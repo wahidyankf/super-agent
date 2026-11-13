@@ -12,7 +12,7 @@ These rules apply to the Go code in `apps/retriever-cli`, and to any Go library 
 
 ## Version and Module
 
-- The `go.mod` file sets `go 1.26.1` and `toolchain go1.26.9`.
+- The `go.mod` file sets `go 1.27.4` and `toolchain go1.27.4`, the Go release the CI setup-go action pins.
 - The module path is `github.com/wahidyankf/super-agent/apps/retriever-cli`.
 
 ## Tools

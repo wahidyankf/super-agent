@@ -1,8 +1,6 @@
 module github.com/wahidyankf/super-agent/apps/retriever-cli
 
-go 1.26.1
-
-toolchain go1.26.9
+go 1.27.4
 
 require (
 	github.com/99designs/gqlgen v0.17.98
