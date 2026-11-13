@@ -15,15 +15,14 @@ import (
 )
 
 func main() {
-	os.Exit(run())
+	os.Exit(run(os.Args[1:], os.Getenv))
 }
 
-// run builds the dependencies, runs one command line, and returns the process exit code.
-func run() int {
-	argv := os.Args[1:]
-
+// run builds the dependencies, runs one command line, and returns the process exit code. The command line and the
+// environment are parameters, so a test runs any command line without changing the real process.
+func run(argv []string, getenv func(string) string) int {
 	// An invalid test seam of any kind stops every command. It must never fall back to a production host.
-	seams, err := readSeams(os.Getenv)
+	seams, err := readSeams(getenv)
 	if err != nil {
 		return startupFailure(os.Stderr, argv, err)
 	}
@@ -36,11 +35,11 @@ func run() int {
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
-		Getenv: cli.SecretEnv,
+		Getenv: cli.SecretLookup(getenv),
 		Now:    time.Now,
 		Sink:   exportSink,
 	}
-	deps.SetupErr = attachSources(&deps, globals, seams)
+	deps.SetupErr = attachSourcesFrom(&deps, globals, seams, getenv, os.Getwd)
 	return cli.Run(argv, deps)
 }
 
@@ -56,14 +55,9 @@ func startupFailure(stderr io.Writer, argv []string, err error) int {
 	return cli.StartupStatus(argv)
 }
 
-// attachSources resolves the configuration paths and wires the sources of every kind into deps. A failure is returned, so
-// the CLI records it as the setup error, and only the commands that need the sources report it.
-func attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) error {
-	return attachSourcesFrom(deps, g, seams, os.Getenv, os.Getwd)
-}
-
-// attachSourcesFrom is attachSources with the environment and the working directory passed in, so a test can make the
-// path rules fail without changing the real process.
+// attachSourcesFrom resolves the configuration paths and wires the sources of every kind into deps. The environment and
+// the working directory are passed in, so a test can set the path rules without changing the real process. A failure is
+// returned, so the CLI records it as the setup error, and only the commands that need the sources report it.
 func attachSourcesFrom(deps *cli.Deps, g cli.Globals, seams seamSet, getenv func(string) string, getwd func() (string, error)) error {
 	paths, err := configpaths.Resolve(configpaths.Inputs{
 		CatalogFlag: g.Catalog,

@@ -361,21 +361,11 @@ func TestAttachSourcesRefusesWhenTheWorkingDirectoryCannotBeRead(t *testing.T) {
 // TestRunReturnsTheStatusOfTheCommandLine checks the composition root end to end for a command that needs no source:
 // --version writes its line and returns 0, with the configuration paths pinned so the test reads no user file.
 func TestRunReturnsTheStatusOfTheCommandLine(t *testing.T) {
-	t.Setenv("RETRIEVER_CATALOG", absPath(t, exampleCatalog))
-	t.Setenv("RETRIEVER_ENV_FILE", filepath.Join(t.TempDir(), ".env.local"))
-	t.Setenv("RETRIEVER_OUTLINE_TEST_BASE_URL", "")
-	t.Setenv("RETRIEVER_OUTLINE_TEST_CA_FILE", "")
-	t.Setenv("RETRIEVER_OUTLINE_TEST_TIMEOUT", "")
-	t.Setenv("RETRIEVER_KIWI_TEST_BASE_URL", "")
-	t.Setenv("RETRIEVER_KIWI_TEST_CA_FILE", "")
-	t.Setenv("RETRIEVER_KIWI_TEST_TIMEOUT", "")
-	t.Setenv("RETRIEVER_JIRA_TEST_BASE_URL", "")
-	t.Setenv("RETRIEVER_JIRA_TEST_CA_FILE", "")
-	t.Setenv("RETRIEVER_JIRA_TEST_TIMEOUT", "")
-	args := os.Args
-	t.Cleanup(func() { os.Args = args })
-	os.Args = []string{"retriever", "--version"}
-	if status := run(); status != 0 {
+	getenv := envOf(map[string]string{
+		"RETRIEVER_CATALOG":  absPath(t, exampleCatalog),
+		"RETRIEVER_ENV_FILE": filepath.Join(t.TempDir(), ".env.local"),
+	})
+	if status := run([]string{"--version"}, getenv); status != 0 {
 		t.Fatalf("run(--version) = %d, want 0", status)
 	}
 }
@@ -383,12 +373,8 @@ func TestRunReturnsTheStatusOfTheCommandLine(t *testing.T) {
 // TestRunStopsWhenASeamVariableIsInvalid checks that an invalid test seam stops the process with status 2 before any
 // command runs.
 func TestRunStopsWhenASeamVariableIsInvalid(t *testing.T) {
-	t.Setenv("RETRIEVER_JIRA_TEST_TIMEOUT", "1s")
-	t.Setenv("RETRIEVER_JIRA_TEST_BASE_URL", "")
-	args := os.Args
-	t.Cleanup(func() { os.Args = args })
-	os.Args = []string{"retriever", "--version"}
-	if status := run(); status != 2 {
+	getenv := envOf(map[string]string{"RETRIEVER_JIRA_TEST_TIMEOUT": "1s"})
+	if status := run([]string{"--version"}, getenv); status != 2 {
 		t.Fatalf("run with an invalid seam = %d, want 2", status)
 	}
 }
