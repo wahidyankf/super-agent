@@ -17,8 +17,10 @@ it.
   break.
 - [Architecture Specifications](./architecture-specifications.md): the C4 model of what has been built, kept in
   `specs/`.
-- [Behaviour-Driven Development](./behaviour-driven-development.md): behaviour written once as Gherkin and run at three
-  levels.
+- [Behaviour-Driven Development](./behaviour-driven-development.md): the choice between a scenario and a plain test,
+  application-only Gherkin corpora, and behaviour run at three levels.
+- [Behaviour-Driven Development Modules](./behaviour-driven-development/README.md): strict bindings, scoped exemptions,
+  and the behaviour-coverage check.
 - [Agents](./agents/README.md): when coding work is delegated to a swe agent, and the procedures those agents follow.
 - [Pattern](./pattern/README.md): hexagonal architecture and the functional core, imperative shell practice.
 - [Practice](./practice/README.md): resource-aware development for local compute, and task tracking.

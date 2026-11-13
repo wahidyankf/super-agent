@@ -27,9 +27,12 @@ A pull request adds only the folders it needs. A folder that does not exist yet 
 
 ## Rules
 
+- Only an application owns scenarios. A library or a script keeps plain tests and adds no `behaviours/` folder; the
+  scenarios of the application that uses it prove what it contributes. The test project of a built binary implements
+  the application's corpus and keeps none of its own.
 - A feature file covers one behaviour area and holds one `Feature:`.
-- A feature describes behaviour at the public boundary: a command, a tool exposed over the protocol server, or a
-  connector contract. It does not describe internal functions.
+- A feature describes contract behaviour at the public boundary: a command, a tool exposed over the protocol server, or
+  a connector contract. It does not describe internal functions or other developer details.
 - A scenario has a stable name. Renaming a scenario changes the contract, so it follows the [public
   contract](../../development/public-contract.md) rules.
 - An architecture specification describes what exists. Anything planned is labelled planned.

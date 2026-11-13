@@ -28,9 +28,14 @@ where it runs.
 - A test that needs a live credential does not belong in this repository. It runs under the owner's control, outside
   pull requests.
 - The quality gate reports a skipped level as skipped, never as passed.
+- Keep the levels in separate trees or targets, so a gate selects one level without filtering by name. A stack standard
+  may select a level by a build tag, and the unit level then carries no tag.
+- Gating coverage comes from the one instrumented unit run that executed the tests, because two runs can disagree. The
+  floor and the allowed exclusions belong to [Meaningful Coverage](testing/meaningful-coverage.md), and the fast gate's
+  unit run enforces the floor.
 
 ## Related
 
 - [Behaviour-Driven Development](../behaviour-driven-development.md) gives the corpus that runs at each level.
 - [Test-Driven Development](../workflow/test-driven-development.md) gives the cycle that writes each test first.
-- [Meaningful Coverage](testing/meaningful-coverage.md) defines what the coverage numbers measure.
+- [Meaningful Coverage](testing/meaningful-coverage.md) defines the coverage floor and what the numbers measure.

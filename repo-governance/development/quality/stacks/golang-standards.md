@@ -12,7 +12,8 @@ These rules apply to the Go code in `apps/retriever-cli`, and to any Go library 
 
 ## Version and Module
 
-- The `go.mod` file sets `go 1.27.4` and `toolchain go1.27.4`, the Go release the CI setup-go action pins.
+- The `go.mod` file sets `go 1.27.0`, the minimum language version, and `toolchain go1.27.4`, the Go release the CI setup-go
+  action pins. The go command refuses a `go` line of `1.27.4` beside a `toolchain` line of `go1.27.4`, so the lines differ.
 - The module path is `github.com/wahidyankf/super-agent/apps/retriever-cli`.
 
 ## Tools
@@ -50,5 +51,22 @@ stack trace. The [tiers record](../../../conventions/command-line-interface/009-
 
 - Behaviour scenarios run with godog, pinned at v0.16.0, as described in [Behaviour-Driven
   Development](../../behaviour-driven-development.md).
-- Decisions have plain Go unit tests. Files use `t.TempDir()`, and network tests use a local `httptest` server.
-- Build tags do not hide tests.
+- Decisions have plain Go unit tests beside their package, run with `-race`. A test that uses `t.TempDir`, `t.Setenv`,
+  a real listener, or a child process is not a unit test; it is integration under the [three-level testing
+  standard](../three-level-testing-standard.md).
+- Unit tests carry no build tag and run in process. Go coverage counts statements, so no branch figure is claimed. One
+  instrumented unit run measures the whole module (`-coverpkg` and `-coverprofile`), and only that figure is held to the
+  floor in [Meaningful Coverage](../testing/meaningful-coverage.md). Integration and end-to-end runs stay outside it.
+- Contract behaviour is a Gherkin scenario and a developer detail is a plain test, per [Behaviour-Driven
+  Development](../../behaviour-driven-development.md#scenario-or-plain-test).
+
+### Selecting a Level
+
+This repository selects the integration and end-to-end levels by a build tag on each file, the option the
+`ose-rules` catalog's Go standard lists beside a separate test directory:
+
+- Integration tests carry `//go:build integration`, and tests that run the built binary or a real service carry
+  `//go:build e2e`.
+- The cost is that a forgotten tag moves a test into the unit run. The unit run therefore bans skipped tests, and the
+  lint and type-check targets compile every tag, so a tagged file cannot rot.
+- A tag selects a level and never hides a test: each tag has a target that runs it, and the pipeline runs that target.
