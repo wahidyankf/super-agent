@@ -107,9 +107,11 @@ func selfCheck(ctx context.Context, svc Service, row operations.Row, src domain.
 }
 
 // confirmCritical checks the --confirm of a critical call against the canonical value of its target (ADR 007 section 3.5).
-// It reads the target, then compares the --confirm with the value that Retriever read or named. A critical row that names no
-// target, no host, and no text has no canonical value, so the call stops before any request, with ErrUnsupportedOperation,
-// instead of dereferencing a missing target. The catalog test that pins every critical row keeps that case unreachable.
+// The order is deliberate. A row with no canonical value at all stops with ErrUnsupportedOperation before any read. A
+// missing --confirm, or one that differs from a value the call already names, is refused before any read, so that refusal
+// sends no request. Only when the value must be read does the function read the target and compare the --confirm with the
+// value the wiki holds. This departs from the Butler CLI, which reads the target before it checks the --confirm; the
+// migration table records the departure. The catalog test that pins every critical row keeps the no-value case unreachable.
 func confirmCritical(ctx context.Context, svc Service, row operations.Row, src domain.Source, args domain.Args, conf Confirmation) error {
 	// A row with no canonical value at all stops the call before any read. A missing --confirm, or one that differs from a
 	// value the call already knows, is refused before any read too, so that refusal sends no request.
