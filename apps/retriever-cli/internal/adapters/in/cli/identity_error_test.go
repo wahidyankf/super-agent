@@ -7,8 +7,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// TestInvalidIdentityIsShownWithItsVariableNameOnly checks the terminal text of a malformed e-mail variable (ADR 010
-// section 1.2): the variable name, and never the value, directly or wrapped.
+// TestInvalidIdentityIsShownWithItsVariableNameOnly checks the terminal text of a malformed e-mail variable: the variable name, and never the value, directly or wrapped.
 func TestInvalidIdentityIsShownWithItsVariableNameOnly(t *testing.T) {
 	const want = "EXAMPLE_JIRA_EMAIL is not a valid e-mail address"
 	err := domain.InvalidIdentityError{Variable: "EXAMPLE_JIRA_EMAIL"}
@@ -28,7 +27,7 @@ func TestInvalidIdentityHasItsOwnErrorCode(t *testing.T) {
 	}
 }
 
-// TestAccessAboveKindCeilingHasItsReasonCode checks the public ceiling error has its own reason code (ADR 010 section 1.1).
+// TestAccessAboveKindCeilingHasItsReasonCode checks the public ceiling error has its own reason code.
 func TestAccessAboveKindCeilingHasItsReasonCode(t *testing.T) {
 	if got := errorCode(domain.ErrAccessAboveKindCeiling, "outline"); got != "retriever.outline.access_above_kind_ceiling" {
 		t.Fatalf("errorCode = %q, want retriever.outline.access_above_kind_ceiling", got)

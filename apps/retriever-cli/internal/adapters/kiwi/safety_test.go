@@ -347,7 +347,7 @@ func TestAReadSourceNeverSendsAWrite(t *testing.T) {
 	}
 }
 
-// TestEveryFailureNamesKiwi checks that the boundary wraps each failure in the Kiwi kind (ADR 010 section 7).
+// TestEveryFailureNamesKiwi checks that the boundary wraps each failure in the Kiwi kind.
 func TestEveryFailureNamesKiwi(t *testing.T) {
 	r := newRig(t, sampleDataset(), domain.AccessRead)
 	r.stub.SetFault(kiwistub.Fault{Status: http.StatusUnauthorized})

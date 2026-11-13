@@ -47,7 +47,7 @@ func levelsOf(c Catalog) map[string]string {
 	return out
 }
 
-// TestCappedLowersEverySourceToTheCeiling checks ADR 007 section 3.3: each source's level becomes the lower of its own
+// TestCappedLowersEverySourceToTheCeiling checks the ceiling rule: each source's level becomes the lower of its own
 // level and the ceiling, so one enforcement point (the use case) sees the capped value.
 func TestCappedLowersEverySourceToTheCeiling(t *testing.T) {
 	cat := cappedCatalog(t)

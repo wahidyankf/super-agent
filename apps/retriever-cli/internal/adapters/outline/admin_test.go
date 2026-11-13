@@ -180,7 +180,7 @@ func TestTheAdminTableHoldsExactlyTheStageCRowsOfThisSlice(t *testing.T) {
 	}
 }
 
-// TestAdminRefusesAWriteSourceBeforeAnyRequest checks layer 3 of ADR 007 section 3.2: an admin call on a source below admin
+// TestAdminRefusesAWriteSourceBeforeAnyRequest checks layer 3: an admin call on a source below admin
 // never reaches the network.
 func TestAdminRefusesAWriteSourceBeforeAnyRequest(t *testing.T) {
 	gw, rec := recordingGatewayAt(t, domain.AccessWrite)
@@ -275,8 +275,7 @@ func TestAnAdminAckWithoutSuccessIsAnOutcomeUnknown(t *testing.T) {
 	}
 }
 
-// TestNoAdminReachesANonLoopbackHost is the proof that no test admin call leaves the in-process stub for a real host (ADR
-// 007 sections 3.4 and 3.6, and the strict behaviour gate). Every admin row of this slice is sent through the client at
+// TestNoAdminReachesANonLoopbackHost is the proof that no test admin call leaves the in-process stub for a real host. Every admin row of this slice is sent through the client at
 // admin access; the stub refuses any host that is not a loopback address or a .invalid name, and counts it. Each call must
 // succeed and reach the stub once, and the count of refused hosts must stay at zero.
 func TestNoAdminReachesANonLoopbackHost(t *testing.T) {

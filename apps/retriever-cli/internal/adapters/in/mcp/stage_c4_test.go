@@ -13,7 +13,7 @@ type stageCHints struct {
 	idempotent  bool
 }
 
-// stageCTools is the expected annotation of each of the 48 MCP tools of stage c, written out by hand from ADR 007 section 3.3
+// stageCTools is the expected annotation of each of the 48 MCP tools of stage c, written out by hand from the access rules
 // (finding m3). The test reads no value from the catalog's annotation code, so a wrong predicate there cannot agree with
 // itself. The rule applied: a destructive tool announces destructive and not idempotent; an update announces idempotent,
 // because no stage c update repeats another change (the only non-idempotent update is in stage b); an additive tool is not

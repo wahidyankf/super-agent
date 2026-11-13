@@ -8,7 +8,7 @@ import (
 )
 
 // TestEveryPublicErrorIsShownWithTheKindNameToTheModel checks that a Kiwi failure reaches the model with the kind's own
-// name, and never with the word Outline (ADR 010 section 7).
+// name, and never with the word Outline.
 func TestEveryPublicErrorIsShownWithTheKindNameToTheModel(t *testing.T) {
 	for _, sentinel := range domain.PublicErrors() {
 		err := domain.KindError{Kind: domain.KindKiwi, Err: sentinel}

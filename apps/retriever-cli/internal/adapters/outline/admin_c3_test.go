@@ -62,8 +62,7 @@ var requestCasesC3 = []requestCase{
 }
 
 // adminPreReads names the read that a change of this slice sends first. The wiki replaces some stored values when a request
-// leaves them out, so Retriever reads the object and fills the values the caller did not set (ADR 007 section 3.4; the
-// inventory, Finding 9). The read is an admin read of the same source.
+// leaves them out, so Retriever reads the object and fills the values the caller did not set. The read is an admin read of the same source.
 var adminPreReads = map[domain.OperationID]domain.OperationID{
 	domain.OpAuthenticationProvidersUpdate: domain.OpAuthenticationProvidersGet,
 	domain.OpIntegrationsUpdate:            domain.OpIntegrationsGet,
@@ -148,7 +147,7 @@ func TestSliceC3EveryRequestIsSentOnceWithItsExactBody(t *testing.T) {
 	}
 }
 
-// TestSliceC3EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest checks layer 3 of ADR 007 section 3.2 for each row of the slice: a
+// TestSliceC3EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest checks layer 3 for each row of the slice: a
 // source below admin never sends the change or the pre-read.
 func TestSliceC3EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest(t *testing.T) {
 	for _, tc := range requestCasesC3 {

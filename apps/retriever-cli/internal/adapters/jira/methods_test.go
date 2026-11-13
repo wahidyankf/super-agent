@@ -12,7 +12,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// TestTheEndpointTableHoldsExactlyTheFiveRows pins the closed table to the five requests of ADR 010 section 5.
+// TestTheEndpointTableHoldsExactlyTheFiveRows pins the closed table to the five requests.
 func TestTheEndpointTableHoldsExactlyTheFiveRows(t *testing.T) {
 	want := []string{
 		"GET /rest/api/3/myself",

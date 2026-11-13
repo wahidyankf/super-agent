@@ -9,7 +9,7 @@ import (
 )
 
 // TestInvalidIdentityGivesAFixedTextForTheModel checks that a malformed e-mail variable reaches a model with a fixed text
-// that names no variable, because the name of a credential or an identity is never shown to a model (ADR 010 section 1.2).
+// that names no variable, because the name of a credential or an identity is never shown to a model.
 func TestInvalidIdentityGivesAFixedTextForTheModel(t *testing.T) {
 	const want = "the e-mail address for this source is not valid"
 	err := domain.InvalidIdentityError{Variable: "EXAMPLE_JIRA_EMAIL"}

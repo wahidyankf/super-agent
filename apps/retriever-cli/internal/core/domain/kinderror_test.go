@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// TestSourceKindDisplayNamesEachKind checks the name a person reads in a failure, per ADR 010 section 7.
+// TestSourceKindDisplayNamesEachKind checks the name a person reads in a failure.
 func TestSourceKindDisplayNamesEachKind(t *testing.T) {
 	cases := map[string]SourceKind{
 		"Outline": KindOutline,

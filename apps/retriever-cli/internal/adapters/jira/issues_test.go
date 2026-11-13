@@ -41,7 +41,7 @@ func TestAnIssueIsReadAsItsDocumentFields(t *testing.T) {
 	}
 }
 
-// TestTheIssueMarkdownHasItsMetadataAndDescription pins the document layout of ADR 010 section 3 for an issue with every field.
+// TestTheIssueMarkdownHasItsMetadataAndDescription pins the document layout for an issue with every field.
 func TestTheIssueMarkdownHasItsMetadataAndDescription(t *testing.T) {
 	r := newRig(t)
 	md := issueText(t, r.gw, "EXAMPLE-12").Str("markdown")

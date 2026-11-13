@@ -125,12 +125,12 @@ func TestRelationshipsListNeedsExactlyOneDocument(t *testing.T) {
 	}
 }
 
-// TestFileOperationsListIsReadButNeedsTheAdminRole records the owner decision of ADR 007 (decision 17): the class stays
+// TestFileOperationsListIsReadButNeedsTheAdminRole records the owner decision 17: the class stays
 // read, and the row says the server needs an admin user.
 func TestFileOperationsListIsReadButNeedsTheAdminRole(t *testing.T) {
 	row := rowOf(t, domain.OpFileOperationsList)
 	if row.Access != domain.AccessRead {
-		t.Fatalf("file-operations.list access = %v, want read (ADR 007 decision 17)", row.Access)
+		t.Fatalf("file-operations.list access = %v, want read", row.Access)
 	}
 	if !strings.Contains(row.Description, "admin") {
 		t.Fatalf("file-operations.list must say that the server needs an admin user, got %q", row.Description)

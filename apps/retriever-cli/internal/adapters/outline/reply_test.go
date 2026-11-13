@@ -42,7 +42,7 @@ func TestInterpretMapsEachStatusToItsSentinel(t *testing.T) {
 		{"404 on collections.documents is an unknown collection", methodCollectionsDocuments, 404, "", missing, domain.ErrCollectionNotFound},
 		{"404 on documents.info is an unknown document", methodDocumentsInfo, 404, "", missing, domain.ErrDocumentNotFound},
 		{"404 on documents.export is an unknown document", methodDocumentsExport, 404, "", missing, domain.ErrDocumentNotFound},
-		// ADR 007 section 6.2: any 404 that is not the catch-all is not found, on a list as on an object, never unexpected.
+		// The not-found rule: any 404 that is not the catch-all is not found, on a list as on an object, never unexpected.
 		{"404 on a list with another message is not found", methodCollectionsList, 404, "", missing, domain.ErrNotFound},
 		{"404 on documents.list with another message is not found", methodDocumentsList, 404, "", missing, domain.ErrNotFound},
 		{"404 on a revision read is not found", methodRevisionsInfo, 404, "", missing, domain.ErrNotFound},

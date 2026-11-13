@@ -44,7 +44,7 @@ type kiwiWant struct {
 	fields []string
 }
 
-// kiwiWants are the six Kiwi rows, in the order of the ADR table.
+// kiwiWants are the six Kiwi rows, in the order of the spec table.
 var kiwiWants = []kiwiWant{
 	{domain.OpKiwiProductsList, "kiwi products list", domain.EffectRead, domain.AccessRead, []string{"id", "name"}},
 	{domain.OpKiwiProductsTree, "kiwi products tree", domain.EffectRead, domain.AccessRead, []string{"id", "title", "url", "parentId", "depth"}},
@@ -121,7 +121,7 @@ func TestKiwiRowParameters(t *testing.T) {
 	}
 }
 
-// TestKiwiRowsHaveNoAdminDestructiveOrCriticalOperation is the table test of ADR 009 section 2: no Kiwi row has
+// TestKiwiRowsHaveNoAdminDestructiveOrCriticalOperation is the table test of the Kiwi rows: no Kiwi row has
 // destructive effect, admin access, a critical value, a tool, or a need for --yes.
 func TestKiwiRowsHaveNoAdminDestructiveOrCriticalOperation(t *testing.T) {
 	count := 0

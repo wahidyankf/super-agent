@@ -47,8 +47,7 @@ func webhookReply() domain.Record {
 	)
 }
 
-// TestAdministerCriticalOAuthClientCreateConfirmsTheNewName checks the canonical target of oauth-clients.create (ADR 007 section
-// 3.5): the new client name, typed exactly. No client exists before the call, so the dry run reads nothing, and the name is the
+// TestAdministerCriticalOAuthClientCreateConfirmsTheNewName checks the canonical target of oauth-clients.create: the new client name, typed exactly. No client exists before the call, so the dry run reads nothing, and the name is the
 // target; a --confirm in another case, or another name, is a mismatch, and only the exact name sends the request.
 func TestAdministerCriticalOAuthClientCreateConfirmsTheNewName(t *testing.T) {
 	reader := &fakeReader{reply: domain.NewRecord()}

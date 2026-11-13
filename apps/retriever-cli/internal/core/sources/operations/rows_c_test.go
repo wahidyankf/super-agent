@@ -105,7 +105,7 @@ func TestStageCRowsHaveTheInventoryCliToolEffectAndAdminAccess(t *testing.T) {
 			t.Errorf("%s: effect %s, want %s", want.op, row.Effect, want.effect)
 		}
 		if row.Access != domain.AccessAdmin {
-			t.Errorf("%s: access %s, want admin (ADR 007 section 3.3: class D and A are admin)", want.op, row.Access)
+			t.Errorf("%s: access %s, want admin", want.op, row.Access)
 		}
 		if len(row.Fields) == 0 {
 			t.Errorf("%s: no result fields", want.op)
@@ -117,7 +117,7 @@ func TestEveryStageCRowNeedsYesAndNoStageAOrBRowDoes(t *testing.T) {
 	for _, want := range stageCRows {
 		row, _ := Lookup(want.op)
 		if !row.NeedsYes() {
-			t.Errorf("%s: NeedsYes false, want true (ADR 007 section 3.4)", want.op)
+			t.Errorf("%s: NeedsYes false, want true", want.op)
 		}
 	}
 	for _, id := range []domain.OperationID{domain.OpAPIKeysList, domain.OpDocumentsGet, domain.OpDocumentsUpdate, domain.OpCollectionsCreate} {

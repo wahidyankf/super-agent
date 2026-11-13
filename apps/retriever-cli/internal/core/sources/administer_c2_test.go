@@ -35,7 +35,7 @@ func providerRecord(id, name string) domain.Record {
 	return domain.NewRecord(domain.Field{Name: "id", Value: id}, domain.Field{Name: "name", Value: name})
 }
 
-// TestAdministerRefusesAChangeToTheKeysOwnUserBeforeAnyRequest checks rule 6 of ADR 007 section 3.5: a delete, a suspension,
+// TestAdministerRefusesAChangeToTheKeysOwnUserBeforeAnyRequest checks rule 6: a delete, a suspension,
 // or a role change of the user of the API key is refused, in a dry run as well as a real call, and the match ignores case.
 func TestAdministerRefusesAChangeToTheKeysOwnUserBeforeAnyRequest(t *testing.T) {
 	cases := []struct {
@@ -71,7 +71,7 @@ func TestAdministerRefusesAChangeToTheKeysOwnUserBeforeAnyRequest(t *testing.T) 
 	}
 }
 
-// TestAdministerRefusesAUserChangeWithoutYesBeforeAnyRead checks the order of ADR 007 section 3.4 for the self-target rows: a
+// TestAdministerRefusesAUserChangeWithoutYesBeforeAnyRead checks the order for the self-target rows: a
 // change to a user that is not confirmed with --yes is refused as yes_required before the key's user is read, so a call that
 // is not confirmed makes no read and no change at all, whoever the target is.
 func TestAdministerRefusesAUserChangeWithoutYesBeforeAnyRead(t *testing.T) {

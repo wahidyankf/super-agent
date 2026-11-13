@@ -8,7 +8,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// TestAllowlistHoldsExactlyTheTenMethods checks the closed method table of ADR 009 section 5. A method outside it never
+// TestAllowlistHoldsExactlyTheTenMethods checks the closed method table. A method outside it never
 // reaches the network, and no remove, delete, or Auth method is in it.
 func TestAllowlistHoldsExactlyTheTenMethods(t *testing.T) {
 	want := []string{
@@ -49,7 +49,7 @@ func TestPermittedMethodFollowsTheAccessLevel(t *testing.T) {
 	}
 }
 
-// TestArgumentGuardRefusesForbiddenKeysAtAnyDepth checks the guard of ADR 009 section 5. Kiwi refuses these keys, so
+// TestArgumentGuardRefusesForbiddenKeysAtAnyDepth checks the guard. Kiwi refuses these keys, so
 // the adapter refuses to send them.
 func TestArgumentGuardRefusesForbiddenKeysAtAnyDepth(t *testing.T) {
 	bad := []map[string]any{

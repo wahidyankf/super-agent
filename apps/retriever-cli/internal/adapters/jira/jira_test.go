@@ -111,7 +111,7 @@ func TestTheTLSNameIsTheEndpointHostAndNotTheConnectionBase(t *testing.T) {
 	}
 }
 
-// TestTheDefaultsMatchTheSafetyRules pins the pacing, the timeout, and the page limits that ADR 010 section 5 states.
+// TestTheDefaultsMatchTheSafetyRules pins the pacing, the timeout, and the page limits that the client sets.
 func TestTheDefaultsMatchTheSafetyRules(t *testing.T) {
 	g := New(testSource(t), newSecrets())
 	if g.minDelay != 100*time.Millisecond {
@@ -121,6 +121,6 @@ func TestTheDefaultsMatchTheSafetyRules(t *testing.T) {
 		t.Fatalf("timeout = %v, want 30s", g.timeout)
 	}
 	if maxBodyBytes != 10<<20 || maxRetries != 3 || maxRetryAfter != 60 {
-		t.Fatal("the reply cap, retry count, or Retry-After limit differs from ADR 010 section 5")
+		t.Fatal("the reply cap, retry count, or Retry-After limit differs from the client limits")
 	}
 }

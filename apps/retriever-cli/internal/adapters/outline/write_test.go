@@ -366,7 +366,7 @@ func TestEveryWriteIsAPostOfJSONWithTheAPIVersion(t *testing.T) {
 	}
 }
 
-// TestAWriteIsNeverRetriedAfterATimeoutOrADroppedConnection checks ADR 007 section 3.4: after a timeout or a dropped
+// TestAWriteIsNeverRetriedAfterATimeoutOrADroppedConnection checks the retry rule: after a timeout or a dropped
 // connection the outcome is unknown, so the write returns ErrWriteOutcomeUnknown after one request, never a retry.
 func TestAWriteIsNeverRetriedAfterATimeoutOrADroppedConnection(t *testing.T) {
 	for _, fault := range []outlinestub.Fault{{Hang: true}, {Drop: true}} {
@@ -385,7 +385,7 @@ func TestAWriteIsNeverRetriedAfterATimeoutOrADroppedConnection(t *testing.T) {
 	}
 }
 
-// TestAWriteRetriesOnlyAfterA429 checks ADR 007 section 3.4 and 6.3: a 429 means the wiki refused the write before it
+// TestAWriteRetriesOnlyAfterA429 checks the retry rules: a 429 means the wiki refused the write before it
 // ran, so the client waits Retry-After and sends it again, once, and then succeeds.
 func TestAWriteRetriesOnlyAfterA429(t *testing.T) {
 	r := writeRig(t, nil)
@@ -448,7 +448,7 @@ func TestA409DocumentConflictIsItsOwnErrorAndIsNotRetried(t *testing.T) {
 	}
 }
 
-// TestAWriteOnAReadSourceIsRefusedBeforeAnyRequest checks layer 3 of ADR 007 section 3.2: the client refuses a write
+// TestAWriteOnAReadSourceIsRefusedBeforeAnyRequest checks layer 3: the client refuses a write
 // method on a read source, so a write never reaches the network from a read source.
 func TestAWriteOnAReadSourceIsRefusedBeforeAnyRequest(t *testing.T) {
 	r := newRig(t, sampleOptions())
@@ -563,8 +563,7 @@ func TestDuplicateAnswersTheCopiesAsAList(t *testing.T) {
 	}
 }
 
-// TestNoWriteReachesANonLoopbackHost is the proof that no test write leaves the in-process stub for a real host (ADR 007
-// section 3.4 and the strict behaviour gate). Every write row is sent through the client; the stub refuses any host
+// TestNoWriteReachesANonLoopbackHost is the proof that no test write leaves the in-process stub for a real host. Every write row is sent through the client; the stub refuses any host
 // that is not a loopback address or a .invalid name, and counts it. The count must stay at zero.
 func TestNoWriteReachesANonLoopbackHost(t *testing.T) {
 	for _, tc := range requestCasesB {

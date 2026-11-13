@@ -8,7 +8,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// jiraWant is the expected shape of one Jira row (ADR 010 section 2). Each row is a read: no write, admin, critical, or
+// jiraWant is the expected shape of one Jira row. Each row is a read: no write, admin, critical, or
 // MCP tool.
 type jiraWant struct {
 	id         domain.OperationID
@@ -17,7 +17,7 @@ type jiraWant struct {
 	fields     []string
 }
 
-// jiraWants are the five Jira rows, in the order of the ADR table.
+// jiraWants are the five Jira rows, in the order of the spec table.
 var jiraWants = []jiraWant{
 	{domain.OpJiraWhoami, "jira whoami", "", []string{"displayName", "accountType", "active"}},
 	{domain.OpJiraProjectsList, "jira projects list", "", []string{"key", "name", "type", "style"}},
@@ -26,7 +26,7 @@ var jiraWants = []jiraWant{
 	{domain.OpJiraCommentsList, "jira comments list", "issueKey", []string{"id", "author", "created", "updated", "markdown"}},
 }
 
-// TestJiraRowsAreTheFiveReadRows checks the catalog filter for the Jira kind: exactly the five rows of ADR 010, in order,
+// TestJiraRowsAreTheFiveReadRows checks the catalog filter for the Jira kind: exactly the five rows, in order,
 // and no other row belongs to it.
 func TestJiraRowsAreTheFiveReadRows(t *testing.T) {
 	jira := RowsOf(domain.KindJira)
@@ -55,7 +55,7 @@ func TestJiraRowsHaveTheADRShape(t *testing.T) {
 			t.Errorf("%s is %s/%s, want read/read", want.id, row.Effect, row.Access)
 		}
 		if row.Tool != "" {
-			t.Errorf("%s has MCP tool %q, want none (ADR 010 section 4)", want.id, row.Tool)
+			t.Errorf("%s has MCP tool %q, want none", want.id, row.Tool)
 		}
 		if row.Critical != nil || row.Target != nil {
 			t.Errorf("%s has a critical or target read, want none", want.id)
@@ -75,8 +75,7 @@ func TestJiraRowsHaveTheADRShape(t *testing.T) {
 	}
 }
 
-// TestJiraRowParametersMatchTheADR checks the parameters of the four rows that take any: the kind and bounds of each
-// (ADR 010 section 2).
+// TestJiraRowParametersMatchTheADR checks the parameters of the four rows that take any: the kind and bounds of each.
 func TestJiraRowParametersMatchTheADR(t *testing.T) {
 	cases := []struct {
 		id   domain.OperationID
@@ -147,7 +146,7 @@ func (w jiraWant) rowOrFail(t *testing.T) Row {
 }
 
 // TestJiraRowsRefuseNonIssueKeyForIssueKeyParameter checks the KindIssueKey validator: a strict upper-case issue key of
-// ADR 010 section 2 passes, and any other text is refused with ErrInvalidDocumentID before a request.
+// The issue-key form passes, and any other text is refused with ErrInvalidDocumentID before a request.
 func TestJiraRowsRefuseNonIssueKeyForIssueKeyParameter(t *testing.T) {
 	row, _ := Lookup(domain.OpJiraIssuesGet)
 	for _, good := range []string{"EXAMPLE-12", "OPS-3", "AB-1", "EXAMPLE-999999999"} {

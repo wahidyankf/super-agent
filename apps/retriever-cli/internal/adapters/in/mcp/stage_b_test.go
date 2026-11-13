@@ -11,7 +11,7 @@ import (
 )
 
 // stageBIdempotent is the expected idempotent hint of every write tool of stage b, written out by hand (finding A3). It is
-// the rule of ADR 007 section 3.3 applied to each row: an additive row is not idempotent, an update is idempotent, and
+// the ceiling rule applied to each row: an additive row is not idempotent, an update is idempotent, and
 // documents.update is not, because its append and patch modes repeat a different change. The test reads no value from the
 // catalog's own annotation code, so a wrong predicate cannot agree with itself. The table holds the 40 write tools of stage
 // b (inventory: stage b 40, class W). None is critical, so the write ceiling offers exactly these tools.

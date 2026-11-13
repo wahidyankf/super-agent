@@ -19,7 +19,7 @@ func TestCleanUnescapesOnceAndStripsControlCharacters(t *testing.T) {
 	}
 }
 
-// TestCaseDocumentHasItsMetadataAndText checks the case document layout of ADR 009 section 5, with the legacy sections
+// TestCaseDocumentHasItsMetadataAndText checks the case document layout, with the legacy sections
 // shown only when Kiwi returns them.
 func TestCaseDocumentHasItsMetadataAndText(t *testing.T) {
 	doc := caseDocument{

@@ -27,8 +27,7 @@ func integrationReply() domain.Record {
 	)
 }
 
-// TestAdministerCriticalIntegrationsCreateConfirmsTheHostOfItsURL checks the canonical target of integrations.create (ADR 007
-// section 3.5): the host of the URL setting, lower-cased. No object exists before the call, so the dry run reads nothing and
+// TestAdministerCriticalIntegrationsCreateConfirmsTheHostOfItsURL checks the canonical target of integrations.create: the host of the URL setting, lower-cased. No object exists before the call, so the dry run reads nothing and
 // shows the host alone; a --confirm in another case, or another host, is a mismatch, and only the host sends the request.
 func TestAdministerCriticalIntegrationsCreateConfirmsTheHostOfItsURL(t *testing.T) {
 	reader := &fakeReader{reply: domain.NewRecord()}
@@ -75,8 +74,7 @@ func TestAdministerCriticalIntegrationsCreateConfirmsTheHostOfItsURL(t *testing.
 	}
 }
 
-// TestAdministerCriticalIntegrationsUpdateConfirmsTheNewHost checks the canonical target of integrations.update (ADR 007
-// section 3.5, the stricter reading): the host of the new URL setting, which is the destination the call opens. The target
+// TestAdministerCriticalIntegrationsUpdateConfirmsTheNewHost checks the canonical target of integrations.update: the host of the new URL setting, which is the destination the call opens. The target
 // read confirms that the integration exists; the host the wiki held before is not the value to type, so typing it is a
 // mismatch.
 func TestAdministerCriticalIntegrationsUpdateConfirmsTheNewHost(t *testing.T) {

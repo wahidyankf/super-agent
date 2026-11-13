@@ -96,7 +96,7 @@ func TestSliceC4EveryRequestIsSentOnceWithItsExactBody(t *testing.T) {
 	}
 }
 
-// TestSliceC4EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest checks layer 3 of ADR 007 section 3.2 for each row of the slice:
+// TestSliceC4EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest checks layer 3 for each row of the slice:
 // a source below admin never sends the change.
 func TestSliceC4EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest(t *testing.T) {
 	for _, tc := range requestCasesC4 {

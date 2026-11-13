@@ -81,8 +81,7 @@ func TestSliceC2ToolsAndCriticalRowsCount(t *testing.T) {
 	}
 }
 
-// TestSliceC2UsersInviteTakesOneEmailAddressAndRefusesAMalformedOne checks the e-mail kind (ADR 007 section 3.5 and the
-// redaction rules): a well-formed address is bound, and a malformed one is refused with the fixed text, never the address.
+// TestSliceC2UsersInviteTakesOneEmailAddressAndRefusesAMalformedOne checks the e-mail kind: a well-formed address is bound, and a malformed one is refused with the fixed text, never the address.
 func TestSliceC2UsersInviteTakesOneEmailAddressAndRefusesAMalformedOne(t *testing.T) {
 	row := rowOf(t, domain.OpUsersInvite)
 	args, err := Bind(row, map[string]any{"email": "ann@example.com", "name": "Ann", "role": "member"})

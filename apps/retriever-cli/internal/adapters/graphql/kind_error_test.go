@@ -8,7 +8,7 @@ import (
 )
 
 // TestEveryPublicErrorIsShownWithTheKindNameInGraphQL checks that a Kiwi failure reaches a GraphQL client with the
-// kind's own name, and never with the word Outline (ADR 010 section 7).
+// kind's own name, and never with the word Outline.
 func TestEveryPublicErrorIsShownWithTheKindNameInGraphQL(t *testing.T) {
 	for _, sentinel := range domain.PublicErrors() {
 		err := domain.KindError{Kind: domain.KindKiwi, Err: sentinel}

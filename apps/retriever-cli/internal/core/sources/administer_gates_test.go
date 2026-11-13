@@ -90,8 +90,7 @@ func sampleArgs(row operations.Row) map[string]any {
 
 // TestEveryChangeNeedsYesAndAdminBeforeAnyRead runs one table over every row of the catalog that needs --yes. Without --yes,
 // on an admin source, the call is refused as yes_required; on a read source and on a write source, with --yes, it is
-// refused as access_level_too_low. Each refusal happens before any read and before any admin call (ADR 007 sections 3.1,
-// 3.4, and 3.5), so a row that reads its target or its caller's user first fails here.
+// refused as access_level_too_low. Each refusal happens before any read and before any admin call, so a row that reads its target or its caller's user first fails here.
 func TestEveryChangeNeedsYesAndAdminBeforeAnyRead(t *testing.T) {
 	gated := 0
 	for _, row := range operations.Rows() {

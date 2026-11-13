@@ -11,7 +11,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// TestTheStatusMappingOfEachReply pins the table of ADR 010 section 5. Each row is one status of one request.
+// TestTheStatusMappingOfEachReply pins the table. Each row is one status of one request.
 func TestTheStatusMappingOfEachReply(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -117,7 +117,7 @@ func TestAMissingKeyStaysTypedThroughTheWrap(t *testing.T) {
 }
 
 // TestEveryPublicSentinelReadsAsJiraNeverAsOutline proves that a Jira failure never says Outline. Each public sentinel is
-// wrapped as a Jira error, and its text is checked (ADR 010 section 7).
+// wrapped as a Jira error, and its text is checked.
 func TestEveryPublicSentinelReadsAsJiraNeverAsOutline(t *testing.T) {
 	for _, sentinel := range domain.PublicErrors() {
 		text := kindError(sentinel).Error()

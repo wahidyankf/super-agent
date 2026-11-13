@@ -8,7 +8,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// TestRPCErrorMapsEachCodeAndMessage is the table of ADR 009 section 5, read by code and by message text. The message is
+// TestRPCErrorMapsEachCodeAndMessage is the table of error codes, read by code and by message text. The message is
 // matched and never shown, so each row names the sentinel the presenter prints.
 func TestRPCErrorMapsEachCodeAndMessage(t *testing.T) {
 	cases := []struct {

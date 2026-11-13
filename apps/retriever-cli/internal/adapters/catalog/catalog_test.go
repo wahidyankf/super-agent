@@ -294,7 +294,7 @@ sources:
 	}
 }
 
-// oneJira is a valid catalog with one Jira source, which needs an identity name (ADR 010 section 1.1).
+// oneJira is a valid catalog with one Jira source, which needs an identity name.
 const oneJira = `version: 1
 sources:
   - id: jira
@@ -323,7 +323,7 @@ func withoutLine(content, field string) string {
 }
 
 // TestIdentityEnvIsReadAndCheckedWithItsRule checks the optional identity field: a jira source carries its e-mail name,
-// and each rule of ADR 010 section 1.1 is reported with its position, the field, and the rule, and never a value.
+// and each kind rule is reported with its position, the field, and the rule, and never a value.
 func TestIdentityEnvIsReadAndCheckedWithItsRule(t *testing.T) {
 	cat := mustLoad(t, oneJira)
 	src := cat.All()[0]

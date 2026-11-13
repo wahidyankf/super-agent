@@ -72,8 +72,7 @@ func TestMCPWritesOnlyTheServerToStandardOutput(t *testing.T) {
 	}
 }
 
-// TestMCPCeilingDefaultsToRead checks that a session with no --max-access flag runs at the read ceiling (ADR 007 section
-// 3.3), and that each named level is passed to the server as it is named.
+// TestMCPCeilingDefaultsToRead checks that a session with no --max-access flag runs at the read ceiling, and that each named level is passed to the server as it is named.
 func TestMCPCeilingDefaultsToRead(t *testing.T) {
 	cases := []struct {
 		name string

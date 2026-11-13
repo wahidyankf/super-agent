@@ -254,7 +254,7 @@ func TestSearchTrimsAPageThatHoldsMoreThanAsked(t *testing.T) {
 	}
 }
 
-// TestSearchTruncationNeedsATokenAndNoLastFlag proves truncation follows the rule of ADR 010 section 3: a token that is present
+// TestSearchTruncationNeedsATokenAndNoLastFlag proves truncation follows the paging rule: a token that is present
 // while isLast is not true.
 func TestSearchTruncationNeedsATokenAndNoLastFlag(t *testing.T) {
 	issue := `{"key":"EXAMPLE-1","fields":{"summary":"s"}}`

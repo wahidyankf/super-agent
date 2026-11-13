@@ -6,7 +6,7 @@ import (
 )
 
 // kindSource builds a source of any kind, with an identity name when identity is not empty. It is the test helper of the
-// identity and ceiling rules of ADR 010 section 1.1.
+// identity and ceiling rules of the kind table.
 func kindSource(t *testing.T, id string, kind SourceKind, host, cred, identity string, access Access) Source {
 	t.Helper()
 	sid, err := NewSourceID(id)
@@ -33,7 +33,7 @@ func kindSource(t *testing.T, id string, kind SourceKind, host, cred, identity s
 }
 
 // TestKindJiraIsAKnownKindAfterKiwi checks that jira is accepted and listed last, so the known-kinds text reads
-// "outline, kiwi, jira" (ADR 010 section 9).
+// "outline, kiwi, jira".
 func TestKindJiraIsAKnownKindAfterKiwi(t *testing.T) {
 	got, err := NewSourceKind("jira")
 	if err != nil || got != KindJira {
@@ -47,7 +47,7 @@ func TestKindJiraIsAKnownKindAfterKiwi(t *testing.T) {
 	}
 }
 
-// TestKindTraitsOfEachKind pins the per-kind table of ADR 010 section 1.1: which kind needs an identity name, and the
+// TestKindTraitsOfEachKind pins the per-kind table: which kind needs an identity name, and the
 // highest access the catalog accepts for it. A kind with no traits uses no identity and allows nothing.
 func TestKindTraitsOfEachKind(t *testing.T) {
 	cases := []struct {
@@ -71,7 +71,7 @@ func TestKindTraitsOfEachKind(t *testing.T) {
 	}
 }
 
-// TestSourceKindDisplayNamesJira checks the display name of the Jira kind, which the failure texts use (ADR 010 section 7).
+// TestSourceKindDisplayNamesJira checks the display name of the Jira kind, which the failure texts use.
 func TestSourceKindDisplayNamesJira(t *testing.T) {
 	if got := KindJira.Display(); got != "Jira" {
 		t.Fatalf("KindJira.Display() = %q, want Jira", got)
@@ -109,7 +109,7 @@ func TestSourceIdentityIsZeroUntilSetAndWithIdentityCopies(t *testing.T) {
 	}
 }
 
-// TestNewCatalogIdentityAndCeilingRules checks each kind rule of ADR 010 section 1.1 for a source at position 2, with
+// TestNewCatalogIdentityAndCeilingRules checks each kind rule for a source at position 2, with
 // a valid first source. The text names the position, the field, and the rule, and never a value.
 func TestNewCatalogIdentityAndCeilingRules(t *testing.T) {
 	good := kindSource(t, "outline", KindOutline, "docs.example.com", "GOOD_API_KEY", "", AccessRead)

@@ -337,7 +337,7 @@ func TestDocumentOfAMissingIssueIsNotFound(t *testing.T) {
 }
 
 // TestEveryRequestTheGatewayMakesIsInTheTable runs every gateway method and every read, then checks each request the stub
-// received against the closed table of ADR 010 section 5.
+// received against the closed table.
 func TestEveryRequestTheGatewayMakesIsInTheTable(t *testing.T) {
 	r := newRig(t)
 	ctx := context.Background()
