@@ -65,9 +65,13 @@ A package with no statements, such as the interface-only `internal/core/ports`, 
 Unit tests run in process, beside their package. They may touch the file system only through `t.TempDir`, and they may
 open a loopback `httptest` server. The registry tests have no build tag, so they run at the unit level.
 
-Two untagged unit tests also set environment variables with `t.Setenv`: `internal/adapters/in/cli/environment_unit_test.go`
-and `internal/adapters/in/cli/paths_unit_test.go`. The stack standard counts a test that uses `t.Setenv` as integration.
-Whether these two move to the integration level is an open question for the owner.
+An untagged unit test does not change the process environment. The composition root takes the environment as a function:
+`run` in `cmd/retriever` and `SecretLookup` in `internal/adapters/in/cli` receive it as a parameter, so a unit test supplies
+its own values. The architecture test `TestUntaggedTestsNeverChangeTheEnvironment` fails when an untagged test calls
+`t.Setenv`, `os.Setenv`, `os.Unsetenv`, or `os.Clearenv`. It exempts one file, `tests/behaviour/world_test.go`, the
+in-process behaviour harness. That harness serves the unit and integration levels from one file and sets the environment
+for both, so the exemption stays until the integration-only part moves to a tagged file. The check reads the direct calls
+of each file. It does not check writes outside `t.TempDir`.
 
 This page records no coverage figure. A figure comes from a run of `npx nx run retriever-cli:test:coverage` on a given
 tree, and it belongs with the change that produced it.
