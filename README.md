@@ -36,7 +36,7 @@ changes in [CHANGELOG.md](./CHANGELOG.md).
 
 - `worktrees/` holds local task checkouts for pull requests. It is not committed.
 - `local-tmp/` holds local working state. It is not committed.
-- `.env.example` holds no variable names yet; connector variables arrive with the CLI. Values stay empty there.
+- `.env.example` names no variables, because each source in a catalog names its own. Values stay empty there.
 
 Real catalogs, connector specs, and credentials are never committed to this repository. Use `.env.local`
 for local values; that file is ignored by Git.

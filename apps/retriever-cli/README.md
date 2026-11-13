@@ -50,7 +50,7 @@ not a tool directive in `go.mod`. A release that publishes archives for each pla
 ## Layout
 
 - `cmd/` holds the composition root. See [cmd](./cmd/README.md).
-- `examples/` holds the example sources catalog, `sources.example.yml`. The folder has no README yet.
+- `examples/` holds the example sources catalog, `sources.example.yml`. See [examples](./examples/README.md).
 - `internal/` holds the core, the adapters, and their unit tests. See [internal](./internal/README.md).
 - `tests/` holds the behaviour tests and the stub servers that the tests use.
 - `.golangci.yml` is the lint configuration, written for a later golangci-lint adoption.

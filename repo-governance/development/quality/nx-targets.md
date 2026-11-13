@@ -9,8 +9,9 @@ when_to_use: >-
 # Nx Targets
 
 The workspace uses Nx to run tasks across projects. Every project exposes the same target names with the same meaning,
-so a gate can run one name across all of them. No project exists yet. The first project adopts these names when it is
-added.
+so a gate can run one name across all of them. The first project, `apps/retriever-cli`, exposes the required names. It also
+exposes `test:conformance`, `bdd:check`, and `deps:audit`, which are listed in its
+[test gates reference](../../../docs/reference/retriever-cli-test-gates.md).
 
 ## Required Targets
 
