@@ -111,6 +111,18 @@ func selfCheck(ctx context.Context, svc Service, row operations.Row, src domain.
 // target, no host, and no text has no canonical value, so the call stops before any request, with ErrUnsupportedOperation,
 // instead of dereferencing a missing target. The catalog test that pins every critical row keeps that case unreachable.
 func confirmCritical(ctx context.Context, svc Service, row operations.Row, src domain.Source, args domain.Args, conf Confirmation) error {
+	// A row with no canonical value at all stops the call before any read. A missing --confirm, or one that differs from a
+	// value the call already knows, is refused before any read too, so that refusal sends no request.
+	want, known := knownTarget(row, src, args)
+	if !known && row.Target == nil {
+		return domain.ErrUnsupportedOperation
+	}
+	if conf.Confirm == nil {
+		return domain.ConfirmError{Kind: row.Critical.Kind}
+	}
+	if known && *conf.Confirm != want {
+		return domain.ConfirmError{Kind: row.Critical.Kind, Mismatch: true}
+	}
 	target, err := readTarget(ctx, svc, row, src, args)
 	if err != nil {
 		return err
@@ -118,13 +130,22 @@ func confirmCritical(ctx context.Context, svc Service, row operations.Row, src d
 	if target == nil {
 		return domain.ErrUnsupportedOperation
 	}
-	if conf.Confirm == nil {
-		return domain.ConfirmError{Kind: row.Critical.Kind}
-	}
 	if *conf.Confirm != target.Value {
 		return domain.ConfirmError{Kind: row.Critical.Kind, Mismatch: true}
 	}
 	return nil
+}
+
+// knownTarget returns the canonical value of a critical call when no read is needed to name it: the value the arguments
+// name, or the source ID when the row reads no field of the target. It returns false when the target must be read.
+func knownTarget(row operations.Row, src domain.Source, args domain.Args) (string, bool) {
+	if value := criticalValue(row, args); value != "" {
+		return value, true
+	}
+	if row.Target != nil && row.Target.Field == "" {
+		return src.ID().String(), true
+	}
+	return "", false
 }
 
 // readTarget reads the target of a change through the read port, so a dry run can name it and a critical call can

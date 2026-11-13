@@ -69,7 +69,7 @@ func kindFault(position int, src Source) error {
 		return SourceFault{Position: position, Field: "identity_env", Err: IdentityNotUsedError{Kind: src.kind}}
 	}
 	if ceiling := src.kind.MaxAccess(); !ceiling.Allows(src.access) {
-		return SourceFault{Position: position, Field: "access", Err: KindCeilingError{Kind: src.kind, Max: ceiling}}
+		return SourceFault{Position: position, Field: "access", Err: KindError{Kind: src.kind, Err: KindCeilingError{Kind: src.kind, Max: ceiling}}}
 	}
 	return nil
 }

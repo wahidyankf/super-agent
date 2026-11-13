@@ -26,6 +26,9 @@ var (
 	ErrInvalidEndpoint = errors.New("invalid endpoint")
 	// ErrInvalidCredentialRef reports a variable name that is not a *_API_KEY name.
 	ErrInvalidCredentialRef = errors.New("invalid credential name")
+	// ErrCatalogMissing reports that no sources catalog file exists at the path the flag, the environment, or the working
+	// directory names. Retriever never invents a source, so a missing catalog is a refusal, not a default.
+	ErrCatalogMissing = errors.New("sources catalog not found: set --catalog or RETRIEVER_CATALOG, or create ./sources.yml")
 	// ErrEmptyCatalog reports a catalog with no source.
 	ErrEmptyCatalog = errors.New("the catalog needs at least one source")
 	// ErrTooManySources reports a catalog with more than 64 sources.

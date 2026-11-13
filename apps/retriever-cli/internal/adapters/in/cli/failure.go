@@ -186,6 +186,7 @@ var errorReasons = []struct {
 	{domain.ErrInvalidReason, "invalid_reason"},
 	{domain.ErrDocumentConflict, "document_conflict"},
 	{errNotConfigured, "not_configured"},
+	{domain.ErrCatalogMissing, "catalog_missing"},
 }
 
 // errorCode returns the code of a failed command: retriever.<area>.<reason>. The area is the source kind of a kind-named
@@ -229,6 +230,10 @@ func errorCode(err error, area string) string {
 		if errors.Is(err, e.err) {
 			return prefix + e.reason
 		}
+	}
+	var catalog domain.CatalogError
+	if errors.As(err, &catalog) {
+		return prefix + "catalog_invalid"
 	}
 	return prefix + "failed"
 }

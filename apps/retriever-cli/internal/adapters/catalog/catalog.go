@@ -50,7 +50,7 @@ func (l *Loader) Load() (domain.Catalog, error) {
 		return domain.Catalog{}, err
 	}
 	if !found {
-		return domain.Catalog{}, catalogErr("not found: set --catalog or RETRIEVER_CATALOG, or create ./sources.yml")
+		return domain.Catalog{}, catalogCause("not found: set --catalog or RETRIEVER_CATALOG, or create ./sources.yml", domain.ErrCatalogMissing)
 	}
 	return parse(data)
 }
@@ -162,6 +162,10 @@ func toSource(position int, e sourceEntry) (domain.Source, error) {
 	}
 	endpoint, err := domain.NewEndpoint(e.Endpoint)
 	if err != nil {
+		if errors.Is(err, domain.ErrHTTPSRequired) {
+			// A plain HTTP endpoint is refused at load, before any request, under the kind's own code.
+			err = domain.KindError{Kind: kind, Err: err}
+		}
 		return domain.Source{}, fieldErr(position, "endpoint", err)
 	}
 	credential, err := domain.NewCredentialRef(e.CredentialEnv)
@@ -187,9 +191,15 @@ func catalogErr(rule string) error {
 	return domain.CatalogError{Message: "sources catalog: " + rule}
 }
 
+// catalogCause returns the safe catalog error with the typed rule that broke as its cause, so the failure code can name
+// the kind and the reason. The rule text stays the same as catalogErr's.
+func catalogCause(rule string, cause error) error {
+	return domain.CatalogError{Message: "sources catalog: " + rule, Cause: cause}
+}
+
 // fieldErr reports one source field that broke its rule.
 func fieldErr(position int, field string, err error) error {
-	return catalogErr(fmt.Sprintf("source %d %s: %s", position, field, fieldRule(err)))
+	return catalogCause(fmt.Sprintf("source %d %s: %s", position, field, fieldRule(err)), err)
 }
 
 // catalogFault maps a domain invariant failure onto the safe catalog error.
@@ -197,7 +207,7 @@ func catalogFault(err error) error {
 	var fault domain.SourceFault
 	switch {
 	case errors.As(err, &fault):
-		return catalogErr(fmt.Sprintf("source %d %s: %s", fault.Position, fault.Field, invariantRule(fault.Err)))
+		return catalogCause(fmt.Sprintf("source %d %s: %s", fault.Position, fault.Field, invariantRule(fault.Err)), fault)
 	case errors.Is(err, domain.ErrEmptyCatalog):
 		return catalogErr("sources: " + domain.ErrEmptyCatalog.Error())
 	case errors.Is(err, domain.ErrTooManySources):
@@ -220,7 +230,7 @@ func fieldRule(err error) string {
 		return domain.ErrInvalidAccess.Error()
 	case errors.Is(err, domain.ErrUnknownSourceKind):
 		return "unknown kind (known: outline, kiwi, jira)"
-	case errors.Is(err, domain.ErrInvalidEndpoint):
+	case errors.Is(err, domain.ErrInvalidEndpoint), errors.Is(err, domain.ErrHTTPSRequired):
 		return "must be an https host name"
 	case errors.Is(err, domain.ErrInvalidCredentialRef):
 		return "must be an upper-case *_API_KEY name"

@@ -27,14 +27,21 @@ func (e SourceFault) Unwrap() error {
 	return e.Err
 }
 
-// CatalogError is a sources catalog that cannot be used. Its text is safe to print; it never repeats a value.
+// CatalogError is a sources catalog that cannot be used. Its text is safe to print; it never repeats a value. Cause is the
+// typed rule that broke, if any, so errors.Is and errors.As see through the catalog to its kind and its reason.
 type CatalogError struct {
 	Message string
+	Cause   error
 }
 
 // Error returns the safe text.
 func (e CatalogError) Error() string {
 	return e.Message
+}
+
+// Unwrap returns the rule that broke, so the failure code can name its kind and its reason.
+func (e CatalogError) Unwrap() error {
+	return e.Cause
 }
 
 // SourceFilter selects sources. A nil Kind matches every kind. Every tag of Tags must be on a source.

@@ -19,6 +19,7 @@ func PublicErrors() []error {
 		ErrRedirected,
 		ErrTimedOut,
 		ErrHTTPSRequired,
+		ErrCatalogMissing,
 		ErrUnreachable,
 		ErrUpstreamFailure,
 		ErrUnexpectedResponse,

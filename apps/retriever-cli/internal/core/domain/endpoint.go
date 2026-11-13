@@ -8,6 +8,9 @@ import (
 // endpointScheme is the only scheme an endpoint may use.
 const endpointScheme = "https://"
 
+// plainHTTPScheme is the scheme that NewEndpoint names as refused for its own reason, HTTPS is required.
+const plainHTTPScheme = "http://"
+
 // maxHostLength is the longest host name in bytes, per RFC 1035.
 const maxHostLength = 253
 
@@ -24,6 +27,9 @@ type Endpoint struct {
 // lowercase and made of at least two labels. The last label must start with a letter and must not be
 // localhost. This rejects every IP literal, localhost, and single-label name.
 func NewEndpoint(raw string) (Endpoint, error) {
+	if strings.HasPrefix(raw, plainHTTPScheme) {
+		return Endpoint{}, ErrHTTPSRequired
+	}
 	if !strings.HasPrefix(raw, endpointScheme) {
 		return Endpoint{}, ErrInvalidEndpoint
 	}

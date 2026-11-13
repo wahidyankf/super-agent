@@ -140,7 +140,7 @@ func TestNewEndpointAcceptsHTTPSHostNames(t *testing.T) {
 func TestNewEndpointRejectsEverythingElse(t *testing.T) {
 	long := "https://" + strings.Repeat("a.", 127) + "b"
 	for _, raw := range []string{
-		"", "https://", "docs.example.test", "http://docs.example.test",
+		"", "https://", "docs.example.test",
 		"https://reader@docs.example.test", "https://docs.example.test:8443",
 		"https://192.0.2.10", "https://1.2.3.4", "https://[::1]", "https://2001:db8::1",
 		"https://localhost", "https://a.localhost", "https://intranet", "https://docs.example.test/api",
@@ -151,6 +151,14 @@ func TestNewEndpointRejectsEverythingElse(t *testing.T) {
 		if _, err := NewEndpoint(raw); !errors.Is(err, ErrInvalidEndpoint) {
 			t.Fatalf("NewEndpoint(%q) error = %v, want ErrInvalidEndpoint", raw, err)
 		}
+	}
+}
+
+// TestNewEndpointRefusesPlainHTTPAsHTTPSRequired pins the refusal that the owner's rule names: a plain HTTP endpoint is
+// refused at load with HTTPS required, which the failure code reports as https_required.
+func TestNewEndpointRefusesPlainHTTPAsHTTPSRequired(t *testing.T) {
+	if _, err := NewEndpoint("http://docs.example.test"); !errors.Is(err, ErrHTTPSRequired) {
+		t.Fatalf("NewEndpoint(http) error = %v, want ErrHTTPSRequired", err)
 	}
 }
 
