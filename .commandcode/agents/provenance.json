@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "profile": "commandcode",
+  "sources": [
+    {
+      "id": "skill/building-command-line-interfaces",
+      "path": ".agents/skills/building-command-line-interfaces/SKILL.md",
+      "digest": "168894af7140264e99e10609de763d5096ddaf7571ef156bc2a59f435859a868"
+    },
+    {
+      "id": "skill/cutting-releases",
+      "path": ".agents/skills/cutting-releases/SKILL.md",
+      "digest": "5ae9cde142706c92287bb78e0c2254b86323cca70bc79bde221390b328c6042d"
+    },
+    {
+      "id": "skill/developing-applications",
+      "path": ".agents/skills/developing-applications/SKILL.md",
+      "digest": "8bb94370f5e5533b3cc492e4994eafd12a986eb39ccbf54436793ab6d4acc968"
+    },
+    {
+      "id": "skill/docs-applying-content-quality",
+      "path": ".agents/skills/docs-applying-content-quality/SKILL.md",
+      "digest": "206f6a0885dc60f02c5b925ed3d8ccae0739ab913676d25c77cbd44b2d189bed"
+    },
+    {
+      "id": "skill/docs-validating-factual-accuracy",
+      "path": ".agents/skills/docs-validating-factual-accuracy/SKILL.md",
+      "digest": "d2481a30dec8632932cd3143410b535b72cc354aaab30fcaceb545e6737fb47e"
+    },
+    {
+      "id": "skill/exploratory-testing",
+      "path": ".agents/skills/exploratory-testing/SKILL.md",
+      "digest": "ab705af97cd3bdd2812489c8accfb63ed844ca7c85396b788cfdc4dcbe5594fc"
+    },
+    {
+      "id": "skill/grill-me",
+      "path": ".agents/skills/grill-me/SKILL.md",
+      "digest": "1e8a9218b9c7287c3cccf430bbd4749f5a591da0b97c05e8f58142e423a84a09"
+    },
+    {
+      "id": "skill/plan-writing-gherkin-criteria",
+      "path": ".agents/skills/plan-writing-gherkin-criteria/SKILL.md",
+      "digest": "a92b568a077a8a0c39c584e972d69cbf2b829ad00afeca2d1b2040361803d635"
+    },
+    {
+      "id": "skill/producing-review-findings",
+      "path": ".agents/skills/producing-review-findings/SKILL.md",
+      "digest": "17eb6ed0d7b6d38452bcde6238daca064cc320fc52901d69847223218cb99d65"
+    },
+    {
+      "id": "skill/programming-golang",
+      "path": ".agents/skills/programming-golang/SKILL.md",
+      "digest": "8eb3343b96b6aec864e7ac5a13cfdae31ca973cc5131495fc5e774d4a2cd8f9d"
+    },
+    {
+      "id": "skill/programming-shell",
+      "path": ".agents/skills/programming-shell/SKILL.md",
+      "digest": "19d0fe41ef692fdf9182e215c662df94d861775f2d9e62c270eee3ae1d8645d6"
+    },
+    {
+      "id": "skill/propagating-rules",
+      "path": ".agents/skills/propagating-rules/SKILL.md",
+      "digest": "2766de56f4aacaf2cc6c4c010ea09b50ba561356181e9b253216b8541f694771"
+    },
+    {
+      "id": "skill/repo-applying-maker-checker-fixer",
+      "path": ".agents/skills/repo-applying-maker-checker-fixer/SKILL.md",
+      "digest": "29d5082eac45eaea849e2ffe841696dd0318541893fa33f57d8947d85de9a8f3"
+    },
+    {
+      "id": "skill/repo-assessing-criticality-confidence",
+      "path": ".agents/skills/repo-assessing-criticality-confidence/SKILL.md",
+      "digest": "56b3524592c048dfdf18fe27b84527deefda804fccd1cd2a16979dff3a4c2724"
+    },
+    {
+      "id": "skill/repo-generating-validation-reports",
+      "path": ".agents/skills/repo-generating-validation-reports/SKILL.md",
+      "digest": "f39e3b7d29e18f4cf387f7b71c14000fcab328094e1d21166baa7c12bc8a748b"
+    },
+    {
+      "id": "instruction",
+      "path": "AGENTS.md",
+      "digest": "50a86bfe64207149b70cb995ce37f8c8815c68747bcc40e0313a086488532892"
+    },
+    {
+      "id": "agent/docs-checker",
+      "path": "agents/docs-checker.md",
+      "digest": "88ecc94b344f3168abf528289a4a4940128fe566c077e177056d34238cd474de"
+    },
+    {
+      "id": "agent/docs-fixer",
+      "path": "agents/docs-fixer.md",
+      "digest": "81b640a7aa32dc10259caa56df28429dff201504939b38a67882593609cd726c"
+    },
+    {
+      "id": "agent/document-writer",
+      "path": "agents/document-writer.md",
+      "digest": "40081b951159350c37de17e77fd67b699a858145c8fe558772a7a63025624e93"
+    },
+    {
+      "id": "agent/harness-checker",
+      "path": "agents/harness-checker.md",
+      "digest": "5e4a2c106f424746bec8ffd383346101f3e336b400cac9c152a5f43359b35acd"
+    },
+    {
+      "id": "agent/harness-fixer",
+      "path": "agents/harness-fixer.md",
+      "digest": "ec0e4d0a1c9a75bd21c8140ced996f08f3529a684db900cf3febed090a2d2d1e"
+    },
+    {
+      "id": "agent/repo-rules-maker",
+      "path": "agents/repo-rules-maker.md",
+      "digest": "faf7d84d115c869d08f54dbbfc161c45d7a35bda9af9ac8ed5978666a563db17"
+    },
+    {
+      "id": "agent/rules-checker",
+      "path": "agents/rules-checker.md",
+      "digest": "fff8e5cb2f0380af7bd7071a8cd67a8e5a0b239445657562283f0834877ac98b"
+    },
+    {
+      "id": "agent/rules-fixer",
+      "path": "agents/rules-fixer.md",
+      "digest": "d6732496d5c743fcff811f92152fb49e06cc209f753f04598cc3257341fe03f4"
+    },
+    {
+      "id": "agent/swe-api-tester",
+      "path": "agents/swe-api-tester.md",
+      "digest": "e1a65fb38aef6fd9f0bb211e27db1a05f7ffedd4e42f5ac772ab59483398ac87"
+    },
+    {
+      "id": "agent/swe-architect",
+      "path": "agents/swe-architect.md",
+      "digest": "6eb29724f814a1b226c4a6486ba73eb4c27e2eb2f72f40dd92ed7b407d256a07"
+    },
+    {
+      "id": "agent/swe-debugger",
+      "path": "agents/swe-debugger.md",
+      "digest": "ae40e16399cb35c19c4b6700ab5b3a8347e3768e932cad5ac694480d86151c19"
+    },
+    {
+      "id": "agent/swe-developer",
+      "path": "agents/swe-developer.md",
+      "digest": "612e4101873db854763cd258d87c54a497fb71d0d1d9cd9da26595cff4aafade"
+    },
+    {
+      "id": "agent/swe-orchestrator",
+      "path": "agents/swe-orchestrator.md",
+      "digest": "1f4dc967ae07158f5598b776a5014d965fa81629caa5c1553465a33d6b7d7433"
+    },
+    {
+      "id": "agent/swe-releaser",
+      "path": "agents/swe-releaser.md",
+      "digest": "6de9d55dc3351ea7c61ce1b447023a07d2b6225ef231536833d761e27588151a"
+    },
+    {
+      "id": "agent/swe-reviewer",
+      "path": "agents/swe-reviewer.md",
+      "digest": "265d734d50eb8359ef8c573aaeb2830b7a2a4e464519c5e4bf5ae3a178c93c28"
+    },
+    {
+      "id": "agent/web-researcher",
+      "path": "agents/web-researcher.md",
+      "digest": "be687fc37fd185abd187a0d05a1f89aeca84bc89013e3d7dcb648bd5065bceae"
+    }
+  ]
+}
