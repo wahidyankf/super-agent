@@ -7,7 +7,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go vet ./... && test -z \"$(gofmt -l .)\"",
+        "command": "go vet -tags 'integration e2e' ./... && test -z \"$(gofmt -l .)\"",
         "cwd": "apps/retriever-cli"
       },
       "cache": true,
@@ -16,7 +16,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go build ./... && go test -count=1 -run '^$' ./...",
+        "command": "go build ./... && go test -count=1 -tags 'integration e2e' -run '^$' ./...",
         "cwd": "apps/retriever-cli"
       },
       "cache": true,
@@ -66,10 +66,47 @@
       },
       "cache": false
     },
+    "test:conformance": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -count=1 ./tests/conformance/... ./tests/architecture/...",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "bdd:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -count=1 -tags bdd -run 'TestEveryScenarioHasItsBindingsOrAJustifiedExemption|TestBehaviourCoverageFileMatchesTheFeatures' ./tests/conformance/",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/tests/conformance/**/*.go", "{projectRoot}/behaviour-coverage.json", "{workspaceRoot}/specs/behaviours/**/*.feature"]
+    },
+    "test:e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -count=1 -tags e2e ./tests/behaviour/...",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false
+    },
+    "deps:audit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go tool govulncheck ./...",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false,
+      "metadata": {
+        "description": "Reads the Go vulnerability database at vuln.go.dev, so it needs the network and stays out of the cached path."
+      }
+    },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go test -count=1 -cover ./... && go test -count=1 -tags integration -cover ./... && go test -count=1 -cover ./internal/core/... | awk '{ print } /coverage:/ { pct = $5; sub(/%/, \"\", pct); if (pct + 0 < 99) { bad = 1 } } END { if (bad) { print \"a core package is below the 99% target\" > \"/dev/stderr\"; exit 1 } }'",
+        "command": "go test -count=1 -cover ./... && go test -count=1 -tags integration -cover ./... && ./scripts/coverage-gate.sh",
         "cwd": "apps/retriever-cli"
       },
       "cache": false
