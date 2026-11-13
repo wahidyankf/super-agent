@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": [
+    {
+      "id": "tpl-1",
+      "title": "Weekly Report",
+      "collectionId": "11111111-1111-4111-8111-111111111111",
+      "data": {
+        "type": "doc"
+      }
+    }
+  ]
+}

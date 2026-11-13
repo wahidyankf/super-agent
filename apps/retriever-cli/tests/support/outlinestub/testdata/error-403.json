@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "error": "authorization_error",
+  "status": 403,
+  "message": "Authorization error"
+}

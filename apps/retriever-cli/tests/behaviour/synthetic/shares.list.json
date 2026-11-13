@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": [
+    {
+      "id": "88888888-8888-4888-8888-888888888888",
+      "documentTitle": "Plan",
+      "published": true,
+      "url": "https://wiki.example.test/s/abc123",
+      "urlId": "abc123"
+    }
+  ]
+}

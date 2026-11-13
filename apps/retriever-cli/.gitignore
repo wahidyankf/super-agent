@@ -1,0 +1,8 @@
+# Built binaries
+dist/
+
+# Local configuration. A real catalog names real endpoints, and an env file holds real keys: never commit either.
+sources.yml
+.env
+.env.*
+!.env.example

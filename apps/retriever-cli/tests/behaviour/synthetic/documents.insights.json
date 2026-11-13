@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": [
+    {
+      "date": "2026-01-01",
+      "period": "day",
+      "viewCount": 3,
+      "viewerCount": 2,
+      "commentCount": 0,
+      "reactionCount": 0,
+      "revisionCount": 1,
+      "editorCount": 1
+    }
+  ]
+}

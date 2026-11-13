@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": {
+    "shares": [
+      {
+        "id": "88888888-8888-4888-8888-888888888888",
+        "documentId": "doc-1",
+        "collectionId": null,
+        "documentTitle": "Plan",
+        "published": true,
+        "includeChildDocuments": false,
+        "allowIndexing": true,
+        "views": 3,
+        "url": "https://wiki.example.test/s/abc123",
+        "urlId": "abc123",
+        "createdBy": {
+          "id": "33333333-3333-4333-8333-333333333333",
+          "name": "Fixture Author"
+        },
+        "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-02T00:00:00Z"
+      }
+    ],
+    "sharedTree": {
+      "id": "doc-1"
+    },
+    "team": {
+      "id": "team-1"
+    }
+  }
+}

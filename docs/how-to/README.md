@@ -1,6 +1,6 @@
 ---
 title: How-to guides
-description: Guides for delivering changes, running gates, repinning tools, dispatching work, and cutting pre-releases.
+description: Guides for using the retriever tool, delivering changes, running gates, repinning tools, and releases.
 category: how-to
 tags:
   - index
@@ -15,6 +15,8 @@ If you are still learning what super-agent is, start with the [explanation pages
 
 ## Directory Map
 
+- [Add a source from the example catalog](./add-a-source-from-the-example-catalog.md) builds `retriever`, points it at
+  a catalog, gives it a key, and reads a document.
 - [Deliver a change with a pull request](./deliver-a-change-with-a-pull-request.md) creates a worktree, opens a pull
   request, waits for CI, and merges under the merge rules.
 - [Run the quality gates](./run-the-quality-gates.md) runs the gates through HIPPO and RHINO, locally and in Git

@@ -1,0 +1,38 @@
+{
+  "data": {
+    "users": [
+      {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "Ann",
+        "email": "ann@example.test",
+        "role": "member",
+        "isSuspended": false,
+        "createdAt": "2025-06-01T00:00:00Z",
+        "updatedAt": "2026-01-02T00:00:00Z",
+        "deletedAt": null
+      }
+    ],
+    "groupMemberships": [
+      {
+        "groupId": "77777777-7777-4777-8777-777777777777",
+        "userId": "33333333-3333-4333-8333-333333333333",
+        "permission": "member",
+        "createdAt": "2026-01-04T00:00:00Z"
+      }
+    ],
+    "groups": [
+      {
+        "id": "77777777-7777-4777-8777-777777777777",
+        "name": "Engineering",
+        "description": "Builders",
+        "color": null,
+        "icon": null,
+        "memberCount": 5,
+        "disableMentions": false,
+        "createdAt": "2025-06-01T00:00:00Z",
+        "updatedAt": "2026-01-04T00:00:00Z",
+        "externalId": null
+      }
+    ]
+  }
+}

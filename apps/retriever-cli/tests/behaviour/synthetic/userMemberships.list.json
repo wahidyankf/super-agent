@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": {
+    "memberships": [
+      {
+        "id": "af000000-0000-4000-8000-000000000014",
+        "documentId": "66666666-6666-4666-8666-666666666666",
+        "collectionId": null,
+        "userId": "33333333-3333-4333-8333-333333333333",
+        "permission": "read_write",
+        "createdById": "33333333-3333-4333-8333-333333333333",
+        "sourceId": null,
+        "index": "P"
+      }
+    ],
+    "documents": []
+  }
+}

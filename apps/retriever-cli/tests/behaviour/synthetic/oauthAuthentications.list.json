@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": [
+    {
+      "id": "a8000000-0000-4000-8000-000000000008",
+      "userId": "33333333-3333-4333-8333-333333333333",
+      "oauthClientId": "a9000000-0000-4000-8000-000000000009",
+      "scope": ["read"],
+      "lastActiveAt": null,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "oauthClient": {
+        "name": "CI app",
+        "clientId": "client-1",
+        "published": false
+      }
+    }
+  ]
+}

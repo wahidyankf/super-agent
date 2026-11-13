@@ -1,0 +1,19 @@
+{
+  "data": {
+    "sent": 1,
+    "unsent": 0,
+    "users": [
+      {
+        "id": "44444444-4444-4444-8444-444444444444",
+        "name": "Ben",
+        "email": "ben@example.test",
+        "role": "member",
+        "isSuspended": false,
+        "lastActiveAt": null,
+        "createdAt": "2026-01-03T00:00:00Z",
+        "updatedAt": "2026-01-03T00:00:00Z",
+        "deletedAt": null
+      }
+    ]
+  }
+}

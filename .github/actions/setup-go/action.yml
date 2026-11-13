@@ -2,7 +2,7 @@ name: "Setup Go"
 description: "Install the pinned Go toolchain for Go projects"
 inputs:
   go-version:
-    description: "Go toolchain version. Keep it equal to the go directive of each Go module once a module exists."
+    description: "Go toolchain version. Keep it equal to the toolchain line of each Go module."
     required: false
     default: "1.27.4"
   cache-dependency-path:

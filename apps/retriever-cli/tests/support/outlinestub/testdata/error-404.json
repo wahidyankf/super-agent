@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "error": "not_found",
+  "status": 404,
+  "message": "Resource not found"
+}

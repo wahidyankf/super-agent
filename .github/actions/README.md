@@ -6,7 +6,8 @@ Local composite actions that give the workflows one repeatable toolchain setup. 
 - [setup-node](setup-node/action.yml) — installs the Node.js and npm versions pinned under `volta` in `package.json`
   through Volta, then runs `npm ci --ignore-scripts`. Set `run-npm-ci` to `false` for a job that needs no Node-managed
   tool.
-- [setup-go](setup-go/action.yml) — installs the pinned Go toolchain. The Go quality job uses it once a Go module exists.
+- [setup-go](setup-go/action.yml) — installs the pinned Go toolchain. The Go quality job and the cross-compile check use
+  it. Its default version equals the `toolchain` line of `apps/retriever-cli/go.mod`.
 - [setup-lint-tools](setup-lint-tools/action.yml) — installs the shellcheck, actionlint, and shfmt release binaries that
   the declared gates call. Each asset is refused unless its SHA-256 matches the pinned digest.
 

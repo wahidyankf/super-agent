@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "contract": "retriever command-line contract",
+  "description": "Published contract checks for the commands that need no source, no catalog, and no network. Each check runs the CLI in process and compares the exit status, the streams, and the failure body. The runner refuses any check whose result differs, and it refuses a check that names a status outside the closed set.",
+  "closedExitStatuses": [0, 1, 2, 124, 125],
+  "knownGaps": [],
+  "assertions": [
+    {
+      "id": "version-prints-name-and-banner",
+      "argv": ["--version"],
+      "exitStatus": 0,
+      "stdout": { "contains": ["retriever ", "ALPHA: expect breaking changes"] },
+      "stderr": { "empty": true }
+    },
+    {
+      "id": "version-ignores-json-output",
+      "argv": ["--output", "json", "--version"],
+      "exitStatus": 0,
+      "stdout": { "contains": ["retriever "] },
+      "stderr": { "empty": true }
+    },
+    {
+      "id": "no-command-is-usage-error",
+      "argv": [],
+      "exitStatus": 2,
+      "stdout": { "empty": true },
+      "stderr": { "notEmpty": true }
+    },
+    {
+      "id": "root-help-lists-groups",
+      "argv": ["--help"],
+      "exitStatus": 0,
+      "stdout": { "contains": ["USAGE: retriever", "sources", "outline", "kiwi", "jira", "serve", "mcp", "--output"] },
+      "stderr": { "empty": true }
+    },
+    {
+      "id": "leaf-help-lists-exit-statuses",
+      "argv": ["outline", "documents", "get", "--help"],
+      "exitStatus": 0,
+      "stdout": { "contains": ["EXIT STATUS:", "124", "125"] }
+    },
+    {
+      "id": "help-word-prints-group-help",
+      "argv": ["help", "outline"],
+      "exitStatus": 0,
+      "stdout": { "contains": ["Outline wiki commands"] }
+    },
+    {
+      "id": "help-flag-wins-over-arguments",
+      "argv": ["outline", "documents", "get", "--help"],
+      "exitStatus": 0,
+      "stdout": { "contains": ["USAGE: retriever outline documents get"] }
+    },
+    {
+      "id": "output-accepts-json",
+      "argv": ["--output", "json", "serve", "--help"],
+      "exitStatus": 0,
+      "stdout": { "notEmpty": true }
+    },
+    {
+      "id": "output-refuses-yaml",
+      "argv": ["--output", "yaml", "serve", "--help"],
+      "exitStatus": 2,
+      "stdout": { "empty": true },
+      "stderr": { "notEmpty": true }
+    },
+    {
+      "id": "color-refuses-unknown-value",
+      "argv": ["--color", "sometimes", "--version"],
+      "exitStatus": 2,
+      "stdout": { "empty": true }
+    },
+    {
+      "id": "unknown-argument-is-text-usage-error",
+      "argv": ["does-not-exist"],
+      "exitStatus": 2,
+      "stdout": { "empty": true },
+      "stderr": { "notEmpty": true }
+    },
+    {
+      "id": "json-missing-argument-body",
+      "argv": ["--output", "json", "outline", "documents", "get"],
+      "exitStatus": 2,
+      "stdout": { "empty": true },
+      "stderr": {
+        "jsonError": {
+          "schemaVersion": 1,
+          "command": "retriever outline documents get",
+          "exitCode": 2,
+          "code": "retriever.outline.usage_missing_argument",
+          "retryable": false
+        }
+      }
+    },
+    {
+      "id": "json-unknown-argument-body",
+      "argv": ["--output", "json", "does-not-exist"],
+      "exitStatus": 2,
+      "stdout": { "empty": true },
+      "stderr": {
+        "jsonError": {
+          "schemaVersion": 1,
+          "command": "retriever",
+          "exitCode": 2,
+          "code": "retriever.usage.usage_unrecognized_argument",
+          "retryable": false
+        }
+      }
+    },
+    {
+      "id": "json-port-out-of-range-body",
+      "argv": ["--output", "json", "serve", "--port", "70000"],
+      "exitStatus": 2,
+      "stdout": { "empty": true },
+      "stderr": {
+        "jsonError": {
+          "schemaVersion": 1,
+          "command": "retriever serve",
+          "exitCode": 2,
+          "code": "retriever.serve.usage_invalid_argument",
+          "retryable": false
+        }
+      }
+    },
+    {
+      "id": "json-invalid-enum-body",
+      "argv": ["--output", "json", "mcp", "--max-access", "nope"],
+      "exitStatus": 2,
+      "stdout": { "empty": true },
+      "stderr": {
+        "jsonError": {
+          "schemaVersion": 1,
+          "command": "retriever mcp",
+          "exitCode": 2,
+          "code": "retriever.mcp.usage_invalid_argument",
+          "retryable": false
+        }
+      }
+    }
+  ]
+}

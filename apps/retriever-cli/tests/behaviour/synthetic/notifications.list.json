@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": {
+    "notifications": [
+      {
+        "id": "a7000000-0000-4000-8000-000000000007",
+        "event": "documents.update",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "viewedAt": null,
+        "archivedAt": null,
+        "actorId": "33333333-3333-4333-8333-333333333333",
+        "documentId": "66666666-6666-4666-8666-666666666666",
+        "collectionId": null,
+        "commentId": null,
+        "groupId": null,
+        "revisionId": null,
+        "accessRequestId": null,
+        "accessRequestStatus": null,
+        "data": { "title": "Runbook" },
+        "actor": { "email": "synthetic.person@example.com" }
+      }
+    ],
+    "unseen": 1
+  }
+}

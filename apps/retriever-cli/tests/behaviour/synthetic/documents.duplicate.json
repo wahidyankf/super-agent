@@ -1,0 +1,14 @@
+{
+  "data": {
+    "documents": [
+      {
+        "id": "doc-3",
+        "title": "Plan (copy)",
+        "url": "/doc/plan-copy",
+        "collectionId": "col-1",
+        "revision": 1
+      }
+    ]
+  },
+  "policies": []
+}

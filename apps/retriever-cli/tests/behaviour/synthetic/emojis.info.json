@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": {
+    "id": "a3000000-0000-4000-8000-000000000003",
+    "name": "party",
+    "url": "https://storage.example.com/synthetic/party.png",
+    "createdById": "33333333-3333-4333-8333-333333333333",
+    "createdAt": "2026-01-01T00:00:00Z",
+    "updatedAt": "2026-01-01T00:00:00Z"
+  }
+}

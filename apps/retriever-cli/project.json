@@ -1,0 +1,157 @@
+{
+  "name": "retriever-cli",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/retriever-cli",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go vet -tags 'integration e2e' ./... && test -z \"$(gofmt -l .)\"",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go build ./... && go test -count=1 -tags 'integration e2e' -run '^$' ./...",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "install": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go mod download",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go build -trimpath -o dist/retriever ./cmd/retriever",
+        "cwd": "apps/retriever-cli"
+      },
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./dist/retriever",
+        "cwd": "apps/retriever-cli"
+      },
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "test:unit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "if grep -rn --include='*_test.go' -E '\\.Skip\\(' internal cmd tests; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; sh ./scripts/coverage-gate_test.sh && ./scripts/coverage-gate.sh",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/**/*.go",
+        "{projectRoot}/scripts/**",
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum",
+        "{workspaceRoot}/specs/behaviours/**/*.feature"
+      ]
+    },
+    "test:integration": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -count=1 -tags integration ./...",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false
+    },
+    "test:conformance": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -count=1 ./tests/conformance/... ./tests/architecture/...",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "bdd:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -count=1 -tags bdd -run 'TestEveryScenarioHasItsBindingsOrAJustifiedExemption|TestBehaviourCoverageFileMatchesTheFeatures' ./tests/conformance/",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/tests/conformance/**/*.go",
+        "{projectRoot}/behaviour-coverage.json",
+        "{workspaceRoot}/specs/behaviours/**/*.feature"
+      ]
+    },
+    "test:e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -count=1 -tags e2e ./tests/behaviour/...",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false
+    },
+    "deps:audit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go tool govulncheck ./...",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false,
+      "metadata": {
+        "description": "Reads the Go vulnerability database at vuln.go.dev, so it needs the network and stays out of the cached path."
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/coverage-gate.sh",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "gofmt -w .",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false
+    },
+    "format:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "test -z \"$(gofmt -l .)\"",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "test:quick": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          { "command": "npm exec -- nx run retriever-cli:lint", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-cli:typecheck", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-cli:test:unit", "forwardAllArgs": false }
+        ],
+        "parallel": false,
+        "forwardAllArgs": false
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    }
+  },
+  "tags": ["type:app", "platform:cli", "lang:go", "domain:retriever"]
+}

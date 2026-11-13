@@ -1,0 +1,15 @@
+{
+  "data": {
+    "id": "77777777-7777-4777-8777-777777777777",
+    "name": "Engineering",
+    "description": "Builders of the wiki",
+    "color": "#3a7bd5",
+    "icon": null,
+    "memberCount": 4,
+    "disableMentions": false,
+    "createdAt": "2025-06-01T00:00:00Z",
+    "updatedAt": "2026-01-04T00:00:00Z",
+    "externalId": "idp-42"
+  },
+  "policies": []
+}

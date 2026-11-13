@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "error": "internal_server_error",
+  "status": 500,
+  "message": "Internal error"
+}

@@ -1,0 +1,14 @@
+{
+  "data": {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "documentId": "66666666-6666-4666-8666-666666666666",
+    "title": "Plan",
+    "name": "Plan",
+    "icon": null,
+    "color": null,
+    "createdAt": "2026-01-01T00:00:00Z",
+    "createdById": "33333333-3333-4333-8333-333333333333",
+    "deletedAt": null
+  },
+  "policies": []
+}

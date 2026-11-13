@@ -1,0 +1,16 @@
+{
+  "data": {
+    "id": "a1000000-0000-4000-8000-000000000001",
+    "documentId": "66666666-6666-4666-8666-666666666666",
+    "userId": "33333333-3333-4333-8333-333333333333",
+    "status": "dismissed",
+    "responderId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "respondedAt": "2026-01-02T00:00:00Z",
+    "createdAt": "2026-01-01T00:00:00Z",
+    "updatedAt": "2026-01-02T00:00:00Z",
+    "user": {
+      "name": "Ann"
+    }
+  },
+  "policies": []
+}

@@ -1,0 +1,22 @@
+{
+  "data": {
+    "memberships": [
+      {
+        "id": "a7000000-0000-4000-8000-000000000002",
+        "userId": "33333333-3333-4333-8333-333333333333",
+        "documentId": "doc-2",
+        "collectionId": null,
+        "permission": "read_write",
+        "createdById": "33333333-3333-4333-8333-333333333333",
+        "sourceId": null,
+        "index": null
+      }
+    ],
+    "users": [
+      {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "Ann"
+      }
+    ]
+  }
+}

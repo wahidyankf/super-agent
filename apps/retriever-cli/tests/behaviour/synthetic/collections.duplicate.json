@@ -1,0 +1,17 @@
+{
+  "data": {
+    "id": "col-3",
+    "urlId": "copy-3",
+    "url": "/collection/copy-3",
+    "name": "Copy",
+    "description": "About",
+    "permission": "read",
+    "sharing": false,
+    "commenting": true,
+    "templateManagement": "read_write",
+    "index": "Q",
+    "createdAt": "2026-01-02T00:00:00Z",
+    "updatedAt": "2026-01-02T00:00:00Z"
+  },
+  "policies": []
+}

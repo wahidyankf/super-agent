@@ -955,6 +955,10 @@ gates:
 
 extensions:
   # Owner: repo-governance/development/quality/stacks/repository-adapter.md
-  # No projects yet. The first Nx project (PR 2) adds its entry here.
+  # The inventory is informational. The pull-request gate picks the Go job from the lang:go tag in each Nx project.json.
   software-development:
-    projects: {}
+    projects:
+      retriever-cli:
+        path: apps/retriever-cli
+        kind: app
+        stacks: [golang]

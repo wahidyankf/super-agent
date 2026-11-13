@@ -1,0 +1,17 @@
+{
+  "data": {
+    "id": "col-2",
+    "urlId": "wiki-2",
+    "url": "/collection/wiki-2",
+    "name": "Wiki",
+    "description": "About",
+    "permission": "read_write",
+    "sharing": true,
+    "commenting": false,
+    "templateManagement": "admin",
+    "index": "P",
+    "createdAt": "2026-01-01T00:00:00Z",
+    "updatedAt": "2026-01-01T00:00:00Z"
+  },
+  "policies": []
+}

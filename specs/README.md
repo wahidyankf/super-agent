@@ -1,27 +1,43 @@
 # Specifications
 
-This tree is meant to hold the executable description of what super-agent does. Nothing is specified yet. The first
-specification arrives with the command-line tool.
+This tree holds the executable description of what retriever does. Code and tests implement these specifications, and a
+change to behaviour starts here. The layout follows the
+[specs directory structure](../repo-governance/conventions/structure/specs-directory-structure.md).
 
 ## What lives here
 
-Each deployed surface has one owner folder. The command-line tool will be the first owner, at
-`specs/apps/super-agent/cli/`.
-
 ```text
-specs/apps/<product>/<owner>/
-├── README.md                          what is here and where to go next
-├── architecture.md                    the as-built system: context, containers, and components (C4)
-└── behaviours/
-    └── <domain>/<feature>.feature     Gherkin scenarios that describe observable behaviour
+specs/
+├── README.md              this index
+├── behaviours/            Gherkin feature files, one folder per behaviour area
+│   ├── cli/               the command-line contract: flags, exit statuses, failure bodies
+│   ├── catalog/           the sources catalog and how a command finds it
+│   ├── credentials/       where each source's key comes from, and where it may go
+│   ├── transport/         HTTPS, redirects, timeouts, retries, and reply limits
+│   ├── outline/           Outline reads, writes, critical actions, and reply redaction
+│   ├── kiwi/              Kiwi product, plan, and case operations
+│   ├── jira/              Jira Cloud reads and their rendering
+│   ├── export/            export to plain Markdown files in a chosen folder
+│   ├── graphql/           the read-only GraphQL server started by `serve`
+│   └── mcp/               the MCP tool server started by `mcp`
+└── fixtures/              synthetic data and conformance data that tests and feature files read
+    └── cli-conformance/   the published contract checks that run before merge
 ```
 
-- **Gherkin scenarios** go under `behaviours/`, one folder per domain, one `.feature` file per feature.
-- **The C4 architecture** goes in `architecture.md`, one document per owner.
+- [behaviours/](behaviours/) holds the feature files, and [fixtures/](fixtures/) holds the synthetic data they read.
+- **Feature files** cover one behaviour area each, and each file holds one `Feature:`. Every scenario carries a tag for
+  each level it runs at: `@unit`, `@integration`, or `@e2e`.
+- **Fixtures** are small and synthetic. Hosts are `example.test` names, keys are `EXAMPLE_*` names, and issue keys are
+  `EXAMPLE-n`.
+- **Run by** the runners in [apps/retriever-cli/tests](../apps/retriever-cli/tests/README.md). The step vocabulary is
+  documented there.
 
-Nothing in this tree exists yet. The layout is fixed so that the first owner lands in the right place.
+## Status
+
+Every feature is written to the public contract. A scenario that a build does not yet satisfy fails; it is not removed
+or marked pending.
 
 ## Related
 
-- [Apps](../apps/README.md) holds the implementations. None exist yet.
+- [Apps](../apps/retriever-cli/README.md) holds the implementation.
 - [Documentation](../docs/README.md) explains the project for people who use it.

@@ -1,0 +1,13 @@
+{
+  "data": {
+    "id": "b6000000-0000-4000-8000-000000000020",
+    "name": "CI events",
+    "url": "https://new.example.test/SYNTHETICPATHTOKEN",
+    "secret": "ol_whs_SYNTHETICWEBHOOKSECRET",
+    "events": ["documents.create", "documents.update"],
+    "enabled": true,
+    "createdById": "33333333-3333-4333-8333-333333333333",
+    "createdAt": "2026-01-01T00:00:00Z",
+    "updatedAt": "2026-01-02T00:00:00Z"
+  }
+}

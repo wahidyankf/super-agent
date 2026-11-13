@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": {
+    "memberships": [
+      {
+        "id": "66666666-6666-4666-8666-666666666666",
+        "userId": "33333333-3333-4333-8333-333333333333",
+        "collectionId": "col-1",
+        "permission": "read_write",
+        "createdById": "33333333-3333-4333-8333-333333333333",
+        "sourceId": null,
+        "index": "P"
+      }
+    ],
+    "users": [
+      {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "Ann",
+        "email": "ann@example.test"
+      }
+    ]
+  }
+}

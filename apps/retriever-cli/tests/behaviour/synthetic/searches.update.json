@@ -1,0 +1,10 @@
+{
+  "data": {
+    "id": "d1000000-0000-4000-8000-000000000001",
+    "query": "plan",
+    "source": "api",
+    "score": 0.5,
+    "createdAt": "2026-01-01T00:00:00Z",
+    "answer": "secret answer text"
+  }
+}

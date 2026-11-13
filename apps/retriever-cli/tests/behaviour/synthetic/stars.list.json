@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "status": 200,
+  "data": {
+    "stars": [
+      {
+        "id": "97979797-9797-4797-8797-979797979797",
+        "documentId": "doc-1",
+        "collectionId": null,
+        "index": "P"
+      }
+    ],
+    "documents": [
+      {
+        "id": "doc-1",
+        "title": "Starred Page"
+      }
+    ]
+  }
+}

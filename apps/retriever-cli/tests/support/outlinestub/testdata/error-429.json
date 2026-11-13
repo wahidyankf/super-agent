@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "error": "rate_limit_exceeded",
+  "status": 429,
+  "message": "Too many requests"
+}

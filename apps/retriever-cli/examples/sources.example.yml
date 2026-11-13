@@ -1,0 +1,28 @@
+# Example sources catalog for retriever. Copy it to sources.yml, or point --catalog at it. Every host and every name is an
+# example. A real catalog names real hosts and must stay out of the repository.
+#
+# Each source names its endpoint (the host that receives its key) and the environment variable that holds its key. The
+# key itself never appears in this file: it comes from the process environment or from the env file.
+version: 1
+sources:
+  - id: example-outline
+    kind: outline
+    tags: [wiki, docs]
+    access: read
+    endpoint: https://outline.example.test
+    credential_env: EXAMPLE_OUTLINE_API_KEY
+
+  - id: example-kiwi
+    kind: kiwi
+    tags: [tests]
+    access: read
+    endpoint: https://kiwi.example.test
+    credential_env: EXAMPLE_KIWI_API_KEY
+
+  - id: example-jira
+    kind: jira
+    tags: [tickets]
+    access: read
+    endpoint: https://jira.example.test
+    credential_env: EXAMPLE_JIRA_API_TOKEN
+    identity_env: EXAMPLE_JIRA_EMAIL

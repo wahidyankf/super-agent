@@ -16,7 +16,8 @@ You work across many resources and channels, at work and outside work. You also 
 single program.
 
 super-agent amplifies that person. It is an orchestrator of many agents and of information from many data sources
-and channels. Today it is a skeleton. The design below describes what it is for.
+and channels. Today it is an early alpha: a sourcing command-line tool and the repository around it. The design below
+describes what it is for.
 
 ## It is not a catch-all agent
 
@@ -28,29 +29,33 @@ you already use. Each agent keeps its own job. super-agent supplies two shared t
 - **One access model.** Every agent meets the same access limits. Each connector checks access before it reads or
   writes data.
 
-## How the pieces fit (planned)
+## How the pieces fit
 
 ```text
   you + harnesses ---> CLI or MCP server ---> connectors ---> data sources and channels
-  (many agents)        (planned)              (planned)       (catalogs, documents, messages)
+  (many agents)        (built)                (built)         (wikis, test management, tickets)
 ```
 
-- **The harness side** is the command-line tool, `retriever-cli`, and a Model Context Protocol (MCP) server. Many
-  agents use the same connectors through either one. Both are planned.
-- **The data side** is the connectors. A connector reads and writes one kind of source. Both sides are planned.
+- **The harness side** is the command-line tool, `retriever`, and its Model Context Protocol (MCP) server, started with
+  `retriever mcp`. Many agents use the same connectors through either one.
+- **The data side** is the connectors. The tool has three, for Outline wikis, Kiwi test management, and Jira Cloud. A
+  connector reads one kind of source, and it writes only where the source's access level allows it. Connectors for
+  other kinds of channel are planned.
 
 Work and personal contexts stay separate in the design. Each has its own catalog and access ceiling. The
 [software-factory note](./software-factory-note.md) lists this and the other planned items.
 
 ## What exists today
 
-Only the repository skeleton exists: the quality gates, the governance rules, this documentation, and an empty plans
-folder. There is no CLI, no MCP server, and no connector. The first command-line tool, `retriever-cli`, arrives in
-the next pull request.
+The repository holds the quality gates, the governance rules, this documentation, and an empty plans folder. It also
+holds the first command-line tool, `retriever`, in `apps/retriever-cli`. The tool includes an MCP server and a
+read-only GraphQL service, and it reads three kinds of source. Its interfaces are alpha, so read the
+[changelog](../../CHANGELOG.md) before you depend on them.
 
 ## Where to go next
 
 - [Stability and versioning](./stability-and-versioning.md) explains what alpha means before you depend on the
   project.
 - [Public data policy](./public-data-policy.md) explains what never enters the repository.
+- [The sourcing layer](./sourcing-layer.md) explains the command-line tool's design.
 - [Software-factory note](./software-factory-note.md) records the later direction for orchestrating agents.
