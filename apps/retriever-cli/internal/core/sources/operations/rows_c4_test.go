@@ -72,10 +72,10 @@ func TestSliceC4ToolsAndCriticalRowsCount(t *testing.T) {
 	}
 }
 
-// TestCriticalRowsAreExactlyTheElevenOfTheADR pins the complete set of critical operations: eleven rows
+// TestCriticalRowsAreExactlyTheEleven pins the complete set of critical operations: eleven rows
 // that are critical on every call, and none of them has an MCP tool at any ceiling. documents.delete is the one row critical
 // only with permanent true, so it keeps its tool; a call of it without permanent has no critical value.
-func TestCriticalRowsAreExactlyTheElevenOfTheADR(t *testing.T) {
+func TestCriticalRowsAreExactlyTheEleven(t *testing.T) {
 	want := []domain.OperationID{
 		domain.OpDocumentsEmptyTrash,
 		domain.OpUsersDelete,

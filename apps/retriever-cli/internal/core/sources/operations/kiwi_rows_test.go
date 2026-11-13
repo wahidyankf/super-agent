@@ -54,9 +54,9 @@ var kiwiWants = []kiwiWant{
 	{domain.OpKiwiPlansAddCase, "kiwi plans add-case", domain.EffectAdditive, domain.AccessWrite, []string{"planId", "caseId"}},
 }
 
-// TestKiwiRowsHaveTheADRShape checks each of the six Kiwi rows: its path, effect, access, result fields, and that it names
-// no MCP tool and no critical call.
-func TestKiwiRowsHaveTheADRShape(t *testing.T) {
+// TestKiwiRowsHaveTheExpectedShape checks each of the six Kiwi rows: its path, effect, access, result fields, and that it
+// names no MCP tool and no critical call.
+func TestKiwiRowsHaveTheExpectedShape(t *testing.T) {
 	for _, want := range kiwiWants {
 		row, ok := Lookup(want.id)
 		if !ok {
