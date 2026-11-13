@@ -1,13 +1,14 @@
+//go:build integration
+
 package main
 
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
 )
 
 // TestStartCertificateCoversEveryCatalogHost checks that the CA file the command writes is valid for each endpoint host

@@ -34,10 +34,12 @@ type fileReader interface {
 type fileOps struct {
 	lstat func(name string) (fs.FileInfo, error)
 	open  func(name string) (fileReader, error)
+	// same reports whether two descriptions are the same file. os.SameFile matches only real descriptions.
+	same func(a, b fs.FileInfo) bool
 }
 
 // realFiles is the set of file calls New uses.
-var realFiles = fileOps{lstat: os.Lstat, open: openFile}
+var realFiles = fileOps{lstat: os.Lstat, open: openFile, same: os.SameFile}
 
 // openFile opens an env file. It returns a nil interface, not a typed nil, when the open fails.
 func openFile(name string) (fileReader, error) {
@@ -132,7 +134,7 @@ func (c *Credentials) fileValue(variable string) (value string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("checking local env file: %w", err)
 	}
-	if !os.SameFile(info, opened) {
+	if !c.files.same(info, opened) {
 		return "", errors.New("local env file changed while it was being opened")
 	}
 	return lookup(f, variable)

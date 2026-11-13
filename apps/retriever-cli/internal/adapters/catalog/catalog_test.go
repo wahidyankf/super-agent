@@ -2,8 +2,7 @@ package catalog
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
+	"io/fs"
 	"strings"
 	"testing"
 
@@ -24,31 +23,34 @@ sources:
     credential_env: EXAMPLE_OUTLINE_API_KEY
 `
 
-// newFile returns the path of a catalog file, named sources.yml in a fresh folder, written as content. An empty content
-// leaves the file absent.
-func newFile(t *testing.T, content string) string {
-	t.Helper()
-	file := filepath.Join(t.TempDir(), "sources.yml")
-	if content != "" {
-		if err := os.WriteFile(file, []byte(content), 0o600); err != nil {
-			t.Fatalf("write catalog: %v", err)
-		}
+// contentFiles serves one catalog file with the given content through the file calls a load makes. An empty content
+// leaves the file absent. The descriptions are fakes, so a unit test reads no real file.
+func contentFiles(content string) fileOps {
+	info := fakeStatInfo{mode: 0o600}
+	return fileOps{
+		lstat: func(string) (fs.FileInfo, error) {
+			if content == "" {
+				return nil, fs.ErrNotExist
+			}
+			return info, nil
+		},
+		open: func(string) (fileReader, error) {
+			return &fakeOpened{r: strings.NewReader(content), info: info}, nil
+		},
+		same: sameFake,
 	}
-	return file
 }
 
-func loadFrom(t *testing.T, file string) (domain.Catalog, error) {
+// loadFrom loads the catalog that content describes, through fake file calls.
+func loadFrom(t *testing.T, content string) (domain.Catalog, error) {
 	t.Helper()
-	l, err := New(file)
-	if err != nil {
-		t.Fatalf("New(%q): %v", file, err)
-	}
+	l := &Loader{path: "/work/project/sources.yml", files: contentFiles(content)}
 	return l.Load()
 }
 
 func mustLoad(t *testing.T, content string) domain.Catalog {
 	t.Helper()
-	cat, err := loadFrom(t, newFile(t, content))
+	cat, err := loadFrom(t, content)
 	if err != nil {
 		t.Fatalf("Load() error = %v, want nil", err)
 	}
@@ -58,7 +60,7 @@ func mustLoad(t *testing.T, content string) domain.Catalog {
 // mustFailWith requires the load to fail with exactly the rule text after the safe prefix, and never echo the sentinel.
 func mustFailWith(t *testing.T, content, rule string) {
 	t.Helper()
-	_, err := loadFrom(t, newFile(t, content))
+	_, err := loadFrom(t, content)
 	if err == nil {
 		t.Fatalf("Load() error = nil, want %q", catalogPrefix+rule)
 	}
@@ -88,7 +90,7 @@ func withField(field, value string) string {
 }
 
 func TestAbsentFileIsAConfigurationError(t *testing.T) {
-	_, err := loadFrom(t, newFile(t, ""))
+	_, err := loadFrom(t, "")
 	var cat domain.CatalogError
 	if !errors.As(err, &cat) || !strings.Contains(err.Error(), "not found") {
 		t.Fatalf("absent catalog error = %v; want a CatalogError that says the file is not found", err)
@@ -212,7 +214,7 @@ func TestStructuralFailuresAreRefusedWithTheirExactRule(t *testing.T) {
 
 func TestOversizeFileIsRefused(t *testing.T) {
 	big := oneSource + "# " + strings.Repeat("x", 64<<10) + "\n"
-	_, err := loadFrom(t, newFile(t, big))
+	_, err := loadFrom(t, big)
 	if err == nil || !strings.Contains(err.Error(), "must be at most 64 KiB") {
 		t.Fatalf("oversize error = %v", err)
 	}
@@ -224,48 +226,14 @@ func TestFileAtExactlyTheLimitIsAccepted(t *testing.T) {
 	if len(content) != 64<<10 {
 		t.Fatalf("test fixture is %d bytes", len(content))
 	}
-	if _, err := loadFrom(t, newFile(t, content)); err != nil {
+	if _, err := loadFrom(t, content); err != nil {
 		t.Fatalf("file of exactly 64 KiB error = %v, want nil", err)
-	}
-}
-
-func TestSymlinkAndFolderAreRefused(t *testing.T) {
-	dir := t.TempDir()
-	target := filepath.Join(dir, "elsewhere.yml")
-	if err := os.WriteFile(target, []byte(oneSource), 0o600); err != nil {
-		t.Fatalf("write target: %v", err)
-	}
-	link := filepath.Join(dir, "sources.yml")
-	if err := os.Symlink(target, link); err != nil {
-		t.Fatalf("symlink: %v", err)
-	}
-	if _, err := loadFrom(t, link); err == nil || !strings.HasPrefix(err.Error(), catalogPrefix) {
-		t.Fatalf("symlink error = %v", err)
-	}
-
-	folder := filepath.Join(t.TempDir(), "sources.yml")
-	if err := os.Mkdir(folder, 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	if _, err := loadFrom(t, folder); err == nil || !strings.Contains(err.Error(), "must be a regular file") {
-		t.Fatalf("folder error = %v", err)
 	}
 }
 
 func TestNewRequiresAnAbsolutePath(t *testing.T) {
 	if _, err := New("relative/sources.yml"); err == nil {
 		t.Fatalf("New accepted a relative path")
-	}
-}
-
-func TestUnreadableCatalogIsAnError(t *testing.T) {
-	file := newFile(t, oneSource)
-	if err := os.Chmod(file, 0o000); err != nil {
-		t.Fatalf("chmod: %v", err)
-	}
-	t.Cleanup(func() { _ = os.Chmod(file, 0o600) })
-	if _, err := loadFrom(t, file); err == nil || !strings.HasPrefix(err.Error(), catalogPrefix) {
-		t.Fatalf("unreadable catalog error = %v", err)
 	}
 }
 

@@ -14,7 +14,7 @@ live in the repository's standards.
 | `test:quick`       | `lint`, `typecheck`, then `test:unit`                                                                          |
 | `test:integration` | `go test -count=1 -tags integration ./...`                                                                     |
 | `test:e2e`         | `go test -count=1 -tags e2e ./tests/behaviour/...`; the suite builds the binary first                          |
-| `test:conformance` | `go test -count=1 ./tests/conformance/... ./tests/architecture/...`, with no tags                              |
+| `test:conformance` | `go test -count=1 -tags integration ./tests/conformance/... ./tests/architecture/...`                          |
 | `bdd:check`        | the binding check of `specs/behaviours`, described below                                                       |
 | `test:coverage`    | `scripts/coverage-gate.sh`, the same gate as `test:unit` without the skip check                                |
 | `build`            | `go build -trimpath -o dist/retriever ./cmd/retriever`                                                         |
@@ -63,16 +63,23 @@ A package with no statements, such as the interface-only `internal/core/ports`, 
 
 ### What unit tests may do
 
-Unit tests run in process, beside their package. They may touch the file system only through `t.TempDir`, and they may
-open a loopback `httptest` server. The registry tests have no build tag, so they run at the unit level.
+Unit tests run in process, beside their package, and they do not reach outside the process. An untagged unit test
+does not read or write a file, does not read or change the process environment, and does not start a child process.
+It may open a loopback `httptest` server. The registry tests have no build tag, so they run at the unit level.
 
-An untagged unit test does not change the process environment. The composition root takes the environment as a function:
-`run` in `cmd/retriever` and `SecretLookup` in `internal/adapters/in/cli` receive it as a parameter, so a unit test supplies
-its own values. The architecture test `TestUntaggedTestsNeverChangeTheEnvironment` fails when an untagged test calls
-`t.Setenv`, `os.Setenv`, `os.Unsetenv`, or `os.Clearenv`. It exempts one file, `tests/behaviour/world_test.go`, the
-in-process behaviour harness. That harness serves the unit and integration levels from one file and sets the environment
-for both, so the exemption stays until the integration-only part moves to a tagged file. The check reads the direct calls
-of each file. It does not check writes outside `t.TempDir`.
+The file system, the environment, and the child processes reach the code through seams: a field or a parameter that
+holds a function or an interface. The production code takes the seam, and a unit test supplies a fake. Examples are
+the `fileOps` of the catalog and the credentials, the `folderOps` of the Markdown sink, and the `getenv` parameter of
+`run` in `cmd/retriever`. A test that needs the real file system, the real environment, or a real child process
+carries the `integration` build tag, in a file named `*_integration_test.go`. Those tests run in `test:integration`
+and `test:conformance`.
+
+The architecture test `TestUntaggedTestsNeverChangeTheEnvironment` fails when an untagged test calls `t.Setenv`,
+`os.Setenv`, `os.Unsetenv`, or `os.Clearenv`. It exempts one file, `tests/behaviour/world_test.go`. The behaviour
+harness is not yet on fakes. Its untagged unit binding, `TestUnitBehaviours`, runs on `world_test.go` and
+`process_test.go`, which can set the environment and start the built binary. Those two files are the known exception
+to the rule above, until the harness moves to fakes in a later change. The architecture check reads the direct calls
+of each file. It does not check file access.
 
 This page records no coverage figure. A figure comes from a run of `npx nx run retriever-cli:test:coverage` on a given
 tree, and it belongs with the change that produced it.

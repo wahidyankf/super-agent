@@ -43,7 +43,7 @@ Run each target from the repository root with `npx nx run retriever-cli:<target>
   The gate measures unit-level statement coverage of the whole module, with a 99 percent floor.
 - `test:integration`: runs `go test -tags integration ./...`.
 - `test:e2e`: runs the end-to-end suite in `tests/behaviour` against the binary that the suite builds.
-- `test:conformance`: runs the conformance and architecture tests.
+- `test:conformance`: runs the conformance and architecture tests, with the `integration` tag.
 - `bdd:check`: checks that each scenario has its bindings or a justified exemption, and that `behaviour-coverage.json`
   matches the feature files.
 - `test:coverage`: runs the coverage gate on its own.

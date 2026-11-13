@@ -7,4 +7,5 @@ failure body with the fixture.
 A check that differs fails the run, unless the fixture lists it under `knownGaps`. A listed gap that passes also
 fails, so the list stays exact and a fixed gap must be removed from it.
 
-Run it with `go test ./tests/conformance/` from the module root.
+The contract check carries the `integration` build tag, because it reads the fixture from disk. Run it with
+`go test -tags integration ./tests/conformance/` from the module root.

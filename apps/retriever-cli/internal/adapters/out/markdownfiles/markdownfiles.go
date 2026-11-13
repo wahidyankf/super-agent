@@ -51,13 +51,24 @@ func osCreateTemp(dir, pattern string) (tempFile, error) {
 type Sink struct {
 	dir    string
 	create createTempFunc
+	// fsys holds the folder calls of a write. New uses the real folder; a unit test replaces them with fakes.
+	fsys folderOps
 }
+
+// folderOps are the folder calls a write makes. realFolder is the set New uses.
+type folderOps struct {
+	mkdirAll func(path string, perm os.FileMode) error
+	rename   func(oldpath, newpath string) error
+	remove   func(name string) error
+}
+
+var realFolder = folderOps{mkdirAll: os.MkdirAll, rename: os.Rename, remove: os.Remove}
 
 var _ ports.ExportSink = (*Sink)(nil)
 
 // New returns a sink that writes into dir. The folder is created on the first write.
 func New(dir string) *Sink {
-	return &Sink{dir: dir, create: osCreateTemp}
+	return &Sink{dir: dir, create: osCreateTemp, fsys: realFolder}
 }
 
 // Write stores data as the file name inside the sink's folder and returns the path it wrote. The name is checked before
@@ -69,11 +80,11 @@ func (s *Sink) Write(_ context.Context, name string, data []byte) (string, error
 	if err := checkName(name); err != nil {
 		return "", err
 	}
-	if err := os.MkdirAll(s.dir, 0o755); err != nil {
+	if err := s.fsys.mkdirAll(s.dir, 0o755); err != nil {
 		return "", fmt.Errorf("creating the export folder: %w", err)
 	}
 	target := filepath.Join(s.dir, name)
-	if err := writeAtomic(s.create, s.dir, target, data); err != nil {
+	if err := s.writeAtomic(s.dir, target, data); err != nil {
 		return "", err
 	}
 	return target, nil
@@ -94,15 +105,15 @@ func checkName(name string) error {
 
 // writeAtomic writes data to a temporary file in dir and renames it to target. The temporary file is removed when a
 // step fails.
-func writeAtomic(create createTempFunc, dir, target string, data []byte) (err error) {
-	tmp, err := create(dir, ".export-*.tmp")
+func (s *Sink) writeAtomic(dir, target string, data []byte) (err error) {
+	tmp, err := s.create(dir, ".export-*.tmp")
 	if err != nil {
 		return fmt.Errorf("creating a temporary file: %w", err)
 	}
 	tmpName := tmp.Name()
 	defer func() {
 		if err != nil {
-			_ = os.Remove(tmpName)
+			_ = s.fsys.remove(tmpName)
 		}
 	}()
 	if _, err = tmp.Write(data); err != nil {
@@ -114,7 +125,7 @@ func writeAtomic(create createTempFunc, dir, target string, data []byte) (err er
 	if err = tmp.Close(); err != nil {
 		return fmt.Errorf("closing the export: %w", err)
 	}
-	if err = os.Rename(tmpName, target); err != nil {
+	if err = s.fsys.rename(tmpName, target); err != nil {
 		return fmt.Errorf("placing the export: %w", err)
 	}
 	return nil

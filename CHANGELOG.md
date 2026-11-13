@@ -9,6 +9,15 @@ upgrade.
 
 ## Unreleased
 
+### Changed
+
+- `retriever` unit tests no longer read or write real files, read or change the process environment, or start child
+  processes. The tests that need those move to files with the `integration` build tag. The unit tests reach the file
+  system and the environment through fakes at the seams of the catalog, the credentials, the Markdown sink, and the
+  composition root. The unit coverage floor stays at 99 percent, and no exclusion is added. The behaviour harness in
+  `tests/behaviour` still uses the real environment, and its redesign on fakes, with the wording of the environment
+  guard's comment, is a later change.
+
 ### Fixed
 
 - The public-safety scanner no longer reports a Go package-qualified identifier as an internal hostname. The release

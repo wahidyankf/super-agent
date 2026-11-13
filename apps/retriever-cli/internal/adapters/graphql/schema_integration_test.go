@@ -1,13 +1,14 @@
+//go:build integration
+
 package graphql
 
 import (
+	"github.com/vektah/gqlparser/v2"
+	"github.com/vektah/gqlparser/v2/ast"
 	"os"
 	"slices"
 	"strings"
 	"testing"
-
-	"github.com/vektah/gqlparser/v2"
-	"github.com/vektah/gqlparser/v2/ast"
 )
 
 // schemaSource reads schema.graphqls as the code generator reads it, and parses it.
