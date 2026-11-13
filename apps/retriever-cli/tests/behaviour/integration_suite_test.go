@@ -7,5 +7,7 @@ import "testing"
 // TestIntegrationBehaviours runs the @integration scenarios. They call the real adapters in process, against the
 // loopback stub servers.
 func TestIntegrationBehaviours(t *testing.T) {
-	runSuite(t, levelIntegration, "@integration", "")
+	runSuite(t, levelIntegration, "@integration", func(outer *testing.T) backend {
+		return newDiskBackend(outer, true, "")
+	})
 }

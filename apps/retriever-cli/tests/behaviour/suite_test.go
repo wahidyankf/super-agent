@@ -19,8 +19,8 @@ func registerSteps(ctx *godog.ScenarioContext, cur func() *world) {
 }
 
 // runSuite runs the scenarios of one level, the ones that carry its tag. Strict mode fails the run on any undefined or
-// pending step. Scenarios run one at a time, because the integration level changes the working directory.
-func runSuite(t *testing.T, lvl level, tag, binary string) {
+// pending step. Scenarios run one at a time, because an in-process level changes the working directory and the environment of this process at the disk levels.
+func runSuite(t *testing.T, lvl level, tag string, newBackend func(*testing.T) backend) {
 	t.Helper()
 	var w *world
 	cur := func() *world { return w }
@@ -28,7 +28,7 @@ func runSuite(t *testing.T, lvl level, tag, binary string) {
 		Name: "retriever-" + string(lvl),
 		ScenarioInitializer: func(ctx *godog.ScenarioContext) {
 			ctx.Before(func(bctx context.Context, sc *godog.Scenario) (context.Context, error) {
-				w = newWorld(lvl, t, binary)
+				w = newWorld(lvl, t, newBackend(t))
 				if err := w.setup(); err != nil {
 					return bctx, err
 				}

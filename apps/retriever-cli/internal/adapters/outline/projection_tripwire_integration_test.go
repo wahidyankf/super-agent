@@ -14,7 +14,7 @@ import (
 )
 
 // syntheticDir holds the router-faithful synthetic replies, one per wire method, relative to this package.
-const syntheticDir = "../../../tests/behaviour/synthetic"
+const syntheticDir = "../../../tests/support/synthetic"
 
 // loadSynthetic returns the synthetic reply of one wire method. A missing reply fails the test, so every read operation
 // needs one.

@@ -93,7 +93,7 @@ func registerCLISteps(ctx *godog.ScenarioContext, cur func() *world) {
 		return cur().writeCatalog(name, tbl)
 	})
 	ctx.Step(`^the sources catalog file "([^"]*)" is absent$`, func(name string) error {
-		if regularFile(filepath.Join(cur().dir, name)) {
+		if cur().be.regularFile(cur().absPath(name)) {
 			return fmt.Errorf("the catalog %q must be absent, and it exists", name)
 		}
 		return nil

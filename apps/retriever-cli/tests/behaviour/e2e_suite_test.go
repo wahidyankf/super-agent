@@ -37,5 +37,7 @@ func TestMain(m *testing.M) {
 
 // TestE2EBehaviours runs the @e2e scenarios against the built binary.
 func TestE2EBehaviours(t *testing.T) {
-	runSuite(t, levelE2E, "@e2e", e2eBinary)
+	runSuite(t, levelE2E, "@e2e", func(outer *testing.T) backend {
+		return newDiskBackend(outer, false, e2eBinary)
+	})
 }

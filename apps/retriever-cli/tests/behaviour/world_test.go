@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -19,9 +17,9 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
 )
 
-// level names the test level a scenario runs at. The same step definitions serve every level. Only the way a command
-// runs changes: in process with no source (unit), in process with the real adapters and loopback stubs (integration),
-// or as the built binary (end-to-end).
+// level names the test level a scenario runs at. The same step definitions serve every level. Only the place the
+// scenario lives and the way a command runs change: in memory and in process (unit), on disk and in process with the
+// real environment (integration), or on disk as the built binary (end-to-end).
 type level string
 
 const (
@@ -40,12 +38,12 @@ type runResult struct {
 
 // world is the state of one scenario. It is created fresh for every scenario, so no state leaks between scenarios.
 type world struct {
-	level  level
-	outer  *testing.T
-	binary string // the built retriever executable; only the end-to-end level uses it
+	level level
+	outer *testing.T
+	// be keeps the scenario's files, working directory, and environment, and runs its production adapters.
+	be backend
 
-	dir    string            // the scenario's working directory and the root of its files
-	cwd    string            // the process working directory before the scenario; restored at the integration level
+	dir    string            // the scenario's working directory and the root of its files, an absolute path
 	env    map[string]string // the environment the command sees, and the only one a process receives
 	inputs map[string]bool   // files the scenario wrote as inputs (catalog, env file, CA certificate); never scanned
 	// envFileVars holds the values of the env file the scenario wrote, so the secret scan can look for them.
@@ -59,17 +57,14 @@ type world struct {
 	procKill []func()
 	// stdoutClosed is set by a step that makes standard output a pipe with no reader, so the next command meets EPIPE.
 	stdoutClosed bool
-	// savedEnv is the process environment before an integration scenario, restored after it. The integration level
-	// makes the process environment the scenario environment, because the credentials adapter reads it directly.
-	savedEnv []string
 }
 
-// newWorld returns the state of one scenario at the given level.
-func newWorld(lvl level, outer *testing.T, binary string) *world {
+// newWorld returns the state of one scenario at the given level, kept by the given backend.
+func newWorld(lvl level, outer *testing.T, be backend) *world {
 	return &world{
 		level:       lvl,
 		outer:       outer,
-		binary:      binary,
+		be:          be,
 		env:         map[string]string{},
 		inputs:      map[string]bool{},
 		envFileVars: map[string]string{},
@@ -77,56 +72,39 @@ func newWorld(lvl level, outer *testing.T, binary string) *world {
 	}
 }
 
-// setup creates the scenario directory. The home and configuration folders point inside it, so no user configuration
-// reaches a scenario. At the integration level the scenario directory becomes the working directory.
+// setup creates the scenario folder. The home and configuration folders point inside it, so no user configuration
+// reaches a scenario.
 func (w *world) setup() error {
-	w.dir = w.outer.TempDir()
-	w.env["HOME"] = filepath.Join(w.dir, "home")
-	w.env["XDG_CONFIG_HOME"] = filepath.Join(w.dir, "config")
+	dir, err := w.be.start()
+	if err != nil {
+		return err
+	}
+	w.dir = dir
+	w.env["HOME"] = w.absPath("home")
+	w.env["XDG_CONFIG_HOME"] = w.absPath("config")
 	for _, k := range proxyVars {
 		w.env[k] = proxyRefusal
-	}
-	if w.inProcess() {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		w.cwd = cwd
-		w.savedEnv = os.Environ()
-		return os.Chdir(w.dir)
 	}
 	return nil
 }
 
-// teardown stops every process and stub the scenario started, and restores the working directory and, at the
-// integration level, the process environment.
+// teardown stops every process and stub the scenario started, and lets the backend restore what it changed.
 func (w *world) teardown() {
 	for i := len(w.procKill) - 1; i >= 0; i-- {
 		w.procKill[i]()
 	}
 	w.stubs.close()
-	if w.inProcess() {
-		if w.cwd != "" {
-			_ = os.Chdir(w.cwd)
-		}
-		if w.savedEnv != nil {
-			os.Clearenv()
-			for _, kv := range w.savedEnv {
-				k, v, _ := strings.Cut(kv, "=")
-				_ = os.Setenv(k, v)
-			}
-		}
-	}
+	w.be.stop()
 }
 
-// adoptProcessEnv makes the process environment exactly the scenario environment. The credentials adapter reads secrets
-// with os.Getenv, so a variable the scenario does not set must be absent from the process, not inherited from the
-// developer's shell.
-func (w *world) adoptProcessEnv() {
-	os.Clearenv()
-	for k, v := range w.env {
-		_ = os.Setenv(k, v)
-	}
+// absPath returns the absolute path of a slash path inside the scenario folder.
+func (w *world) absPath(rel string) string {
+	return filepath.Join(w.dir, filepath.FromSlash(rel))
+}
+
+// inProcess reports whether the scenario runs its commands in this process, which the unit and integration levels do.
+func (w *world) inProcess() bool {
+	return w.be.inProcess()
 }
 
 // getenv is the environment lookup of the in-process levels. It reads only the scenario's variables.
@@ -143,55 +121,19 @@ func (w *world) deps(stdout, stderr *bytes.Buffer) cli.Deps {
 		Stderr: stderr,
 		Getenv: w.getenv,
 		Now:    time.Now,
-		Sink:   exportSink,
+		Sink:   w.be.sink,
 	}
 }
 
 // execute runs one command line, the argument vector after the program name, and records its result.
 func (w *world) execute(argv []string) error {
-	switch w.level {
-	case levelUnit, levelIntegration:
-		if err := w.ensureStubs(); err != nil {
-			return err
-		}
+	if err := w.ensureStubs(); err != nil {
+		return err
+	}
+	if w.inProcess() {
 		return w.runIntegration(argv)
-	default:
-		if err := w.ensureStubs(); err != nil {
-			return err
-		}
-		return w.runProcess(argv)
 	}
-}
-
-// runProcess runs the built binary with exactly the scenario's environment, in the scenario's directory.
-func (w *world) runProcess(argv []string) error {
-	if w.binary == "" {
-		return errors.New("the end-to-end level has no built retriever binary")
-	}
-	cmd := exec.Command(w.binary, argv...)
-	cmd.Dir = w.dir
-	cmd.Env = w.envList()
-	cmd.Stdin = strings.NewReader("")
-	var out, errb bytes.Buffer
-	cmd.Stdout = &out
-	if w.stdoutClosed {
-		// A pipe whose reader is already closed: the first write fails, and the process ends by SIGPIPE.
-		reader, writer, err := os.Pipe()
-		if err != nil {
-			return err
-		}
-		_ = reader.Close()
-		defer writer.Close()
-		cmd.Stdout = writer
-	}
-	cmd.Stderr = &errb
-	err := cmd.Run()
-	var exitErr *exec.ExitError
-	if err != nil && !errors.As(err, &exitErr) {
-		return fmt.Errorf("start retriever: %w", err)
-	}
-	w.record(exitCodeOf(err), &out, &errb)
-	return nil
+	return w.be.runBinary(w, argv)
 }
 
 // brokenPipe is a standard output whose reader has closed. Every write fails with EPIPE, as a pipe with no reader does.
@@ -238,77 +180,37 @@ func (w *world) valueOf(name string) (string, error) {
 	return "", fmt.Errorf("the scenario holds no value for %q", name)
 }
 
-// writeInput writes a file the scenario reads as an input, and records it so the secret scan skips it.
+// writeInput writes a file the scenario reads as an input, and records it so the secret scan skips it. It returns the
+// absolute path of the file.
 func (w *world) writeInput(name, content string) (string, error) {
-	path := filepath.Join(w.dir, filepath.FromSlash(name))
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return "", err
-	}
+	path := w.absPath(name)
 	w.inputs[filepath.ToSlash(name)] = true
-	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+	if err := w.be.writeFile(path, []byte(content)); err != nil {
 		return "", err
 	}
 	return path, nil
 }
 
-// scanFiles returns every file under the scenario directory except the inputs the scenario wrote, keyed by the slash
-// path relative to the scenario directory.
+// scanFiles returns every file under the scenario folder except the inputs the scenario wrote, keyed by the slash path
+// relative to the scenario folder.
 func (w *world) scanFiles() (map[string]string, error) {
+	all, err := w.be.walk(w.dir)
+	if err != nil {
+		return nil, err
+	}
 	files := map[string]string{}
-	err := filepath.Walk(w.dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	for rel, text := range all {
+		if !w.inputs[rel] {
+			files[rel] = text
 		}
-		if info.IsDir() {
-			return nil
-		}
-		rel, err := filepath.Rel(w.dir, path)
-		if err != nil {
-			return err
-		}
-		rel = filepath.ToSlash(rel)
-		if w.inputs[rel] {
-			return nil
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		files[rel] = string(data)
-		return nil
-	})
-	return files, err
+	}
+	return files, nil
 }
 
 // folderFiles returns the files directly inside an output folder, keyed by file name. A folder that does not exist
 // holds no files.
 func (w *world) folderFiles(folder string) (map[string]string, error) {
-	dir := filepath.Join(w.dir, filepath.FromSlash(folder))
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return map[string]string{}, nil
-		}
-		return nil, err
-	}
-	files := map[string]string{}
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(dir, e.Name()))
-		if err != nil {
-			return nil, err
-		}
-		files[e.Name()] = string(data)
-	}
-	return files, nil
-}
-
-// regularFile reports whether path names a regular file, as the composition root checks it.
-func regularFile(path string) bool {
-	info, err := os.Stat(path)
-	return err == nil && info.Mode().IsRegular()
+	return w.be.dirFiles(w.absPath(folder))
 }
 
 // splitArgs splits a command line into arguments. Single and double quotes group words; there are no escapes.
@@ -421,10 +323,4 @@ var controlByte = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
 // hasControlBytes reports whether text holds a control byte that a terminal would misread.
 func hasControlBytes(text string) bool {
 	return controlByte.MatchString(text)
-}
-
-// inProcess reports whether the scenario runs the adapters in this process against in-process stubs: the unit and the
-// integration levels do. Only the end-to-end level runs the built binary.
-func (w *world) inProcess() bool {
-	return w.level == levelUnit || w.level == levelIntegration
 }
