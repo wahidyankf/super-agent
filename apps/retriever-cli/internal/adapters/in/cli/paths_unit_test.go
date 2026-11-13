@@ -311,22 +311,20 @@ func TestSourceRowsAsJSONAreNeverNull(t *testing.T) {
 	}
 }
 
-func TestSecretEnvReadsEveryKeyTheToolAccepts(t *testing.T) {
+func TestSecretLookupReadsEveryKeyTheToolAccepts(t *testing.T) {
 	values := map[string]string{
 		"EXAMPLE_OUTLINE_API_KEY": "synthetic-outline",
 		"EXAMPLE_KIWI_API_KEY":    "synthetic-kiwi",
 		"EXAMPLE_JIRA_API_TOKEN":  "synthetic-token",
 		"EXAMPLE_JIRA_EMAIL":      "synthetic@example.test",
 	}
+	lookup := SecretLookup(envOf(values))
 	for key, value := range values {
-		t.Setenv(key, value)
-	}
-	for key, value := range values {
-		if got := SecretEnv(key); got != value {
-			t.Errorf("SecretEnv(%s) = %q, want the set value", key, got)
+		if got := lookup(key); got != value {
+			t.Errorf("SecretLookup(%s) = %q, want the set value", key, got)
 		}
 	}
-	if got := SecretEnv("EXAMPLE_NOT_A_KEY"); got != "" {
+	if got := lookup("EXAMPLE_NOT_A_KEY"); got != "" {
 		t.Errorf("an unknown key must read as empty, got %q", got)
 	}
 }

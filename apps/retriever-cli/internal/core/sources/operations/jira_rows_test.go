@@ -40,9 +40,9 @@ func TestJiraRowsAreTheFiveReadRows(t *testing.T) {
 	}
 }
 
-// TestJiraRowsHaveTheADRShape checks each Jira row: its path, its effect and access, its positional parameter, its result
-// fields, and that it has no MCP tool and no critical or target read.
-func TestJiraRowsHaveTheADRShape(t *testing.T) {
+// TestJiraRowsHaveTheExpectedShape checks each Jira row: its path, its effect and access, its positional parameter, its
+// result fields, and that it has no MCP tool and no critical or target read.
+func TestJiraRowsHaveTheExpectedShape(t *testing.T) {
 	for _, want := range jiraWants {
 		row, ok := Lookup(want.id)
 		if !ok {
@@ -75,8 +75,9 @@ func TestJiraRowsHaveTheADRShape(t *testing.T) {
 	}
 }
 
-// TestJiraRowParametersMatchTheADR checks the parameters of the four rows that take any: the kind and bounds of each.
-func TestJiraRowParametersMatchTheADR(t *testing.T) {
+// TestJiraRowParametersHaveTheExpectedKindAndBounds checks the parameters of the four rows that take any: the kind and
+// bounds of each.
+func TestJiraRowParametersHaveTheExpectedKindAndBounds(t *testing.T) {
 	cases := []struct {
 		id   domain.OperationID
 		name string

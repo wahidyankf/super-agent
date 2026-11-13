@@ -14,6 +14,11 @@ import (
 // emptyEnv reads every variable as unset, so no test seam is on.
 func emptyEnv(string) string { return "" }
 
+// envOf returns a lookup over the given values, so a test sets variables without changing the process environment.
+func envOf(values map[string]string) func(string) string {
+	return func(key string) string { return values[key] }
+}
+
 // TestReadSeamsIsOffWhenNothingIsSet checks that an unset environment turns every test seam off, so each source uses its own
 // endpoint.
 func TestReadSeamsIsOffWhenNothingIsSet(t *testing.T) {
@@ -60,19 +65,20 @@ func TestRegularFileExistsIsFalseForADirectoryAndTrueForAFile(t *testing.T) {
 func TestAttachSourcesReportsAMissingCatalog(t *testing.T) {
 	var deps cli.Deps
 	catalog := filepath.Join(t.TempDir(), "sources.yml")
-	err := attachSources(&deps, cli.Globals{Catalog: catalog, EnvFile: filepath.Join(t.TempDir(), ".env.local")}, seamSet{})
+	err := attachSourcesFrom(&deps, cli.Globals{Catalog: catalog, EnvFile: filepath.Join(t.TempDir(), ".env.local")},
+		seamSet{}, emptyEnv, os.Getwd)
 	if err == nil || !strings.Contains(err.Error(), "sources catalog: not found") {
-		t.Fatalf("attachSources error = %v, want the missing-catalog error", err)
+		t.Fatalf("attachSourcesFrom error = %v, want the missing-catalog error", err)
 	}
 }
 
 // TestAttachSourcesWiresTheExampleCatalog checks that the example catalog wires every source the CLI and the servers need.
 func TestAttachSourcesWiresTheExampleCatalog(t *testing.T) {
 	var deps cli.Deps
-	err := attachSources(&deps, cli.Globals{Catalog: filepath.Join("..", "..", "examples", "sources.example.yml"),
-		EnvFile: filepath.Join(t.TempDir(), ".env.local")}, seamSet{})
+	err := attachSourcesFrom(&deps, cli.Globals{Catalog: filepath.Join("..", "..", "examples", "sources.example.yml"),
+		EnvFile: filepath.Join(t.TempDir(), ".env.local")}, seamSet{}, emptyEnv, os.Getwd)
 	if err != nil {
-		t.Fatalf("attachSources: %v", err)
+		t.Fatalf("attachSourcesFrom: %v", err)
 	}
 	if got := len(deps.Service.Catalog.All()); got != 3 {
 		t.Fatalf("the example catalog wires %d sources, want 3", got)

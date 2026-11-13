@@ -2,11 +2,14 @@
 
 package cli
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
-// TestSecretEnvReadsProcessEnvironment proves the lookup returns the process value of each variable retriever reads, and
-// reads no other key.
-func TestSecretEnvReadsProcessEnvironment(t *testing.T) {
+// TestSecretLookupReadsProcessEnvironment proves the lookup over the process environment returns the process value of
+// each variable retriever reads, and reads no other key.
+func TestSecretLookupReadsProcessEnvironment(t *testing.T) {
 	t.Setenv("EXAMPLE_OUTLINE_API_KEY", "outline-key")
 	t.Setenv("EXAMPLE_KIWI_API_KEY", "kiwi-key")
 	t.Setenv("EXAMPLE_JIRA_API_TOKEN", "jira-key")
@@ -20,22 +23,24 @@ func TestSecretEnvReadsProcessEnvironment(t *testing.T) {
 		"EXAMPLE_JIRA_EMAIL":       "jira-identity@example.test",
 		"RETRIEVER_TEST_OTHER_KEY": "",
 	}
+	lookup := SecretLookup(os.Getenv)
 	for key, want := range cases {
-		if got := SecretEnv(key); got != want {
-			t.Errorf("SecretEnv(%q) = %q, want %q", key, got, want)
+		if got := lookup(key); got != want {
+			t.Errorf("SecretLookup(%q) = %q, want %q", key, got, want)
 		}
 	}
 }
 
-// TestSecretEnvEmptyWhenUnset proves an unset variable reads as the empty string.
-func TestSecretEnvEmptyWhenUnset(t *testing.T) {
+// TestSecretLookupEmptyWhenUnset proves an unset variable reads as the empty string.
+func TestSecretLookupEmptyWhenUnset(t *testing.T) {
 	keys := []string{"EXAMPLE_OUTLINE_API_KEY", "EXAMPLE_KIWI_API_KEY", "EXAMPLE_JIRA_API_TOKEN", "EXAMPLE_JIRA_EMAIL"}
 	for _, key := range keys {
 		t.Setenv(key, "")
 	}
+	lookup := SecretLookup(os.Getenv)
 	for _, key := range keys {
-		if got := SecretEnv(key); got != "" {
-			t.Errorf("SecretEnv(%q) = %q, want empty", key, got)
+		if got := lookup(key); got != "" {
+			t.Errorf("SecretLookup(%q) = %q, want empty", key, got)
 		}
 	}
 }
