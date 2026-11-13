@@ -1,5 +1,5 @@
 // Package main is a test-only command. It serves the scripted Outline stub over TLS on a loopback port, as a process,
-// so the Elixir end-to-end layer can point the real retriever binary at it through the loopback seam of ADR 003. It is
+// so the Elixir end-to-end layer can point the real retriever binary at it through the loopback seam. It is
 // not part of the retriever binary, and nothing in retriever-cli depends on it.
 //
 // The command prints one line, "outline stub listening on <url>", once it listens. It writes the PEM certificate

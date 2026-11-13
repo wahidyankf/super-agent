@@ -2,7 +2,10 @@ package behaviour
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -10,7 +13,9 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/catalog"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/configpaths"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/envfile"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
+	mcpadapter "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/mcp"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/jira"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/kiwi"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/out/markdownfiles"
@@ -185,7 +190,8 @@ func wireJira(src domain.Source, secrets jira.Secrets, seam seamConfig) (ports.S
 }
 
 // attachSources resolves the configuration paths and wires the sources into deps, as attachSourcesFrom does in the
-// composition root. The returned error becomes the setup error of the CLI.
+// composition root. It also wires the serve and mcp servers over the same sources. The returned error becomes the setup
+// error of the CLI.
 func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) error {
 	paths, err := configpaths.Resolve(configpaths.Inputs{
 		CatalogFlag: g.Catalog,
@@ -202,7 +208,50 @@ func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) erro
 		return err
 	}
 	deps.Service = svc
+	deps.Serve = serveFunc(svc)
+	deps.MCP = mcpFunc(svc)
 	return nil
+}
+
+// serveFunc is the server of the serve command, as the composition root wires it: the GraphQL API over the sources,
+// capped to read access. Both levels run graphql.Run, the same body the root runs.
+func serveFunc(svc sources.Service) cli.ServeFunc {
+	return func(ctx context.Context, port int, ready func(addr string)) error {
+		return graphql.Run(ctx, svc.Capped(domain.AccessRead), port, slog.New(slog.DiscardHandler), ready)
+	}
+}
+
+// mcpFunc is the server of the mcp command, as the composition root wires it: the sources capped to the ceiling the
+// command names, offering the resources it names.
+func mcpFunc(svc sources.Service) cli.MCPFunc {
+	return func(ctx context.Context, ceiling domain.Access, resources []string, in io.Reader, out io.Writer) error {
+		return mcpadapter.Runner(svc.Capped(ceiling), cli.Version, io.Discard, resources)(ctx, in, out)
+	}
+}
+
+// protocolDeps returns the dependencies of a command that runs for a while, such as serve or mcp, in process. The
+// process environment becomes the scenario environment, the given streams are attached, and the run context is the one
+// the caller cancels to send a signal. A setup error is kept in SetupErr, as the composition root keeps it.
+func (w *world) protocolDeps(ctx context.Context, stdin io.Reader, stdout io.Writer, argv []string) cli.Deps {
+	w.adoptProcessEnv()
+	deps := cli.Deps{
+		Ports:   ports.Ports{},
+		Stdin:   stdin,
+		Stdout:  stdout,
+		Stderr:  io.Discard,
+		Getenv:  w.getenv,
+		Now:     time.Now,
+		Sink:    exportSink,
+		Context: ctx,
+	}
+	seams, err := readSeams(w.getenv)
+	if err != nil {
+		deps.SetupErr = err
+		return deps
+	}
+	globals, _ := cli.ParseGlobals(argv)
+	deps.SetupErr = w.attachSources(&deps, globals, seams)
+	return deps
 }
 
 // runIntegration runs one command line in process with the real adapters. A seam that is invalid stops the command at
@@ -211,6 +260,9 @@ func (w *world) runIntegration(argv []string) error {
 	var out, errb bytes.Buffer
 	w.adoptProcessEnv()
 	deps := w.deps(&out, &errb)
+	if w.stdoutClosed {
+		deps.Stdout = brokenPipe{}
+	}
 	seams, err := readSeams(w.getenv)
 	if err != nil {
 		fmt.Fprintf(&errb, "retriever: %v\n", err)

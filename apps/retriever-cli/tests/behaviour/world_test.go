@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -56,6 +57,8 @@ type world struct {
 	mcp      *mcpSession
 	reply    *graphqlReply
 	procKill []func()
+	// stdoutClosed is set by a step that makes standard output a pipe with no reader, so the next command meets EPIPE.
+	stdoutClosed bool
 	// savedEnv is the process environment before an integration scenario, restored after it. The integration level
 	// makes the process environment the scenario environment, because the credentials adapter reads it directly.
 	savedEnv []string
@@ -171,20 +174,31 @@ func (w *world) runProcess(argv []string) error {
 	cmd.Stdin = strings.NewReader("")
 	var out, errb bytes.Buffer
 	cmd.Stdout = &out
+	if w.stdoutClosed {
+		// A pipe whose reader is already closed: the first write fails, and the process ends by SIGPIPE.
+		reader, writer, err := os.Pipe()
+		if err != nil {
+			return err
+		}
+		_ = reader.Close()
+		defer writer.Close()
+		cmd.Stdout = writer
+	}
 	cmd.Stderr = &errb
 	err := cmd.Run()
-	code := 0
 	var exitErr *exec.ExitError
-	switch {
-	case err == nil:
-	case errors.As(err, &exitErr):
-		code = exitErr.ExitCode()
-	default:
+	if err != nil && !errors.As(err, &exitErr) {
 		return fmt.Errorf("start retriever: %w", err)
 	}
-	w.record(code, &out, &errb)
+	w.record(exitCodeOf(err), &out, &errb)
 	return nil
 }
+
+// brokenPipe is a standard output whose reader has closed. Every write fails with EPIPE, as a pipe with no reader does.
+type brokenPipe struct{}
+
+// Write fails with EPIPE and writes nothing.
+func (brokenPipe) Write([]byte) (int, error) { return 0, syscall.EPIPE }
 
 // record stores the result of the last command.
 func (w *world) record(code int, out, errb *bytes.Buffer) {

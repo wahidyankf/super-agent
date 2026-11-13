@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/cucumber/godog"
 )
@@ -143,22 +144,41 @@ func registerProcessSteps(ctx *godog.ScenarioContext, cur func() *world) {
 		return nil
 	})
 	ctx.Step(`^the MCP server exits with status (\d+)$`, func(want string) error {
-		n, err := strconv.Atoi(want)
-		if err != nil {
-			return err
-		}
 		m, err := cur().mcpClient()
 		if err != nil {
 			return err
 		}
-		if err := m.finish(); err != nil {
+		code, err := m.finish()
+		if err != nil {
 			return err
 		}
-		if m.exit != n {
-			return fmt.Errorf("the MCP server exited with status %d, want %d", m.exit, n)
-		}
-		return nil
+		return checkStatus("the MCP server", code, want)
 	})
+	ctx.Step(`^the serve command exits with status (\d+)$`, func(want string) error {
+		code, err := cur().serveExitStatus()
+		if err != nil {
+			return err
+		}
+		return checkStatus("the serve command", code, want)
+	})
+	ctx.Step(`^the interrupt reaches the running server$`, func() error {
+		return cur().signalRunning(syscall.SIGINT)
+	})
+	ctx.Step(`^the termination signal reaches the running server$`, func() error {
+		return cur().signalRunning(syscall.SIGTERM)
+	})
+}
+
+// checkStatus compares the exit status of a server with the status a step names.
+func checkStatus(who string, got int, want string) error {
+	n, err := strconv.Atoi(want)
+	if err != nil {
+		return err
+	}
+	if got != n {
+		return fmt.Errorf("%s exited with status %d, want %d", who, got, n)
+	}
+	return nil
 }
 
 // mcpClient returns the MCP session of the scenario, or an error when no client has started.

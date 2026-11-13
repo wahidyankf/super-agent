@@ -83,6 +83,39 @@ func featureFiles(t *testing.T) []string {
 	return files
 }
 
+// bindingProblems returns one message for each binding gap in the given feature files. An empty result means the files
+// conform. The check does not stop at the first gap, so one run reports every gap.
+func bindingProblems(t *testing.T, files []string) []string {
+	t.Helper()
+	var problems []string
+	for _, file := range files {
+		for _, sc := range readScenarios(t, file) {
+			where := sc.file + ":" + strconv.Itoa(sc.line) + " " + sc.title
+			if !sc.tags["@unit"] {
+				problems = append(problems, where+": no unit binding (@unit); the unit binding is always required")
+			}
+			if sc.tags["@integration-exempt"] && sc.tags["@e2e-exempt"] {
+				problems = append(problems, where+": exempt at both layers (@integration-exempt and @e2e-exempt); a scenario with both exemptions is a plain test, not a spec scenario")
+			}
+			for _, level := range []string{"integration", "e2e"} {
+				tag := "@" + level
+				exempt := "@" + level + "-exempt"
+				switch {
+				case sc.tags[tag] && sc.tags[exempt]:
+					problems = append(problems, where+": carries both "+tag+" and "+exempt)
+				case sc.tags[tag]:
+				case sc.tags[exempt] && sc.exemptions[level]:
+				case sc.tags[exempt]:
+					problems = append(problems, where+": "+exempt+" has no Exemption("+level+") comment with an alternative-proof directly above the tags")
+				default:
+					problems = append(problems, where+": no "+tag+" binding and no "+exempt+" tag")
+				}
+			}
+		}
+	}
+	return problems
+}
+
 // TestEveryScenarioHasItsBindingsOrAJustifiedExemption fails for each scenario that lacks a unit binding, an integration
 // or end-to-end binding without a justified exemption, or both exemptions at once.
 func TestEveryScenarioHasItsBindingsOrAJustifiedExemption(t *testing.T) {
@@ -90,28 +123,96 @@ func TestEveryScenarioHasItsBindingsOrAJustifiedExemption(t *testing.T) {
 	if len(files) == 0 {
 		t.Fatalf("no feature files under %s", specsRoot)
 	}
-	for _, file := range files {
-		for _, sc := range readScenarios(t, file) {
-			where := sc.file + ":" + strconv.Itoa(sc.line) + " " + sc.title
-			if !sc.tags["@unit"] {
-				t.Errorf("%s: no unit binding (@unit); the unit binding is always required", where)
-			}
-			for _, level := range []string{"integration", "e2e"} {
-				tag := "@" + level
-				exempt := "@" + level + "-exempt"
-				switch {
-				case sc.tags[tag] && sc.tags[exempt]:
-					t.Errorf("%s: carries both %s and %s", where, tag, exempt)
-				case sc.tags[tag]:
-				case sc.tags[exempt] && sc.exemptions[level]:
-				case sc.tags[exempt]:
-					t.Errorf("%s: %s has no Exemption(%s) comment with an alternative-proof directly above the tags", where, exempt, level)
-				default:
-					t.Errorf("%s: no %s binding and no %s tag", where, tag, exempt)
-				}
-			}
+	for _, problem := range bindingProblems(t, files) {
+		t.Error(problem)
+	}
+}
+
+// writeCorpus writes one feature file into dir, with the given text, and returns its path.
+func writeCorpus(t *testing.T, dir, name, text string) string {
+	t.Helper()
+	path := filepath.Join(dir, name)
+	if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+	return path
+}
+
+// TestBindingCheckFailsOnViolatingCorpus runs the check on a synthetic corpus of feature files that each break one rule.
+// The check must report every violation, each with the scenario it names.
+func TestBindingCheckFailsOnViolatingCorpus(t *testing.T) {
+	dir := t.TempDir()
+	files := []string{
+		writeCorpus(t, dir, "missing-unit.feature", `Feature: synthetic
+  @integration @e2e
+  Scenario: lacks the unit binding
+    When something runs
+`),
+		writeCorpus(t, dir, "missing-comment.feature", `Feature: synthetic
+  @unit @integration-exempt @e2e
+  Scenario: exempt without the comment
+    When something runs
+`),
+		writeCorpus(t, dir, "malformed-comment.feature", `Feature: synthetic
+  # Exemption(e2e): no alternative proof named
+  @unit @integration @e2e-exempt
+  Scenario: exempt with a malformed comment
+    When something runs
+`),
+		writeCorpus(t, dir, "both-exempt.feature", `Feature: synthetic
+  # Exemption(integration): synthetic reason; alternative-proof: synthetic location
+  # Exemption(e2e): synthetic reason; alternative-proof: synthetic location
+  @unit @integration-exempt @e2e-exempt
+  Scenario: exempt at both layers
+    When something runs
+`),
+	}
+	problems := bindingProblems(t, files)
+	want := []struct{ scenario, fragment string }{
+		{"lacks the unit binding", "no unit binding (@unit)"},
+		{"exempt without the comment", "@integration-exempt has no Exemption(integration) comment"},
+		{"exempt with a malformed comment", "@e2e-exempt has no Exemption(e2e) comment"},
+		{"exempt at both layers", "exempt at both layers"},
+	}
+	for _, w := range want {
+		if !containsProblem(problems, w.scenario, w.fragment) {
+			t.Errorf("the check did not report %q for scenario %q; problems were:\n%s", w.fragment, w.scenario, strings.Join(problems, "\n"))
 		}
 	}
+	if len(problems) != len(want) {
+		t.Errorf("the check reported %d problems, want %d, one per violating scenario:\n%s", len(problems), len(want), strings.Join(problems, "\n"))
+	}
+}
+
+// TestBindingCheckPassesOnConformingCorpus runs the check on feature files that follow every rule, and expects none.
+func TestBindingCheckPassesOnConformingCorpus(t *testing.T) {
+	dir := t.TempDir()
+	files := []string{
+		writeCorpus(t, dir, "bound.feature", `Feature: synthetic
+  @unit @integration @e2e
+  Scenario: fully bound
+    When something runs
+`),
+		writeCorpus(t, dir, "exempt-e2e.feature", `Feature: synthetic
+  # Exemption(e2e): synthetic reason; alternative-proof: synthetic location
+  @unit @integration @e2e-exempt
+  Scenario: exempt from the end-to-end level with its proof
+    When something runs
+`),
+	}
+	if problems := bindingProblems(t, files); len(problems) != 0 {
+		t.Errorf("a conforming corpus must pass, got:\n%s", strings.Join(problems, "\n"))
+	}
+}
+
+// containsProblem reports whether one problem names the scenario and contains the fragment.
+func containsProblem(problems []string, scenario, fragment string) bool {
+	for _, p := range problems {
+		if strings.Contains(p, scenario) && strings.Contains(p, fragment) {
+			return true
+		}
+	}
+	return false
 }
 
 // TestBehaviourCoverageFileMatchesTheFeatures compares the counts in behaviour-coverage.json with the feature files.

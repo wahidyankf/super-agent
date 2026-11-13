@@ -126,3 +126,9 @@ Feature: Command-line contract of retriever
     Then the exit status is 2
     And the standard output is empty
     And the standard error is not empty
+
+  @unit @integration @e2e
+  Scenario: A standard output with no reader ends the command with status 141
+    Given the standard output pipe has no reader
+    When I run "retriever --help"
+    Then the exit status is 141

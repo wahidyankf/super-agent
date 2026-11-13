@@ -21,6 +21,10 @@ func registerCLISteps(ctx *godog.ScenarioContext, cur func() *world) {
 		}
 		return cur().execute(argv)
 	})
+	ctx.Step(`^the standard output pipe has no reader$`, func() error {
+		cur().stdoutClosed = true
+		return nil
+	})
 	ctx.Step(`^the exit status is (\d+)$`, func(want string) error {
 		return cur().checkExit(want)
 	})

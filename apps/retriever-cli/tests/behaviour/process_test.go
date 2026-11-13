@@ -3,29 +3,59 @@ package behaviour
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
+
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 )
 
 // servePrefix is the line the serve command prints once its listener is bound.
 const servePrefix = "retriever serve listening on "
 
-// replyTimeout bounds every wait on a process, so a hung process fails the scenario instead of the whole run.
+// replyTimeout bounds every wait on a session, so a hung session fails the scenario instead of the whole run.
 const replyTimeout = 15 * time.Second
 
-// errNoBinary is the error of a process step at a level without a built binary.
+// errNoBinary is the error of a process session at a level without a built binary.
 var errNoBinary = errors.New("the end-to-end level has no built retriever binary")
 
-// serveSession is a running retriever serve process and the address it bound.
+// endState is how a session ends. Its status arrives once on exited, and is kept in code after that.
+type endState struct {
+	exited chan int
+	kill   func()
+	done   bool
+	code   int
+}
+
+// wait returns the exit status of the session. A session that does not end in time is killed.
+func (e *endState) wait() (int, error) {
+	if !e.done {
+		select {
+		case e.code = <-e.exited:
+			e.done = true
+		case <-time.After(replyTimeout):
+			e.kill()
+			return 0, errors.New("the server did not exit in time")
+		}
+	}
+	return e.code, nil
+}
+
+// serveSession is a running retriever serve and the address it bound. The session runs in process at the unit and
+// integration levels, and as the built binary at the end-to-end level.
 type serveSession struct {
-	addr string
+	addr   string
+	signal func(os.Signal) error
+	end    endState
 }
 
 // graphqlReply is the last HTTP answer of the GraphQL endpoint.
@@ -49,16 +79,19 @@ type mcpCall struct {
 	size    int
 }
 
-// mcpSession is a running retriever mcp process that speaks JSON-RPC over stdio.
+// mcpSession is a running retriever mcp that speaks JSON-RPC over stdio. Like serveSession, it runs in process or as
+// the built binary.
 type mcpSession struct {
-	cmd    *exec.Cmd
 	stdin  io.WriteCloser
 	lines  chan string
+	signal func(os.Signal) error
+	end    endState
 	nextID int
 	tools  []mcpTool
 	call   *mcpCall
-	exit   int
-	exited bool
+	// signalled is set once a signal was sent, so finish waits for the signal to end the server rather than closing the
+	// input first: a closed input ends the server by EOF, which would hide the signal's status.
+	signalled bool
 }
 
 // readLines sends each line of r to out until r ends, and then closes out.
@@ -71,45 +104,121 @@ func readLines(r io.Reader, out chan<- string) {
 	}
 }
 
-// startServe starts retriever serve on an unused loopback port, once per scenario, and reads the address it reports.
+// exitCodeOf returns the status of a finished process: its exit code, or 128+N when signal N ended it, as the shell
+// reports it.
+func exitCodeOf(err error) int {
+	if err == nil {
+		return 0
+	}
+	var exitErr *exec.ExitError
+	if !errors.As(err, &exitErr) {
+		return -1
+	}
+	if st, ok := exitErr.Sys().(syscall.WaitStatus); ok && st.Signaled() {
+		return 128 + int(st.Signal())
+	}
+	return exitErr.ExitCode()
+}
+
+// awaitServeLine reads the first line of a serve session and returns the address it names.
+func awaitServeLine(lines <-chan string) (string, error) {
+	select {
+	case line, ok := <-lines:
+		if !ok || !strings.HasPrefix(line, servePrefix) {
+			return "", fmt.Errorf("retriever serve did not report a listening address, it printed %q", line)
+		}
+		return strings.TrimSpace(strings.TrimPrefix(line, servePrefix)), nil
+	case <-time.After(replyTimeout):
+		return "", errors.New("retriever serve did not report a listening address in time")
+	}
+}
+
+// startServe starts retriever serve once per scenario and reads the address it reports.
 func (w *world) startServe() error {
 	if w.serve != nil {
 		return nil
 	}
-	if w.binary == "" {
-		return errNoBinary
-	}
 	if err := w.ensureStubs(); err != nil {
 		return err
+	}
+	var (
+		s   *serveSession
+		err error
+	)
+	if w.inProcess() {
+		s, err = w.serveInProcess()
+	} else {
+		s, err = w.serveProcess()
+	}
+	if err != nil {
+		return err
+	}
+	w.serve = s
+	return nil
+}
+
+// serveInProcess runs the serve command in this process. Its standard output is a pipe the scenario reads, and an
+// interrupt or SIGTERM is delivered by cancelling the context the command runs under, with the signal as the cause.
+func (w *world) serveInProcess() (*serveSession, error) {
+	argv := []string{"serve", "--port", "0"}
+	ctx, cancel := context.WithCancelCause(context.Background())
+	stdoutR, stdoutW := io.Pipe()
+	deps := w.protocolDeps(ctx, strings.NewReader(""), stdoutW, argv)
+	s := &serveSession{
+		signal: func(sig os.Signal) error {
+			cancel(cli.SignalCause(sig))
+			return nil
+		},
+		end: endState{exited: make(chan int, 1), kill: func() { cancel(nil) }},
+	}
+	go func() {
+		s.end.exited <- cli.Run(argv, deps)
+		_ = stdoutW.Close()
+	}()
+	lines := make(chan string, 16)
+	go readLines(stdoutR, lines)
+	w.procKill = append(w.procKill, s.end.kill)
+	addr, err := awaitServeLine(lines)
+	if err != nil {
+		return nil, err
+	}
+	s.addr = addr
+	return s, nil
+}
+
+// serveProcess runs the built binary as retriever serve.
+func (w *world) serveProcess() (*serveSession, error) {
+	if w.binary == "" {
+		return nil, errNoBinary
 	}
 	cmd := exec.Command(w.binary, "serve", "--port", "0")
 	cmd.Dir = w.dir
 	cmd.Env = w.envList()
+	cmd.Stderr = io.Discard
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("start retriever serve: %w", err)
+		return nil, fmt.Errorf("start retriever serve: %w", err)
 	}
-	w.procKill = append(w.procKill, func() {
-		_ = cmd.Process.Kill()
-		_ = cmd.Wait()
-	})
+	s := &serveSession{
+		signal: func(sig os.Signal) error { return cmd.Process.Signal(sig) },
+		end: endState{
+			exited: make(chan int, 1),
+			kill:   func() { _ = cmd.Process.Kill() },
+		},
+	}
+	go func() { s.end.exited <- exitCodeOf(cmd.Wait()) }()
+	w.procKill = append(w.procKill, s.end.kill)
 	lines := make(chan string, 16)
 	go readLines(stdout, lines)
-	select {
-	case line, ok := <-lines:
-		if !ok || !strings.HasPrefix(line, servePrefix) {
-			return fmt.Errorf("retriever serve did not report a listening address, it printed %q (stderr %q)", line, stderr.String())
-		}
-		w.serve = &serveSession{addr: strings.TrimSpace(strings.TrimPrefix(line, servePrefix))}
-		return nil
-	case <-time.After(replyTimeout):
-		return errors.New("retriever serve did not report a listening address in time")
+	addr, err := awaitServeLine(lines)
+	if err != nil {
+		return nil, err
 	}
+	s.addr = addr
+	return s, nil
 }
 
 // postGraphQL sends one query to the served endpoint, with the loopback Host the server expects, and records the answer.
@@ -159,9 +268,6 @@ func isLoopback(addr string) bool {
 
 // startMCP starts the MCP server a command line names and completes the initialize handshake.
 func (w *world) startMCP(line string) error {
-	if w.binary == "" {
-		return errNoBinary
-	}
 	args, err := commandArgs(line)
 	if err != nil {
 		return err
@@ -169,28 +275,16 @@ func (w *world) startMCP(line string) error {
 	if err := w.ensureStubs(); err != nil {
 		return err
 	}
-	cmd := exec.Command(w.binary, args...)
-	cmd.Dir = w.dir
-	cmd.Env = w.envList()
-	stdin, err := cmd.StdinPipe()
+	var m *mcpSession
+	if w.inProcess() {
+		m, err = w.mcpInProcess(args)
+	} else {
+		m, err = w.mcpProcess(args)
+	}
 	if err != nil {
 		return err
 	}
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	cmd.Stderr = io.Discard
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("start retriever mcp: %w", err)
-	}
-	m := &mcpSession{cmd: cmd, stdin: stdin, lines: make(chan string, 64)}
-	go readLines(stdout, m.lines)
 	w.mcp = m
-	w.procKill = append(w.procKill, func() {
-		_ = m.stdin.Close()
-		_ = cmd.Process.Kill()
-	})
 	if _, err := m.request("initialize", map[string]any{
 		"protocolVersion": "2025-06-18",
 		"capabilities":    map[string]any{},
@@ -199,6 +293,95 @@ func (w *world) startMCP(line string) error {
 		return fmt.Errorf("initialize the MCP session: %w", err)
 	}
 	return m.notify("notifications/initialized")
+}
+
+// mcpInProcess runs the mcp command in this process over two in-memory pipes: the scenario writes requests to one, and
+// reads the protocol answers from the other.
+func (w *world) mcpInProcess(args []string) (*mcpSession, error) {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	inR, inW := io.Pipe()
+	outR, outW := io.Pipe()
+	deps := w.protocolDeps(ctx, inR, outW, args)
+	m := &mcpSession{
+		stdin: inW,
+		lines: make(chan string, 64),
+		signal: func(sig os.Signal) error {
+			cancel(cli.SignalCause(sig))
+			return nil
+		},
+		end: endState{
+			exited: make(chan int, 1),
+			kill: func() {
+				_ = inW.Close()
+				cancel(nil)
+			},
+		},
+	}
+	go func() {
+		m.end.exited <- cli.Run(args, deps)
+		_ = outW.Close()
+	}()
+	go readLines(outR, m.lines)
+	w.procKill = append(w.procKill, m.end.kill)
+	return m, nil
+}
+
+// mcpProcess runs the built binary as retriever mcp, with the scenario environment.
+func (w *world) mcpProcess(args []string) (*mcpSession, error) {
+	if w.binary == "" {
+		return nil, errNoBinary
+	}
+	cmd := exec.Command(w.binary, args...)
+	cmd.Dir = w.dir
+	cmd.Env = w.envList()
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	cmd.Stderr = io.Discard
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("start retriever mcp: %w", err)
+	}
+	m := &mcpSession{
+		stdin:  stdin,
+		lines:  make(chan string, 64),
+		signal: func(sig os.Signal) error { return cmd.Process.Signal(sig) },
+		end: endState{
+			exited: make(chan int, 1),
+			kill:   func() { _ = cmd.Process.Kill() },
+		},
+	}
+	go func() { m.end.exited <- exitCodeOf(cmd.Wait()) }()
+	go readLines(stdout, m.lines)
+	w.procKill = append(w.procKill, func() {
+		_ = m.stdin.Close()
+		m.end.kill()
+	})
+	return m, nil
+}
+
+// signalRunning delivers a signal to the server the scenario started, the MCP server or the serve command.
+func (w *world) signalRunning(sig os.Signal) error {
+	switch {
+	case w.mcp != nil:
+		w.mcp.signalled = true
+		return w.mcp.signal(sig)
+	case w.serve != nil:
+		return w.serve.signal(sig)
+	}
+	return errors.New("no server is running in this scenario")
+}
+
+// serveExitStatus returns the exit status of the serve command, after it has ended.
+func (w *world) serveExitStatus() (int, error) {
+	if w.serve == nil {
+		return 0, errors.New("retriever serve has not started in this scenario")
+	}
+	return w.serve.end.wait()
 }
 
 // write sends one JSON-RPC message, one line each, to the server.
@@ -312,26 +495,10 @@ func (m *mcpSession) callTool(name string, args map[string]any) error {
 	return nil
 }
 
-// finish closes the input and waits for the server to exit, and records the exit status.
-func (m *mcpSession) finish() error {
-	_ = m.stdin.Close()
-	done := make(chan error, 1)
-	go func() { done <- m.cmd.Wait() }()
-	select {
-	case err := <-done:
-		m.exited = true
-		if err == nil {
-			m.exit = 0
-			return nil
-		}
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			m.exit = exitErr.ExitCode()
-			return nil
-		}
-		return err
-	case <-time.After(replyTimeout):
-		_ = m.cmd.Process.Kill()
-		return errors.New("the MCP server did not exit after its input closed")
+// finish closes the input unless a signal was sent, waits for the server to end, and returns its exit status.
+func (m *mcpSession) finish() (int, error) {
+	if !m.signalled {
+		_ = m.stdin.Close()
 	}
+	return m.end.wait()
 }
