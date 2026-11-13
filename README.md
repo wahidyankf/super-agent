@@ -1,26 +1,47 @@
 # super-agent
 
-super-agent connects coding harnesses and people to data sources. It provides source connectors for
-catalogs and document systems, and exposes them through a command-line tool (`super-agent-cli`) and a
-Model Context Protocol (MCP) server. Every connector checks access before it reads or writes data.
+> **Status: alpha.** Expect breaking changes: commands, flags, file formats, connector specs, JSON output, and APIs can
+> change in any release, including minor and patch releases, until a stable 1.0. Do not depend on it in production.
+
+super-agent connects coding harnesses and people to data sources and channels. It is a set of source connectors for
+catalogs, document systems, and messaging, exposed through a command-line tool (`super-agent-cli`) and a Model Context
+Protocol (MCP) server. Every connector checks access before it reads or writes data.
+
+## What the name means
+
+The human is the super agent. You juggle many resources and channels, at work and outside work, and you use many coding
+agents to help. super-agent amplifies that person and their harnesses: it is an orchestrator of many agents and of
+information from many data sources.
+
+super-agent is not a single catch-all agent. It does not decide for you and it does not replace your agents. It gives
+every harness and every person one catalog of sources and one access model, so the same connectors serve many agents.
+Orchestrating the agents themselves is a later direction, described in the
+[software-factory note](./docs/explanation/software-factory-note.md), and it is out of scope now.
+
+## Documentation
+
+Start at the [documentation index](./docs/README.md). Reference material for the repository layout, environment
+variable names, and quality gates is in [docs/reference](./docs/reference/README.md). The
+[stability and versioning](./docs/explanation/stability-and-versioning.md) page explains what alpha means for you.
 
 ## Status
 
-This is a pre-release 0.x project, under construction. Commands, file formats, and APIs will change
-without notice until a stable 1.0 release. There is no released binary yet.
+There is no released binary yet. The first release will be a pre-release tagged `v0.x`. Each release names its breaking
+changes in [CHANGELOG.md](./CHANGELOG.md).
 
 ## Repository
 
 - `worktrees/` holds local task checkouts for pull requests. It is not committed.
 - `local-tmp/` holds local working state. It is not committed.
-- `.env.example` lists the environment variable names that connectors read. Values stay empty here.
+- `.env.example` holds no variable names yet; connector variables arrive with the CLI. Values stay empty there.
 
 Real catalogs, connector specs, and credentials are never committed to this repository. Use `.env.local`
 for local values; that file is ignored by Git.
 
 ## Contributing
 
-This repository is under construction and does not yet accept external contributions.
+This repository is under construction and does not yet accept external contributions. Contributor rules are in
+[AGENTS.md](./AGENTS.md).
 
 ## License
 
