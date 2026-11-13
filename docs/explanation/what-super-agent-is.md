@@ -35,7 +35,7 @@ you already use. Each agent keeps its own job. super-agent supplies two shared t
   (many agents)        (planned)              (planned)       (catalogs, documents, messages)
 ```
 
-- **The harness side** is the command-line tool, `super-agent-cli`, and a Model Context Protocol (MCP) server. Many
+- **The harness side** is the command-line tool, `retriever-cli`, and a Model Context Protocol (MCP) server. Many
   agents use the same connectors through either one. Both are planned.
 - **The data side** is the connectors. A connector reads and writes one kind of source. Both sides are planned.
 
@@ -45,7 +45,7 @@ Work and personal contexts stay separate in the design. Each has its own catalog
 ## What exists today
 
 Only the repository skeleton exists: the quality gates, the governance rules, this documentation, and an empty plans
-folder. There is no CLI, no MCP server, and no connector. The first command-line tool, `super-agent-cli`, arrives in
+folder. There is no CLI, no MCP server, and no connector. The first command-line tool, `retriever-cli`, arrives in
 the next pull request.
 
 ## Where to go next

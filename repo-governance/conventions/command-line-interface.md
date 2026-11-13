@@ -69,7 +69,7 @@ conforming tool overrides its runtime rather than inheriting from it. Each modul
 
 | Surface                                   | Tier     | Why                                                              |
 | ----------------------------------------- | -------- | ---------------------------------------------------------------- |
-| `super-agent-cli`, built in `apps/`       | Full bar | Called by a person and a harness; choices recorded in module 009 |
+| `retriever-cli`, built in `apps/`         | Full bar | Called by a person and a harness; choices recorded in module 009 |
 | `./hippo` and `./rhino`                   | Floor    | Shell-invoked wrappers; each starts the pinned tool it installs  |
 | `.husky/{commit-msg,pre-commit,pre-push}` | Floor    | Git invokes them and branches on what they return                |
 | `scripts/*.sh` and `scripts/*`            | Floor    | Shipped scripts that a gate or a hook calls                      |

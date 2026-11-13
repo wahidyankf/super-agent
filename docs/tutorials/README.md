@@ -10,7 +10,7 @@ tags:
 # Tutorials
 
 There are no tutorials yet. A tutorial teaches by doing, and the first one needs the command-line tool,
-`super-agent-cli`. That tool does not exist yet. It arrives in the next pull request, and its tutorials arrive with
+`retriever-cli`. That tool does not exist yet. It arrives in the next pull request, and its tutorials arrive with
 it.
 
 ## Next steps

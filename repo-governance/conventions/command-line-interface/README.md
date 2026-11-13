@@ -25,4 +25,4 @@ entrypoint indexes.
 - [006 Errors and Diagnostics](006-errors-and-diagnostics.md): the shape of a message and what it may never contain.
 - [007 Terminal and Environment](007-terminal-and-environment.md): colour, escapes, and environment variables.
 - [008 Help and Discovery](008-help-and-discovery.md): help spellings and what an invocation with no arguments does.
-- [009 Tiers Here](009-tiers-here.md): the tier of `super-agent-cli` and the owner choices that fix its open points.
+- [009 Tiers Here](009-tiers-here.md): the tier of `retriever-cli` and the owner choices that fix its open points.
