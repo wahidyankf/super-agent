@@ -24,6 +24,7 @@ specs/
     └── cli-conformance/   the published contract checks that run before merge
 ```
 
+- [behaviours/](behaviours/) holds the feature files, and [fixtures/](fixtures/) holds the synthetic data they read.
 - **Feature files** cover one behaviour area each, and each file holds one `Feature:`. Every scenario carries a tag for
   each level it runs at: `@unit`, `@integration`, or `@e2e`.
 - **Fixtures** are small and synthetic. Hosts are `example.test` names, keys are `EXAMPLE_*` names, and issue keys are
