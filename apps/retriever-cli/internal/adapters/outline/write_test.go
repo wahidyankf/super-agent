@@ -88,11 +88,11 @@ var requestCasesB = []requestCase{
 	{"comments.unresolve", domain.OpCommentsUnresolve,
 		map[string]any{"commentId": uuidOther}, "/api/comments.unresolve", `{"id":"` + uuidOther + `"}`},
 	{"comments.add_reaction", domain.OpCommentsAddReaction,
-		map[string]any{"commentId": uuidOther, "emoji": "👍"},
-		"/api/comments.add_reaction", `{"id":"` + uuidOther + `","emoji":"👍"}`},
+		map[string]any{"commentId": uuidOther, "emoji": "\U0001F44D"},
+		"/api/comments.add_reaction", `{"id":"` + uuidOther + `","emoji":"` + "\U0001F44D" + `"}`},
 	{"comments.remove_reaction", domain.OpCommentsRemoveReaction,
-		map[string]any{"commentId": uuidOther, "emoji": "👍"},
-		"/api/comments.remove_reaction", `{"id":"` + uuidOther + `","emoji":"👍"}`},
+		map[string]any{"commentId": uuidOther, "emoji": "\U0001F44D"},
+		"/api/comments.remove_reaction", `{"id":"` + uuidOther + `","emoji":"` + "\U0001F44D" + `"}`},
 	{"accessRequests.create", domain.OpAccessRequestsCreate,
 		map[string]any{"documentId": uuidOther},
 		"/api/accessRequests.create", `{"documentId":"` + uuidOther + `"}`},
@@ -181,7 +181,7 @@ func TestCommentReactionsAnswerAnAcknowledgement(t *testing.T) {
 	for _, op := range []domain.OperationID{domain.OpCommentsAddReaction, domain.OpCommentsRemoveReaction} {
 		r := writeRig(t, nil)
 		r.stub.SetReply(string(endpointMethodOf(t, op)), http.StatusOK, `{"success":true}`)
-		rec, err := r.gw.Write(context.Background(), op, domain.NewArgs(map[string]any{"commentId": uuidOther, "emoji": "👍"}))
+		rec, err := r.gw.Write(context.Background(), op, domain.NewArgs(map[string]any{"commentId": uuidOther, "emoji": "\U0001F44D"}))
 		if err != nil {
 			t.Fatalf("%s: Write = %v", op, err)
 		}
@@ -192,7 +192,7 @@ func TestCommentReactionsAnswerAnAcknowledgement(t *testing.T) {
 		for _, tc := range ackRefusals {
 			r = writeRig(t, nil)
 			r.stub.SetReply(string(endpointMethodOf(t, op)), http.StatusOK, tc.body)
-			_, err = r.gw.Write(context.Background(), op, domain.NewArgs(map[string]any{"commentId": uuidOther, "emoji": "👍"}))
+			_, err = r.gw.Write(context.Background(), op, domain.NewArgs(map[string]any{"commentId": uuidOther, "emoji": "\U0001F44D"}))
 			if !errors.Is(err, domain.ErrWriteOutcomeUnknown) {
 				t.Fatalf("%s: %s: error = %v, want ErrWriteOutcomeUnknown (finding m1)", op, tc.name, err)
 			}

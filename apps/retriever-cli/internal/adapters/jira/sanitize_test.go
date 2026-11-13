@@ -24,7 +24,7 @@ func TestStripControlsRemovesEachHiddenClass(t *testing.T) {
 		{name: "byte order mark", in: "a\uFEFFb", want: "ab"},
 		{name: "newline is kept", in: "a\nb", want: "a\nb"},
 		{name: "tab is kept", in: "a\tb", want: "a\tb"},
-		{name: "ordinary Unicode is kept", in: "héllo ☺ 日本", want: "héllo ☺ 日本"},
+		{name: "ordinary Unicode is kept", in: "héllo \u263a 日本", want: "héllo \u263a 日本"},
 		{name: "empty stays empty", in: "", want: ""},
 	}
 	for _, tt := range tests {

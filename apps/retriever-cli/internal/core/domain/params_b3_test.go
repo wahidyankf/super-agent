@@ -26,7 +26,7 @@ func TestValidateColorAcceptsOnlyHexWithThreeOrSixDigits(t *testing.T) {
 // UUID. The server holds the list of named icons, so Retriever checks the shape only: non-blank, at most 255 characters,
 // and no control character.
 func TestValidateIconAcceptsAnEmojiANameOrAnAttachmentUUID(t *testing.T) {
-	for _, raw := range []string{"📅", "calendar", "123e4567-e89b-12d3-a456-426614174000"} {
+	for _, raw := range []string{"\U0001F4C5", "calendar", "123e4567-e89b-12d3-a456-426614174000"} {
 		if err := ValidateIcon(raw); err != nil {
 			t.Errorf("ValidateIcon(%q) = %v, want nil", raw, err)
 		}

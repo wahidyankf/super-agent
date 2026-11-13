@@ -262,8 +262,8 @@ func TestRenderADFInlineNodes(t *testing.T) {
 		},
 		{
 			name: "emoji shows its text",
-			in:   adfDoc(`{"type":"paragraph","content":[{"type":"emoji","attrs":{"shortName":":smile:","text":"☺"}}]}`),
-			want: "☺",
+			in:   adfDoc(`{"type":"paragraph","content":[{"type":"emoji","attrs":{"shortName":":smile:","text":"\u263a"}}]}`),
+			want: "\u263a",
 		},
 		{
 			name: "emoji without text shows its short name",
