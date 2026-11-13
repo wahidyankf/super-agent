@@ -9,6 +9,14 @@ upgrade.
 
 ## Unreleased
 
+## v0.1.0
+
+Alpha pre-release. Expect breaking changes: commands, flags, file formats, connector specs, JSON output, and APIs can
+change in any release, including minor and patch releases, until a stable 1.0. Read the
+[migration table](docs/reference/retriever-cli-migration-from-butler.md) before you move from Butler, and the
+[scenario-gap page](docs/reference/retriever-cli-scenario-gap.md) for the behaviours that no scenario covers yet. This is
+the first release, so it has no earlier version to break.
+
 ### Added
 
 - Repository skeleton: Nx workspace configuration, HIPPO and RHINO pins, Husky hooks, public-safety gates, and the
@@ -26,3 +34,5 @@ upgrade.
     output pipe ends the process by `SIGPIPE` (shell status `141`).
   - The migration table now lists four deliberate departures from Butler: refusals before reads, the missing-catalog
     code, the HTTPS refusal at load, and the unknown outcome of a Kiwi write. `retriever` supports macOS and Linux only.
+- A release build, `build:release`, that writes one archive for each of `darwin` and `linux` on `amd64` and `arm64`, and
+  a `SHA256SUMS` file, from an annotated tag.

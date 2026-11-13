@@ -6,19 +6,20 @@ live in the repository's standards.
 
 ## Targets
 
-| Target             | Runs                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------- |
-| `lint`             | `go vet` with the integration and e2e tags, then a `gofmt` check                      |
-| `typecheck`        | `go build ./...`, then compiles every test package with those tags, without running   |
-| `test:unit`        | a check that no `_test.go` file calls `.Skip(`, the gate self-test, then the gate     |
-| `test:quick`       | `lint`, `typecheck`, then `test:unit`                                                 |
-| `test:integration` | `go test -count=1 -tags integration ./...`                                            |
-| `test:e2e`         | `go test -count=1 -tags e2e ./tests/behaviour/...`; the suite builds the binary first |
-| `test:conformance` | `go test -count=1 ./tests/conformance/... ./tests/architecture/...`, with no tags     |
-| `bdd:check`        | the binding check of `specs/behaviours`, described below                              |
-| `test:coverage`    | `scripts/coverage-gate.sh`, the same gate as `test:unit` without the skip check       |
-| `build`            | `go build -trimpath -o dist/retriever ./cmd/retriever`                                |
-| `deps:audit`       | `go tool govulncheck ./...`, which reads vuln.go.dev and needs the network            |
+| Target             | Runs                                                                                                           |
+| ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `lint`             | `go vet` with the integration and e2e tags, then a `gofmt` check                                               |
+| `typecheck`        | `go build ./...`, then compiles every test package with those tags, without running                            |
+| `test:unit`        | a check that no `_test.go` file calls `.Skip(`, the gate self-test, the gate, then the release build self-test |
+| `test:quick`       | `lint`, `typecheck`, then `test:unit`                                                                          |
+| `test:integration` | `go test -count=1 -tags integration ./...`                                                                     |
+| `test:e2e`         | `go test -count=1 -tags e2e ./tests/behaviour/...`; the suite builds the binary first                          |
+| `test:conformance` | `go test -count=1 ./tests/conformance/... ./tests/architecture/...`, with no tags                              |
+| `bdd:check`        | the binding check of `specs/behaviours`, described below                                                       |
+| `test:coverage`    | `scripts/coverage-gate.sh`, the same gate as `test:unit` without the skip check                                |
+| `build`            | `go build -trimpath -o dist/retriever ./cmd/retriever`                                                         |
+| `build:release`    | `scripts/build-release.sh`: the four platform archives and `SHA256SUMS` of one tag                             |
+| `deps:audit`       | `go tool govulncheck ./...`, which reads vuln.go.dev and needs the network                                     |
 
 ## Coverage gate
 

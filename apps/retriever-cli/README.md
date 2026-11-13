@@ -39,8 +39,8 @@ Run each target from the repository root with `npx nx run retriever-cli:<target>
   it.
 - `format`: runs `gofmt -w .`.
 - `format:check`: checks that `gofmt -l` reports no file.
-- `test:unit`: refuses a test that calls `.Skip(`, then runs the coverage gate. The gate measures unit-level statement
-  coverage of the whole module, with a 99 percent floor.
+- `test:unit`: refuses a test that calls `.Skip(`, then runs the coverage gate, then the self-test of the release build.
+  The gate measures unit-level statement coverage of the whole module, with a 99 percent floor.
 - `test:integration`: runs `go test -tags integration ./...`.
 - `test:e2e`: runs the end-to-end suite in `tests/behaviour` against the binary that the suite builds.
 - `test:conformance`: runs the conformance and architecture tests.
@@ -49,12 +49,15 @@ Run each target from the repository root with `npx nx run retriever-cli:<target>
 - `test:coverage`: runs the coverage gate on its own.
 - `test:quick`: runs `lint`, `typecheck`, and `test:unit`, in order.
 - `deps:audit`: runs `govulncheck`, which reads the Go vulnerability database and needs the network.
+- `build:release`: builds the release archives and `SHA256SUMS` for the annotated tag named by `RELEASE_VERSION`, into
+  the empty directory named by `RELEASE_OUT`. The [alpha pre-release how-to](../../docs/how-to/cut-an-alpha-pre-release.md)
+  runs it. CI never runs it, and nothing is published by it.
 
 The [test gates](../../docs/reference/retriever-cli-test-gates.md) page describes what each target runs, the coverage
 gate rules, the binding rules, and the platforms each target runs on in CI.
 
-No release target exists yet. The `.golangci.yml` file is present, but no target runs `golangci-lint`, because it is not
-a tool directive in `go.mod`. The CI cross-compile check builds four platforms and publishes nothing.
+The `.golangci.yml` file is present, but no target runs `golangci-lint`, because it is not a tool directive in `go.mod`.
+The CI cross-compile check builds four platforms and publishes nothing.
 
 ## Layout
 
@@ -63,6 +66,7 @@ a tool directive in `go.mod`. The CI cross-compile check builds four platforms a
 - `internal/` holds the core, the adapters, and their unit tests. See [internal](./internal/README.md).
 - `tests/` holds the behaviour tests, the conformance and architecture tests, and the stub servers that the tests use.
 - `scripts/coverage-gate.sh` is the coverage gate that `test:unit` and `test:coverage` run.
+- `scripts/build-release.sh` builds the release archives for `build:release`, and `scripts/build-release_test.sh` tests it.
 - `behaviour-coverage.json` records the scenario counts that the binding check compares with the feature files.
 - `.golangci.yml` is the lint configuration, written for a later golangci-lint adoption.
 - `.gitignore` ignores `dist/`, `sources.yml`, and the env files.

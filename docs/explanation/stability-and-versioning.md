@@ -32,7 +32,7 @@ Each breaking change is listed in [CHANGELOG.md](../../CHANGELOG.md) under the r
 
 Releases are tags on GitHub. Each one is a pre-release, and GitHub does not mark a pre-release as the latest
 release. Each release publishes a checksum list, so you can verify every archive. The steps are in [Cut an alpha
-pre-release](../how-to/cut-an-alpha-pre-release.md). No release has been published yet.
+pre-release](../how-to/cut-an-alpha-pre-release.md). The first pre-release is `v0.1.0`.
 
 ## How to consume a release
 
