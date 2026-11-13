@@ -27,9 +27,35 @@ const maxBytes = 64 << 10
 // schemaVersion is the only catalog version this code reads.
 const schemaVersion = 1
 
+// fileReader is the part of an open catalog file that a load uses. *os.File satisfies it.
+type fileReader interface {
+	io.Reader
+	Stat() (fs.FileInfo, error)
+	Close() error
+}
+
+// fileOps are the file calls a load makes. New uses the real files; a test replaces them to make one step fail.
+type fileOps struct {
+	lstat func(name string) (fs.FileInfo, error)
+	open  func(name string) (fileReader, error)
+}
+
+// realFiles is the set of calls New uses.
+var realFiles = fileOps{lstat: os.Lstat, open: openFile}
+
+// openFile opens a catalog file. It returns a nil interface, not a typed nil, when the open fails.
+func openFile(name string) (fileReader, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
 // Loader implements ports.CatalogLoader over one catalog file.
 type Loader struct {
-	path string
+	path  string
+	files fileOps
 }
 
 var _ ports.CatalogLoader = (*Loader)(nil)
@@ -39,7 +65,7 @@ func New(path string) (*Loader, error) {
 	if !filepath.IsAbs(path) {
 		return nil, errors.New("the catalog path must be absolute")
 	}
-	return &Loader{path: path}, nil
+	return &Loader{path: path, files: realFiles}, nil
 }
 
 // Load reads the catalog file once. A missing file, a file that is not a regular file, a file that is too large, and a
@@ -57,7 +83,7 @@ func (l *Loader) Load() (domain.Catalog, error) {
 
 // read returns the file bytes. found is false when no file exists at the path, with no error.
 func (l *Loader) read() (data []byte, found bool, err error) {
-	info, err := os.Lstat(l.path)
+	info, err := l.files.lstat(l.path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, false, nil
 	}
@@ -67,7 +93,7 @@ func (l *Loader) read() (data []byte, found bool, err error) {
 	if !info.Mode().IsRegular() {
 		return nil, false, catalogErr("must be a regular file, not a symlink or a folder")
 	}
-	f, err := os.Open(l.path)
+	f, err := l.files.open(l.path)
 	if err != nil {
 		return nil, false, catalogErr("could not open the file")
 	}
@@ -105,7 +131,7 @@ type sourceEntry struct {
 	Access        *string  `yaml:"access"`
 	Endpoint      string   `yaml:"endpoint"`
 	CredentialEnv string   `yaml:"credential_env"`
-	// IdentityEnv is the optional name of the variable that holds the source's e-mail address (ADR 010 section 1.1). A nil
+	// IdentityEnv is the optional name of the variable that holds the source's e-mail address. A nil
 	// pointer means the field is absent, which an empty value is not.
 	IdentityEnv *string `yaml:"identity_env"`
 }
@@ -174,7 +200,7 @@ func toSource(position int, e sourceEntry) (domain.Source, error) {
 	}
 	src := domain.NewSource(id, kind, tags, access, endpoint, credential)
 	// A nil pointer means the field is absent, so the source has no identity. An empty value is a name that fails the
-	// rule (ADR 010 section 1.1).
+	// rule.
 	if e.IdentityEnv != nil {
 		identity, err := domain.NewIdentityRef(*e.IdentityEnv)
 		if err != nil {

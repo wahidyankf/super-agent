@@ -36,9 +36,14 @@ type Options struct {
 // resources opts names. Each tool call writes one line to opts.Logger, and nothing else that the server prints goes to
 // standard output.
 func NewServer(svc sources.Service, opts Options) (*sdk.Server, error) {
+	return newServer(svc, opts, handWrittenTools)
+}
+
+// newServer is NewServer over the given hand-written table, so a test can offer a table that the production one never is.
+func newServer(svc sources.Service, opts Options, table []tool) (*sdk.Server, error) {
 	impl := &sdk.Implementation{Name: "retriever", Version: opts.Version}
 	server := sdk.NewServer(impl, &sdk.ServerOptions{Instructions: instructions})
-	if _, err := register(server, svc, opts.logger(), handWrittenTools); err != nil {
+	if _, err := register(server, svc, opts.logger(), table); err != nil {
 		return nil, err
 	}
 	registerOperations(server, svc, opts.logger(), newResourceSet(opts.Resources))
@@ -48,7 +53,12 @@ func NewServer(svc sources.Service, opts Options) (*sdk.Server, error) {
 // Serve runs one MCP session over in and out until the client closes in or ctx ends. Standard output carries the
 // protocol and nothing else, so the caller must not write to out itself.
 func Serve(ctx context.Context, svc sources.Service, opts Options, in io.Reader, out io.Writer) error {
-	server, err := NewServer(svc, opts)
+	return serveWith(ctx, svc, opts, in, out, handWrittenTools)
+}
+
+// serveWith is Serve over the given hand-written table.
+func serveWith(ctx context.Context, svc sources.Service, opts Options, in io.Reader, out io.Writer, table []tool) error {
+	server, err := newServer(svc, opts, table)
 	if err != nil {
 		return err
 	}

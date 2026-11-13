@@ -116,8 +116,7 @@ func NewCatalog(sources []Source) (Catalog, error) {
 }
 
 // zeroFault returns a SourceFault for the first required field of src that is a zero value, or nil when none is. A kind
-// that uses an identity name (jira) needs a non-zero identity, so a zero identity there is a fault too (ADR 010 section
-// 1.1). Only a validating constructor fills these fields, so a zero value means the source was not built by one.
+// that uses an identity name (jira) needs a non-zero identity, so a zero identity there is a fault too. Only a validating constructor fills these fields, so a zero value means the source was not built by one.
 func zeroFault(position int, src Source) error {
 	switch {
 	case src.id == SourceID{}:
@@ -263,8 +262,7 @@ func (c Catalog) MaxAccessOf(kinds ...SourceKind) Access {
 	return top
 }
 
-// Capped returns a catalog in which every source's level is the lower of its own level and the ceiling (ADR 007 section
-// 3.3). The IDs, kinds, tags, endpoints, and credential names do not change, and the receiver is not changed. A zero
+// Capped returns a catalog in which every source's level is the lower of its own level and the ceiling. The IDs, kinds, tags, endpoints, and credential names do not change, and the receiver is not changed. A zero
 // ceiling allows nothing. The wiring applies it once, before it builds the service, so the use cases enforce the capped
 // level and the registration of MCP tools reads the capped maximum.
 func (c Catalog) Capped(ceiling Access) Catalog {

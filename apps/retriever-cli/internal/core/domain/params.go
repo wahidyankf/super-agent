@@ -39,7 +39,7 @@ var (
 	shareSlugPattern = regexp.MustCompile(`^[0-9a-z-]+$`)
 )
 
-// ValidateID accepts a non-empty identifier of letters, digits, "_" and "-" (ADR 001).
+// ValidateID accepts a non-empty identifier of letters, digits, "_" and "-".
 func ValidateID(raw string) error {
 	if len(raw) > MaxIDLength || !idPattern.MatchString(raw) {
 		return ErrInvalidID

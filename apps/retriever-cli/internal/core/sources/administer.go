@@ -32,8 +32,7 @@ type resolvedTarget struct {
 	FullPage bool
 }
 
-// Administer runs one destructive or admin operation of the catalog against the selected source (ADR 007 sections 3.1,
-// 3.4, and 3.5). The order is fixed: a read is refused; the arguments are bound; a source is required and selected; the
+// Administer runs one destructive or admin operation of the catalog against the selected source. The order is fixed: a read is refused; the arguments are bound; a source is required and selected; the
 // level and the kind are checked. A dry run makes its self-check and reads the target, then returns the plan. Otherwise
 // --yes is required, and only then comes the self-check of a change to the key's own user, then a critical call must give
 // the canonical target value that Retriever read, and last the admin port is called once. A refused, invalid, or dry-run call

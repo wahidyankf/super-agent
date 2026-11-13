@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"time"
+
+	usecases "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
 )
 
 const (
@@ -46,6 +49,28 @@ func Listen(port int) (net.Listener, error) {
 	return net.Listen("tcp", addr.String())
 }
 
+// Run is the body of retriever serve. It binds the loopback listener at port, mounts the GraphQL handler over svc, calls
+// ready with the bound address, and serves until ctx ends. The composition root and the behaviour tests both call it, so
+// every level runs the same wiring.
+func Run(ctx context.Context, svc usecases.Service, port int, logger *slog.Logger, ready func(addr string)) error {
+	listener, err := Listen(port)
+	if err != nil {
+		return err
+	}
+	return serveOn(ctx, listener, svc, logger, ready)
+}
+
+// serveOn mounts the GraphQL handler over svc on an already bound listener, calls ready with its address, and serves until
+// ctx ends. A listener whose address is not TCP is refused by the handler, and the listener is closed then.
+func serveOn(ctx context.Context, listener net.Listener, svc usecases.Service, logger *slog.Logger, ready func(addr string)) error {
+	handler, err := NewHandler(Deps{Service: svc, Logger: logger}, WithListener(listener))
+	if err != nil {
+		return errors.Join(err, listener.Close())
+	}
+	ready(listener.Addr().String())
+	return Serve(ctx, listener, handler)
+}
+
 // Serve serves handler on l until ctx is cancelled, then shuts down gracefully. It refuses a listener that
 // is not bound to loopback, before it accepts anything. It returns nil after a clean shutdown.
 func Serve(ctx context.Context, l net.Listener, handler http.Handler) error {
@@ -67,9 +92,8 @@ func Serve(ctx context.Context, l net.Listener, handler http.Handler) error {
 
 	select {
 	case err := <-serveErr:
-		if errors.Is(err, http.ErrServerClosed) {
-			return nil
-		}
+		// Serve returns ErrServerClosed only after Shutdown, and Shutdown runs only in the ctx branch below, so a value here
+		// is always a listener failure.
 		return err
 	case <-ctx.Done():
 	}

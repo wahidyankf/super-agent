@@ -10,7 +10,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// Read runs one catalog operation of the Jira source and returns its Record (ADR 010 section 2). It binds the arguments with
+// Read runs one catalog operation of the Jira source and returns its Record. It binds the arguments with
 // the catalog's rules before any request, so a value that reaches a request has passed them. Only the five read operations
 // of the Jira kind are served; any other returns domain.ErrUnsupportedOperation. The use case has already checked the access
 // level. Every error it returns is named for Jira.
@@ -98,7 +98,7 @@ func (g *Gateway) projectPage(ctx context.Context, startAt, maxResults int, quer
 }
 
 // issuesSearch runs one search for the JQL of the arguments, with at most the limit of issues. The JQL is data: it goes into
-// the body as one JSON string and is never changed (ADR 010 section 5).
+// the body as one JSON string and is never changed.
 func (g *Gateway) issuesSearch(ctx context.Context, args domain.Args) (domain.Record, error) {
 	limit := args.Int("limit")
 	reply, err := g.jqlPage(ctx, args.String("jql"), limit, "")

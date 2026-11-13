@@ -13,13 +13,13 @@ var KindOutline = SourceKind{value: "outline"}
 // KindKiwi is the Kiwi TCMS kind, the test case management system of Example Org.
 var KindKiwi = SourceKind{value: "kiwi"}
 
-// KindJira is the Jira Cloud kind, read only, of Example Org (ADR 010).
+// KindJira is the Jira Cloud kind, read only, of Example Org.
 var KindJira = SourceKind{value: "jira"}
 
 // knownKinds lists every kind NewSourceKind accepts, in the order the unknown-kind text names them.
 var knownKinds = []SourceKind{KindOutline, KindKiwi, KindJira}
 
-// kindTraits is what the catalog needs to know about one kind beside its name (ADR 010 section 1.1).
+// kindTraits is what the catalog needs to know about one kind beside its name.
 type kindTraits struct {
 	// usesIdentity is true when a source of the kind needs an identity name (a non-secret variable beside the key).
 	usesIdentity bool
@@ -37,7 +37,7 @@ var traits = map[SourceKind]kindTraits{
 }
 
 // UsesIdentity reports whether a source of the kind needs an identity name, the non-secret variable that holds an account
-// e-mail address (ADR 010 section 1.1). Jira needs one; Outline and Kiwi refuse one.
+// e-mail address. Jira needs one; Outline and Kiwi refuse one.
 func (k SourceKind) UsesIdentity() bool {
 	return traits[k].usesIdentity
 }
@@ -77,8 +77,7 @@ func (k SourceKind) String() string {
 	return k.value
 }
 
-// Display returns the name of the kind as a person reads it in a failure, such as "Outline" or "Kiwi" (ADR 010 section
-// 7). A kind without a display name returns its kind name.
+// Display returns the name of the kind as a person reads it in a failure, such as "Outline" or "Kiwi". A kind without a display name returns its kind name.
 func (k SourceKind) Display() string {
 	switch k.value {
 	case "outline":

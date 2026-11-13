@@ -7,8 +7,8 @@ import (
 )
 
 // This file holds the shapes of the Jira replies that Retriever reads. Each struct names only the members Retriever uses. Unknown
-// members are ignored (ADR 010 section 5). A member Retriever needs is a pointer or a required value, so a reply that lacks it
-// is an unexpected reply and not a silent empty value. Only the members of ADR 010 section 3 are read: no e-mail address, no
+// members are ignored. A member Retriever needs is a pointer or a required value, so a reply that lacks it
+// is an unexpected reply and not a silent empty value. Only the members of the document shape are read: no e-mail address, no
 // account ID, and no avatar or self URL is ever decoded.
 
 // myselfReply is the reply of GET /rest/api/3/myself. The display name and the active flag are required, because whoami
@@ -74,7 +74,7 @@ func (r projectsReply) projects() ([]project, bool, error) {
 }
 
 // searchRequest is the JSON body of POST /rest/api/3/search/jql. Only these members are sent. The JQL is one string value, and
-// expand and properties are never sent (ADR 010 section 5).
+// expand and properties are never sent.
 type searchRequest struct {
 	JQL           string   `json:"jql"`
 	MaxResults    int      `json:"maxResults"`
@@ -144,7 +144,7 @@ type commentBody struct {
 	Body    json.RawMessage `json:"body"`
 }
 
-// maxCommentIDDigits is the longest numeric comment ID that Retriever accepts (ADR 010 section 3).
+// maxCommentIDDigits is the longest numeric comment ID that Retriever accepts.
 const maxCommentIDDigits = 18
 
 // checkComments returns the comments of a page, each with a numeric ID. A page with no comments member is an unexpected reply.

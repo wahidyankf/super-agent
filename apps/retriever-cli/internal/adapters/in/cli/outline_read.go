@@ -57,8 +57,7 @@ func attachOperations(group *command, kind domain.SourceKind) {
 				next.summary = row.Summary
 				next.leaf = readLeaf(row, row.CLI)
 				if word == "list" && node.name == legacyRunnableGroup {
-					// "outline collections" is the command of today, and it runs the list (ADR 007 section 4, "Names of
-					// today's commands"). No other group is runnable, so "outline documents" stays a group.
+					// "outline collections" is the command of today, and it runs the list. No other group is runnable, so "outline documents" stays a group.
 					node.summary = row.Summary
 					node.leaf = readLeaf(row, strings.TrimSuffix(row.CLI, " list"))
 				}

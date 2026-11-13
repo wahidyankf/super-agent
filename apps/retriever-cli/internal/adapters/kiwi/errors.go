@@ -15,7 +15,7 @@ const (
 	rpcServerError    = -32603
 )
 
-// kindErr wraps a failure in the Kiwi kind, so a presenter names Kiwi and not Outline (ADR 010 section 7). A nil error
+// kindErr wraps a failure in the Kiwi kind, so a presenter names Kiwi and not Outline. A nil error
 // stays nil.
 func kindErr(err error) error {
 	if err == nil {
@@ -37,8 +37,8 @@ func rpcError(method string, code int, message string, write bool) error {
 	return unmatched(write)
 }
 
-// serverErrorMessage maps a -32603 message onto a sentinel. The first matching group wins, in the order of ADR 009
-// section 5. The lower-case message is only compared, never stored.
+// serverErrorMessage maps a -32603 message onto a sentinel. The first matching group wins, in the order of the error table.
+// The lower-case message is only compared, never stored.
 func serverErrorMessage(method, message string, write bool) error {
 	switch {
 	case containsAny(message, "authentication", "credentials", "token", "login required"):

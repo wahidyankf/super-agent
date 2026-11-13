@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// authorize sets the HTTP Basic authorization of one request (ADR 010 section 1.4). It is the only place in this package that
+// authorize sets the HTTP Basic authorization of one request. It is the only place in this package that
 // calls SetBasicAuth. The token is read first, then the account e-mail address, both for this request only. They are locals
 // of this call: nothing is stored in the gateway, a closure, a struct, or an error. A missing or invalid value stops the
 // request before the network, and its error names the variable, never the value.

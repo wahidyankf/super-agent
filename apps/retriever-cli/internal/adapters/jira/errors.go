@@ -20,7 +20,7 @@ var errMethodNotAllowed = errors.New("jira method is not allowed")
 // errInvalidBaseURL reports a connection base that does not parse, has no host, or holds user information.
 var errInvalidBaseURL = errors.New("invalid Jira base URL")
 
-// kindError names Jira as the kind of a failure (ADR 010 section 7), so a presenter prints "Jira rejected the API key", never
+// kindError names Jira as the kind of a failure, so a presenter prints "Jira rejected the API key", never
 // a text about another system. A context error is returned as it is, because the caller cancelled it, and an error that is
 // already a KindError is not wrapped twice.
 func kindError(err error) error {
@@ -38,7 +38,7 @@ func kindError(err error) error {
 }
 
 // interpret maps one reply onto a decoded value or a sentinel. Its errors never carry the body, the headers, the token, or the
-// e-mail address (ADR 010 section 5). A 410 Gone means the server does not offer the path, so the reply is the unavailable
+// e-mail address. A 410 Gone means the server does not offer the path, so the reply is the unavailable
 // sentinel, whose text names the endpoint, not a method.
 func interpret(ep endpoint, status int, retryAfter string, raw []byte, out any) (time.Duration, bool, error) {
 	switch {

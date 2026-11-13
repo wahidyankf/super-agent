@@ -7,7 +7,7 @@ import (
 
 // KindError names the kind of source an error came from. Unwrap returns Err, so errors.Is still finds the sentinel under
 // it. Its text is the sentinel's text, with the word "Outline" replaced by the kind's display name for any kind other
-// than Outline (ADR 010 section 7), so a Kiwi failure never tells the owner to rotate an Outline key.
+// than Outline, so a Kiwi failure never tells the owner to rotate an Outline key.
 type KindError struct {
 	Kind SourceKind
 	Err  error

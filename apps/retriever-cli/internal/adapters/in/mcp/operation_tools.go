@@ -39,8 +39,7 @@ const dryRunParam = "dry_run"
 const dryRunText = "true to return the change that would be made, with nothing changed; no request is sent"
 
 // dryRunAdminText describes the dry_run input of an admin tool (finding m6). Its dry run sends no change, but it reads the
-// target of the change first, and for a change to a user it reads the key's own user, so it does send requests (ADR 007
-// sections 3.4 and 3.5).
+// target of the change first, and for a change to a user it reads the key's own user, so it does send requests.
 const dryRunAdminText = "true to return the change that would be made, with nothing changed; it sends no change, but it may " +
 	"read the target of the change and, for a change to a user, the key's own user, first"
 
@@ -59,7 +58,7 @@ func operationTools() []operations.Row {
 }
 
 // toolKinds returns the kinds of the sources that the generated tools call: each kind that a row with a tool names, once.
-// Today that is Outline alone. A source of any other kind (Kiwi, ADR 009 section 4) adds no level to the ceiling, so it
+// Today that is Outline alone. A source of any other kind adds no level to the ceiling, so it
 // adds no tool, at any --max-access.
 func toolKinds() []domain.SourceKind {
 	var out []domain.SourceKind
@@ -333,12 +332,7 @@ func runWriteOperation(ctx context.Context, svc sources.Service, row operations.
 		plan["truncated"] = false
 		return plan, id, outcomeOK, nil
 	}
-	answer, err := render(row, id, rec, 0)
-	if err != nil {
-		public, class := publicError(err)
-		return nil, id, class, public
-	}
-	return answer, id, outcomeOK, nil
+	return renderObject(id, rec), id, outcomeOK, nil
 }
 
 // runAdminOperation runs one destructive or admin row for one call. The MCP tool has no --yes
@@ -364,12 +358,7 @@ func runAdminOperation(ctx context.Context, svc sources.Service, row operations.
 		plan["truncated"] = false
 		return plan, id, outcomeOK, nil
 	}
-	answer, err := render(row, id, rec, 0)
-	if err != nil {
-		public, class := publicError(err)
-		return nil, id, class, public
-	}
-	return answer, id, outcomeOK, nil
+	return renderObject(id, rec), id, outcomeOK, nil
 }
 
 // resolvedID returns the ID of the source a call names, for the answer and the log line. It returns "" when the call
@@ -396,8 +385,7 @@ func dryRunOf(args map[string]any) (bool, error) {
 	return flag, nil
 }
 
-// requireRevision refuses an update_document call that replaces the text without the last_revision it was read at (ADR
-// 007 section 2, item 9). Without it, a replace could overwrite a newer text that the model never saw. The decision reads
+// requireRevision refuses an update_document call that replaces the text without the last_revision it was read at . Without it, a replace could overwrite a newer text that the model never saw. The decision reads
 // the bound values, so it is the one the binder makes: a call with no text, or with an append, a prepend, or a patch,
 // needs no revision.
 func requireRevision(row operations.Row, bound domain.Args) error {
@@ -513,15 +501,21 @@ func render(row operations.Row, source string, rec domain.Record, offset int) (m
 	if row.Body != "" {
 		return renderBody(row, source, rec, offset)
 	}
+	return renderObject(source, rec), nil
+}
+
+// renderObject answers one record, which is neither a list nor a body. It is cut to the page cap when it is too large,
+// with truncated set. Every row that is not a list or a body is an object, so the write and admin answers use it too.
+func renderObject(source string, rec domain.Record) map[string]any {
 	out := snakeRecord(rec)
 	out["source"] = source
 	out["truncated"] = false
 	if fitsCap(out) {
-		return out, nil
+		return out
 	}
 	out["truncated"] = true
 	cut, _ := cutToCap(out, func(m map[string]any) any { return m })
-	return cut, nil
+	return cut
 }
 
 // renderList answers a list row. The rows that fit pageCap are kept, and truncated is set when rows were left out. A

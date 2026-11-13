@@ -15,7 +15,7 @@ import (
 // standard input, so the marker is refused.
 const standardInputMarker = "-"
 
-// issueKeyPattern is the shape of a Jira issue key (ADR 010 section 2): an upper-case project key of 2 to 20 characters,
+// issueKeyPattern is the shape of a Jira issue key: an upper-case project key of 2 to 20 characters,
 // a dash, and a number with no leading zero of at most 9 digits. Retriever never corrects a key that does not match it.
 var issueKeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,19}-[1-9][0-9]{0,8}$`)
 

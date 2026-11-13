@@ -2,7 +2,7 @@ package operations
 
 import "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 
-// jiraOperations is the closed list of the Jira Cloud operations that Supports runs for the Jira kind (ADR 010 section 2).
+// jiraOperations is the closed list of the Jira Cloud operations that Supports runs for the Jira kind.
 // A new Jira row is one entry here and one row in jiraRows. The kind is read only, so the list holds no write.
 var jiraOperations = []domain.OperationID{
 	domain.OpJiraWhoami,
@@ -12,9 +12,9 @@ var jiraOperations = []domain.OperationID{
 	domain.OpJiraCommentsList,
 }
 
-// jiraRows are the five read operations of the Jira Cloud source (ADR 010 section 2). Jira has no write, admin, destructive,
+// jiraRows are the five read operations of the Jira Cloud source. Jira has no write, admin, destructive,
 // or critical operation, and no MCP tool, so Tool, Critical, and Target stay empty. A project is a collection and an issue
-// is a document (ADR 010 section 3); the adapter maps the provider's words to the domain's.
+// is a document; the adapter maps the provider's words to the domain's.
 var jiraRows = []Row{
 	{
 		ID:          domain.OpJiraWhoami,

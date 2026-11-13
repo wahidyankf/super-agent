@@ -45,7 +45,7 @@ const (
 	KindEmail          Kind = "Email"          // one e-mail address; a dry run never shows it
 	KindEventList      Kind = "EventList"      // at most 50 event names, each `*` or a dotted name such as documents.create
 	KindURLList        Kind = "URLList"        // 1 to 10 HTTPS addresses, each at most 1024 characters (the redirect addresses)
-	KindIssueKey       Kind = "IssueKey"       // a Jira issue key, such as EXAMPLE-12; refused as an invalid document ID (ADR 010 section 2)
+	KindIssueKey       Kind = "IssueKey"       // a Jira issue key, such as EXAMPLE-12; refused as an invalid document ID
 )
 
 // Param is one parameter of an operation. Name is the catalog name in camelCase, such as collectionId. The CLI flag
@@ -103,14 +103,12 @@ type Row struct {
 	// subscription.
 	OneOf []string
 	// AnyOf names parameters of which at least one must be set, such as the fields a Kiwi test case update changes. The
-	// binder refuses a call with none of them with ErrMissingArgument, so a dry run of an empty update fails too (ADR 009
-	// section 2).
+	// binder refuses a call with none of them with ErrMissingArgument, so a dry run of an empty update fails too.
 	AnyOf []string
 	// NotIdempotent marks an update whose repeat is not the same change, such as an append. Its tool says so in its hints
 	//. A create is never idempotent, and it needs no flag.
 	NotIdempotent bool
-	// SameOnRepeat marks a create whose repeat answers the same object, so its tool announces idempotent (ADR 007 section
-	// 3.3). It is set on shares.create, which returns the share of a document that is already shared.
+	// SameOnRepeat marks a create whose repeat answers the same object, so its tool announces idempotent. It is set on shares.create, which returns the share of a document that is already shared.
 	SameOnRepeat bool
 	// Critical marks an operation, or one call of it, that needs the strictest confirmation. A
 	// critical operation has no MCP tool at any ceiling, so its Tool is empty.
@@ -244,8 +242,7 @@ func (r Row) IsList() bool {
 }
 
 // Kind returns the source kind that the row belongs to: the first word of its CLI path, read as a kind. It returns false
-// when that word names no known kind. The convention ties a row to its kind, and a test checks every catalog row (ADR 009
-// section 2).
+// when that word names no known kind. The convention ties a row to its kind, and a test checks every catalog row.
 func (r Row) Kind() (domain.SourceKind, bool) {
 	path := r.Path()
 	if len(path) == 0 {
@@ -256,8 +253,7 @@ func (r Row) Kind() (domain.SourceKind, bool) {
 }
 
 // Supports reports whether a source kind runs the row. The Outline kind runs every Outline row, and the Kiwi kind runs
-// the closed list of its six rows, and the Jira kind the closed list of its five read rows (ADR 007 section 2, item 1, ADR
-// 009 section 2, and ADR 010 section 2). A kind that is not listed runs none.
+// the closed list of its six rows, and the Jira kind the closed list of its five read rows. A kind that is not listed runs none.
 func Supports(kind domain.SourceKind, row Row) bool {
 	switch kind {
 	case domain.KindOutline:

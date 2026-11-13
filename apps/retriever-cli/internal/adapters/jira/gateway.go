@@ -8,7 +8,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
 )
 
-// The generic reads of the source port (ADR 010 section 3). A project is a collection, and an issue is a document and a
+// The generic reads of the source port. A project is a collection, and an issue is a document and a
 // node of its project's tree.
 const (
 	projectPageSize = 50

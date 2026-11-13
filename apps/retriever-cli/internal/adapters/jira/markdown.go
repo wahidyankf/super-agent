@@ -10,7 +10,7 @@ import (
 // other shape does not parse.
 const jiraTimeLayout = "2006-01-02T15:04:05.000-0700"
 
-// maxTitleRunes is the longest title a document or a search row carries (ADR 010 section 3).
+// maxTitleRunes is the longest title a document or a search row carries.
 const maxTitleRunes = 255
 
 // lineBreaks turns every line break and tab into a space, so a field stays on one line.
@@ -57,7 +57,7 @@ func projectOfKey(key string) string {
 // noDescription is the text of an issue whose description is empty or null.
 const noDescription = "(no description)"
 
-// issueMarkdown assembles the Markdown of one issue (ADR 010 section 3): the title, a metadata list, and the description. Free
+// issueMarkdown assembles the Markdown of one issue: the title, a metadata list, and the description. Free
 // text is escaped with escapeText. The key, the dates, and the due date are written as they are, because they passed their
 // checks. Optional lines are left out when they have no value. The description is rendered from ADF, and an empty one is
 // "(no description)". The result ends with the description and no trailing line break.

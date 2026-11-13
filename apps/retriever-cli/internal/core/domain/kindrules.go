@@ -2,7 +2,7 @@ package domain
 
 import "strings"
 
-// IdentityRequiredError reports a source of a kind that needs an identity name and has none (ADR 010 section 1.1). Its text
+// IdentityRequiredError reports a source of a kind that needs an identity name and has none. Its text
 // names the kind, never a value, and it matches ErrIdentityRequired.
 type IdentityRequiredError struct {
 	Kind SourceKind
@@ -18,7 +18,7 @@ func (e IdentityRequiredError) Is(target error) bool {
 	return target == ErrIdentityRequired
 }
 
-// IdentityNotUsedError reports a source of a kind that does not use an identity name but has one (ADR 010 section 1.1).
+// IdentityNotUsedError reports a source of a kind that does not use an identity name but has one.
 // Its text names the kind, and it matches ErrIdentityNotUsed.
 type IdentityNotUsedError struct {
 	Kind SourceKind
@@ -34,7 +34,7 @@ func (e IdentityNotUsedError) Is(target error) bool {
 	return target == ErrIdentityNotUsed
 }
 
-// KindCeilingError reports an access level above the highest level its kind accepts (ADR 010 section 1.1). Its text names
+// KindCeilingError reports an access level above the highest level its kind accepts. Its text names
 // the kind and the highest level, such as "a jira source allows read at most", and it matches ErrAccessAboveKindCeiling.
 type KindCeilingError struct {
 	Kind SourceKind

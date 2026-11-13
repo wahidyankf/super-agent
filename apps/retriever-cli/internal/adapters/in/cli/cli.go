@@ -56,6 +56,9 @@ type Deps struct {
 	Stderr io.Writer
 	Getenv func(string) string
 	Now    func() time.Time
+	// Context is the parent of the context that serve and mcp run under. SIGINT and SIGTERM cancel that context with
+	// SignalCause, so a caller can end either command as a signal would, without sending one. Nil means Background.
+	Context context.Context
 	// Service serves the sources, outline, kiwi, jira, and document commands. Serve runs the GraphQL server, MCP runs the
 	// MCP server, and Sink builds the export sink. SetupErr says why the wiring is missing, when it is.
 	Service  sources.Service
@@ -68,6 +71,7 @@ type Deps struct {
 // runtime is what a leaf action reads: the ports, the output writers, the parsed output format, and the wiring.
 type runtime struct {
 	ports    ports.Ports
+	ctx      context.Context
 	out      io.Writer
 	stdin    io.Reader
 	stdout   io.Writer
@@ -100,10 +104,26 @@ func (e exitStatus) Error() string {
 func (e exitStatus) Unwrap() error { return e.err }
 
 // Run executes one retriever command line and returns the process exit status. A panic inside a command is reported as
-// the internal failure with status 2, and it never reaches the caller as a crash.
-func Run(argv []string, d Deps) (status int) {
+// the internal failure with status 2, and it never reaches the caller as a crash. A write to standard output or standard
+// error that meets a closed reader ends the command with status 141, as the built binary ends by SIGPIPE.
+func Run(argv []string, d Deps) int {
+	stdout := &pipeWatch{w: orDiscard(d.Stdout)}
+	stderr := &pipeWatch{w: orDiscard(d.Stderr)}
+	d.Stdout, d.Stderr = stdout, stderr
+	status := run(argv, d)
+	if stdout.broken || stderr.broken {
+		return exitBrokenPipe
+	}
+	return status
+}
+
+// run is Run without the closed-pipe check. It parses the command line, runs the leaf, and reports every failure.
+func run(argv []string, d Deps) (status int) {
 	if d.Now == nil {
 		d.Now = time.Now
+	}
+	if d.Context == nil {
+		d.Context = context.Background()
 	}
 	command := "retriever"
 	defer func() {
@@ -163,6 +183,7 @@ func Run(argv []string, d Deps) (status int) {
 	}
 	inv.rt = &runtime{
 		ports:    d.Ports,
+		ctx:      d.Context,
 		out:      d.Stdout,
 		stdin:    stdin,
 		stdout:   d.Stdout,

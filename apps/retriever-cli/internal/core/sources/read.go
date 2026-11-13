@@ -7,8 +7,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// Read runs one operation of the catalog against the selected source of the row's kind (ADR 007 section 3.1, ADR 009
-// section 1). The order is fixed: the row and its kind are looked up, and an operation its kind does not support is
+// Read runs one operation of the catalog against the selected source of the row's kind. The order is fixed: the row and its kind are looked up, and an operation its kind does not support is
 // refused; the raw arguments are bound and validated; the source is selected by the default rule for the kind; the
 // source's access level is checked; and the reader is called last. A refused or invalid call makes no request to the wiki.
 func Read(ctx context.Context, svc Service, op domain.OperationID, source *string, raw map[string]any) (domain.Record, error) {

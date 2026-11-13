@@ -211,7 +211,7 @@ const (
 	OpKiwiPlansAddCase    OperationID = "kiwi.plans.add-case"
 )
 
-// The Jira Cloud operations (ADR 010 section 2): five reads, and no write, admin, critical, or MCP operation. Each names one
+// The Jira Cloud operations: five reads, and no write, admin, critical, or MCP operation. Each names one
 // row of rows_jira.go.
 const (
 	OpJiraWhoami       OperationID = "jira.whoami"
@@ -245,7 +245,7 @@ const (
 // stage a.
 type Effect string
 
-// The four effects of ADR 007, from the least to the most changing.
+// The four effects, from the least to the most changing.
 const (
 	EffectRead        Effect = "read"
 	EffectAdditive    Effect = "additive"

@@ -9,6 +9,7 @@ package envfile
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -22,9 +23,36 @@ const (
 	envFileName = ".env.local"
 )
 
+// fileReader is the part of an open env file that a read uses. *os.File satisfies it.
+type fileReader interface {
+	io.Reader
+	Stat() (fs.FileInfo, error)
+	Close() error
+}
+
+// fileOps are the file calls a read makes. New uses the real files; a test replaces them to make one step fail.
+type fileOps struct {
+	lstat func(name string) (fs.FileInfo, error)
+	open  func(name string) (fileReader, error)
+}
+
+// realFiles is the set of file calls New uses.
+var realFiles = fileOps{lstat: os.Lstat, open: openFile}
+
+// openFile opens an env file. It returns a nil interface, not a typed nil, when the open fails.
+func openFile(name string) (fileReader, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
 // Credentials implements ports.Credentials and ports.Identities. Build it with New.
 type Credentials struct {
 	envPath string
+	getenv  func(string) string
+	files   fileOps
 }
 
 var (
@@ -38,7 +66,7 @@ func New(envPath string) (*Credentials, error) {
 	if !filepath.IsAbs(envPath) {
 		return nil, errors.New("the env file path must be absolute")
 	}
-	return &Credentials{envPath: envPath}, nil
+	return &Credentials{envPath: envPath, getenv: os.Getenv, files: realFiles}, nil
 }
 
 // APIKey returns the key that ref names. The process value wins over the file value. An empty value in either place counts
@@ -74,7 +102,7 @@ func (c *Credentials) Identity(ref domain.IdentityRef) (domain.Identity, error) 
 // value returns the value of one variable: the process value when it is non-empty, else the value in the local env file.
 // An empty value in both places is returned as "" with no error, so the caller reports it as missing.
 func (c *Credentials) value(variable string) (string, error) {
-	if value := os.Getenv(variable); value != "" {
+	if value := c.getenv(variable); value != "" {
 		return value, nil
 	}
 	return c.fileValue(variable)
@@ -83,7 +111,7 @@ func (c *Credentials) value(variable string) (string, error) {
 // fileValue returns the value of variable in the local env file. It returns "" with no error when the file does not
 // exist. It refuses a path that is not a regular file, including a symlink, and a file that changes while it is opened.
 func (c *Credentials) fileValue(variable string) (value string, err error) {
-	info, err := os.Lstat(c.envPath)
+	info, err := c.files.lstat(c.envPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return "", nil
 	}
@@ -93,7 +121,7 @@ func (c *Credentials) fileValue(variable string) (value string, err error) {
 	if !info.Mode().IsRegular() {
 		return "", errors.New("local env file must be a regular file, not a symlink or a folder")
 	}
-	f, err := os.Open(c.envPath)
+	f, err := c.files.open(c.envPath)
 	if err != nil {
 		return "", fmt.Errorf("opening local env file: %w", err)
 	}

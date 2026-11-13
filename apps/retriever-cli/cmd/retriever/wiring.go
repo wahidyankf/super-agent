@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -173,7 +172,7 @@ func wireSources(paths configpaths.Paths, seams seamSet) (sourceWiring, error) {
 }
 
 // buildOutline returns the gateway of one Outline source. The source's endpoint names the host that receives its key:
-// the catalog is the reviewed control (ADR 005 section 7). The seam, when it is on, replaces only the connection base.
+// the catalog is the reviewed control. The seam, when it is on, replaces only the connection base.
 func buildOutline(src domain.Source, creds ports.Credentials, seam seamConfig) (ports.SourceGateway, error) {
 	if !seam.on {
 		return outline.New(src, creds), nil
@@ -198,7 +197,7 @@ func buildKiwi(src domain.Source, creds ports.Credentials, seam seamConfig) (por
 	return gw, nil
 }
 
-// buildJira returns the gateway of one Jira source, under the same rule as buildOutline and buildKiwi (ADR 010 section 5).
+// buildJira returns the gateway of one Jira source, under the same rule as buildOutline and buildKiwi.
 // The gateway reads the token and the account e-mail address through secrets, which the credentials adapter provides
 // both of.
 func buildJira(src domain.Source, secrets jira.Secrets, seam seamConfig) (ports.SourceGateway, error) {
@@ -217,25 +216,13 @@ func buildJira(src domain.Source, secrets jira.Secrets, seam seamConfig) (ports.
 func graphqlServe(svc sources.Service) cli.ServeFunc {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	return func(ctx context.Context, port int, ready func(addr string)) error {
-		listener, err := graphql.Listen(port)
-		if err != nil {
-			return err
-		}
-		handler, err := graphql.NewHandler(
-			graphql.Deps{Service: svc, Logger: logger},
-			graphql.WithListener(listener),
-		)
-		if err != nil {
-			return errors.Join(err, listener.Close())
-		}
-		ready(listener.Addr().String())
-		return graphql.Serve(ctx, listener, handler)
+		return graphql.Run(ctx, svc, port, logger, ready)
 	}
 }
 
 // mcpServe returns the function the mcp command runs, at the ceiling the command names, offering the tools of the
 // resources it names (nil for every resource). The catalog is capped before the server is built, so the tools it
-// registers and the use cases that serve them enforce the same level (ADR 006, ADR 007 section 3.3). The server writes
+// registers and the use cases that serve them enforce the same level. The server writes
 // one log line per tool call to stderr, and standard output stays the protocol channel the caller passes in.
 func mcpServe(svc sources.Service, stderr io.Writer) cli.MCPFunc {
 	return func(ctx context.Context, ceiling domain.Access, resources []string, in io.Reader, out io.Writer) error {

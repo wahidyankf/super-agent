@@ -9,8 +9,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// Write runs one write operation of the catalog against the selected source of the row's kind (ADR 007 section 3.1, ADR 009
-// section 1). The order is fixed: the row and its kind are looked up, and an operation its kind does not support is
+// Write runs one write operation of the catalog against the selected source of the row's kind. The order is fixed: the row and its kind are looked up, and an operation its kind does not support is
 // refused; an operation of the read effect is refused, because it belongs to the read port; the raw arguments are bound and
 // validated; a source is required and selected; the access level is checked; and then a dry run returns the plan, or the
 // writer is called last. A refused, invalid, or dry-run call makes no request to the wiki. A reply
@@ -34,7 +33,7 @@ func Write(ctx context.Context, svc Service, op domain.OperationID, source *stri
 	if err != nil {
 		return domain.Record{}, err
 	}
-	// The level is checked after the kind is selected, as ADR 007 section 3.1 orders the steps: a source below the row's need
+	// The level is checked after the kind is selected, in the order the steps are listed: a source below the row's need
 	// is refused with the level error before any call.
 	if err := operations.Refuse(row, src); err != nil {
 		return domain.Record{}, err

@@ -2,13 +2,12 @@ package kiwi
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// The Kiwi IDs of ADR 009 section 3: product-<n> is a collection, plan-<n> a test plan, and case-<n> a test case. The
+// The Kiwi IDs: product-<n> is a collection, plan-<n> a test plan, and case-<n> a test case. The
 // number is a positive integer of at most nine digits, with no leading zero, so the text is one canonical form.
 const (
 	productPrefix = "product-"
@@ -34,14 +33,14 @@ func parseNumber(raw, prefix string) (int, bool) {
 	if digits == "" || len(digits) > maxIDDigits || digits[0] == '0' {
 		return 0, false
 	}
+	// The digits are one to nine ASCII digits with no leading zero, so the value is at least one and fits an int: no
+	// overflow or zero check is needed after the loop.
+	n := 0
 	for _, c := range digits {
 		if c < '0' || c > '9' {
 			return 0, false
 		}
-	}
-	n, err := strconv.Atoi(digits)
-	if err != nil || n <= 0 {
-		return 0, false
+		n = n*10 + int(c-'0')
 	}
 	return n, true
 }

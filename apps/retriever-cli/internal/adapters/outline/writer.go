@@ -10,7 +10,7 @@ import (
 // Write runs one write operation against the wiki and returns the Record of its reply. It
 // checks the arguments again with the catalog's rules, so a value that reaches a request has passed them, then sends the
 // operation's request once. The use case has checked the source and its access level already; the client checks the
-// level again (layer 3, ADR 007 section 3.2), and a read source never sends a write.
+// level again, and a read source never sends a write.
 func (g *Gateway) Write(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
 	row, ok := operations.Lookup(op)
 	if !ok {

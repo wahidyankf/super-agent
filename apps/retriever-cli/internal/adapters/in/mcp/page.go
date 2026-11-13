@@ -3,7 +3,7 @@ package mcp
 import "unicode/utf8"
 
 // pageCap is the most text one get_document answer holds, in bytes. It keeps the answer far below the limits of
-// Claude Code for a tool result (ADR 006, section 5).
+// Claude Code for a tool result.
 const pageCap = 32768
 
 // cutPage returns the page of markdown that starts at offset. A page holds at most pageCap bytes and never splits a

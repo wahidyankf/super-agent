@@ -8,7 +8,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// issueDocument runs GET /rest/api/3/issue/{key} for one issue key and returns the document (ADR 010 section 3). The key is
+// issueDocument runs GET /rest/api/3/issue/{key} for one issue key and returns the document. The key is
 // checked before the request is built. The reply must name the same key, and must hold an ID, the fields, and a summary. The
 // URL is built from the endpoint, never from the reply.
 func (g *Gateway) issueDocument(ctx context.Context, rawKey string) (domain.SourceDocument, error) {

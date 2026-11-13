@@ -254,8 +254,7 @@ func retryable(err error) bool {
 		errors.Is(err, domain.ErrUnreachable)
 }
 
-// withKind names the source kind of an error from one command, so its text and its JSON code carry that kind (ADR 009
-// section 3, ADR 010 section 7). An Outline error is returned as it is, so every Outline text and code stays the same. An
+// withKind names the source kind of an error from one command, so its text and its JSON code carry that kind. An Outline error is returned as it is, so every Outline text and code stays the same. An
 // error that already names a kind keeps it.
 func withKind(kind domain.SourceKind, err error) error {
 	if err == nil || kind == domain.KindOutline {

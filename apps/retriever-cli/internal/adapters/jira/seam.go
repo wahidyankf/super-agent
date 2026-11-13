@@ -66,6 +66,11 @@ type Seam struct {
 // The composition root calls it with the real environment, and only for tests. The name keeps the seam visible: it is a test
 // seam, not a production setting.
 func TestSeamFromEnv(getenv func(string) string) (Seam, error) {
+	return seamFromEnv(getenv, os.ReadFile)
+}
+
+// seamFromEnv is TestSeamFromEnv with the CA file read injected, so a unit test supplies the file's bytes or a fault.
+func seamFromEnv(getenv func(string) string, readFile func(string) ([]byte, error)) (Seam, error) {
 	base := getenv(BaseURLEnv)
 	caFile := getenv(CAFileEnv)
 	timeoutText := getenv(TimeoutEnv)
@@ -97,7 +102,7 @@ func TestSeamFromEnv(getenv func(string) string) (Seam, error) {
 		return Seam{}, err
 	}
 
-	pemBytes, readErr := os.ReadFile(caFile)
+	pemBytes, readErr := readFile(caFile)
 	if readErr != nil {
 		return Seam{}, fmt.Errorf("read %s: %w", CAFileEnv, readErr)
 	}

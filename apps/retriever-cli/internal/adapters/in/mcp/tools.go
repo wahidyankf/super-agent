@@ -18,8 +18,8 @@ import (
 type binder func(server *sdk.Server, meta *sdk.Tool, c caller)
 
 // tool is one hand-written row: its name, the lowest access level that may use it, what it does, whether it calls a
-// wiki, and how it is bound to its use case. Only a tool that is not an Outline operation is written here; every
-// operation of the catalog is generated (generated.go).
+// wiki, and how it is bound to its use case. Only a tool that is not an operation of the catalog is written here; every
+// operation of the catalog becomes a tool in operation_tools.go.
 type tool struct {
 	name        string
 	description string
@@ -79,8 +79,14 @@ func register(server *sdk.Server, svc sources.Service, log *slog.Logger, table [
 // RegisteredTools returns the names of every tool a server built over svc offers for the named resources (nil for every
 // resource), the hand-written ones first. A sync test compares it with the catalog and the command tree.
 func RegisteredTools(svc sources.Service, resources []string) ([]string, error) {
+	return registeredTools(svc, resources, handWrittenTools)
+}
+
+// registeredTools is RegisteredTools over the given hand-written table, so a test can offer a table that the production
+// one never is, such as one that names a tool twice.
+func registeredTools(svc sources.Service, resources []string, table []tool) ([]string, error) {
 	server := sdk.NewServer(&sdk.Implementation{Name: "retriever"}, nil)
-	names, err := register(server, svc, slog.New(slog.DiscardHandler), handWrittenTools)
+	names, err := register(server, svc, slog.New(slog.DiscardHandler), table)
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +208,14 @@ type sourceOut struct {
 	Tags   []string `json:"tags"`
 }
 
+// tagsOrEmpty returns the tags of a source, or an empty list when it has none, so the answer shows [] and never null.
+func tagsOrEmpty(tags []string) []string {
+	if tags == nil {
+		return []string{}
+	}
+	return tags
+}
+
 // listSources returns the catalog rows that match the filter. It reads the catalog only.
 func listSources(_ context.Context, svc sources.Service, in listSourcesIn) (listSourcesOut, string, error) {
 	filter, err := domain.NewSourceFilter(in.Kind, in.Tags...)
@@ -211,18 +225,11 @@ func listSources(_ context.Context, svc sources.Service, in listSourcesIn) (list
 	summaries := sources.ListSources(svc.Catalog, filter)
 	rows := make([]sourceOut, 0, len(summaries))
 	for _, r := range summaries {
-		tags := r.Tags
-		if tags == nil {
-			tags = []string{}
-		}
-		rows = append(rows, sourceOut{ID: r.ID, Kind: r.Kind, Access: r.Access, Tags: tags})
+		rows = append(rows, sourceOut{ID: r.ID, Kind: r.Kind, Access: r.Access, Tags: tagsOrEmpty(r.Tags)})
 	}
-	kept, truncated, err := fitRows(rows, func(kept []sourceOut, tr bool) any {
+	kept, truncated := fitPlainRows(rows, func(kept []sourceOut, tr bool) any {
 		return listSourcesOut{Sources: kept, Count: len(kept), Truncated: tr}
 	})
-	if err != nil {
-		return listSourcesOut{}, "", err
-	}
 	return listSourcesOut{Sources: kept, Count: len(kept), Truncated: truncated}, "", nil
 }
 

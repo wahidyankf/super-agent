@@ -9,8 +9,7 @@ type Source struct {
 	access     Access
 	endpoint   Endpoint
 	credential CredentialRef
-	// identity names the variable that holds the source's account e-mail address. The zero value means none (ADR 010 section
-	// 1.2). It is set by WithIdentity, so NewSource keeps its signature.
+	// identity names the variable that holds the source's account e-mail address. The zero value means none. It is set by WithIdentity, so NewSource keeps its signature.
 	identity IdentityRef
 }
 

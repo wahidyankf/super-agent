@@ -37,7 +37,7 @@ var (
 	ErrDuplicateSource = errors.New("duplicate")
 	// ErrCredentialHostMismatch reports one credential name used for two endpoint hosts.
 	ErrCredentialHostMismatch = errors.New("one credential serves one host only")
-	// ErrIdentityHostMismatch reports one identity name used for two endpoint hosts (ADR 010 section 1.1).
+	// ErrIdentityHostMismatch reports one identity name used for two endpoint hosts.
 	ErrIdentityHostMismatch = errors.New("one identity serves one host only")
 	// ErrIdentityRequired reports a source of a kind that needs an identity name and has none. IdentityRequiredError
 	// matches it and names the kind.
@@ -180,6 +180,6 @@ var (
 	// ErrReplyTooLarge reports a reply over the 10 MiB body cap. The caller can act on it: a smaller limit.
 	ErrReplyTooLarge = errors.New("the reply was larger than 10 MiB; use a smaller limit")
 	// ErrDocumentConflict reports a document write that the server refused because the document changed since the
-	// revision the caller named (HTTP 409, document_conflict; ADR 007 section 2, item 9).
+	// revision the caller named.
 	ErrDocumentConflict = errors.New("the document changed since the revision you read; read it again")
 )

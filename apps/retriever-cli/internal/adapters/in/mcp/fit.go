@@ -22,13 +22,24 @@ func fitRows[T any](rows []T, render func(kept []T, truncated bool) any) ([]T, b
 	return nil, len(rows) > 0, nil
 }
 
+// fitPlainRows is fitRows for rows that hold only strings and string lists, which always encode. An encoding failure
+// there is a broken invariant, so it fails loudly: the call panics, and the tool handler's guard turns the panic into the
+// unexpected error without its text.
+func fitPlainRows[T any](rows []T, render func(kept []T, truncated bool) any) ([]T, bool) {
+	kept, truncated, err := fitRows(rows, render)
+	if err != nil {
+		panic(err)
+	}
+	return kept, truncated
+}
+
 // fitsCap reports whether the JSON answer of v is within pageCap bytes.
 func fitsCap(v any) bool {
 	raw, err := json.Marshal(v)
 	return err == nil && len(raw) <= pageCap
 }
 
-// cutToCap returns one object cut to the cap (ADR 006, section 5). wrap builds the answer that the object sits in, so the
+// cutToCap returns one object cut to the cap. wrap builds the answer that the object sits in, so the
 // size is the size of the whole answer. Every string longer than the largest limit that still fits is cut to that limit,
 // on a character boundary, and the object keeps its shape. When no cut makes it fit, only its scalar fields are kept. The
 // caller sets the truncated flag.

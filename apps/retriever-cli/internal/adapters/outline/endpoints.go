@@ -69,8 +69,7 @@ type endpoint struct {
 	// after completes a Record that the reply left partial, such as a document whose text is read by its export.
 	after func(ctx context.Context, g *Gateway, a domain.Args, rec domain.Record) (domain.Record, error)
 	// current, when set, reads the object before its change and returns the arguments the request carries. The wiki replaces
-	// some stored values when the request leaves them out, so the read values fill the arguments the caller did not set (ADR
-	// 007 section 3.4; the inventory, Finding 9).
+	// some stored values when the request leaves them out, so the read values fill the arguments the caller did not set.
 	current func(ctx context.Context, g *Gateway, a domain.Args) (domain.Args, error)
 }
 

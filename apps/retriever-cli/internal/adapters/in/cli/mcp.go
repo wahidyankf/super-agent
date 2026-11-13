@@ -3,9 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
@@ -70,26 +67,26 @@ func runMCP(inv *invocation) error {
 		return exitStatus{code: mcpExitNotDone, err: errNotConfigured}
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(sigs)
+	ctx, stop := withSignals(rt.ctx)
+	defer stop()
 
 	done := make(chan error, 1)
 	go func() { done <- rt.mcp(ctx, ceiling, resources, rt.stdin, rt.stdout) }()
 
+	// A signal wins over the session's own end: the session may end as a result of the same cancellation, and the status
+	// must still name the signal. The session is not waited for, because a blocked read on standard input cannot hold it.
+	// Both arms reach the same signal check, so the order in which select picks them does not change the status.
+	var ended error
 	select {
-	case err := <-done:
-		if err != nil {
-			return exitStatus{code: mcpExitNotDone, err: err}
-		}
-		return exitStatus{code: mcpExitOK}
-	case sig := <-sigs:
-		cancel()
-		if sig == syscall.SIGTERM {
-			return exitStatus{code: mcpExitTerm}
-		}
-		return exitStatus{code: mcpExitInterrupt}
+	case ended = <-done:
+	case <-ctx.Done():
+		ended = fmt.Errorf("the session was cancelled: %w", context.Cause(ctx))
 	}
+	if code, ok := endedBySignal(ctx); ok {
+		return exitStatus{code: code}
+	}
+	if ended != nil {
+		return exitStatus{code: mcpExitNotDone, err: ended}
+	}
+	return exitStatus{code: mcpExitOK}
 }

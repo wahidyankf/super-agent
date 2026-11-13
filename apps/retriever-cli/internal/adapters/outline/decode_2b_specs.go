@@ -174,7 +174,7 @@ func oauthClientSpec(m map[string]any) (domain.Record, error) {
 }
 
 // creatorID returns the ID of the creator of an object. The flat createdById is read first, and when the reply holds only
-// the creator as the createdBy object (the nested-creator convention of ADR 007), the ID of that object is read.
+// the creator as the createdBy object, the ID of that object is read.
 func creatorID(m map[string]any) any {
 	if id := textOrNil(m, "createdById"); id != nil {
 		return id

@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// endpoint is one row of the closed table of Jira requests (ADR 010 section 5). A row names one HTTP method and one path
+// endpoint is one row of the closed table of Jira requests. A row names one HTTP method and one path
 // template. The request builder takes a row, not a free method and path, so a request outside the table cannot be built.
 type endpoint struct {
 	method string
@@ -20,7 +20,7 @@ type endpoint struct {
 // keyPlaceholder stands for one issue key in a path template. Only a key that passes ParseIssueKey is put in its place.
 const keyPlaceholder = "{key}"
 
-// The five rows. Each one is the request of one operation or of one gateway method (ADR 010 section 5).
+// The five rows. Each one is the request of one operation or of one gateway method.
 var (
 	epMyself        = endpoint{http.MethodGet, "/rest/api/3/myself"}
 	epProjectSearch = endpoint{http.MethodGet, "/rest/api/3/project/search"}

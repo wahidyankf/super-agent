@@ -14,7 +14,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
 )
 
-// Limits of the client (ADR 010 section 5). They are constants: no catalog field or reply changes them.
+// Limits of the client. They are constants: no catalog field or reply changes them.
 const (
 	defaultMinDelay = 100 * time.Millisecond
 	defaultTimeout  = 30 * time.Second
@@ -24,14 +24,14 @@ const (
 )
 
 // Secrets is what the gateway reads for each request: the API token and the account e-mail address that Atlassian Cloud
-// needs for HTTP Basic authorization (ADR 010 section 1). The gateway declares the pair it needs; the credentials adapter
+// needs for HTTP Basic authorization. The gateway declares the pair it needs; the credentials adapter
 // provides both.
 type Secrets interface {
 	ports.Credentials
 	ports.Identities
 }
 
-// Gateway reads one Jira Cloud site (ADR 010). It implements the generic gateway and the read port. It holds the secrets
+// Gateway reads one Jira Cloud site. It implements the generic gateway and the read port. It holds the secrets
 // port, never the token or the e-mail address, and it reads both for each request (auth.go).
 //
 // base is the connection base, which is the endpoint in production and a loopback stub in tests. host is the endpoint host.

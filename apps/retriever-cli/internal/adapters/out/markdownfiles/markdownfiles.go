@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,16 +26,38 @@ var (
 // fileMode is the permission of an exported file: readable by everyone, writable by its owner.
 const fileMode os.FileMode = 0o644
 
+// tempFile is the part of a temporary export file that a write uses. *os.File satisfies it. The interface lets a test
+// make one step fail, which a real folder cannot do on demand.
+type tempFile interface {
+	io.Writer
+	Name() string
+	Chmod(mode os.FileMode) error
+	Close() error
+}
+
+// createTempFunc makes the temporary file of one write inside dir. New uses os.CreateTemp.
+type createTempFunc func(dir, pattern string) (tempFile, error)
+
+// osCreateTemp is the real creator. It returns a nil interface, not a typed nil, when the file cannot be made.
+func osCreateTemp(dir, pattern string) (tempFile, error) {
+	f, err := os.CreateTemp(dir, pattern)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
 // Sink implements ports.ExportSink over one folder. Build it with New.
 type Sink struct {
-	dir string
+	dir    string
+	create createTempFunc
 }
 
 var _ ports.ExportSink = (*Sink)(nil)
 
 // New returns a sink that writes into dir. The folder is created on the first write.
 func New(dir string) *Sink {
-	return &Sink{dir: dir}
+	return &Sink{dir: dir, create: osCreateTemp}
 }
 
 // Write stores data as the file name inside the sink's folder and returns the path it wrote. The name is checked before
@@ -50,7 +73,7 @@ func (s *Sink) Write(_ context.Context, name string, data []byte) (string, error
 		return "", fmt.Errorf("creating the export folder: %w", err)
 	}
 	target := filepath.Join(s.dir, name)
-	if err := writeAtomic(s.dir, target, data); err != nil {
+	if err := writeAtomic(s.create, s.dir, target, data); err != nil {
 		return "", err
 	}
 	return target, nil
@@ -71,8 +94,8 @@ func checkName(name string) error {
 
 // writeAtomic writes data to a temporary file in dir and renames it to target. The temporary file is removed when a
 // step fails.
-func writeAtomic(dir, target string, data []byte) (err error) {
-	tmp, err := os.CreateTemp(dir, ".export-*.tmp")
+func writeAtomic(create createTempFunc, dir, target string, data []byte) (err error) {
+	tmp, err := create(dir, ".export-*.tmp")
 	if err != nil {
 		return fmt.Errorf("creating a temporary file: %w", err)
 	}
