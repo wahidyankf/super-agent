@@ -5,7 +5,6 @@ package envfile
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -135,16 +134,16 @@ func TestAPIKeyRefusesAnEnvFileThatIsAFolder(t *testing.T) {
 }
 
 func TestAPIKeyReportsAnUnreadableEnvFileWithoutItsContent(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("root reads files whatever their mode, so an unreadable file cannot be made")
-	}
+	// A path under a regular file fails to stat with ENOTDIR for every user, root included, so the read fails without a
+	// permission bit. The file holds the sentinel, which the error must not echo.
 	root := newRoot(t, outlineVariable+"="+sentinel+"\n")
-	if err := os.Chmod(filepath.Join(root, envFileName), 0o000); err != nil {
-		t.Fatalf("chmod unreadable: %v", err)
-	}
 	unsetEnv(t, outlineVariable)
+	blocked, err := New(filepath.Join(root, envFileName, "unreadable"))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
 
-	_, err := newCredentials(t, root).APIKey(outlineRef(t))
+	_, err = blocked.APIKey(outlineRef(t))
 	if err == nil || missingKey(err) {
 		t.Fatalf("APIKey error = %v, want a read failure", err)
 	}
