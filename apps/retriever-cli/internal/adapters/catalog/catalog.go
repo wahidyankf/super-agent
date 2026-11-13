@@ -27,26 +27,22 @@ const maxBytes = 64 << 10
 // schemaVersion is the only catalog version this code reads.
 const schemaVersion = 1
 
-// fileReader is the part of an open catalog file that a load uses. *os.File satisfies it.
-type fileReader interface {
-	io.Reader
-	Stat() (fs.FileInfo, error)
-	Close() error
-}
-
-// fileOps are the file calls a load makes. New uses the real files; a test replaces them to make one step fail.
-type fileOps struct {
-	lstat func(name string) (fs.FileInfo, error)
-	open  func(name string) (fileReader, error)
-	// same reports whether two descriptions are the same file. os.SameFile matches only real descriptions.
-	same func(a, b fs.FileInfo) bool
+// Files are the file calls a load makes. New uses the real files; a caller with no disk, such as a unit test, passes an
+// in-memory set, and a test may replace one call to make one step fail.
+type Files struct {
+	// Lstat describes the entry at a name without following a link.
+	Lstat func(name string) (fs.FileInfo, error)
+	// Open opens the file at a name for reading.
+	Open func(name string) (fs.File, error)
+	// SameFile reports whether two descriptions are the same file. os.SameFile matches only real descriptions.
+	SameFile func(a, b fs.FileInfo) bool
 }
 
 // realFiles is the set of calls New uses.
-var realFiles = fileOps{lstat: os.Lstat, open: openFile, same: os.SameFile}
+var realFiles = Files{Lstat: os.Lstat, Open: openFile, SameFile: os.SameFile}
 
 // openFile opens a catalog file. It returns a nil interface, not a typed nil, when the open fails.
-func openFile(name string) (fileReader, error) {
+func openFile(name string) (fs.File, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err
@@ -57,17 +53,23 @@ func openFile(name string) (fileReader, error) {
 // Loader implements ports.CatalogLoader over one catalog file.
 type Loader struct {
 	path  string
-	files fileOps
+	files Files
 }
 
 var _ ports.CatalogLoader = (*Loader)(nil)
 
-// New returns a loader for the catalog file at path. path must be absolute.
+// New returns a loader for the catalog file at path, read from the real files. path must be absolute.
 func New(path string) (*Loader, error) {
+	return NewWithFiles(path, realFiles)
+}
+
+// NewWithFiles returns a loader for the catalog file at path that makes its file calls through files. path must be
+// absolute. A unit test passes an in-memory set, so the load reads no disk.
+func NewWithFiles(path string, files Files) (*Loader, error) {
 	if !filepath.IsAbs(path) {
 		return nil, errors.New("the catalog path must be absolute")
 	}
-	return &Loader{path: path, files: realFiles}, nil
+	return &Loader{path: path, files: files}, nil
 }
 
 // Load reads the catalog file once. A missing file, a file that is not a regular file, a file that is too large, and a
@@ -85,7 +87,7 @@ func (l *Loader) Load() (domain.Catalog, error) {
 
 // read returns the file bytes. found is false when no file exists at the path, with no error.
 func (l *Loader) read() (data []byte, found bool, err error) {
-	info, err := l.files.lstat(l.path)
+	info, err := l.files.Lstat(l.path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, false, nil
 	}
@@ -95,7 +97,7 @@ func (l *Loader) read() (data []byte, found bool, err error) {
 	if !info.Mode().IsRegular() {
 		return nil, false, catalogErr("must be a regular file, not a symlink or a folder")
 	}
-	f, err := l.files.open(l.path)
+	f, err := l.files.Open(l.path)
 	if err != nil {
 		return nil, false, catalogErr("could not open the file")
 	}
@@ -106,7 +108,7 @@ func (l *Loader) read() (data []byte, found bool, err error) {
 	if err != nil {
 		return nil, false, catalogErr("could not check the file")
 	}
-	if !l.files.same(info, opened) {
+	if !l.files.SameFile(info, opened) {
 		return nil, false, catalogErr("changed while it was being opened")
 	}
 	data, err = io.ReadAll(io.LimitReader(f, maxBytes+1))

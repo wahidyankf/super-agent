@@ -69,7 +69,13 @@ type Seam struct {
 // The composition root calls it with the real environment, and only for tests. The
 // name keeps the seam visible: it is a test seam, not a production setting.
 func TestSeamFromEnv(getenv func(string) string) (Seam, error) {
-	return seamFromEnv(getenv, os.ReadFile)
+	return TestSeamFromEnvWithFiles(getenv, os.ReadFile)
+}
+
+// TestSeamFromEnvWithFiles is TestSeamFromEnv with the CA file read injected. A unit test passes the certificate bytes from
+// memory, so the seam reads no disk. Every rule is the same.
+func TestSeamFromEnvWithFiles(getenv func(string) string, readFile func(string) ([]byte, error)) (Seam, error) {
+	return seamFromEnv(getenv, readFile)
 }
 
 // seamFromEnv is TestSeamFromEnv with the CA file read injected, so a unit test supplies the file's bytes or a fault.

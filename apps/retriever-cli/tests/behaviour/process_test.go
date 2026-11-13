@@ -11,9 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
@@ -24,9 +22,6 @@ const servePrefix = "retriever serve listening on "
 
 // replyTimeout bounds every wait on a session, so a hung session fails the scenario instead of the whole run.
 const replyTimeout = 15 * time.Second
-
-// errNoBinary is the error of a process session at a level without a built binary.
-var errNoBinary = errors.New("the end-to-end level has no built retriever binary")
 
 // endState is how a session ends. Its status arrives once on exited, and is kept in code after that.
 type endState struct {
@@ -104,22 +99,6 @@ func readLines(r io.Reader, out chan<- string) {
 	}
 }
 
-// exitCodeOf returns the status of a finished process: its exit code, or 128+N when signal N ended it, as the shell
-// reports it.
-func exitCodeOf(err error) int {
-	if err == nil {
-		return 0
-	}
-	var exitErr *exec.ExitError
-	if !errors.As(err, &exitErr) {
-		return -1
-	}
-	if st, ok := exitErr.Sys().(syscall.WaitStatus); ok && st.Signaled() {
-		return 128 + int(st.Signal())
-	}
-	return exitErr.ExitCode()
-}
-
 // awaitServeLine reads the first line of a serve session and returns the address it names.
 func awaitServeLine(lines <-chan string) (string, error) {
 	select {
@@ -148,7 +127,7 @@ func (w *world) startServe() error {
 	if w.inProcess() {
 		s, err = w.serveInProcess()
 	} else {
-		s, err = w.serveProcess()
+		s, err = w.be.spawnServe(w, []string{"serve", "--port", "0"})
 	}
 	if err != nil {
 		return err
@@ -178,41 +157,6 @@ func (w *world) serveInProcess() (*serveSession, error) {
 	lines := make(chan string, 16)
 	go readLines(stdoutR, lines)
 	w.procKill = append(w.procKill, s.end.kill)
-	addr, err := awaitServeLine(lines)
-	if err != nil {
-		return nil, err
-	}
-	s.addr = addr
-	return s, nil
-}
-
-// serveProcess runs the built binary as retriever serve.
-func (w *world) serveProcess() (*serveSession, error) {
-	if w.binary == "" {
-		return nil, errNoBinary
-	}
-	cmd := exec.Command(w.binary, "serve", "--port", "0")
-	cmd.Dir = w.dir
-	cmd.Env = w.envList()
-	cmd.Stderr = io.Discard
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("start retriever serve: %w", err)
-	}
-	s := &serveSession{
-		signal: func(sig os.Signal) error { return cmd.Process.Signal(sig) },
-		end: endState{
-			exited: make(chan int, 1),
-			kill:   func() { _ = cmd.Process.Kill() },
-		},
-	}
-	go func() { s.end.exited <- exitCodeOf(cmd.Wait()) }()
-	w.procKill = append(w.procKill, s.end.kill)
-	lines := make(chan string, 16)
-	go readLines(stdout, lines)
 	addr, err := awaitServeLine(lines)
 	if err != nil {
 		return nil, err
@@ -279,7 +223,7 @@ func (w *world) startMCP(line string) error {
 	if w.inProcess() {
 		m, err = w.mcpInProcess(args)
 	} else {
-		m, err = w.mcpProcess(args)
+		m, err = w.be.spawnMCP(w, args)
 	}
 	if err != nil {
 		return err
@@ -323,44 +267,6 @@ func (w *world) mcpInProcess(args []string) (*mcpSession, error) {
 	}()
 	go readLines(outR, m.lines)
 	w.procKill = append(w.procKill, m.end.kill)
-	return m, nil
-}
-
-// mcpProcess runs the built binary as retriever mcp, with the scenario environment.
-func (w *world) mcpProcess(args []string) (*mcpSession, error) {
-	if w.binary == "" {
-		return nil, errNoBinary
-	}
-	cmd := exec.Command(w.binary, args...)
-	cmd.Dir = w.dir
-	cmd.Env = w.envList()
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, err
-	}
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	cmd.Stderr = io.Discard
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("start retriever mcp: %w", err)
-	}
-	m := &mcpSession{
-		stdin:  stdin,
-		lines:  make(chan string, 64),
-		signal: func(sig os.Signal) error { return cmd.Process.Signal(sig) },
-		end: endState{
-			exited: make(chan int, 1),
-			kill:   func() { _ = cmd.Process.Kill() },
-		},
-	}
-	go func() { m.end.exited <- exitCodeOf(cmd.Wait()) }()
-	go readLines(stdout, m.lines)
-	w.procKill = append(w.procKill, func() {
-		_ = m.stdin.Close()
-		m.end.kill()
-	})
 	return m, nil
 }
 

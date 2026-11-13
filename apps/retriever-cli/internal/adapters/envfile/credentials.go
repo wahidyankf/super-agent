@@ -9,7 +9,6 @@ package envfile
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -23,26 +22,22 @@ const (
 	envFileName = ".env.local"
 )
 
-// fileReader is the part of an open env file that a read uses. *os.File satisfies it.
-type fileReader interface {
-	io.Reader
-	Stat() (fs.FileInfo, error)
-	Close() error
-}
-
-// fileOps are the file calls a read makes. New uses the real files; a test replaces them to make one step fail.
-type fileOps struct {
-	lstat func(name string) (fs.FileInfo, error)
-	open  func(name string) (fileReader, error)
-	// same reports whether two descriptions are the same file. os.SameFile matches only real descriptions.
-	same func(a, b fs.FileInfo) bool
+// Files are the file calls a read makes. New uses the real files; a caller with no disk, such as a unit test, passes an
+// in-memory set, and a test may replace one call to make one step fail.
+type Files struct {
+	// Lstat describes the entry at a name without following a link.
+	Lstat func(name string) (fs.FileInfo, error)
+	// Open opens the file at a name for reading.
+	Open func(name string) (fs.File, error)
+	// SameFile reports whether two descriptions are the same file. os.SameFile matches only real descriptions.
+	SameFile func(a, b fs.FileInfo) bool
 }
 
 // realFiles is the set of file calls New uses.
-var realFiles = fileOps{lstat: os.Lstat, open: openFile, same: os.SameFile}
+var realFiles = Files{Lstat: os.Lstat, Open: openFile, SameFile: os.SameFile}
 
 // openFile opens an env file. It returns a nil interface, not a typed nil, when the open fails.
-func openFile(name string) (fileReader, error) {
+func openFile(name string) (fs.File, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err
@@ -54,7 +49,7 @@ func openFile(name string) (fileReader, error) {
 type Credentials struct {
 	envPath string
 	getenv  func(string) string
-	files   fileOps
+	files   Files
 }
 
 var (
@@ -63,12 +58,19 @@ var (
 )
 
 // New returns Credentials that read the local env file at envPath, which the configpaths rules choose. envPath must be
-// absolute. A missing file is not an error: the key is then reported as missing.
+// absolute. A missing file is not an error: the key is then reported as missing. The process environment and the real
+// files are read.
 func New(envPath string) (*Credentials, error) {
+	return NewWithFiles(envPath, os.Getenv, realFiles)
+}
+
+// NewWithFiles returns Credentials that read the environment through getenv and the env file at envPath through files.
+// envPath must be absolute. A unit test passes a fake lookup and an in-memory set, so no real variable or file is read.
+func NewWithFiles(envPath string, getenv func(string) string, files Files) (*Credentials, error) {
 	if !filepath.IsAbs(envPath) {
 		return nil, errors.New("the env file path must be absolute")
 	}
-	return &Credentials{envPath: envPath, getenv: os.Getenv, files: realFiles}, nil
+	return &Credentials{envPath: envPath, getenv: getenv, files: files}, nil
 }
 
 // APIKey returns the key that ref names. The process value wins over the file value. An empty value in either place counts
@@ -113,7 +115,7 @@ func (c *Credentials) value(variable string) (string, error) {
 // fileValue returns the value of variable in the local env file. It returns "" with no error when the file does not
 // exist. It refuses a path that is not a regular file, including a symlink, and a file that changes while it is opened.
 func (c *Credentials) fileValue(variable string) (value string, err error) {
-	info, err := c.files.lstat(c.envPath)
+	info, err := c.files.Lstat(c.envPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return "", nil
 	}
@@ -123,7 +125,7 @@ func (c *Credentials) fileValue(variable string) (value string, err error) {
 	if !info.Mode().IsRegular() {
 		return "", errors.New("local env file must be a regular file, not a symlink or a folder")
 	}
-	f, err := c.files.open(c.envPath)
+	f, err := c.files.Open(c.envPath)
 	if err != nil {
 		return "", fmt.Errorf("opening local env file: %w", err)
 	}
@@ -134,7 +136,7 @@ func (c *Credentials) fileValue(variable string) (value string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("checking local env file: %w", err)
 	}
-	if !c.files.same(info, opened) {
+	if !c.files.SameFile(info, opened) {
 		return "", errors.New("local env file changed while it was being opened")
 	}
 	return lookup(f, variable)

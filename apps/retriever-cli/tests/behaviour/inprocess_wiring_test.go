@@ -7,18 +7,14 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/catalog"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/configpaths"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/envfile"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 	mcpadapter "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/mcp"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/jira"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/kiwi"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/out/markdownfiles"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/outline"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/registry"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
@@ -26,10 +22,10 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
 )
 
-// The integration level mirrors the composition root in cmd/retriever (main.go and wiring.go) in process. The root is in
-// package main, so it cannot be imported, and these functions repeat its wiring step for step. One difference is
-// deliberate: the root reads secrets through cli.SecretEnv, which reads the process environment, while this level reads
-// the scenario environment. The end-to-end level runs the real root, so that path is covered there.
+// The in-process levels mirror the composition root in cmd/retriever (main.go and wiring.go). The root is in package
+// main, so it cannot be imported, and these functions repeat its wiring step for step. The files, the credentials, the
+// catalog, the export sink, and the working directory come from the level's backend: the real disk at the integration
+// level, memory at the unit level. The end-to-end level runs the real root as the built binary.
 
 // seamConfig is the loopback test seam of one source kind, as the composition root holds it.
 type seamConfig struct {
@@ -45,28 +41,24 @@ type seamSet map[domain.SourceKind]seamConfig
 // seamKinds lists the kinds that have a seam, in the order their variables are read.
 var seamKinds = []domain.SourceKind{domain.KindOutline, domain.KindKiwi, domain.KindJira}
 
-// exportSink returns the sink that writes the exported Markdown files into the folder the --out flag names.
-func exportSink(dir string) ports.ExportSink {
-	return markdownfiles.New(dir)
-}
-
 // readSeam reads the seam of one kind through getenv. An invalid seam is an error.
-func readSeam(kind domain.SourceKind, getenv func(string) string) (seamConfig, error) {
+func readSeam(kind domain.SourceKind, getenv func(string) string,
+	readFile func(string) ([]byte, error)) (seamConfig, error) {
 	switch kind {
 	case domain.KindOutline:
-		seam, err := outline.TestSeamFromEnv(getenv)
+		seam, err := outline.TestSeamFromEnvWithFiles(getenv, readFile)
 		if err != nil {
 			return seamConfig{}, err
 		}
 		return seamConfig{base: seam.BaseURL, client: seam.Client, on: seam.Enabled, timeout: seam.Timeout}, nil
 	case domain.KindKiwi:
-		seam, err := kiwi.TestSeamFromEnv(getenv)
+		seam, err := kiwi.TestSeamFromEnvWithFiles(getenv, readFile)
 		if err != nil {
 			return seamConfig{}, err
 		}
 		return seamConfig{base: seam.BaseURL, client: seam.Client, on: seam.Enabled, timeout: seam.Timeout}, nil
 	case domain.KindJira:
-		seam, err := jira.TestSeamFromEnv(getenv)
+		seam, err := jira.TestSeamFromEnvWithFiles(getenv, readFile)
 		if err != nil {
 			return seamConfig{}, err
 		}
@@ -76,10 +68,10 @@ func readSeam(kind domain.SourceKind, getenv func(string) string) (seamConfig, e
 }
 
 // readSeams reads the seam of every kind. One bad seam fails the whole set, as it stops every command at startup.
-func readSeams(getenv func(string) string) (seamSet, error) {
+func readSeams(getenv func(string) string, readFile func(string) ([]byte, error)) (seamSet, error) {
 	set := seamSet{}
 	for _, kind := range seamKinds {
-		seam, err := readSeam(kind, getenv)
+		seam, err := readSeam(kind, getenv, readFile)
 		if err != nil {
 			return nil, err
 		}
@@ -110,19 +102,15 @@ func checkSeams(seams seamSet) error {
 
 // wireSources loads the catalog, builds the gateway registry, and returns the source service, as wireSources does in
 // the composition root. A catalog error is returned, so only the source commands report it.
-func wireSources(paths configpaths.Paths, seams seamSet) (sources.Service, error) {
+func (w *world) wireSources(paths configpaths.Paths, seams seamSet) (sources.Service, error) {
 	if err := checkSeams(seams); err != nil {
 		return sources.Service{}, err
 	}
-	creds, err := envfile.New(paths.EnvFile)
+	creds, err := w.be.credentials(paths.EnvFile, w.getenv)
 	if err != nil {
 		return sources.Service{}, err
 	}
-	loader, err := catalog.New(paths.Catalog)
-	if err != nil {
-		return sources.Service{}, err
-	}
-	cat, err := loader.Load()
+	cat, err := w.be.loadCatalog(paths.Catalog)
 	if err != nil {
 		return sources.Service{}, err
 	}
@@ -197,13 +185,13 @@ func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) erro
 		CatalogFlag: g.Catalog,
 		EnvFileFlag: g.EnvFile,
 		Getenv:      w.getenv,
-		Getwd:       os.Getwd,
-		Exists:      regularFile,
+		Getwd:       w.be.getwd,
+		Exists:      w.be.regularFile,
 	})
 	if err != nil {
 		return err
 	}
-	svc, err := wireSources(paths, seams)
+	svc, err := w.wireSources(paths, seams)
 	if err != nil {
 		return err
 	}
@@ -230,10 +218,11 @@ func mcpFunc(svc sources.Service) cli.MCPFunc {
 }
 
 // protocolDeps returns the dependencies of a command that runs for a while, such as serve or mcp, in process. The
-// process environment becomes the scenario environment, the given streams are attached, and the run context is the one
-// the caller cancels to send a signal. A setup error is kept in SetupErr, as the composition root keeps it.
+// backend makes the process environment the scenario environment where the level uses it, the given streams are
+// attached, and the run context is the one the caller cancels to send a signal. A setup error is kept in SetupErr, as
+// the composition root keeps it.
 func (w *world) protocolDeps(ctx context.Context, stdin io.Reader, stdout io.Writer, argv []string) cli.Deps {
-	w.adoptProcessEnv()
+	w.be.adoptEnv(w.env)
 	deps := cli.Deps{
 		Ports:   ports.Ports{},
 		Stdin:   stdin,
@@ -241,10 +230,10 @@ func (w *world) protocolDeps(ctx context.Context, stdin io.Reader, stdout io.Wri
 		Stderr:  io.Discard,
 		Getenv:  w.getenv,
 		Now:     time.Now,
-		Sink:    exportSink,
+		Sink:    w.be.sink,
 		Context: ctx,
 	}
-	seams, err := readSeams(w.getenv)
+	seams, err := readSeams(w.getenv, w.be.readFile)
 	if err != nil {
 		deps.SetupErr = err
 		return deps
@@ -258,12 +247,12 @@ func (w *world) protocolDeps(ctx context.Context, stdin io.Reader, stdout io.Wri
 // startup, as it does in the composition root, and prints the same message.
 func (w *world) runIntegration(argv []string) error {
 	var out, errb bytes.Buffer
-	w.adoptProcessEnv()
+	w.be.adoptEnv(w.env)
 	deps := w.deps(&out, &errb)
 	if w.stdoutClosed {
 		deps.Stdout = brokenPipe{}
 	}
-	seams, err := readSeams(w.getenv)
+	seams, err := readSeams(w.getenv, w.be.readFile)
 	if err != nil {
 		fmt.Fprintf(&errb, "retriever: %v\n", err)
 		w.record(cli.StartupStatus(argv), &out, &errb)

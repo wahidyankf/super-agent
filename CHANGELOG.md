@@ -11,12 +11,19 @@ upgrade.
 
 ### Changed
 
-- `retriever` unit tests no longer read or write real files, read or change the process environment, or start child
-  processes. The tests that need those move to files with the `integration` build tag. The unit tests reach the file
-  system and the environment through fakes at the seams of the catalog, the credentials, the Markdown sink, and the
-  composition root. The unit coverage floor stays at 99 percent, and no exclusion is added. The behaviour harness in
-  `tests/behaviour` still uses the real environment, and its redesign on fakes, with the wording of the environment
-  guard's comment, is a later change.
+- `retriever` unit tests no longer read or write real files, read or change the process environment, change the working
+  directory, or start child processes. The tests that need those move to files with the `integration` build tag. The
+  unit tests reach the file system and the environment through fakes at the seams of the catalog, the credentials, the
+  Markdown sink, the source seams, and the composition root. The behaviour harness runs its 156 `@unit` scenarios in
+  memory, through an in-memory file tree and an in-memory export sink. The integration and end-to-end levels keep the
+  real disk, the real environment at the integration level, and the built binary at the end-to-end level. The synthetic
+  Outline replies move to `tests/support/synthetic`.
+- The architecture guard that keeps untagged tests hermetic has no exemption. It reads the source of every untagged test
+  file, and it flags a reference to the disk, the environment, the working directory, a child process, or a pipe, even
+  when the call sits in a helper. Its negative tests run in `test:unit`.
+- The unit coverage floor stays at 99 percent, and no exclusion is added. The real-disk wrappers of the catalog, the
+  credentials, the Markdown sink, and the composition root now run only at the integration and end-to-end levels, so the
+  unit figure moves to 99.03 percent.
 
 ### Fixed
 

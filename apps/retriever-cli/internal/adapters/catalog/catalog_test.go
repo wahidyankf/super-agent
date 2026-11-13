@@ -25,19 +25,19 @@ sources:
 
 // contentFiles serves one catalog file with the given content through the file calls a load makes. An empty content
 // leaves the file absent. The descriptions are fakes, so a unit test reads no real file.
-func contentFiles(content string) fileOps {
+func contentFiles(content string) Files {
 	info := fakeStatInfo{mode: 0o600}
-	return fileOps{
-		lstat: func(string) (fs.FileInfo, error) {
+	return Files{
+		Lstat: func(string) (fs.FileInfo, error) {
 			if content == "" {
 				return nil, fs.ErrNotExist
 			}
 			return info, nil
 		},
-		open: func(string) (fileReader, error) {
+		Open: func(string) (fs.File, error) {
 			return &fakeOpened{r: strings.NewReader(content), info: info}, nil
 		},
-		same: sameFake,
+		SameFile: sameFake,
 	}
 }
 

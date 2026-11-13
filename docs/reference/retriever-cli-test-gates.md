@@ -63,23 +63,39 @@ A package with no statements, such as the interface-only `internal/core/ports`, 
 
 ### What unit tests may do
 
-Unit tests run in process, beside their package, and they do not reach outside the process. An untagged unit test
-does not read or write a file, does not read or change the process environment, and does not start a child process.
-It may open a loopback `httptest` server. The registry tests have no build tag, so they run at the unit level.
+Unit tests run in process, beside their package, and they do not reach outside the process. An untagged unit test does
+not read or write a file, does not read or change the process environment, does not change the working directory, does
+not start a child process, and does not open a pipe. It may open a loopback `httptest` server. The registry tests have
+no build tag, so they run at the unit level.
 
 The file system, the environment, and the child processes reach the code through seams: a field or a parameter that
-holds a function or an interface. The production code takes the seam, and a unit test supplies a fake. Examples are
-the `fileOps` of the catalog and the credentials, the `folderOps` of the Markdown sink, and the `getenv` parameter of
-`run` in `cmd/retriever`. A test that needs the real file system, the real environment, or a real child process
-carries the `integration` build tag, in a file named `*_integration_test.go`. Those tests run in `test:integration`
-and `test:conformance`.
+holds a function or an interface. The production code takes the seam, and a unit test supplies a fake. Examples are the
+`Files` of the catalog and the credentials, the `folderOps` of the Markdown sink, the `getenv` parameter of `run` in
+`cmd/retriever`, and the `readFile` parameter of each source's `TestSeamFromEnvWithFiles`. A test that needs the real file
+system, the real environment, or a real child process carries the `integration` build tag, in a file named
+`*_integration_test.go`, or the `integration || e2e` tag for a shared file. Those tests run in `test:integration` and
+`test:conformance`.
 
-The architecture test `TestUntaggedTestsNeverChangeTheEnvironment` fails when an untagged test calls `t.Setenv`,
-`os.Setenv`, `os.Unsetenv`, or `os.Clearenv`. It exempts one file, `tests/behaviour/world_test.go`. The behaviour
-harness is not yet on fakes. Its untagged unit binding, `TestUnitBehaviours`, runs on `world_test.go` and
-`process_test.go`, which can set the environment and start the built binary. Those two files are the known exception
-to the rule above, until the harness moves to fakes in a later change. The architecture check reads the direct calls
-of each file. It does not check file access.
+The behaviour harness follows the same rule. Its unit level, `TestUnitBehaviours`, runs the 156 `@unit` scenarios in
+memory. Each scenario keeps its files in an in-memory tree (`tests/support/memfs`), reads the working directory and the
+environment from the scenario, writes exports to an in-memory sink, and serves the stub certificates from memory. The
+synthetic Outline replies are embedded from `tests/support/synthetic`. The integration level, `TestIntegrationBehaviours`,
+and the end-to-end level run the same step definitions on the real disk: with the real environment at the integration
+level, and as the built binary at the end-to-end level. The disk backend, and the code that starts a process, sit in
+`tests/behaviour/backend_disk_test.go`, which carries the `integration || e2e` tag.
+
+The architecture guard reads the source of every untagged test file, so it covers the helpers of a package too. It flags
+each use of `t.TempDir` and `t.Setenv`; each `os` call that reaches the file system, the environment, the working
+directory, or a pipe, such as `os.Setenv`, `os.Clearenv`, `os.Chdir`, `os.Getenv`, `os.WriteFile`, and `os.Pipe`; each
+member of `os/exec`; and the `filepath.Walk`, `WalkDir`, `Glob`, `Abs`, and `EvalSymlinks` calls. It flags a reference as
+well as a call, so a function value stored in a field is caught. Pure uses, such as `filepath.Join`, `os.SameFile`,
+`os.ErrNotExist`, and the `embed` package, are allowed. The guard has no exemption. Its rule is in
+`tests/architecture/hermetic_test.go`, and its repository walk, `TestUntaggedTestsStayHermetic`, is in
+`hermetic_integration_test.go`, so it runs in `test:integration` and `test:conformance`. The negative tests of the rule
+are untagged, so `test:unit` runs them.
+
+The rule reads the code of each test file. It does not follow a call into production code. A production function that
+touches the disk stays outside the rule, and a test reaches it only through the seams above.
 
 This page records no coverage figure. A figure comes from a run of `npx nx run retriever-cli:test:coverage` on a given
 tree, and it belongs with the change that produced it.

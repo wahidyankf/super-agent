@@ -2,13 +2,11 @@ package behaviour
 
 import (
 	"crypto/sha256"
-	"embed"
 	"encoding/hex"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -18,6 +16,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/jirastub"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/kiwistub"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/synthetic"
 )
 
 // Names of the environment variables that hold the synthetic keys the stubs check.
@@ -57,12 +56,6 @@ func (s *stubSet) close() {
 	}
 }
 
-// syntheticReplies holds one synthetic Outline reply per write and admin method, named by the method. The Outline stub
-// embeds only its own small replay set, so this package loads the rest and hands each to the stub as a fixed reply.
-//
-//go:embed synthetic/*.json
-var syntheticReplies embed.FS
-
 // datasetMethods are the methods the Outline stub answers from its dataset. A synthetic reply never replaces them.
 var datasetMethods = map[string]bool{
 	"auth.info":             true,
@@ -90,7 +83,7 @@ func (w *world) outlineStub() *outlinestub.Stub {
 // loadSyntheticReplies gives the stub one fixed reply for each synthetic method that the stub does not answer from its
 // dataset.
 func loadSyntheticReplies(s *outlinestub.Stub) error {
-	entries, err := fs.ReadDir(syntheticReplies, "synthetic")
+	entries, err := fs.ReadDir(synthetic.Replies(), ".")
 	if err != nil {
 		return err
 	}
@@ -99,7 +92,7 @@ func loadSyntheticReplies(s *outlinestub.Stub) error {
 		if datasetMethods[method] {
 			continue
 		}
-		raw, err := syntheticReplies.ReadFile("synthetic/" + e.Name())
+		raw, err := fs.ReadFile(synthetic.Replies(), e.Name())
 		if err != nil {
 			return err
 		}
@@ -172,18 +165,21 @@ func (w *world) startNamedStubs(texts []string) error {
 // them.
 func (w *world) ensureStubs() error {
 	if w.stubs.outline != nil && !w.stubs.seamed[outlineKind] {
-		path, err := w.stubs.outline.WriteCAFile(w.dir)
+		pem, err := w.stubs.outline.CAPEM()
+		if err != nil {
+			return fmt.Errorf("read the Outline certificate: %w", err)
+		}
+		path, err := w.writeInput("outline-stub-ca.pem", string(pem))
 		if err != nil {
 			return fmt.Errorf("write the Outline certificate: %w", err)
 		}
-		w.inputs[filepath.Base(path)] = true
 		w.env[outline.BaseURLEnv] = w.stubs.outline.URL()
 		w.env[outline.CAFileEnv] = path
 		w.stubs.seamed[outlineKind] = true
 	}
 	if w.stubs.kiwi != nil && !w.stubs.seamed[kiwiKind] {
-		path := w.markInput("kiwi-ca.pem")
-		if err := w.stubs.kiwi.WriteCAFile(path); err != nil {
+		path, err := w.writeInput("kiwi-ca.pem", string(w.stubs.kiwi.CAPEM()))
+		if err != nil {
 			return fmt.Errorf("write the Kiwi certificate: %w", err)
 		}
 		w.env[kiwi.BaseURLEnv] = w.stubs.kiwi.URL()
@@ -246,13 +242,6 @@ func sha256Hex(text string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// markInput records a file inside the scenario directory as an input, and returns its absolute path. The secret scan
-// skips inputs, because the scenario wrote them, not the command.
-func (w *world) markInput(name string) string {
-	w.inputs[filepath.ToSlash(name)] = true
-	return filepath.Join(w.dir, filepath.FromSlash(name))
-}
-
 // requireInside returns an error when the path is not inside the scenario directory.
 func (w *world) requireInside(path string) error {
 	rel, err := filepath.Rel(w.dir, path)
@@ -264,11 +253,11 @@ func (w *world) requireInside(path string) error {
 
 // ensureOutputFolder creates an output folder inside the scenario directory, for a step that prepares one.
 func (w *world) ensureOutputFolder(folder string) (string, error) {
-	path := filepath.Join(w.dir, filepath.FromSlash(folder))
+	path := w.absPath(folder)
 	if err := w.requireInside(path); err != nil {
 		return "", err
 	}
-	if err := os.MkdirAll(path, 0o755); err != nil {
+	if err := w.be.mkdir(path); err != nil {
 		return "", err
 	}
 	return path, nil
