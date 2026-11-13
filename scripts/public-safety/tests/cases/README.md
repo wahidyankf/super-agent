@@ -40,3 +40,5 @@ shell dialect with a directive rather than a shebang. The cases run in the order
   blocks and cleans up.
 - [`190-a-scanner-cache-never-exposes-a-scanner-without-its-stamp.sh`](./190-a-scanner-cache-never-exposes-a-scanner-without-its-stamp.sh):
   a scanner cache publishes a scanner only with its stamp, and refuses an entry with no matching stamp.
+- [`200-go-package-qualified-identifiers.sh`](./200-go-package-qualified-identifiers.sh): a Go package-qualified
+  identifier passes; host forms in every other context still block.

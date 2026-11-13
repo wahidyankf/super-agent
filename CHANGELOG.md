@@ -9,6 +9,13 @@ upgrade.
 
 ## Unreleased
 
+### Fixed
+
+- The public-safety scanner no longer reports a Go package-qualified identifier as an internal hostname. The release
+  binaries name the standard library's `crypto/x509` type `local` in that form, so the `internal-hostname` rule blocked
+  every binary although it names no host. The rule now skips only that shape. URLs, absolute paths, dotted or hyphenated
+  paths, and bare host names still block. The release procedure now screens the unpacked binaries.
+
 ## v0.1.0
 
 Alpha pre-release. Expect breaking changes: commands, flags, file formats, connector specs, JSON output, and APIs can

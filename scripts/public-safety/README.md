@@ -96,6 +96,17 @@ prefix length — is left alone, because a range reads the same on every network
 URL path, and a prefix with host bits set still match. An underscore continues a token on both sides of a hostname, so a
 dotted API member that starts with a suffix word is code, not a host.
 
+The hostname shapes skip one form: a Go package-qualified identifier. The standard library's types appear in a binary
+under their import path, so a struct field can read as a lowercase import path, a slash, and an identifier that is a
+suffix word. The known case is `crypto/x509.local`, the unexported type of the standard `crypto/x509` package, which
+every release binary carries. The skipped shape is an import path of lowercase letters, digits, and underscores, with no
+dot, hyphen, or uppercase letter, then a slash and the identifier. It is skipped only when no URL or path context
+surrounds it. A double slash (a URL authority or path) still matches, and so does a slash that starts a line or follows
+any character other than a letter, digit, or slash (an absolute path). A path with a dotted, hyphenated, or uppercase
+segment still matches, and so does a domain-first import path, because its first segment reads as a host. Every suffix
+word takes the same rule, so `local`, `internal`, `lan`, and `intranet` pass only as identifiers in this form. A bare
+suffix word, or a host with a port, a user name, or a URL around it, still matches.
+
 A workspace that must also screen for named private identifiers keeps that list outside every public checkout and passes
 it with `--terms`. That second layer is the owner's, not this repository's.
 
@@ -158,6 +169,7 @@ bash scripts/public-safety/tests/run.sh 080        # one case by name fragment
 | `170-range-history`                                             | a range is screened per commit; added-then-deleted values and halves block     |
 | `180-canary-fails-closed`                                       | missing detection, disclosure, or scanner failure blocks and cleans up         |
 | `190-a-scanner-cache-never-exposes-a-scanner-without-its-stamp` | a scanner cache publishes a scanner only with its stamp                        |
+| `200-go-package-qualified-identifiers`                          | a Go package-qualified identifier passes; host forms still block               |
 
 Every probe value is assembled at run time from fragments, so no string this repository's own gate would flag exists in
 any test file — a test that hardcoded one would block the commit that added it. `assert_absent` reports only a length on
