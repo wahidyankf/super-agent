@@ -52,11 +52,17 @@
     "test:unit": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "if grep -rn --include='*_test.go' -E '\\.Skip\\(' internal cmd tests; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; go test -count=1 -cover ./...",
+        "command": "if grep -rn --include='*_test.go' -E '\\.Skip\\(' internal cmd tests; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; ./scripts/coverage-gate.sh",
         "cwd": "apps/retriever-cli"
       },
       "cache": true,
-      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+      "inputs": [
+        "{projectRoot}/**/*.go",
+        "{projectRoot}/scripts/coverage-gate.sh",
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum",
+        "{workspaceRoot}/specs/behaviours/**/*.feature"
+      ]
     },
     "test:integration": {
       "executor": "nx:run-commands",
@@ -110,7 +116,7 @@
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go test -count=1 -cover ./... && go test -count=1 -tags integration -cover ./... && ./scripts/coverage-gate.sh",
+        "command": "./scripts/coverage-gate.sh",
         "cwd": "apps/retriever-cli"
       },
       "cache": false
