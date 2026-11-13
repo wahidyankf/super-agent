@@ -29,7 +29,8 @@ retriever --version
 - `-o, --output <format>`: `text` (default) or `json`. JSON prints one document with a `schemaVersion` field. The
   option is accepted before or after the command name.
 - `--color <when>`: `auto` (default), `always`, or `never`. Output never contains escape sequences, so the value changes
-  nothing today.
+  nothing today. No colour is emitted yet, so the `NO_COLOR` environment variable has no effect: a test checks that its
+  set and empty values leave the output unchanged.
 - `--catalog <path>`: the sources catalog file. See [configuration](./retriever-cli-configuration.md).
 - `--env-file <path>`: the local env file that holds source keys. See [configuration](./retriever-cli-configuration.md).
 - `-V, --version`: print `retriever <version>` and the alpha notice, then exit `0`.
