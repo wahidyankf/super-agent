@@ -24,3 +24,5 @@ upgrade.
   maps each behaviour of the older Butler tool to its `retriever` counterpart.
   - `serve` and `mcp` now share one signal rule: `SIGINT` exits `130` and `SIGTERM` exits `143`, and a closed standard
     output pipe ends the process by `SIGPIPE` (shell status `141`).
+  - The migration table now lists four deliberate departures from Butler: refusals before reads, the missing-catalog
+    code, the HTTPS refusal at load, and the unknown outcome of a Kiwi write. `retriever` supports macOS and Linux only.

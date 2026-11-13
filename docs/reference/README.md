@@ -27,6 +27,8 @@ walkthrough, start with the [how-to guides](../how-to/).
 - [Sources catalog format](./retriever-cli-catalog-format.md) gives the fields and rules of the sources file.
 - [Migrating from Butler to retriever](./retriever-cli-migration-from-butler.md) maps each Butler behaviour to its
   retriever counterpart.
+- [retriever scenario gap](./retriever-cli-scenario-gap.md) maps each Butler feature file to its retriever scenarios,
+  and lists the gaps to close before v0.1.0.
 - [retriever test gates](./retriever-cli-test-gates.md) lists the test targets, what the coverage gate measures and
   excludes, and what the binding check reports.
 

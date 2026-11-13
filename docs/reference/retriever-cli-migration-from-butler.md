@@ -57,6 +57,21 @@ Each entry gives the Butler behaviour first, then the retriever behaviour.
   that prints the name, `0.1.0`, and the alpha notice, and a panic that exits `2` as `retriever.panic` with no stack
   trace.
 
+## Departures from Butler
+
+These are the places where retriever behaves differently on purpose, beyond a rename.
+
+- **Refusals before reads.** Butler reads the target of a critical change before it checks `--confirm`. retriever
+  refuses a missing or wrong `--confirm` before any read when the canonical value is already known without a read. That
+  refusal sends no request. A change whose value must be read still reads it first, then compares the two.
+- **Missing catalog.** There is no built-in source. A missing catalog exits `2` with `retriever.<area>.catalog_missing`.
+  For `sources list` the code is `retriever.sources.catalog_missing`.
+- **Plain HTTP refused at load.** An endpoint that is not HTTPS is refused when the catalog loads, before any request.
+  The failure code is `retriever.<kind>.https_required`, for example `retriever.outline.https_required`.
+- **Unknown outcome of a Kiwi write.** A write that Kiwi answers with a server error is sent once and never retried. The
+  change may already have applied, so retriever reports `retriever.kiwi.write_outcome_unknown` with `retryable` set to
+  `false`.
+
 ## What to change in a caller
 
 1. Rename the binary and the environment variables. `BUTLER_` becomes `RETRIEVER_`.

@@ -7,8 +7,8 @@ the `list_sources` tool is always offered.
 Source files:
 
 - `mcp.go` runs one protocol session over standard input and standard output.
-- `generated.go` holds the generated protocol types. Do not edit it by hand.
-- `tools.go` defines the tools and their input schemas.
+- `operation_tools.go` builds one tool for each operation row of the catalog, with its input schema and its handler.
+- `tools.go` defines the hand-written tools, such as `list_sources`, and binds each one to its use case.
 - `fit.go` fits a result to the size that a client accepts.
 - `page.go` pages a list result.
 
