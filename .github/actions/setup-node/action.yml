@@ -1,0 +1,21 @@
+name: "Setup Node.js"
+description: "Install the Node.js and npm versions pinned in package.json through Volta, then install locked dependencies"
+inputs:
+  run-npm-ci:
+    description: "Whether to run npm ci. Set false for jobs whose gates resolve no node-managed tool."
+    required: false
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    # Volta reads the node and npm pins under the volta key of package.json, so the toolchain CI runs is the
+    # toolchain a developer runs. The action is pinned by commit, with its release tag as a comment.
+    - name: Install Volta
+      uses: volta-cli/action@615a78f6c83e116339c53b94f3f82b4d6c0b7d18 # v5.0.0
+
+    # --ignore-scripts skips the husky prepare script, which only installs local Git hooks. CI runs the gates
+    # directly and never needs those hooks.
+    - name: Install locked dependencies
+      if: inputs.run-npm-ci == 'true'
+      shell: bash
+      run: npm ci --ignore-scripts
