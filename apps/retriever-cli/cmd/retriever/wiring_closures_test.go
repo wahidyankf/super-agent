@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/catalog"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/configpaths"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/outline"
@@ -13,14 +12,9 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
-
-// exampleCatalog is the example catalog the repository ships. Its path is absolute, so a test reads the same file the
-// composition root reads with --catalog.
-const exampleCatalog = "../../examples/sources.example.yml"
 
 // seamFixture is a loopback HTTPS server and the PEM file that trusts it. A test turns a seam on with these two values.
 type seamFixture struct {
@@ -31,30 +25,6 @@ type seamFixture struct {
 // mapEnv reads the variables of vars, and every other variable as unset.
 func mapEnv(vars map[string]string) func(string) string {
 	return func(name string) string { return vars[name] }
-}
-
-// absPath returns the absolute path of a repository file, so a test can pass it to the path rules.
-func absPath(t *testing.T, rel string) string {
-	t.Helper()
-	abs, err := filepath.Abs(rel)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return abs
-}
-
-// exampleSources loads the example catalog and returns its sources.
-func exampleSources(t *testing.T) []domain.Source {
-	t.Helper()
-	loader, err := catalog.New(absPath(t, exampleCatalog))
-	if err != nil {
-		t.Fatal(err)
-	}
-	cat, err := loader.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return cat.All()
 }
 
 // TestReadSeamRefusesAKindWithNoSeam checks that a kind with no seam, here the zero kind, is an error and never a silent
