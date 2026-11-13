@@ -19,14 +19,14 @@ Feature: Outline reads
       | d0c2d0c2-0000-4000-8000-000000000002 | 1c1c1c1c-0000-4000-8000-000000000001         | d0c1d0c1-0000-4000-8000-000000000001  | Child   | Synthetic body two  |
     And the stub Outline server holds the signed-in user "Synthetic Author" of team "Synthetic Team"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Getting a document prints its Markdown body in text mode
     When I run "retriever outline documents get d0c1d0c1-0000-4000-8000-000000000001"
     Then the exit status is 0
     And the standard output contains "Synthetic body one"
     And the standard error is empty
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Getting a document in JSON mode holds its text in the markdown field
     When I run "retriever --output json outline documents get d0c1d0c1-0000-4000-8000-000000000001"
     Then the exit status is 0
@@ -36,21 +36,21 @@ Feature: Outline reads
     And the JSON field "markdown" of the standard output is "Synthetic body one"
     And the JSON field "collectionId" of the standard output is "1c1c1c1c-0000-4000-8000-000000000001"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Getting a document that the wiki does not hold is a not-found failure
     When I run "retriever --output json outline documents get d0c9d0c9-0000-4000-8000-000000000009"
     Then the exit status is 2
     And the standard output is empty
     And the standard error is a JSON error with the code "retriever.outline.document_not_found" and retryable false
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A document ID with characters outside the allowed set is refused before any request
     When I run "retriever --output json outline documents get bad/id"
     Then the exit status is 2
     And the standard error is a JSON error with the code "retriever.outline.invalid_document_id" and retryable false
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A document list prints the count and the documents under the documents key
     When I run "retriever --output json outline documents list"
     Then the exit status is 0
@@ -58,42 +58,42 @@ Feature: Outline reads
     And the JSON field "documents.0.id" of the standard output is "d0c1d0c1-0000-4000-8000-000000000001"
     And the JSON field "documents.1.id" of the standard output is "d0c2d0c2-0000-4000-8000-000000000002"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A full page names the next offset and reports that more documents follow
     When I run "retriever --output json outline documents list --limit 1"
     Then the exit status is 0
     And the JSON field "has_more" of the standard output is true
     And the JSON field "next_offset" of the standard output is 1
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A short page reports no more documents and names no next offset
     When I run "retriever --output json outline documents list --limit 5"
     Then the exit status is 0
     And the JSON field "has_more" of the standard output is false
     And the JSON field "next_offset" of the standard output is absent
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A search that matches prints each match with its ID and title
     When I run "retriever --output json outline documents search Synthetic"
     Then the exit status is 0
     And the JSON field "count" of the standard output is 2
     And the JSON field "documents.0.id" of the standard output is "d0c1d0c1-0000-4000-8000-000000000001"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A search that matches nothing exits 1 and prints a count of zero
     When I run "retriever --output json outline documents search nothing-matches-this"
     Then the exit status is 1
     And the JSON field "count" of the standard output is 0
     And the standard error is empty
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A search with a page size outside 1 to 100 is a usage error and sends no request
     When I run "retriever --output json outline documents search Synthetic --limit 0"
     Then the exit status is 2
     And the standard output is empty
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The collection list prints each collection with its ID and name
     When I run "retriever --output json outline collections list"
     Then the exit status is 0
@@ -101,20 +101,20 @@ Feature: Outline reads
     And the JSON field "collections.0.id" of the standard output is "1c1c1c1c-0000-4000-8000-000000000001"
     And the JSON field "collections.0.name" of the standard output is "Synthetic"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The account read prints the user and team names
     When I run "retriever --output json outline auth whoami"
     Then the exit status is 0
     And the JSON field "user.name" of the standard output is "Synthetic Author"
     And the JSON field "team.name" of the standard output is "Synthetic Team"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The account read never prints an e-mail address
     When I run "retriever outline auth whoami"
     Then the exit status is 0
     And the standard output does not contain "@"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario Outline: Every Outline read prints a schemaVersion 1 JSON document in JSON mode
     When I run "retriever --output json outline <command>"
     Then the exit status is 0
@@ -127,7 +127,7 @@ Feature: Outline reads
       | auth whoami              |
       | documents get d0c1d0c1-0000-4000-8000-000000000001      |
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A read with more than one Outline source needs the source flag
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -138,7 +138,7 @@ Feature: Outline reads
     And the standard error is a JSON error with the code "retriever.outline.ambiguous_source" and retryable false
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The source flag picks one of two Outline sources
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |

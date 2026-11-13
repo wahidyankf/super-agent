@@ -14,7 +14,7 @@ Feature: Outline writes
       | id | name      |
       | 1c1c1c1c-0000-4000-8000-000000000001 | Synthetic |
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario Outline: A write is refused on a read-access source before any request is sent
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env --source example-outline |
@@ -32,7 +32,7 @@ Feature: Outline writes
       | comments create d0c1d0c1-0000-4000-8000-000000000001 --text Synthetic-comment --source example-outline |
       | pins create d0c1d0c1-0000-4000-8000-000000000001 --source example-outline |
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Creating a document on a write-access source sends one request that carries its title
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -42,7 +42,7 @@ Feature: Outline writes
     And the stub Outline server received 1 request to "documents.create"
     And the stub Outline server's last request to "documents.create" body contains "Synthetic-note"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A dry run of a document update prints the change and sends no request
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -51,7 +51,7 @@ Feature: Outline writes
     Then the exit status is 0
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A comment on a write-access source sends one request that carries its text
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -61,7 +61,7 @@ Feature: Outline writes
     And the stub Outline server received 1 request to "comments.create"
     And the stub Outline server's last request to "comments.create" body contains "Synthetic-comment"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Pinning a document on a write-access source sends one request
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -70,7 +70,7 @@ Feature: Outline writes
     Then the exit status is 0
     And the stub Outline server received 1 request
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A write that the wiki refuses reports the refusal and changes nothing else
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |

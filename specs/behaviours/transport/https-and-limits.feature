@@ -19,7 +19,7 @@ Feature: Transport safety and bounded requests
       | id | name      |
       | 1c1c1c1c-0000-4000-8000-000000000001 | Synthetic |
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A source whose endpoint is plain HTTP is refused before any request
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id              | kind    | access | tags | endpoint                 | credential_env          | identity_env |
@@ -29,7 +29,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.https_required" and retryable false
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A redirect on a read is reported and not followed
     Given the stub Outline server redirects "collections.list" to "https://elsewhere.example.test/"
     When I run "retriever --output json outline collections list"
@@ -37,7 +37,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.redirected" and retryable false
     And the stub Outline server received 1 request to "collections.list"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A request that gets no reply within the bound stops with status 124
     Given the environment variable "RETRIEVER_OUTLINE_TEST_TIMEOUT" is set to "300ms"
     And the stub Outline server never answers "collections.list"
@@ -45,14 +45,14 @@ Feature: Transport safety and bounded requests
     Then the exit status is 124
     And the standard error is a JSON error with the code "retriever.outline.timed_out" and retryable true
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A rate-limited read waits for Retry-After once and then succeeds
     Given the stub Outline server answers the first 1 request to "collections.list" with status 429 and Retry-After "1"
     When I run "retriever outline collections list"
     Then the exit status is 0
     And the stub Outline server received 2 requests to "collections.list"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Repeated rate-limit replies stop after three retries and report a retryable failure
     Given the stub Outline server answers "collections.list" with status 429 and Retry-After "0"
     When I run "retriever --output json outline collections list"
@@ -60,7 +60,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.rate_limited" and retryable true
     And the stub Outline server received 4 requests to "collections.list"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A Retry-After longer than 60 seconds fails the read without a retry
     Given the stub Outline server answers "collections.list" with status 429 and Retry-After "61"
     When I run "retriever --output json outline collections list"
@@ -68,7 +68,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.retry_after_too_long" and retryable false
     And the stub Outline server received 1 request to "collections.list"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A reply larger than the 10 MiB cap is refused as too large
     Given the stub Outline server answers "collections.list" with a body of 11 MiB
     When I run "retriever --output json outline collections list"
@@ -76,7 +76,7 @@ Feature: Transport safety and bounded requests
     And the standard output is empty
     And the standard error is a JSON error with the code "retriever.outline.reply_too_large" and retryable false
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A reply that is not JSON is an unexpected response and names no host
     Given the stub Outline server answers "collections.list" with the body:
       """
@@ -87,7 +87,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.unexpected_response" and retryable false
     And the standard error does not contain "docs.example.test"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A source that cannot be reached is reported as unreachable and is retryable
     Given no stub Outline server is listening
     When I run "retriever --output json outline collections list"
@@ -95,18 +95,18 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.unreachable" and retryable true
     And the standard error does not contain "127.0.0.1"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Requests to one source run one at a time
     When I run "retriever outline documents list --limit 1"
     Then the stub Outline server's peak concurrency was 1
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Every Outline request uses the POST method and its own method path
     When I run "retriever outline collections list"
     Then the exit status is 0
     And every request to the stub Outline server used the HTTP method "POST"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A Kiwi write that is refused by a redirect is not sent a second time
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the sources catalog file "reviewed.yml" holds these sources:

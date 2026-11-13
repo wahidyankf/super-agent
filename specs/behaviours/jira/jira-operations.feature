@@ -23,7 +23,7 @@ Feature: Jira reads
       }
       """
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The account read prints the display name and never the account ID or the e-mail address
     When I run "retriever jira whoami"
     Then the exit status is 0
@@ -31,52 +31,52 @@ Feature: Jira reads
     And the standard output does not contain "synthetic-account-id"
     And the standard output does not contain "synthetic-user@example.test"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The project list prints each project with its key and name
     When I run "retriever --output json jira projects list"
     Then the exit status is 0
     And the JSON field "projects.0.key" of the standard output is "EXAMPLE"
     And the JSON field "projects.0.name" of the standard output is "Synthetic project"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: An issue search with a JQL query lists the matching issues
     When I run "retriever --output json jira issues search project=EXAMPLE"
     Then the exit status is 0
     And the JSON field "issues.0.key" of the standard output is "EXAMPLE-1"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: An issue search with a page size outside 1 to 100 is a usage error and sends no request
     When I run "retriever --output json jira issues search project=EXAMPLE --limit 500"
     Then the exit status is 2
     And the standard output is empty
     And the stub Jira server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: An issue read renders its description as Markdown text
     When I run "retriever jira issues get EXAMPLE-1"
     Then the exit status is 0
     And the standard output contains "Synthetic description"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: An issue that Jira does not hold is a failure with its own code
     When I run "retriever --output json jira issues get EXAMPLE-999"
     Then the exit status is 2
     And the standard output is empty
     And the standard error is a JSON error with a code that starts with "retriever.jira."
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A comment list prints the comment text of the issue
     When I run "retriever jira comments list EXAMPLE-1"
     Then the exit status is 0
     And the standard output contains "Synthetic comment"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: An issue key with characters outside the allowed form is refused before any request
     When I run "retriever --output json jira issues get not-a-key"
     Then the exit status is 2
     And the stub Jira server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A description that holds a script link and raw HTML is shown as escaped text with no live link
     Given the stub Jira server holds this configuration:
       """
@@ -94,21 +94,21 @@ Feature: Jira reads
     And the standard output does not contain "javascript:"
     And the standard output does not contain "<script>"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A Jira read sends the token and e-mail address only to the Jira endpoint
     When I run "retriever jira whoami"
     Then the exit status is 0
     And every request to the stub Jira server carried the credentials of the synthetic e-mail address and token
     And the value of "EXAMPLE_JIRA_API_TOKEN" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A rate-limited Jira read waits for Retry-After once and then succeeds
     Given the stub Jira server answers the first 1 request to "/rest/api/3/myself" with status 429 and Retry-After "1"
     When I run "retriever jira whoami"
     Then the exit status is 0
     And the stub Jira server received 2 requests to "/rest/api/3/myself"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The removed search path is reported as a clear failure and is never used
     Given the stub Jira server answers "/rest/api/3/search" with status 410
     When I run "retriever --output json jira issues search project=EXAMPLE"

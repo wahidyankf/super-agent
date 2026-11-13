@@ -18,7 +18,7 @@ Feature: MCP tool server
       | id    | collection | parent | title | markdown           |
       | d0c1d0c1-0000-4000-8000-000000000001 | 1c1c1c1c-0000-4000-8000-000000000001         |        | Setup | Synthetic body one |
 
-  @e2e
+  @e2e @unit
   Scenario: The tool list always offers list_sources, even when --tools names other resources
     Given an MCP client starts "retriever mcp --max-access read --tools comments"
     When the client lists the tools
@@ -26,21 +26,21 @@ Feature: MCP tool server
     And the tool list has the tool "list_comments"
     And the tool list has no tool named "list_collections"
 
-  @e2e
+  @e2e @unit
   Scenario: At the default read ceiling the tool list has no write tool
     Given an MCP client starts "retriever mcp"
     When the client lists the tools
     Then the tool list has the tool "list_documents"
     And the tool list has no tool named "create_document"
 
-  @e2e
+  @e2e @unit
   Scenario: At the write ceiling the tool list offers the write tools but not the destructive ones
     Given an MCP client starts "retriever mcp --max-access write"
     When the client lists the tools
     Then the tool list has the tool "create_document"
     And the tool list has no tool named "delete_document"
 
-  @e2e
+  @e2e @unit
   Scenario: At the admin ceiling the destructive tools are offered and marked destructive
     Given an MCP client starts "retriever mcp --max-access admin"
     When the client lists the tools
@@ -48,13 +48,13 @@ Feature: MCP tool server
     And the tool "delete_document" is marked destructive
     And the tool "list_documents" is marked read-only
 
-  @e2e
+  @e2e @unit
   Scenario: At the admin ceiling a critical user deletion has no MCP tool
     Given an MCP client starts "retriever mcp --max-access admin"
     When the client lists the tools
     Then the tool list has no tool named "delete_user"
 
-  @e2e
+  @e2e @unit
   Scenario: A write tool called above the read ceiling is refused and sends no request
     Given an MCP client starts "retriever mcp --max-access read"
     When the client calls the tool "create_document" with these arguments:
@@ -64,7 +64,7 @@ Feature: MCP tool server
     Then the tool result is an error
     And the stub Outline server received no requests
 
-  @e2e
+  @e2e @unit
   Scenario: A read tool returns its result as text
     Given an MCP client starts "retriever mcp --max-access read"
     When the client calls the tool "search_documents" with these arguments:
@@ -74,7 +74,7 @@ Feature: MCP tool server
     Then the tool result is not an error
     And the tool result text contains "d0c1d0c1-0000-4000-8000-000000000001"
 
-  @e2e
+  @e2e @unit
   Scenario: The source list tool omits each source's endpoint and credential name
     Given an MCP client starts "retriever mcp --max-access read"
     When the client calls the tool "list_sources" with no arguments
@@ -83,7 +83,7 @@ Feature: MCP tool server
     And the tool result text does not contain "docs.example.test"
     And the tool result text does not contain "EXAMPLE_OUTLINE_API_KEY"
 
-  @e2e
+  @e2e @unit
   Scenario: A hostile title with a terminal escape never reaches a tool result as a control byte
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -97,7 +97,7 @@ Feature: MCP tool server
     Then the tool result is not an error
     And the tool result text contains no control characters except line breaks
 
-  @e2e
+  @e2e @unit
   Scenario: An oversized reply becomes a bounded tool error rather than a large tool result
     Given the stub Outline server answers "documents.info" with a body of 11 MiB
     And an MCP client starts "retriever mcp --max-access read"
@@ -108,7 +108,7 @@ Feature: MCP tool server
     Then the tool result is an error
     And the whole tool result is at most 1048576 bytes
 
-  @e2e
+  @e2e @unit
   Scenario: The server ends with status 0 when its client closes the input
     Given an MCP client starts "retriever mcp --max-access read"
     When the client lists the tools

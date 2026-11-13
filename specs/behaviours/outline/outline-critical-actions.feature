@@ -14,7 +14,7 @@ Feature: Outline critical actions
       | id | name      |
       | 1c1c1c1c-0000-4000-8000-000000000001 | Synthetic |
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Emptying the trash with --yes and a matching --confirm sends the request once
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -23,7 +23,7 @@ Feature: Outline critical actions
     Then the exit status is 0
     And the stub Outline server received 1 request to "documents.empty_trash"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The dry run of emptying the trash prints the source ID to type and changes nothing
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -33,7 +33,7 @@ Feature: Outline critical actions
     And the standard output contains "example-outline"
     And the stub Outline server received 0 requests to "documents.empty_trash"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario Outline: Emptying the trash is refused without the right confirmation, and sends no request
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -50,7 +50,7 @@ Feature: Outline critical actions
       | --yes                                 | retriever.outline.confirm_required     |
       | --yes --confirm wrong-source          | retriever.outline.confirm_mismatch     |
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Deleting a document for good with --yes and a matching --confirm sends the request once
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -59,7 +59,7 @@ Feature: Outline critical actions
     Then the exit status is 0
     And the stub Outline server received 1 request to "documents.delete"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Deleting a document for good with a --confirm that names another document is refused
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -69,7 +69,7 @@ Feature: Outline critical actions
     And the standard error is a JSON error with the code "retriever.outline.confirm_mismatch" and retryable false
     And the stub Outline server received 0 requests to "documents.delete"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Moving a document to the trash without --yes is refused and sends no request
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -79,7 +79,7 @@ Feature: Outline critical actions
     And the standard error is a JSON error with the code "retriever.outline.yes_required" and retryable false
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Deleting a user with --yes and a matching --confirm sends the request once
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -92,7 +92,7 @@ Feature: Outline critical actions
     Then the exit status is 0
     And the stub Outline server received 1 request to "users.delete"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Deleting the user that owns the API key is refused as a self target even when confirmed
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -106,7 +106,7 @@ Feature: Outline critical actions
     And the standard error is a JSON error with the code "retriever.outline.self_target" and retryable false
     And the stub Outline server received 0 requests to "users.delete"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Changing a user's role without --yes is refused and sends no request
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -116,7 +116,7 @@ Feature: Outline critical actions
     And the standard error is a JSON error with the code "retriever.outline.yes_required" and retryable false
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A destructive change on a write-access source is refused as an access failure
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -126,7 +126,7 @@ Feature: Outline critical actions
     And the standard error is a JSON error with the code "retriever.outline.access_level_too_low" and retryable false
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Creating an integration with a matching host confirmation shows the host and never the path
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -136,7 +136,7 @@ Feature: Outline critical actions
     And the standard output does not contain "/synthetic/path"
     And the stub Outline server received 1 request to "integrations.create"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Creating an integration with the full URL as its confirmation is refused
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -146,7 +146,7 @@ Feature: Outline critical actions
     And the standard error is a JSON error with the code "retriever.outline.confirm_mismatch" and retryable false
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The dry run of an integration names the host of its URL and never the path
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
@@ -157,7 +157,7 @@ Feature: Outline critical actions
     And the standard output does not contain "/synthetic/path"
     And the stub Outline server received no requests
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: Rotating an OAuth client secret shows no secret in standard output or standard error
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |

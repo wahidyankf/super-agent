@@ -11,7 +11,7 @@ Feature: Outline reply redaction
       | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     And the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A title with an escape sequence leaves no terminal control byte in the text output
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -21,7 +21,7 @@ Feature: Outline reply redaction
     Then the exit status is 0
     And the standard output contains no control characters except line breaks
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A document body with an escape sequence leaves no terminal control byte in the text output
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -31,7 +31,7 @@ Feature: Outline reply redaction
     Then the exit status is 0
     And the standard output contains no control characters except line breaks
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A hostile reply in JSON mode is still a single JSON document with no raw control byte
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -42,7 +42,7 @@ Feature: Outline reply redaction
     And the standard output is a JSON document with schemaVersion 1
     And the standard output contains no control characters except line breaks
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The webhook list prints the host of each URL and never its path, query, or signing secret
     Given the stub Outline server answers "webhookSubscriptions.list" with the body:
       """
@@ -55,7 +55,7 @@ Feature: Outline reply redaction
     And the standard output does not contain "synthetic-query-token"
     And the standard output does not contain "synthetic-signing-secret"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: The webhook list JSON document never holds the signing secret or the URL path
     Given the stub Outline server answers "webhookSubscriptions.list" with the body:
       """
@@ -67,7 +67,7 @@ Feature: Outline reply redaction
     And the standard output does not contain "synthetic-signing-secret"
     And the standard output does not contain "/synthetic/path"
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario Outline: A failing Outline response never prints the key
     Given the stub Outline server answers "collections.list" with status <status>
     When I run "retriever --output json outline collections list"
@@ -82,14 +82,14 @@ Feature: Outline reply redaction
       | 429    |
       | 500    |
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A non-JSON reply that echoes the Authorization header never prints the key
     Given the stub Outline server echoes the Authorization header in a non-JSON reply to "collections.list"
     When I run "retriever --output json outline collections list"
     Then the exit status is 2
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e
+  @integration @e2e @unit
   Scenario: A successful account read never prints the key
     Given the stub Outline server holds the signed-in user "Synthetic Author" of team "Synthetic Team"
     When I run "retriever --output json outline auth whoami"
