@@ -12,9 +12,7 @@
         "sourceId": null
       }
     ],
-    "groups": [
-      { "id": "77777777-7777-4777-8777-777777777777", "name": "Engineering" }
-    ],
+    "groups": [{ "id": "77777777-7777-4777-8777-777777777777", "name": "Engineering" }],
     "documents": []
   }
 }

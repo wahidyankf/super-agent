@@ -82,7 +82,11 @@
         "cwd": "apps/retriever-cli"
       },
       "cache": true,
-      "inputs": ["{projectRoot}/tests/conformance/**/*.go", "{projectRoot}/behaviour-coverage.json", "{workspaceRoot}/specs/behaviours/**/*.feature"]
+      "inputs": [
+        "{projectRoot}/tests/conformance/**/*.go",
+        "{projectRoot}/behaviour-coverage.json",
+        "{workspaceRoot}/specs/behaviours/**/*.feature"
+      ]
     },
     "test:e2e": {
       "executor": "nx:run-commands",
