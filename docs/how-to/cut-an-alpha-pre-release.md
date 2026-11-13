@@ -77,18 +77,47 @@ sha256sum -c SHA256SUMS       # Linux
 
 ## 6. Screen the release before publishing
 
-Screen the release notes and every asset with the `release` surface of the public-safety leaf. Run it once per file.
-Also unpack each archive into its own empty directory, and screen the `retriever` binary the same way. Build paths and
-personal values can sit in a binary, and the scanner reads text.
+The public-safety scanner reads text, and it cannot read inside a gzip archive. A screen of a `.tar.gz` file says nothing
+about the binary inside it. So screen the text assets as they are, then screen each unpacked binary. Run every command
+from the root of your worktree, through HIPPO, with the `release` surface of the leaf.
+
+Screen the release notes and `SHA256SUMS`:
 
 ```sh
-scripts/public-safety/outbound-preflight.sh --surface release --file <path>
+./hippo run --class ephemeral --resource-tier light --disk-path . -- \
+  scripts/public-safety/outbound-preflight.sh --surface release --file <notes-file> --file <build-output>/SHA256SUMS
+```
+
+Unpack each archive into its own new, empty directory. Keep the directories outside the checkout, and do not run the
+unpacked files. They are data for the scanner:
+
+```sh
+UNPACK=$(mktemp -d "${TMPDIR:-/tmp}/retriever-unpacked.XXXXXX")
+for platform in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
+  mkdir "$UNPACK/$platform"
+  tar -xzf <build-output>/retriever_v0.1.0_${platform}.tar.gz -C "$UNPACK/$platform" retriever
+done
+```
+
+Screen each unpacked `retriever`, one file per run, and record its exit code:
+
+```sh
+for platform in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
+  ./hippo run --class ephemeral --resource-tier light --disk-path . -- \
+    scripts/public-safety/outbound-preflight.sh --surface release --file "$UNPACK/$platform/retriever"
+  echo "$platform: exit $?"
+done
 ```
 
 A workspace that holds named private identifiers passes its own list with `--terms`, and keeps that list outside the
 checkout.
 
-Exit `0` means the file is clean. Any other exit code blocks the release. Do not publish until every file exits `0`.
+Exit `0` is the only acceptable result. Exit `1` means a finding, and exit `2` means the scan could not run. Both block
+the release, and nothing was screened on exit `2`. A finding prints as `[public-safety] finding <detector> <path>:<line>`.
+The rule no longer reports a Go package-qualified identifier, such as the standard library's `crypto/x509.local` type,
+so no finding is expected from a release binary built with the current rule. Any finding on a release file is a real
+blocker: stop the release, report the detector and the file name to the owner, and fix the cause through a reviewed
+change. Do not suppress, edit, or re-screen a file to clear it. Do not publish until every file exits `0`.
 
 ## 7. Write the release notes
 

@@ -43,17 +43,31 @@ internal-address	regex	(^|[^0-9.])100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[
 # Hostname suffixes that only resolve inside a network. A name ending in one of
 # these is a machine on someone's LAN, and publishing it publishes topology.
 #
-# Both rows start at a token boundary, the same way every address shape above
-# does. Without it the first label may begin mid-token, so a dotted filename
-# such as `.env` plus a `.local` suffix is read as a host -- a file most
-# repositories have, blocking an ordinary sentence about configuration. Two
-# rows rather than one optional group because a middle label must not be
-# allowed to supply the boundary the first label is required to have: the
-# second row spells the extra labels out. Both rows also end at a token
-# boundary that an underscore does not supply: an underscore continues an
-# identifier, so a dotted API member that merely starts with a suffix word
-# (a Terraform local-file data source, a socket's local address accessor) is
-# code, not a host. The comments here name no host, for the same reason the
-# test cases assemble theirs at run time.
-internal-hostname	regex	(^|[^A-Za-z0-9_.-])[a-z0-9][a-z0-9-]+\.(local|internal|lan|intranet)([^A-Za-z0-9_.-]|$)
-internal-hostname	regex	(^|[^A-Za-z0-9_.-])[a-z0-9][a-z0-9-]+(\.[a-z0-9][a-z0-9-]+)+\.(local|internal|lan|intranet)([^A-Za-z0-9_.-]|$)
+# The first two rows start at a token boundary that is not a slash, the same way
+# the address shapes above do. Without it the first label may begin mid-token, so
+# a dotted filename such as `.env` plus a `.local` suffix is read as a host -- a
+# file most repositories have, blocking an ordinary sentence about configuration.
+# Two rows rather than one optional group because a middle label must not be
+# allowed to supply the boundary the first label is required to have: the second
+# row spells the extra labels out. Both rows also end at a token boundary that an
+# underscore does not supply: an underscore continues an identifier, so a dotted
+# API member that merely starts with a suffix word (a Terraform local-file data
+# source, a socket's local address accessor) is code, not a host.
+#
+# A slash is not a boundary for those rows, because a label after one is a path
+# segment. The last two rows judge such a label instead:
+#
+#   third   a URL authority or path (a double slash), or an absolute path: a
+#           slash that no letter, digit, or slash precedes
+#   fourth  a path whose segments hold a dot, a hyphen, or an uppercase letter
+#
+# So the one shape left unmatched is a Go package-qualified identifier: a
+# lowercase, dot-free import path, a slash, then the identifier. The standard
+# library's types appear in release binaries this way, and `crypto/x509.local` is
+# the known case. A domain-first import path has a dot in its first segment, so
+# it is not skipped. The comments here name no host, for the same reason the test
+# cases assemble theirs at run time.
+internal-hostname	regex	(^|[^A-Za-z0-9_./-])[a-z0-9][a-z0-9-]+\.(local|internal|lan|intranet)([^A-Za-z0-9_.-]|$)
+internal-hostname	regex	(^|[^A-Za-z0-9_./-])[a-z0-9][a-z0-9-]+(\.[a-z0-9][a-z0-9-]+)+\.(local|internal|lan|intranet)([^A-Za-z0-9_.-]|$)
+internal-hostname	regex	(//|(^|[^A-Za-z0-9/])/)([A-Za-z0-9_.~%+-]+/)*[a-z0-9][a-z0-9-]+(\.[a-z0-9][a-z0-9-]+)*\.(local|internal|lan|intranet)([^A-Za-z0-9_.-]|$)
+internal-hostname	regex	[A-Za-z0-9_./-]*[.A-Z-][A-Za-z0-9_./-]*/[a-z0-9][a-z0-9-]+(\.[a-z0-9][a-z0-9-]+)*\.(local|internal|lan|intranet)([^A-Za-z0-9_.-]|$)

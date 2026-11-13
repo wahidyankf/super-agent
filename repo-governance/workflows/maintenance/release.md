@@ -25,7 +25,9 @@ notice, and it may contain breaking changes, which are named.
 2. Build the binary for each platform that the release notes name. Build from the tag, with the pinned tools.
 3. Write `SHA256SUMS` with one checksum for each binary. Each binary's checksum is recorded in the notes too.
 4. Run the leak scan over every release asset, the release notes, and the changelog excerpt. A failed scan stops the
-   release.
+   release. The scanner cannot read inside an archive, so screen each archive's unpacked binary, as the
+   [alpha pre-release how-to](../../../docs/how-to/cut-an-alpha-pre-release.md#6-screen-the-release-before-publishing)
+   describes.
 5. Publish the release as a GitHub pre-release. The notes open with the alpha notice and list the breaking changes.
 
 ## Notes
