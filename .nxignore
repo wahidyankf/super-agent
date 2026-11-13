@@ -1,0 +1,13 @@
+# Git files
+.git/
+.github/
+
+# Worktrees. A git worktree is a full second copy of the tree, so its project
+# files would duplicate the ones in this checkout. Nx must read only one copy.
+worktrees/
+.claude/worktrees/
+
+# Temporary and generated files
+local-tmp/
+tmp/
+generated-reports/

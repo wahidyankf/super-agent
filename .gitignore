@@ -1,0 +1,76 @@
+# Dependencies
+node_modules/
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+coverage/
+coverage.out
+*.out
+*.test
+cover_*.out
+
+# Nx cache
+.nx/
+
+# HIPPO machine policy
+hippo.local.json
+
+# Environment variables (real values never leave the machine)
+.env
+.env.*
+!.env.example
+
+# Credentials and keys
+*.pem
+*.key
+*.p12
+id_*
+.secrets/
+secrets.json
+
+# Connector data: real catalogs and user connector specs stay private.
+# Example catalogs and specs under examples/ are the only committed copies.
+sources.yml
+connectors/
+!examples/**/sources.yml
+!examples/**/connectors/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Temporary files and agent working state
+tmp/
+*.tmp
+local-tmp/*
+!local-tmp/.gitkeep
+
+# Git worktrees: only worktrees/<task> is used
+/worktrees/*
+!/worktrees/.gitkeep
+.claude/worktrees/
+
+# Generated reports
+generated-reports/
+
+# Claude Code personal settings
+.claude/settings.local.json
+
+# Serena: track only the README; keep generated and personal state local
+/.serena/*
+!/.serena/README.md
