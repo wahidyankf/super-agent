@@ -13,8 +13,16 @@ These rules apply to the Go code in `apps/retriever-cli`, and to any Go library 
 ## Version and Module
 
 - The `go.mod` file sets `go 1.27.0`, the minimum language version, and `toolchain go1.27.4`, the Go release the CI setup-go
-  action pins. The go command refuses a `go` line of `1.27.4` beside a `toolchain` line of `go1.27.4`, so the lines differ.
+  action pins. The lines differ on purpose; see the local departure below.
 - The module path is `github.com/wahidyankf/super-agent/apps/retriever-cli`.
+
+### Local Departure: The Go Line Stays at 1.27.0
+
+This module departs from the pinned-release form in one way: its `go` line is one patch release below its `toolchain`
+line. The working form is `go 1.27.0` with `toolchain go1.27.4`, because the go command refuses the other pairing. With
+`go 1.27.4` beside `toolchain go1.27.4`, `go build` fails with "updates to go.mod needed", and `go mod tidy` removes the
+toolchain line, so the pin is lost. Under Go 1.27.4, the working form builds, and `go mod tidy` leaves its `go.mod`
+unchanged. Revisit this departure when the go command accepts the pairing.
 
 ## Tools
 
