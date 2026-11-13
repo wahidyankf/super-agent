@@ -1,0 +1,52 @@
+"""
+One configured source. The endpoint and the credential name are not exposed.
+"""
+type Source {
+  id: ID!
+  kind: String!
+  "read, write, or admin: the most Retriever may do with this source. The served API caps it to read."
+  access: String!
+  tags: [String!]!
+}
+
+"""
+A collection of a source wiki.
+"""
+type Collection {
+  id: ID!
+  name: String!
+}
+
+"""
+One document of a collection tree. The tree is flat: parentId is null for a root document,
+and depth is 0 for a root. The caller rebuilds the hierarchy from these two fields.
+"""
+type TreeNode {
+  id: ID!
+  title: String!
+  url: String!
+  parentId: ID
+  depth: Int!
+}
+
+"""
+One document with its Markdown body.
+"""
+type Document {
+  id: ID!
+  title: String!
+  url: String!
+  markdown: String!
+  collectionId: ID!
+}
+
+type Query {
+  "Lists configured sources. All given tags must match; a kind narrows the list."
+  sources(kind: String, tags: [String!]): [Source!]!
+  "Lists the collections of a source. The kind is outline when omitted; kiwi and jira are also accepted. Without a source, exactly one source of the kind must exist."
+  collections(source: String, kind: String): [Collection!]!
+  "Lists the documents of one collection as a flat tree. The kind is outline when omitted; kiwi and jira are also accepted."
+  collectionTree(id: ID!, source: String, kind: String): [TreeNode!]!
+  "Returns one document with its Markdown body. The kind is outline when omitted; kiwi and jira are also accepted."
+  document(id: ID!, source: String, kind: String): Document!
+}

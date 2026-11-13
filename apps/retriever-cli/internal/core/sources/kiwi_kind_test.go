@@ -1,0 +1,319 @@
+package sources
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"testing"
+
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
+)
+
+// kindedSource describes one source of a test catalog: its ID, kind, and access level.
+type kindedSource struct {
+	id     string
+	kind   domain.SourceKind
+	access domain.Access
+}
+
+// kindedCatalog returns a catalog of the given sources. Each source gets its own host and key name, so the catalog
+// invariants hold.
+func kindedCatalog(t *testing.T, list ...kindedSource) domain.Catalog {
+	t.Helper()
+	var out []domain.Source
+	for i, s := range list {
+		id, err := domain.NewSourceID(s.id)
+		if err != nil {
+			t.Fatalf("NewSourceID(%q): %v", s.id, err)
+		}
+		ep, err := domain.NewEndpoint(fmt.Sprintf("https://%s.example.com", s.id))
+		if err != nil {
+			t.Fatalf("NewEndpoint: %v", err)
+		}
+		ref, err := domain.NewCredentialRef(fmt.Sprintf("KEY%d_API_KEY", i))
+		if err != nil {
+			t.Fatalf("NewCredentialRef: %v", err)
+		}
+		out = append(out, domain.NewSource(id, s.kind, mustTagSet(t), s.access, ep, ref))
+	}
+	cat, err := domain.NewCatalog(out)
+	if err != nil {
+		t.Fatalf("NewCatalog: %v", err)
+	}
+	return cat
+}
+
+// kindedService serves every source of the catalog through one gateway, reader, and writer.
+func kindedService(t *testing.T, cat domain.Catalog, gw ports.SourceGateway, reader *fakeReader, writer *fakeWriter) (Service, *fakeResolver) {
+	t.Helper()
+	gws := map[string]ports.SourceGateway{}
+	for _, src := range cat.All() {
+		gws[src.ID().String()] = gw
+	}
+	resolver := &fakeResolver{gateways: gws, reader: reader, writer: writer}
+	return Service{Catalog: cat, Gateways: resolver}, resolver
+}
+
+// kiwiDocumentReply is a Kiwi test case as kiwi.documents.get answers it.
+func kiwiDocumentReply() domain.Record {
+	return domain.NewRecord(
+		domain.Field{Name: "id", Value: "case-12"},
+		domain.Field{Name: "title", Value: "Login works"},
+		domain.Field{Name: "url", Value: "https://kiwi.example.com/case/12/"},
+		domain.Field{Name: "markdown", Value: "# Login works\n"},
+		domain.Field{Name: "collectionId", Value: "product-3"},
+	)
+}
+
+// TestSelectSourceIsKindAware checks that every caller's kind picks a source of that kind, and that a source ID of another
+// kind is refused before any gateway call (ADR 009 section 1).
+func TestSelectSourceIsKindAware(t *testing.T) {
+	cat := kindedCatalog(t,
+		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
+		kindedSource{"kiwi", domain.KindKiwi, domain.AccessWrite},
+	)
+	svc, resolver := kindedService(t, cat, &fakeGateway{}, nil, nil)
+
+	got, err := Resolve(svc, domain.KindKiwi, nil)
+	if err != nil || got.ID().String() != "kiwi" {
+		t.Fatalf("Resolve(kiwi, nil) = %v, %v; want the kiwi source", got.ID(), err)
+	}
+	got, err = Resolve(svc, domain.KindOutline, nil)
+	if err != nil || got.ID().String() != "outline" {
+		t.Fatalf("Resolve(outline, nil) = %v, %v; want the outline source", got.ID(), err)
+	}
+	if _, err := Resolve(svc, domain.KindKiwi, strPtr("outline")); !errors.Is(err, domain.ErrWrongSourceKind) {
+		t.Fatalf("Resolve(kiwi, outline) error = %v, want ErrWrongSourceKind", err)
+	}
+	if _, err := Resolve(svc, domain.KindOutline, strPtr("kiwi")); !errors.Is(err, domain.ErrWrongSourceKind) {
+		t.Fatalf("Resolve(outline, kiwi) error = %v, want ErrWrongSourceKind", err)
+	}
+	if _, err := Resolve(svc, domain.KindKiwi, strPtr("Kiwi")); !errors.Is(err, domain.ErrInvalidSourceID) {
+		t.Fatalf("Resolve(kiwi, Kiwi) error = %v, want ErrInvalidSourceID", err)
+	}
+	if len(resolver.asked) != 0 {
+		t.Fatalf("Resolve reached the gateway resolver: %v", resolver.asked)
+	}
+}
+
+// TestDefaultRulePerKind checks the default rule for each kind: exactly one source of the kind, or the typed error that
+// names the kind (ADR 009 section 1).
+func TestDefaultRulePerKind(t *testing.T) {
+	two := kindedCatalog(t,
+		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
+		kindedSource{"kiwi-a", domain.KindKiwi, domain.AccessWrite},
+		kindedSource{"kiwi-b", domain.KindKiwi, domain.AccessWrite},
+	)
+	svc, _ := kindedService(t, two, &fakeGateway{}, nil, nil)
+	if got, err := Resolve(svc, domain.KindOutline, nil); err != nil || got.ID().String() != "outline" {
+		t.Fatalf("Resolve(outline, nil) with two kiwi sources = %v, %v", got.ID(), err)
+	}
+	_, err := Resolve(svc, domain.KindKiwi, nil)
+	var amb domain.AmbiguousSourceError
+	if !errors.As(err, &amb) || amb.Kind != domain.KindKiwi || len(amb.IDs) != 2 {
+		t.Fatalf("Resolve(kiwi, nil) with two kiwi sources error = %v, want AmbiguousSourceError for kiwi", err)
+	}
+
+	outlineOnly := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	svc, _ = kindedService(t, outlineOnly, &fakeGateway{}, nil, nil)
+	_, err = Resolve(svc, domain.KindKiwi, nil)
+	var none domain.NoSourceOfKindError
+	if !errors.As(err, &none) || none.Kind != domain.KindKiwi || err.Error() != "no kiwi source is configured" {
+		t.Fatalf("Resolve(kiwi, nil) with no kiwi source error = %v, want NoSourceOfKindError for kiwi", err)
+	}
+	if _, err := Resolve(svc, domain.KindOutline, nil); err != nil {
+		t.Fatalf("Resolve(outline, nil) = %v", err)
+	}
+}
+
+// TestListGetAndExportTakeTheKind checks that the list, tree, and document use cases select by the kind they are given,
+// and reach the gateway of that source only.
+func TestListGetAndExportTakeTheKind(t *testing.T) {
+	cat := kindedCatalog(t,
+		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
+		kindedSource{"kiwi", domain.KindKiwi, domain.AccessRead},
+	)
+	gw := &fakeGateway{
+		collections: []domain.Collection{{ID: "product-3", Name: "Lending"}},
+		tree:        []domain.TreeNode{{ID: "plan-1"}},
+		doc:         domain.SourceDocument{ID: "case-12", Title: "Login works", Markdown: "x"},
+	}
+	svc, resolver := kindedService(t, cat, gw, nil, nil)
+
+	if got, err := ListCollections(context.Background(), svc, domain.KindKiwi, nil); err != nil || len(got) != 1 {
+		t.Fatalf("ListCollections(kiwi) = %v, %v", got, err)
+	}
+	if _, err := ListCollectionTree(context.Background(), svc, domain.KindKiwi, strPtr("kiwi"), "product-3"); err != nil {
+		t.Fatalf("ListCollectionTree(kiwi) error = %v", err)
+	}
+	if _, err := GetDocument(context.Background(), svc, domain.KindKiwi, nil, "case-12"); err != nil {
+		t.Fatalf("GetDocument(kiwi) error = %v", err)
+	}
+	if len(resolver.asked) != 3 || resolver.asked[0] != "kiwi" {
+		t.Fatalf("the resolver was asked for %v, want three calls for kiwi", resolver.asked)
+	}
+	if _, err := ListCollections(context.Background(), svc, domain.KindKiwi, strPtr("outline")); !errors.Is(err, domain.ErrWrongSourceKind) {
+		t.Fatalf("ListCollections(kiwi, outline) error = %v, want ErrWrongSourceKind", err)
+	}
+}
+
+// TestReadTakesTheKindOfTheRow checks that a Kiwi row runs on a Kiwi source, and that the Outline catalog is not searched
+// for it (ADR 009 section 1).
+func TestReadTakesTheKindOfTheRow(t *testing.T) {
+	cat := kindedCatalog(t,
+		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
+		kindedSource{"kiwi", domain.KindKiwi, domain.AccessRead},
+	)
+	reader := &fakeReader{reply: kiwiDocumentReply()}
+	svc, resolver := kindedService(t, cat, &fakeGateway{}, reader, nil)
+
+	rec, err := Read(context.Background(), svc, domain.OpKiwiDocumentsGet, nil, map[string]any{"documentId": "case-12"})
+	if err != nil {
+		t.Fatalf("Read(kiwi.documents.get) error = %v", err)
+	}
+	if got := rec.Str("title"); got != "Login works" {
+		t.Fatalf("title = %q, want Login works", got)
+	}
+	if len(reader.ops) != 1 || reader.ops[0] != domain.OpKiwiDocumentsGet || len(resolver.asked) != 1 || resolver.asked[0] != "kiwi" {
+		t.Fatalf("reader ops %v, resolver asked %v; want the kiwi read only", reader.ops, resolver.asked)
+	}
+	if _, err := Read(context.Background(), svc, domain.OpKiwiDocumentsGet, strPtr("outline"), map[string]any{"documentId": "case-12"}); !errors.Is(err, domain.ErrWrongSourceKind) {
+		t.Fatalf("Read(kiwi row, outline) error = %v, want ErrWrongSourceKind", err)
+	}
+
+	outlineOnly := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	svc, _ = kindedService(t, outlineOnly, &fakeGateway{}, reader, nil)
+	_, err = Read(context.Background(), svc, domain.OpKiwiProductsList, nil, nil)
+	var none domain.NoSourceOfKindError
+	if !errors.As(err, &none) || none.Kind != domain.KindKiwi {
+		t.Fatalf("Read(kiwi row) with no kiwi source error = %v, want NoSourceOfKindError for kiwi", err)
+	}
+}
+
+// TestWriteTakesTheKindOfTheRow checks a Kiwi write: it needs a source at write access, a named source, a valid dry run, and
+// a reply of the row's shape. A dry run never reaches the writer.
+func TestWriteTakesTheKindOfTheRow(t *testing.T) {
+	create := map[string]any{"summary": "Login works", "product": "product-3", "category": "Functional", "priority": "P1"}
+	reply := domain.NewRecord(
+		domain.Field{Name: "id", Value: "case-40"},
+		domain.Field{Name: "title", Value: "Login works"},
+		domain.Field{Name: "url", Value: "https://kiwi.example.com/case/40/"},
+	)
+
+	readOnly := kindedCatalog(t,
+		kindedSource{"outline", domain.KindOutline, domain.AccessWrite},
+		kindedSource{"kiwi", domain.KindKiwi, domain.AccessRead},
+	)
+	writer := &fakeWriter{reply: reply}
+	svc, _ := kindedService(t, readOnly, &fakeGateway{}, nil, writer)
+	_, err := Write(context.Background(), svc, domain.OpKiwiTestCasesCreate, strPtr("kiwi"), create, false)
+	var denied domain.AccessLevelError
+	if !errors.As(err, &denied) || len(writer.ops) != 0 {
+		t.Fatalf("Write on a read-only kiwi source error = %v, writer ops %v; want AccessLevelError and no call", err, writer.ops)
+	}
+
+	writable := kindedCatalog(t,
+		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
+		kindedSource{"kiwi", domain.KindKiwi, domain.AccessWrite},
+	)
+	writer = &fakeWriter{reply: reply}
+	svc, resolver := kindedService(t, writable, &fakeGateway{}, nil, writer)
+
+	if _, err := Write(context.Background(), svc, domain.OpKiwiTestCasesCreate, nil, create, false); !errors.Is(err, domain.ErrSourceRequired) {
+		t.Fatalf("Write without a source error = %v, want ErrSourceRequired", err)
+	}
+	plan, err := Write(context.Background(), svc, domain.OpKiwiTestCasesCreate, strPtr("kiwi"), create, true)
+	if err != nil {
+		t.Fatalf("dry run error = %v", err)
+	}
+	if dry, _ := plan.Get("dryRun"); dry != true || len(writer.ops) != 0 || len(resolver.asked) != 0 {
+		t.Fatalf("dry run = %v, writer ops %v, resolver asked %v; want a plan and no call", plan, writer.ops, resolver.asked)
+	}
+
+	got, err := Write(context.Background(), svc, domain.OpKiwiTestCasesCreate, strPtr("kiwi"), create, false)
+	if err != nil || got.Str("id") != "case-40" {
+		t.Fatalf("Write(create) = %v, %v; want case-40", got, err)
+	}
+	if len(writer.ops) != 1 || writer.ops[0] != domain.OpKiwiTestCasesCreate {
+		t.Fatalf("writer ops = %v, want one create", writer.ops)
+	}
+}
+
+// TestWriteUpdateNeedsOneField checks the at-least-one rule in a dry run as well as a real call: an update with none of its
+// fields is refused with ErrMissingArgument before any writer call (ADR 009 section 2).
+func TestWriteUpdateNeedsOneField(t *testing.T) {
+	cat := kindedCatalog(t, kindedSource{"kiwi", domain.KindKiwi, domain.AccessWrite})
+	writer := &fakeWriter{reply: domain.NewRecord(
+		domain.Field{Name: "id", Value: "case-40"},
+		domain.Field{Name: "title", Value: "Login works"},
+		domain.Field{Name: "url", Value: "https://kiwi.example.com/case/40/"},
+	)}
+	svc, _ := kindedService(t, cat, &fakeGateway{}, nil, writer)
+	for _, dryRun := range []bool{true, false} {
+		_, err := Write(context.Background(), svc, domain.OpKiwiTestCasesUpdate, strPtr("kiwi"), map[string]any{"documentId": "case-40"}, dryRun)
+		if !errors.Is(err, domain.ErrMissingArgument) || len(writer.ops) != 0 {
+			t.Fatalf("empty update (dryRun %v) error = %v, writer ops %v; want ErrMissingArgument and no call", dryRun, err, writer.ops)
+		}
+	}
+	if _, err := Write(context.Background(), svc, domain.OpKiwiTestCasesUpdate, strPtr("kiwi"), map[string]any{"documentId": "case-40", "status": "Confirmed"}, false); err != nil {
+		t.Fatalf("update with a status error = %v, want nil", err)
+	}
+}
+
+// TestRowOfRefusesAnUnknownOperation checks the guard that every use case runs first: an operation the catalog does not
+// hold is ErrUnsupportedOperation, and a known operation is returned with its kind.
+func TestRowOfRefusesAnUnknownOperation(t *testing.T) {
+	if _, _, err := rowOf(domain.OperationID("nope.nope")); !errors.Is(err, domain.ErrUnsupportedOperation) {
+		t.Fatalf("rowOf(unknown) error = %v, want ErrUnsupportedOperation", err)
+	}
+	row, kind, err := rowOf(domain.OpKiwiPlansAddCase)
+	if err != nil || kind != domain.KindKiwi || row.ID != domain.OpKiwiPlansAddCase {
+		t.Fatalf("rowOf(kiwi.plans.add-case) = %v, %v, %v", row.ID, kind, err)
+	}
+}
+
+// TestFileStemPerKind checks the file name stem of an export: Outline keeps the title slug, and Kiwi puts the document ID
+// first, so cases with the same title get different files (ADR 009 section 3).
+func TestFileStemPerKind(t *testing.T) {
+	cases := []struct {
+		name  string
+		kind  domain.SourceKind
+		title string
+		id    string
+		want  string
+	}{
+		{"outline keeps the slug", domain.KindOutline, "Getting Started", "doc-1", "getting-started"},
+		{"outline uses the ID without a slug", domain.KindOutline, "!!!", "doc-1", "doc-1"},
+		{"kiwi puts the ID before the slug", domain.KindKiwi, "Login works", "case-12", "case-12-login-works"},
+		{"kiwi uses the ID without a slug", domain.KindKiwi, "!!!", "case-12", "case-12"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			id, err := domain.NewDocumentID(tc.id)
+			if err != nil {
+				t.Fatalf("NewDocumentID(%q): %v", tc.id, err)
+			}
+			if got := fileStem(tc.kind, tc.title, id); got != tc.want {
+				t.Fatalf("fileStem(%s, %q, %s) = %q, want %q", tc.kind, tc.title, tc.id, got, tc.want)
+			}
+		})
+	}
+}
+
+// TestExportDocumentNamesAKiwiCaseByIDAndTitle checks the whole export: the file of a Kiwi case is named by its ID and
+// its title slug.
+func TestExportDocumentNamesAKiwiCaseByIDAndTitle(t *testing.T) {
+	cat := kindedCatalog(t, kindedSource{"kiwi", domain.KindKiwi, domain.AccessRead})
+	gw := &fakeGateway{doc: domain.SourceDocument{ID: "case-12", Title: "Login works", Markdown: "Body.\n"}}
+	svc, _ := kindedService(t, cat, gw, nil, nil)
+	sink := newFakeSink()
+	got, err := ExportDocument(context.Background(), svc, sink, domain.KindKiwi, nil, "case-12")
+	const want = "case-12-login-works.md"
+	if err != nil || got != want {
+		t.Fatalf("ExportDocument(kiwi) = %q, %v; want %s", got, err, want)
+	}
+	if _, ok := sink.bodies[want]; !ok {
+		t.Fatalf("the file %s was not written", want)
+	}
+}

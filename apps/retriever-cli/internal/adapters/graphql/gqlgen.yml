@@ -1,0 +1,32 @@
+# gqlgen configuration. Paths are relative to this file.
+# Regenerate with: go generate ./internal/adapters/graphql/
+# (runs the pinned tool: go tool gqlgen generate, see generate.go).
+schema:
+  - schema.graphqls
+
+exec:
+  filename: generated.go
+  package: graphql
+
+model:
+  filename: models_gen.go
+  package: graphql
+
+resolver:
+  layout: follow-schema
+  dir: .
+  package: graphql
+  filename_template: "{name}.resolvers.go"
+
+# Bind the object types to the core domain types so the resolvers return them without copying.
+# ExportResult is generated, because it has no core type. Source binds to the summary, which has
+# no endpoint and no credential name, so the schema cannot expose either.
+models:
+  Source:
+    model: github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain.SourceSummary
+  Collection:
+    model: github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain.Collection
+  TreeNode:
+    model: github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain.TreeNode
+  Document:
+    model: github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain.SourceDocument
