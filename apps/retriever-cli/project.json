@@ -40,6 +40,17 @@
       "cache": true,
       "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
     },
+    "build:release": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "sh ./scripts/build-release.sh \"$RELEASE_VERSION\" \"$RELEASE_OUT\"",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false,
+      "metadata": {
+        "description": "Builds the release archives and SHA256SUMS for RELEASE_VERSION, an annotated tag, into RELEASE_OUT, which must be empty."
+      }
+    },
     "run": {
       "executor": "nx:run-commands",
       "options": {
@@ -52,7 +63,7 @@
     "test:unit": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "if grep -rn --include='*_test.go' -E '\\.Skip\\(' internal cmd tests; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; sh ./scripts/coverage-gate_test.sh && ./scripts/coverage-gate.sh",
+        "command": "if grep -rn --include='*_test.go' -E '\\.Skip\\(' internal cmd tests; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; sh ./scripts/coverage-gate_test.sh && ./scripts/coverage-gate.sh && sh ./scripts/build-release_test.sh",
         "cwd": "apps/retriever-cli"
       },
       "cache": true,
