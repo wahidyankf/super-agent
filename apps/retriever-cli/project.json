@@ -66,6 +66,31 @@
       },
       "cache": false
     },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -count=1 -cover ./... && go test -count=1 -tags integration -cover ./... && go test -count=1 -cover ./internal/core/... | awk '{ print } /coverage:/ { pct = $5; sub(/%/, \"\", pct); if (pct + 0 < 99) { bad = 1 } } END { if (bad) { print \"a core package is below the 99% target\" > \"/dev/stderr\"; exit 1 } }'",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "gofmt -w .",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": false
+    },
+    "format:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "test -z \"$(gofmt -l .)\"",
+        "cwd": "apps/retriever-cli"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
     "test:quick": {
       "executor": "nx:run-commands",
       "options": {

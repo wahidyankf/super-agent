@@ -32,6 +32,8 @@ type leaf struct {
 	protocol bool
 	// noMatch marks a catalog read whose empty result exits 1, as its row's NoMatch says.
 	noMatch bool
+	// signals marks a leaf that ends with 130 on an interrupt and 143 on SIGTERM, so its help page lists both.
+	signals bool
 	run     func(*invocation) error
 }
 
@@ -198,6 +200,8 @@ var (
 	statusFailed    = [2]string{"2", "the command did not complete: a usage mistake, a configuration error, or a failed request"}
 	statusTimedOut  = [2]string{"124", "a bounded wait elapsed before the command finished; the failure is retryable"}
 	statusRefused   = [2]string{"125", "the environment refused before the command started, such as a port already in use"}
+	statusInterrupt = [2]string{"130", "the session ended on an interrupt (SIGINT)"}
+	statusTerm      = [2]string{"143", "the session ended on SIGTERM"}
 )
 
 // writeHelp prints the help page for c, whose full path is path.
@@ -262,6 +266,9 @@ func exitRows(c *command) [][2]string {
 		rows = append(rows, statusNoMatch)
 	}
 	rows = append(rows, statusFailed, statusTimedOut, statusRefused)
+	if c.leaf != nil && c.leaf.signals {
+		rows = append(rows, statusInterrupt, statusTerm)
+	}
 	return rows
 }
 

@@ -87,6 +87,7 @@ func baseCommandTree() *command {
 						{name: "--tools", meta: "<resource,...>", help: "only the tools of these resources, comma-separated, such as documents,comments; list_sources is always offered (default: every resource)"},
 					},
 					protocol: true,
+					signals:  true,
 					run:      runMCP,
 				},
 			},

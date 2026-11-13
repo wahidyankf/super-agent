@@ -59,11 +59,17 @@ func startupFailure(stderr io.Writer, argv []string, err error) int {
 // attachSources resolves the configuration paths and wires the sources of every kind into deps. A failure is returned, so
 // the CLI records it as the setup error, and only the commands that need the sources report it.
 func attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) error {
+	return attachSourcesFrom(deps, g, seams, os.Getenv, os.Getwd)
+}
+
+// attachSourcesFrom is attachSources with the environment and the working directory passed in, so a test can make the
+// path rules fail without changing the real process.
+func attachSourcesFrom(deps *cli.Deps, g cli.Globals, seams seamSet, getenv func(string) string, getwd func() (string, error)) error {
 	paths, err := configpaths.Resolve(configpaths.Inputs{
 		CatalogFlag: g.Catalog,
 		EnvFileFlag: g.EnvFile,
-		Getenv:      os.Getenv,
-		Getwd:       os.Getwd,
+		Getenv:      getenv,
+		Getwd:       getwd,
 		Exists:      regularFileExists,
 	})
 	if err != nil {
