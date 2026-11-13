@@ -29,8 +29,8 @@ variable names, and quality gates is in [docs/reference](./docs/reference/README
 
 ## Status
 
-There is no released binary yet. The first release will be a pre-release tagged `v0.x`. Each release names its breaking
-changes in [CHANGELOG.md](./CHANGELOG.md).
+The first release is `v0.1.0`, an alpha pre-release. Its archives and checksum list are on the GitHub Releases page. Each
+release names its breaking changes in [CHANGELOG.md](./CHANGELOG.md).
 
 ## Repository
 
