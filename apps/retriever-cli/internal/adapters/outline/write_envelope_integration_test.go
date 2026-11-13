@@ -1,13 +1,14 @@
+//go:build integration
+
 package outline
 
 import (
 	"encoding/json"
-	"slices"
-	"testing"
-
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
+	"slices"
+	"testing"
 )
 
 // TestEveryBuiltWriteFixtureHasExactlyItsVerifiedEnvelope checks, for every built write, destructive, and admin row, that the

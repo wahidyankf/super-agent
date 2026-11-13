@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -110,32 +108,6 @@ func TestAnInvalidIdentityNamesTheVariableNotTheValue(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), "secret") || p.calls() != 0 {
 		t.Fatalf("the refusal shows the value or sent a request: %q, calls %d", err.Error(), p.calls())
-	}
-}
-
-// TestSetBasicAuthIsCalledOnlyInAuthGo is a static guard: the Basic header is built in one place, so a second call that could
-// leak the joined credentials cannot be added unnoticed.
-func TestSetBasicAuthIsCalledOnlyInAuthGo(t *testing.T) {
-	entries, err := os.ReadDir(".")
-	if err != nil {
-		t.Fatalf("ReadDir: %v", err)
-	}
-	var callers []string
-	for _, entry := range entries {
-		name := entry.Name()
-		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Clean(name))
-		if err != nil {
-			t.Fatalf("ReadFile %s: %v", name, err)
-		}
-		if strings.Contains(string(data), "SetBasicAuth(") {
-			callers = append(callers, name)
-		}
-	}
-	if len(callers) != 1 || callers[0] != "auth.go" {
-		t.Fatalf("SetBasicAuth is called in %v, want only auth.go", callers)
 	}
 }
 

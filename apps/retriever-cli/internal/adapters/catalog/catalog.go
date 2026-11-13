@@ -38,10 +38,12 @@ type fileReader interface {
 type fileOps struct {
 	lstat func(name string) (fs.FileInfo, error)
 	open  func(name string) (fileReader, error)
+	// same reports whether two descriptions are the same file. os.SameFile matches only real descriptions.
+	same func(a, b fs.FileInfo) bool
 }
 
 // realFiles is the set of calls New uses.
-var realFiles = fileOps{lstat: os.Lstat, open: openFile}
+var realFiles = fileOps{lstat: os.Lstat, open: openFile, same: os.SameFile}
 
 // openFile opens a catalog file. It returns a nil interface, not a typed nil, when the open fails.
 func openFile(name string) (fileReader, error) {
@@ -104,7 +106,7 @@ func (l *Loader) read() (data []byte, found bool, err error) {
 	if err != nil {
 		return nil, false, catalogErr("could not check the file")
 	}
-	if !os.SameFile(info, opened) {
+	if !l.files.same(info, opened) {
 		return nil, false, catalogErr("changed while it was being opened")
 	}
 	data, err = io.ReadAll(io.LimitReader(f, maxBytes+1))

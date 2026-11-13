@@ -4,8 +4,6 @@ import (
 	"errors"
 	"io"
 	"io/fs"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -55,26 +53,15 @@ func openReturning(f fileReader) func(string) (fileReader, error) {
 	return func(string) (fileReader, error) { return f, nil }
 }
 
-// realFileInfo returns the description of one real empty file in a test folder. os.SameFile can match only real
-// descriptions, so a test that needs the same file twice takes it from here.
-func realFileInfo(t *testing.T) fs.FileInfo {
-	t.Helper()
-	path := filepath.Join(t.TempDir(), "sources.yml")
-	if err := os.WriteFile(path, nil, 0o600); err != nil {
-		t.Fatal(err)
-	}
-	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return info
-}
+// sameFake reports whether two fake descriptions are the same file. os.SameFile matches only real descriptions, so a unit
+// test compares its fake descriptions by value instead.
+func sameFake(a, b fs.FileInfo) bool { return a == b }
 
 // TestALoadFaultIsReportedAsACatalogErrorNamingItsStep checks that each file step that fails returns a catalog error that
 // names the step and never the file, so a path or a value never reaches the message.
 func TestALoadFaultIsReportedAsACatalogErrorNamingItsStep(t *testing.T) {
 	regular := fakeStatInfo{mode: 0o644}
-	same := realFileInfo(t)
+	same := fakeStatInfo{mode: 0o600}
 	tests := []struct {
 		name  string
 		files fileOps
@@ -107,7 +94,7 @@ func TestALoadFaultIsReportedAsACatalogErrorNamingItsStep(t *testing.T) {
 			name: "a file that changes between the check and the open is reported",
 			files: fileOps{
 				lstat: statReturning(regular),
-				open:  openReturning(&fakeOpened{r: strings.NewReader("a: 1"), info: fakeStatInfo{mode: 0o644}}),
+				open:  openReturning(&fakeOpened{r: strings.NewReader("a: 1"), info: fakeStatInfo{mode: 0o640}}),
 			},
 			want: "changed while it was being opened",
 		},
@@ -122,7 +109,9 @@ func TestALoadFaultIsReportedAsACatalogErrorNamingItsStep(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			loader := &Loader{path: "/work/project/sources.yml", files: tt.files}
+			files := tt.files
+			files.same = sameFake
+			loader := &Loader{path: "/work/project/sources.yml", files: files}
 			_, err := loader.Load()
 			var catalogErr domain.CatalogError
 			if !errors.As(err, &catalogErr) || catalogErr.Message != "sources catalog: "+tt.want {

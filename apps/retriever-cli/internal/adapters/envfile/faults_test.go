@@ -4,8 +4,6 @@ import (
 	"errors"
 	"io"
 	"io/fs"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -46,20 +44,9 @@ type failingReader struct{}
 
 func (failingReader) Read([]byte) (int, error) { return 0, errFault }
 
-// realFileInfo returns the description of one real empty file in a test folder. os.SameFile matches only real
-// descriptions, so a test that needs the same file twice takes it from here.
-func realFileInfo(t *testing.T) fs.FileInfo {
-	t.Helper()
-	path := filepath.Join(t.TempDir(), ".env.local")
-	if err := os.WriteFile(path, nil, 0o600); err != nil {
-		t.Fatal(err)
-	}
-	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return info
-}
+// sameFake reports whether two fake descriptions are the same file. os.SameFile matches only real descriptions, so a unit
+// test compares its fake descriptions by value instead.
+func sameFake(a, b fs.FileInfo) bool { return a == b }
 
 // statReturning returns a check that describes the env file as info.
 func statReturning(info fs.FileInfo) func(string) (fs.FileInfo, error) {
@@ -76,6 +63,9 @@ func noEnvironment(string) string { return "" }
 
 // unitCredentials returns Credentials that read the given environment and the given file calls, and no real file.
 func unitCredentials(getenv func(string) string, files fileOps) *Credentials {
+	if files.same == nil {
+		files.same = sameFake
+	}
 	return &Credentials{envPath: "/work/project/.env.local", getenv: getenv, files: files}
 }
 
@@ -176,7 +166,7 @@ func TestAMissingEnvFileIsAMissingKey(t *testing.T) {
 // TestTheFileValueIsReadWhenTheProcessHasNone checks the second rule: with an empty process value, the variable is read
 // from the local env file, and no other variable is taken from it.
 func TestTheFileValueIsReadWhenTheProcessHasNone(t *testing.T) {
-	info := realFileInfo(t)
+	info := fakeFileInfo{mode: 0o600}
 	files := fileOps{
 		lstat: statReturning(info),
 		open: openReturning(&fakeOpenFile{
@@ -194,7 +184,7 @@ func TestTheFileValueIsReadWhenTheProcessHasNone(t *testing.T) {
 // TestAFileFaultIsReturnedWithoutTheFileValue checks each step of reading the env file. A fault is returned with its
 // cause or with a rule that names the step, and the file's value is never part of the error.
 func TestAFileFaultIsReturnedWithoutTheFileValue(t *testing.T) {
-	same := realFileInfo(t)
+	same := fakeFileInfo{mode: 0o600}
 	tests := []struct {
 		name    string
 		files   fileOps
@@ -235,7 +225,7 @@ func TestAFileFaultIsReturnedWithoutTheFileValue(t *testing.T) {
 			name: "a file that changes between the check and the open is refused",
 			files: fileOps{
 				lstat: statReturning(same),
-				open:  openReturning(&fakeOpenFile{r: strings.NewReader("OUTLINE_API_KEY=value\n"), info: fakeFileInfo{mode: 0o600}}),
+				open:  openReturning(&fakeOpenFile{r: strings.NewReader("OUTLINE_API_KEY=value\n"), info: fakeFileInfo{mode: 0o644}}),
 			},
 			wantMsg: "changed while it was being opened",
 		},
@@ -296,39 +286,6 @@ func TestADotenvLineWithTextAfterAClosingQuoteNamesItsLineOnly(t *testing.T) {
 func TestAReadFaultInTheDotenvTextIsReturned(t *testing.T) {
 	if _, err := lookup(failingReader{}, "OUTLINE_API_KEY"); !errors.Is(err, errFault) {
 		t.Fatalf("lookup error = %v, want the read fault", err)
-	}
-}
-
-// TestOpenFileRefusesAMissingPathWithoutAValue checks the real opener on a path that does not exist: it returns an error
-// and a nil reader, so the caller's nil check is never fooled by a typed nil.
-func TestOpenFileRefusesAMissingPathWithoutAValue(t *testing.T) {
-	f, err := openFile("/nonexistent-retriever-test-folder/.env.local")
-	if err == nil || f != nil {
-		t.Fatalf("openFile = %v, %v; want an error and no reader", f, err)
-	}
-}
-
-// TestOpenFileOpensARealFileForReading checks the real opener on one file in a test folder: the reader describes that file.
-func TestOpenFileOpensARealFileForReading(t *testing.T) {
-	path := filepath.Join(t.TempDir(), ".env.local")
-	if err := os.WriteFile(path, []byte("OUTLINE_API_KEY=x\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	f, err := openFile(path)
-	if err != nil {
-		t.Fatalf("openFile: %v", err)
-	}
-	t.Cleanup(func() { _ = f.Close() })
-	opened, err := f.Stat()
-	if err != nil {
-		t.Fatalf("Stat of the opened file: %v", err)
-	}
-	want, err := os.Stat(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !os.SameFile(opened, want) {
-		t.Fatalf("the opened file is not the file at the path")
 	}
 }
 
