@@ -27,97 +27,97 @@ cd "$root"
 
 problems=0
 fail() {
-  echo "coverage gate: $*" >&2
-  problems=$((problems + 1))
+	echo "coverage gate: $*" >&2
+	problems=$((problems + 1))
 }
 
 # check_exclusions reads the exclusion file. Each line is kind, path, and reason, separated by tabs. A tab is a field
 # separator for read, so an empty reason field leaves reason empty, and the line fails the reason check.
 check_exclusions() {
-  if [ ! -f "$exclusions" ]; then
-    fail "the exclusion file $exclusions is missing"
-    return 0
-  fi
-  line_no=0
-  while IFS='	' read -r kind path reason extra || [ -n "${kind:-}" ]; do
-    line_no=$((line_no + 1))
-    case "$kind" in
-      '' | '#'*) continue ;;
-    esac
-    where="$exclusions:$line_no"
-    case "$kind" in
-      generated | test-support) ;;
-      *)
-        fail "$where: kind '$kind' is not allowed; only generated and test-support may be excluded"
-        continue
-        ;;
-    esac
-    if [ -n "${extra:-}" ]; then
-      fail "$where: an entry has four fields; the form is kind, path, reason"
-      continue
-    fi
-    if [ -z "$(printf '%s' "${reason:-}" | tr -d ' ')" ]; then
-      fail "$where: $path has no reason; each exclusion needs its reason in the third field"
-      continue
-    fi
-    case "$path" in
-      '' | /* | *..* | *'*'* | *'?'* | *'['*)
-        fail "$where: '$path' is not a plain relative path; a path pattern is never an exclusion"
-        continue
-        ;;
-    esac
-    case "$kind" in
-      generated)
-        case "$path" in
-          *.go) ;;
-          *)
-            fail "$where: generated entry $path is not a Go file"
-            continue
-            ;;
-        esac
-        if [ ! -f "$path" ]; then
-          fail "$where: $path does not exist"
-          continue
-        fi
-        # Go's convention: the generated-code line must come before the package clause.
-        if ! sed '/^package /q' "$path" | grep -q '^// Code generated .* DO NOT EDIT\.$'; then
-          fail "$where: $path has no 'Code generated ... DO NOT EDIT.' header before its package clause, so it is not generated"
-        fi
-        ;;
-      test-support)
-        if [ "$path" != "tests/support" ] || [ ! -d "$path" ]; then
-          fail "$where: a test-support entry must be the existing directory tests/support, not $path"
-        fi
-        ;;
-    esac
-  done < "$exclusions"
-  return 0
+	if [ ! -f "$exclusions" ]; then
+		fail "the exclusion file $exclusions is missing"
+		return 0
+	fi
+	line_no=0
+	while IFS='	' read -r kind path reason extra || [ -n "${kind:-}" ]; do
+		line_no=$((line_no + 1))
+		case "$kind" in
+		'' | '#'*) continue ;;
+		esac
+		where="$exclusions:$line_no"
+		case "$kind" in
+		generated | test-support) ;;
+		*)
+			fail "$where: kind '$kind' is not allowed; only generated and test-support may be excluded"
+			continue
+			;;
+		esac
+		if [ -n "${extra:-}" ]; then
+			fail "$where: an entry has four fields; the form is kind, path, reason"
+			continue
+		fi
+		if [ -z "$(printf '%s' "${reason:-}" | tr -d ' ')" ]; then
+			fail "$where: $path has no reason; each exclusion needs its reason in the third field"
+			continue
+		fi
+		case "$path" in
+		'' | /* | *..* | *'*'* | *'?'* | *'['*)
+			fail "$where: '$path' is not a plain relative path; a path pattern is never an exclusion"
+			continue
+			;;
+		esac
+		case "$kind" in
+		generated)
+			case "$path" in
+			*.go) ;;
+			*)
+				fail "$where: generated entry $path is not a Go file"
+				continue
+				;;
+			esac
+			if [ ! -f "$path" ]; then
+				fail "$where: $path does not exist"
+				continue
+			fi
+			# Go's convention: the generated-code line must come before the package clause.
+			if ! sed '/^package /q' "$path" | grep -q '^// Code generated .* DO NOT EDIT\.$'; then
+				fail "$where: $path has no 'Code generated ... DO NOT EDIT.' header before its package clause, so it is not generated"
+			fi
+			;;
+		test-support)
+			if [ "$path" != "tests/support" ] || [ ! -d "$path" ]; then
+				fail "$where: a test-support entry must be the existing directory tests/support, not $path"
+			fi
+			;;
+		esac
+	done <"$exclusions"
+	return 0
 }
 
 # check_packages refuses a production package that has statements and no test file, because no test binary would
 # measure its statements.
 check_packages() {
-  if ! listed=$(go list -f '{{if and .GoFiles (not .TestGoFiles)}}{{.ImportPath}}{{end}}' ./internal/... ./cmd/...); then
-    fail "go list could not read the production packages"
-    return 0
-  fi
-  unmeasured=$(printf '%s\n' "$listed" | sed '/^$/d')
-  if [ -n "$unmeasured" ]; then
-    fail "these production packages have no test file, so nothing measures them:"
-    echo "$unmeasured" >&2
-  fi
-  return 0
+	if ! listed=$(go list -f '{{if and .GoFiles (not .TestGoFiles)}}{{.ImportPath}}{{end}}' ./internal/... ./cmd/...); then
+		fail "go list could not read the production packages"
+		return 0
+	fi
+	unmeasured=$(printf '%s\n' "$listed" | sed '/^$/d')
+	if [ -n "$unmeasured" ]; then
+		fail "these production packages have no test file, so nothing measures them:"
+		echo "$unmeasured" >&2
+	fi
+	return 0
 }
 
 check_exclusions
 check_packages
 if [ "$problems" -gt 0 ]; then
-  echo "coverage gate: $problems problem(s) with the exclusions or the package list" >&2
-  exit 1
+	echo "coverage gate: $problems problem(s) with the exclusions or the package list" >&2
+	exit 1
 fi
 if [ "${1:-}" = "--check-only" ]; then
-  echo "coverage gate: the exclusions and the package list are valid"
-  exit 0
+	echo "coverage gate: the exclusions and the package list are valid"
+	exit 0
 fi
 
 # The awk program drops each profile block that an exclusion names. A generated entry matches its file, and the
@@ -126,12 +126,12 @@ needles=$(mktemp)
 profile=$(mktemp)
 trap 'rm -f "$needles" "$profile"' EXIT
 while IFS='	' read -r kind path reason _; do
-  case "$kind" in
-    '' | '#'*) continue ;;
-    generated) printf '/%s:\n' "$path" >> "$needles" ;;
-    test-support) printf '/%s/\n' "$path" >> "$needles" ;;
-  esac
-done < "$exclusions"
+	case "$kind" in
+	'' | '#'*) continue ;;
+	generated) printf '/%s:\n' "$path" >>"$needles" ;;
+	test-support) printf '/%s/\n' "$path" >>"$needles" ;;
+	esac
+done <"$exclusions"
 
 go test -race -count=1 -coverpkg=./internal/...,./cmd/... -coverprofile="$profile" ./...
 
