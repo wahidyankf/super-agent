@@ -1,0 +1,34 @@
+{
+  "name": "super-agent",
+  "version": "0.1.0",
+  "description": "Connects coding harnesses and people to data sources through one catalog and one access model.",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
+  "scripts": {
+    "affected:lint": "./hippo run --class ephemeral --resource-tier light --disk-path . -- nx affected -t lint",
+    "format:md": "prettier --write \"**/*.md\"",
+    "format:md:check": "prettier --check \"**/*.md\"",
+    "lint:md": "markdownlint-cli2 \"**/*.md\"",
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
+    "nx": "./hippo run --class transactional --resource-tier standard --disk-path . -- nx",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "volta": {
+    "node": "24.16.0",
+    "npm": "11.11.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "20.5.0",
+    "@commitlint/config-conventional": "20.5.0",
+    "husky": "9.1.7",
+    "markdownlint-cli2": "0.21.0",
+    "nx": "22.5.4",
+    "prettier": "3.8.1"
+  }
+}

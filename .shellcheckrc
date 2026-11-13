@@ -1,0 +1,14 @@
+# ShellCheck configuration for super-agent.
+# ShellCheck reads this file from the directory of each checked script and its parents.
+
+# Default shell dialect for scripts whose shebang does not pin one.
+shell=bash
+
+# Allow ShellCheck to follow `source`/`.`-included files for cross-file checks.
+external-sources=true
+
+# Severity gating is applied at the call site: scripts/lint-shell runs
+# `shellcheck --severity=warning`. It is not an .shellcheckrc directive.
+#
+# No repo-wide rule disables are configured. Add any future disable here with an
+# inline `# rationale:` comment explaining why the rule is waived repo-wide.

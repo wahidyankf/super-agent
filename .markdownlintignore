@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+**/build/
+.nx/
+
+# Lock files
+package-lock.json
+
+# Generated reports and local state
+generated-reports/
+local-tmp/
+worktrees/
+
+# Archived content: internal links may be stale; do not validate
+plans/done/
+archived/

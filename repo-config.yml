@@ -1,0 +1,960 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/wahidyankf/rhino/v0.17.0/schemas/repo-config/v2.schema.json
+# Repository-owned policy for the checksum-pinned RHINO release named in rhino.lock.
+#
+# Each retained lifecycle check is declared below with a direct executable and typed arguments.
+# Gates for applications, libraries, and Docker that do not exist yet are omitted; later PRs add them.
+
+schema: rhino/repo-config/v2
+
+repository: {}
+
+scan:
+  exclude-directories:
+    - .git
+    - node_modules
+    - dist
+    - build
+    - target
+    - .next
+    - coverage
+    - generated-reports
+    - local-tmp
+    - archived
+    - apps-labs
+    - worktrees
+    - .terraform
+    - generated-contracts
+    - .nx
+    - .fvm-cache
+    - .playwright-mcp
+    - .memsearch
+    - deps
+    - _build
+    - cover
+    - .venv
+    - __pycache__
+    - .pytest_cache
+    - .ruff_cache
+    - fixtures
+    - raw
+    - done
+    # RHINO excludes directory names at any depth, not path globs; no tracked taste tree exists.
+    - taste
+
+environment:
+  examples:
+    - { source: .env.example, target: .env.local }
+  staged:
+    forbidden: [".env*", "**/.env*"]
+    allowed:
+      - .env.example
+  detectors: []
+
+toolchains:
+  entries:
+    - { id: git, executable: git, probe: [--version], required: true }
+    - { id: node, executable: node, probe: [--version], required: true }
+    - { id: npm, executable: npm, probe: [--version], required: true }
+    # Native binaries the declared gates invoke from PATH. The formatter and markdown linters come from the
+    # npm lock file; base utilities are not declared.
+    - { id: bash, executable: bash, probe: [--version], required: true }
+    - { id: curl, executable: curl, probe: [--version], required: true }
+    - { id: jq, executable: jq, probe: [--version], required: true }
+    - { id: shfmt, executable: shfmt, probe: [--version], required: true }
+    - { id: shellcheck, executable: shellcheck, probe: [--version], required: true }
+    - { id: actionlint, executable: actionlint, probe: [--version], required: true }
+
+harness:
+  agents-root: agents
+  canonical:
+    agents:
+      name: name
+      description: description
+      tier: tier
+      grants: capabilities
+      denials: denies
+      constraints: constraints
+      dispatches: dispatches
+    skills:
+      name: name
+      description: description
+  requirements:
+    capabilities:
+      - repository-read
+      - repository-write
+      - shell
+      - network
+      - subagent
+    constraints:
+      - read-only
+      - no-edit
+      - no-glob
+      - no-read
+      - no-write
+    routes:
+      - canonical-import
+    identities:
+      - description
+  profiles:
+    - id: claude
+      supports:
+        capabilities:
+          - repository-read
+          - repository-write
+          - shell
+          - network
+          - subagent
+        constraints:
+          - read-only
+          - no-edit
+          - no-glob
+          - no-read
+          - no-write
+        routes:
+          - canonical-import
+        identities:
+          - description
+      instruction-adapter:
+        path: CLAUDE.md
+        route: "@{path}"
+      agent-adapter:
+        path: ".claude/agents/{name}.md"
+        format: front-matter
+        route-field: body
+        route: "Before acting, read the complete canonical agent definition at the repository-root path {path} and follow it as authoritative. If it cannot be read, stop and report the missing path."
+        identity: { name: name, description: description }
+        lists: { skills: skills }
+        tier-fields: { model: model, effort: effort }
+        dispatches: { field: tools, format: "Agent({names})" }
+        empty-tier: { model: inherit }
+        translations:
+          - { when: always, field: tools, members: [Read] }
+          - { when: requires, capability: repository-read, field: tools, members: [Glob, Grep] }
+          - { when: requires, capability: repository-write, field: tools, members: [Write, Edit] }
+          - { when: requires, capability: shell, field: tools, members: [Bash] }
+          - { when: requires, capability: network, field: tools, members: [WebSearch, WebFetch] }
+          - { when: denies, capability: repository-write, field: tools, absent-members: [Write, Edit] }
+          - { when: denies, capability: shell, field: tools, absent-members: [Bash, PowerShell] }
+          - { when: constrains, capability: no-edit, field: tools, absent-members: [Edit] }
+          - { when: constrains, capability: no-glob, field: tools, absent-members: [Glob] }
+          - { when: constrains, capability: no-read, field: tools, absent-members: [Read] }
+          - { when: constrains, capability: no-write, field: tools, absent-members: [Write] }
+          # Serena base mappings: ose-rules@cc58f5227238d01995cb581857a91d12170e1ade; local overlays retained.
+          - when: requires
+            capability: repository-read
+            field: tools
+            members:
+              - mcp__serena__activate_project
+              - mcp__serena__initial_instructions
+              - mcp__serena__get_current_config
+              - mcp__serena__get_symbols_overview
+              - mcp__serena__find_symbol
+              - mcp__serena__find_referencing_symbols
+              - mcp__serena__find_implementations
+              - mcp__serena__find_declaration
+              - mcp__serena__get_diagnostics_for_file
+              - mcp__serena__get_diagnostics_for_symbol
+              - mcp__serena__search_for_pattern
+              - mcp__serena__read_memory
+              - mcp__serena__list_memories
+          - when: requires
+            capability: repository-write
+            field: tools
+            members:
+              - mcp__serena__replace_symbol_body
+              - mcp__serena__insert_after_symbol
+              - mcp__serena__insert_before_symbol
+              - mcp__serena__rename_symbol
+              - mcp__serena__safe_delete_symbol
+              - mcp__serena__replace_content
+              - mcp__serena__replace_in_files
+              - mcp__serena__create_text_file
+              - mcp__serena__delete_lines
+              - mcp__serena__replace_lines
+              - mcp__serena__insert_at_line
+              - mcp__serena__write_memory
+              - mcp__serena__delete_memory
+              - mcp__serena__rename_memory
+              - mcp__serena__edit_memory
+              - mcp__serena__execute_shell_command
+              - mcp__serena__remove_project
+          - when: constrains
+            capability: read-only
+            field: disallowedTools
+            members:
+              - mcp__serena__replace_symbol_body
+              - mcp__serena__insert_after_symbol
+              - mcp__serena__insert_before_symbol
+              - mcp__serena__rename_symbol
+              - mcp__serena__safe_delete_symbol
+              - mcp__serena__replace_content
+              - mcp__serena__replace_in_files
+              - mcp__serena__create_text_file
+              - mcp__serena__delete_lines
+              - mcp__serena__replace_lines
+              - mcp__serena__insert_at_line
+              - mcp__serena__write_memory
+              - mcp__serena__delete_memory
+              - mcp__serena__rename_memory
+              - mcp__serena__edit_memory
+              - mcp__serena__execute_shell_command
+              - mcp__serena__remove_project
+          - when: constrains
+            capability: no-write
+            field: disallowedTools
+            members:
+              - mcp__serena__replace_symbol_body
+              - mcp__serena__insert_after_symbol
+              - mcp__serena__insert_before_symbol
+              - mcp__serena__rename_symbol
+              - mcp__serena__safe_delete_symbol
+              - mcp__serena__replace_content
+              - mcp__serena__replace_in_files
+              - mcp__serena__create_text_file
+              - mcp__serena__delete_lines
+              - mcp__serena__replace_lines
+              - mcp__serena__insert_at_line
+              - mcp__serena__write_memory
+              - mcp__serena__delete_memory
+              - mcp__serena__rename_memory
+              - mcp__serena__edit_memory
+              - mcp__serena__execute_shell_command
+              - mcp__serena__remove_project
+          - when: constrains
+            capability: no-edit
+            field: disallowedTools
+            members:
+              - mcp__serena__replace_symbol_body
+              - mcp__serena__insert_after_symbol
+              - mcp__serena__insert_before_symbol
+              - mcp__serena__rename_symbol
+              - mcp__serena__safe_delete_symbol
+              - mcp__serena__replace_content
+              - mcp__serena__replace_in_files
+              - mcp__serena__delete_lines
+              - mcp__serena__replace_lines
+              - mcp__serena__insert_at_line
+              - mcp__serena__delete_memory
+              - mcp__serena__rename_memory
+              - mcp__serena__edit_memory
+              - mcp__serena__remove_project
+          - when: constrains
+            capability: no-read
+            field: disallowedTools
+            members:
+              - mcp__serena__get_symbols_overview
+              - mcp__serena__find_symbol
+              - mcp__serena__find_referencing_symbols
+              - mcp__serena__find_implementations
+              - mcp__serena__find_declaration
+              - mcp__serena__get_diagnostics_for_file
+              - mcp__serena__get_diagnostics_for_symbol
+              - mcp__serena__search_for_pattern
+              - mcp__serena__read_memory
+              - mcp__serena__list_memories
+          - when: constrains
+            capability: no-glob
+            field: disallowedTools
+            members:
+              - mcp__serena__find_file
+      skill-adapter:
+        path: ".claude/skills/{name}/SKILL.md"
+        format: front-matter
+        route-field: body
+        route: "Read {path} completely, resolve every relative resource from that skill directory, and follow it as authoritative before acting."
+        identity: { name: name, description: description }
+      tiers:
+        ultra: { model: opus, effort: high }
+        plan: { model: sonnet, effort: high }
+        execution: { model: haiku, effort: high }
+        fast: { model: haiku, effort: medium }
+    - id: codex
+      supports:
+        capabilities:
+          - repository-read
+          - repository-write
+          - shell
+          - network
+          - subagent
+        constraints:
+          - read-only
+          - no-edit
+          - no-glob
+          - no-read
+          - no-write
+        routes:
+          - canonical-import
+        identities:
+          - description
+      agent-adapter:
+        path: ".codex/agents/{name}.toml"
+        format: toml
+        route-field: developer_instructions
+        route: "Before acting, read the complete canonical agent definition at the repository-root path {path} and follow it as authoritative. If it cannot be read, stop and report the missing path."
+        identity: { name: name, description: description }
+        tier-fields: { model: model, effort: model_reasoning_effort }
+      tiers:
+        ultra:
+          model-resolve: { command: [codex, debug, models], pattern: gpt-*-sol, fallback: gpt-6-sol }
+          effort: high
+        plan:
+          model-resolve: { command: [codex, debug, models], pattern: gpt-*-sol, fallback: gpt-6-sol }
+          effort: high
+        execution:
+          model-resolve: { command: [codex, debug, models], pattern: gpt-*-terra, fallback: gpt-6.1-terra }
+          effort: high
+        fast:
+          model-resolve: { command: [codex, debug, models], pattern: gpt-*-terra, fallback: gpt-6.1-terra }
+          effort: medium
+    - id: opencode
+      supports:
+        capabilities:
+          - repository-read
+          - repository-write
+          - shell
+          - network
+          - subagent
+        constraints:
+          - read-only
+          - no-edit
+          - no-glob
+          - no-read
+          - no-write
+        routes:
+          - canonical-import
+        identities:
+          - description
+      agent-adapter:
+        path: ".opencode/agents/{name}.md"
+        format: front-matter
+        route-field: body
+        route: "Before acting, read the complete canonical agent definition at the repository-root path {path} and follow it as authoritative. If it cannot be read, stop and report the missing path."
+        identity: { description: description }
+        fixed: { mode: subagent }
+        dispatches: { field: permission.task, format: allow-map }
+        translations:
+          - { when: always, field: permission, entries: { read: allow } }
+          - { when: requires, capability: repository-read, field: permission, entries: { glob: allow, grep: allow } }
+          - { when: requires, capability: repository-write, field: permission, entries: { edit: allow } }
+          - { when: requires, capability: shell, field: permission, entries: { bash: allow } }
+          - { when: requires, capability: network, field: permission, entries: { webfetch: allow, websearch: allow } }
+          - { when: denies, capability: repository-write, field: permission, entries: { edit: deny } }
+          - { when: denies, capability: shell, field: permission, entries: { bash: deny } }
+          - { when: constrains, capability: read-only, field: permission, entries: { edit: deny } }
+          - { when: no-dispatches, field: permission, entries: { task: deny } }
+
+    - id: commandcode
+      supports:
+        capabilities: [repository-read, repository-write, shell, network, subagent]
+        constraints: [read-only, no-edit, no-glob, no-read, no-write]
+        routes: [canonical-import]
+        identities: [description]
+      agent-adapter:
+        path: ".commandcode/agents/{name}.md"
+        format: front-matter
+        route-field: body
+        route: |-
+          Before acting, read the complete canonical agent definition at the repository-root path
+          {path} and follow it as authoritative.
+          If it cannot be read, stop and report the missing path.
+        identity: { name: name, description: description }
+        absent: [model, featureModels, effort, reasoningEffort]
+        translations:
+          - { when: always, field: tools, members: [read_file] }
+          - { when: always, field: disallowedTools, members: [agent, agent_output] }
+          - { when: requires, capability: repository-read, field: tools, members: [read_directory, grep, glob] }
+          - { when: requires, capability: repository-write, field: tools, members: [write_file, edit_file] }
+          - { when: requires, capability: shell, field: tools, members: [shell_command, run_command, kill_shell] }
+          - { when: requires, capability: network, field: tools, members: [web_search, web_fetch] }
+          - { when: constrains, capability: read-only, field: disallowedTools, members: [write_file, edit_file] }
+          - { when: constrains, capability: no-edit, field: disallowedTools, members: [edit_file] }
+          - { when: constrains, capability: no-glob, field: disallowedTools, members: [glob] }
+          - { when: constrains, capability: no-read, field: disallowedTools, members: [read_file] }
+          - { when: constrains, capability: no-write, field: disallowedTools, members: [write_file] }
+          - {
+              when: denies,
+              capability: repository-read,
+              field: disallowedTools,
+              members: [read_file, read_directory, grep, glob],
+            }
+          - { when: denies, capability: repository-write, field: disallowedTools, members: [write_file, edit_file] }
+          - {
+              when: denies,
+              capability: shell,
+              field: disallowedTools,
+              members: [shell_command, run_command, kill_shell],
+            }
+          - { when: denies, capability: network, field: disallowedTools, members: [web_search, web_fetch] }
+          # Serena base mappings: ose-rules@cc58f5227238d01995cb581857a91d12170e1ade; local overlays retained.
+          - when: requires
+            capability: repository-read
+            field: tools
+            members:
+              - mcp__serena__activate_project
+              - mcp__serena__initial_instructions
+              - mcp__serena__get_current_config
+              - mcp__serena__get_symbols_overview
+              - mcp__serena__find_symbol
+              - mcp__serena__find_referencing_symbols
+              - mcp__serena__find_implementations
+              - mcp__serena__find_declaration
+              - mcp__serena__get_diagnostics_for_file
+              - mcp__serena__get_diagnostics_for_symbol
+              - mcp__serena__search_for_pattern
+              - mcp__serena__read_memory
+              - mcp__serena__list_memories
+          - when: requires
+            capability: repository-write
+            field: tools
+            members:
+              - mcp__serena__replace_symbol_body
+              - mcp__serena__insert_after_symbol
+              - mcp__serena__insert_before_symbol
+              - mcp__serena__rename_symbol
+              - mcp__serena__safe_delete_symbol
+              - mcp__serena__replace_content
+              - mcp__serena__replace_in_files
+              - mcp__serena__create_text_file
+              - mcp__serena__delete_lines
+              - mcp__serena__replace_lines
+              - mcp__serena__insert_at_line
+              - mcp__serena__write_memory
+              - mcp__serena__delete_memory
+              - mcp__serena__rename_memory
+              - mcp__serena__edit_memory
+              - mcp__serena__execute_shell_command
+              - mcp__serena__remove_project
+          - when: constrains
+            capability: read-only
+            field: disallowedTools
+            members:
+              - mcp__serena__replace_symbol_body
+              - mcp__serena__insert_after_symbol
+              - mcp__serena__insert_before_symbol
+              - mcp__serena__rename_symbol
+              - mcp__serena__safe_delete_symbol
+              - mcp__serena__replace_content
+              - mcp__serena__replace_in_files
+              - mcp__serena__create_text_file
+              - mcp__serena__delete_lines
+              - mcp__serena__replace_lines
+              - mcp__serena__insert_at_line
+              - mcp__serena__write_memory
+              - mcp__serena__delete_memory
+              - mcp__serena__rename_memory
+              - mcp__serena__edit_memory
+              - mcp__serena__execute_shell_command
+              - mcp__serena__remove_project
+          - when: constrains
+            capability: no-write
+            field: disallowedTools
+            members:
+              - mcp__serena__replace_symbol_body
+              - mcp__serena__insert_after_symbol
+              - mcp__serena__insert_before_symbol
+              - mcp__serena__rename_symbol
+              - mcp__serena__safe_delete_symbol
+              - mcp__serena__replace_content
+              - mcp__serena__replace_in_files
+              - mcp__serena__create_text_file
+              - mcp__serena__delete_lines
+              - mcp__serena__replace_lines
+              - mcp__serena__insert_at_line
+              - mcp__serena__write_memory
+              - mcp__serena__delete_memory
+              - mcp__serena__rename_memory
+              - mcp__serena__edit_memory
+              - mcp__serena__execute_shell_command
+              - mcp__serena__remove_project
+          - when: constrains
+            capability: no-edit
+            field: disallowedTools
+            members:
+              - mcp__serena__replace_symbol_body
+              - mcp__serena__insert_after_symbol
+              - mcp__serena__insert_before_symbol
+              - mcp__serena__rename_symbol
+              - mcp__serena__safe_delete_symbol
+              - mcp__serena__replace_content
+              - mcp__serena__replace_in_files
+              - mcp__serena__delete_lines
+              - mcp__serena__replace_lines
+              - mcp__serena__insert_at_line
+              - mcp__serena__delete_memory
+              - mcp__serena__rename_memory
+              - mcp__serena__edit_memory
+              - mcp__serena__remove_project
+          - when: constrains
+            capability: no-read
+            field: disallowedTools
+            members:
+              - mcp__serena__get_symbols_overview
+              - mcp__serena__find_symbol
+              - mcp__serena__find_referencing_symbols
+              - mcp__serena__find_implementations
+              - mcp__serena__find_declaration
+              - mcp__serena__get_diagnostics_for_file
+              - mcp__serena__get_diagnostics_for_symbol
+              - mcp__serena__search_for_pattern
+              - mcp__serena__read_memory
+              - mcp__serena__list_memories
+          - when: constrains
+            capability: no-glob
+            field: disallowedTools
+            members:
+              - mcp__serena__find_file
+      tiers:
+        ultra: {}
+        plan: {}
+        execution: {}
+        fast: {}
+    - id: muse
+      supports:
+        capabilities:
+          - repository-read
+          - repository-write
+          - shell
+          - network
+          - subagent
+        constraints:
+          - read-only
+          - no-edit
+          - no-glob
+          - no-read
+          - no-write
+        routes:
+          - canonical-import
+        identities:
+          - description
+      agent-adapter:
+        path: ".agents/agents/{name}/AGENT.md"
+        format: front-matter
+        route-field: body
+        route:
+          "Before acting, read the complete canonical agent definition at the repository-root path\n{path} and follow it
+          as authoritative.\nIf it cannot be read, stop and report the missing path."
+        identity:
+          name: name
+          description: description
+        tier-fields:
+          model: model
+          effort: effort
+      tiers:
+        ultra: { model: muse-wonder-1.0, effort: high }
+        plan: { model: muse-spark-1.3, effort: xhigh }
+        execution: { model: muse-spark-1.3, effort: high }
+        fast: { model: muse-spark-1.3, effort: medium }
+
+policies:
+  markdown:
+    metadata:
+      surfaces:
+        - glob: "agents/*.md"
+          schema: agent
+        - glob: ".agents/skills/*/SKILL.md"
+          schema: skill
+        - glob: "agents/**/README.md"
+          schema: governance
+        - glob: ".agents/**/README.md"
+          schema: governance
+    frontmatter:
+      surfaces:
+        - glob: "repo-governance/**/*.md"
+          require: [description, when_to_use]
+          forbid: [updated, created]
+        - glob: "agents/*.md"
+          require: []
+          forbid: [updated]
+        - glob: ".agents/skills/**/*.md"
+          require: []
+          forbid: [updated]
+        - glob: "plans/**/*.md"
+          require: []
+          forbid: [updated]
+    heading-hierarchy:
+      surfaces:
+        - glob: "docs/**"
+        - glob: "repo-governance/**"
+        - glob: "specs/**"
+        - glob: "plans/**"
+        - glob: "AGENTS.md"
+        - glob: "README.md"
+      single-h1: true
+      max-level-jump: 1
+    internal-link:
+      exclude-sources:
+        - "plans/done/**"
+        - ".claude/skills/**"
+    naming:
+      surfaces:
+        - glob: "**/*.md"
+          style: kebab-case
+      exempt:
+        - "**/README.md"
+        - "**/SKILL.md"
+        - "**/AGENT.md"
+        - "**/AGENTS.md"
+        - "**/CLAUDE.md"
+        - "**/_index.md"
+        - "**/CONTRIBUTING.md"
+        - "**/CHANGELOG.md"
+        - "**/LICENSING-NOTICE.md"
+        - "**/ROADMAP.md"
+        - "**/SECURITY.md"
+        - "**/*__linkedin__*.md"
+        - "**/pull_request_template.md"
+    # Owner: repo-governance/conventions/structure/governance-readme-completeness.md.
+    # Every tree sets require-direct-children, so its root README must link every direct child file
+    # and subdirectory; a subdirectory counts only when linked as ./<dir>/. `annotations` is
+    # deliberately not set: it checks declared file and text pairs, not that each link is annotated.
+    readme-index:
+      trees:
+        - path: docs
+          require-direct-children: true
+        - path: repo-governance
+          require-direct-children: true
+        - path: agents
+          require-direct-children: true
+        - path: .agents/skills
+          require-direct-children: true
+        - path: specs
+          require-direct-children: true
+        - path: plans
+          require-direct-children: true
+        - path: apps
+          require-direct-children: true
+        - path: libs
+          require-direct-children: true
+        - path: scripts
+          require-direct-children: true
+  governance:
+    # The validator fails on any listed term found as a case-sensitive substring under `roots`.
+    # The list holds names only; harness directory paths are deliberately absent.
+    vendor:
+      roots: [repo-governance, AGENTS.md, CLAUDE.md]
+      forbidden-terms:
+        - "Claude Code"
+        - "OpenCode"
+        - "Cursor"
+        - "Windsurf"
+        - "Codeium"
+        - "Mistral"
+        - "Grok"
+    word-budget:
+      count: whitespace-separated
+      surfaces:
+        - { glob: "repo-governance/**/*.md", target: 650, warn: 750, fail: 750 }
+        - { glob: ".codex/**/*.md", target: 650, warn: 750, fail: 750 }
+        - { glob: ".opencode/**/*.md", target: 650, warn: 750, fail: 750 }
+        - { glob: ".agents/**/*.md", target: 650, warn: 750, fail: 750 }
+        - { glob: "agents/**/*.md", target: 650, warn: 750, fail: 750 }
+        - { glob: "AGENTS.md", target: 650, warn: 750, fail: 750 }
+        - { glob: "CLAUDE.md", target: 650, warn: 750, fail: 750 }
+        - { glob: "repo-governance/**/README.md", target: 900, warn: 1000, fail: 1000 }
+        - { glob: ".codex/**/README.md", target: 900, warn: 1000, fail: 1000 }
+        - { glob: ".opencode/**/README.md", target: 900, warn: 1000, fail: 1000 }
+        - { glob: ".agents/**/README.md", target: 900, warn: 1000, fail: 1000 }
+        - { glob: "agents/**/README.md", target: 900, warn: 1000, fail: 1000 }
+        - { glob: "apps/**/README.md", target: 900, warn: 1000, fail: 1000 }
+        - { glob: "libs/**/README.md", target: 900, warn: 1000, fail: 1000 }
+        - { glob: ".github/**/README.md", target: 900, warn: 1000, fail: 1000 }
+        - { glob: "scripts/README.md", target: 900, warn: 1000, fail: 1000 }
+        - { glob: "README.md", target: 900, warn: 1000, fail: 1000 }
+    # Owner: repo-governance/development/workflow/quality-gate-contract.md. Each declared family has its gate,
+    # propagation, checker, and fixer; product rules live in repo-governance/development/quality/gate-adapters/.
+  conventions:
+    emoji:
+      prohibited:
+        - glob: "**/*.json"
+        - glob: "**/*.yaml"
+        - glob: "**/*.yml"
+        - glob: "**/*.toml"
+        - glob: "**/*.go"
+        - glob: "**/*.ts"
+        - glob: "**/*.tsx"
+        - glob: "**/*.js"
+        - glob: "**/*.jsx"
+        - glob: "**/*.py"
+        - glob: "**/*.java"
+        - glob: "**/*.kt"
+        - glob: "**/*.rs"
+        - glob: "**/*.fs"
+        - glob: "**/*.cs"
+        - glob: "**/*.dart"
+        - glob: "**/*.exs"
+        - glob: "**/*.ex"
+        - glob: "**/*.clj"
+
+gates:
+  composition:
+    pull-request:
+      relation: at-least
+  entries:
+    - id: public-safety-tree
+      type: check
+      command:
+        executable: bash
+        args:
+          - literal: scripts/public-safety/check.sh
+      run-on:
+        pre-commit: {}
+        pre-push: {}
+        pull-request: {}
+    - id: public-safety-commit-message
+      type: check
+      inputs:
+        message:
+          kind: commit-message
+      command:
+        executable: ./scripts/public-safety/check-commit-message
+        args:
+          - input: message.text
+            expand: single
+      run-on:
+        commit-msg:
+          bind:
+            message:
+              source: hook-message-file
+        pull-request:
+          bind:
+            message:
+              source: explicit-range
+              range: explicit
+    # The history screen: every commit a push publishes, and every commit in a pull request's base..head range,
+    # contributes its own additions, names, and message.
+    - id: public-safety-range
+      type: check
+      inputs:
+        range:
+          kind: commit-range
+      command:
+        executable: bash
+        args:
+          - literal: scripts/public-safety/check.sh
+        environment:
+          PUBLIC_SAFETY_BASE:
+            input: range.base
+          PUBLIC_SAFETY_HEAD:
+            input: range.head
+      run-on:
+        pre-push:
+          bind:
+            range:
+              source: push-updates
+              fallback: refs/remotes/origin/main
+        pull-request:
+          bind:
+            range:
+              source: explicit-range
+              range: explicit
+    - id: remote-dispatch-refusal
+      type: check
+      command:
+        executable: bash
+        args:
+          - literal: scripts/check-remote-dispatch-refusal.sh
+      run-on:
+        pre-commit: {}
+        pre-push: {}
+        pull-request: {}
+    - id: format-staged
+      type: mutation
+      inputs:
+        staged:
+          kind: files
+      mutation:
+        local: apply-index
+        ci: verify-clean
+      command:
+        executable: ./scripts/format-staged
+        args:
+          - input: staged.paths
+            expand: repeat
+      run-on:
+        pre-commit:
+          bind:
+            staged:
+              source: git-index
+        pull-request:
+          bind:
+            staged:
+              source: explicit-range
+              range: explicit
+    - id: repo-config
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: repo-config
+          - literal: validate
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+    - id: harness-adapters
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: harness
+          - literal: adapters
+          - literal: validate
+      run-on:
+        pre-push: {}
+        pull-request: {}
+    - id: governance-vendor
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: governance
+          - literal: vendor
+          - literal: validate
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+    - id: env-validate
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: env
+          - literal: validate
+      run-on:
+        pre-commit: {}
+        pre-push: {}
+        pull-request: {}
+    - id: markdownlint
+      type: check
+      command:
+        executable: npx
+        args:
+          - literal: --no
+          - literal: markdownlint-cli2
+          - literal: "**/*.md"
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+    - id: md-readme-index
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: md
+          - literal: readme-index
+          - literal: validate
+      # Whole-tree on both surfaces: a README index can break from a directory added or removed outside the staged paths.
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+    - id: md-internal-link
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: md
+          - literal: internal-link
+          - literal: validate
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+    - id: word-budget
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: governance
+          - literal: word-budget
+          - literal: validate
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+    - id: shellcheck
+      type: check
+      inputs:
+        staged:
+          kind: files
+      command:
+        executable: ./scripts/lint-shell
+        args:
+          - input: staged.paths
+            expand: repeat
+      run-on:
+        pre-commit:
+          bind:
+            staged:
+              source: git-index
+        pull-request:
+          bind:
+            staged:
+              source: explicit-range
+              range: explicit
+    - id: actionlint
+      type: check
+      inputs:
+        staged:
+          kind: files
+      command:
+        executable: ./scripts/lint-workflows
+        args:
+          - input: staged.paths
+            expand: repeat
+      run-on:
+        pre-commit:
+          bind:
+            staged:
+              source: git-index
+        pull-request:
+          bind:
+            staged:
+              source: explicit-range
+              range: explicit
+    - id: md-heading-hierarchy
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: md
+          - literal: heading-hierarchy
+          - literal: validate
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+    - id: md-naming
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: md
+          - literal: naming
+          - literal: validate
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+    - id: md-frontmatter
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: md
+          - literal: frontmatter
+          - literal: validate
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+    - id: convention-emoji
+      type: check
+      command:
+        executable: ./rhino
+        args:
+          - literal: convention
+          - literal: emoji
+          - literal: validate
+      run-on:
+        pre-commit: {}
+        pull-request: {}
+
+extensions:
+  # Owner: repo-governance/development/quality/stacks/repository-adapter.md
+  # No projects yet. The first Nx project (PR 2) adds its entry here.
+  software-development:
+    projects: {}
