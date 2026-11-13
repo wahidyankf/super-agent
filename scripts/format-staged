@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Apply the repository's formatters only to paths selected by RHINO's index snapshot.
+# RHINO owns re-staging and disposable pull-request replay; this helper owns formatter
+# selection and never queries Git. Go formatting joins this script with the first Go project.
+set -euo pipefail
+
+prettier_paths=()
+shell_paths=()
+
+for path in "$@"; do
+  # Deleted paths are intentional in an index snapshot and have no bytes to format.
+  [[ -f "$path" ]] || continue
+
+  case "$path" in
+    *.md | *.json | *.yml | *.yaml) prettier_paths+=("$path") ;;
+    *.sh) shell_paths+=("$path") ;;
+  esac
+done
+
+# Prettier reads the root .prettierrc.json and .prettierignore; --write touches only the listed paths.
+if (( ${#prettier_paths[@]} > 0 )); then
+  prettier --write "${prettier_paths[@]}"
+fi
+(( ${#shell_paths[@]} == 0 )) || shfmt -w "${shell_paths[@]}"
