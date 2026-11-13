@@ -4,8 +4,11 @@
 > change in any release, including minor and patch releases, until a stable 1.0. Do not depend on it in production.
 
 super-agent connects coding harnesses and people to data sources and channels. It is a set of source connectors for
-catalogs, document systems, and messaging, exposed through a command-line tool (`super-agent-cli`) and a Model Context
+catalogs, document systems, and messaging, exposed through a command-line tool (`retriever-cli`) and a Model Context
 Protocol (MCP) server. Every connector checks access before it reads or writes data.
+
+The apps share one theme: the human summons one creature per app, and the retriever (`retriever-cli`) fetches data from
+sources and brings it back.
 
 ## What the name means
 

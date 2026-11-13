@@ -8,12 +8,12 @@ when_to_use: >-
 
 # Golang Standards
 
-These rules apply to the Go code in `apps/super-agent-cli`, and to any Go library that the repository adds later.
+These rules apply to the Go code in `apps/retriever-cli`, and to any Go library that the repository adds later.
 
 ## Version and Module
 
 - The `go.mod` file sets `go 1.26.1` and `toolchain go1.26.9`.
-- The module path is `github.com/wahidyankf/super-agent/apps/super-agent-cli`.
+- The module path is `github.com/wahidyankf/super-agent/apps/retriever-cli`.
 
 ## Tools
 

@@ -22,7 +22,7 @@ contract says where each variable is declared, how it is named, and where its re
 ## Naming
 
 - Use upper snake case.
-- Prefix every setting the tool owns with `SUPER_AGENT_`.
+- Prefix every setting the tool owns with `RETRIEVER_`.
 - Use the `EXAMPLE_` prefix only for placeholders in documentation, fixtures, and the template.
 - Name a credential for its purpose and its source kind, never with a number or a generic word.
 

@@ -1,22 +1,22 @@
 ---
 description: >-
-  Records the tier of super-agent-cli under the command-line interface convention, the owner choices that fix its open
+  Records the tier of retriever-cli under the command-line interface convention, the owner choices that fix its open
   points, and how the shared cross-repository standard will replace this local text.
 when_to_use: >-
-  Use when building, reviewing, or changing super-agent-cli's interface, or when a convention module seems to conflict
+  Use when building, reviewing, or changing retriever-cli's interface, or when a convention module seems to conflict
   with what the tool does.
 ---
 
-# Tiers Here: super-agent-cli
+# Tiers Here: retriever-cli
 
 ## Tier
 
-`super-agent-cli` is the full bar. A person and a harness call it directly, so it owes the floor rules and the full-bar
+`retriever-cli` is the full bar. A person and a harness call it directly, so it owes the floor rules and the full-bar
 rules in modules 001 to 008. It starts no child process, so it never returns `126` or `127`.
 
 ## Owner Choices
 
-The owner fixed these points on 2026-11-13. Each one applies to `super-agent-cli` now.
+The owner fixed these points on 2026-11-13. Each one applies to `retriever-cli` now.
 
 1. **JSON mode is a global flag, `--output text|json`.** It applies to every command. No command has its own JSON flag,
    and no command treats `--json` as an alias.
@@ -28,7 +28,7 @@ The owner fixed these points on 2026-11-13. Each one applies to `super-agent-cli
    signal.
 4. **`NO_COLOR` suppresses colour only when it is set and non-empty.** An empty value does not suppress colour.
 5. **`--version` prints the tool name and the version.** A panic exits `2` with a coded body, for example
-   `super-agent.panic`, and prints no stack trace.
+   `retriever.panic`, and prints no stack trace.
 
 ## Conformance Runs Before Merge
 

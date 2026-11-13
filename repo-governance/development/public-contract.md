@@ -16,7 +16,7 @@ even before 1.0. This page lists what the contract covers and what a change to i
 
 - **Exit statuses.** The meaning of each status in the [exit status
   contract](../conventions/command-line-interface/001-exit-status-contract.md).
-- **Error codes.** Each `super-agent.<area>.<reason>` code, its meaning, and its `retryable` value.
+- **Error codes.** Each `retriever.<area>.<reason>` code, its meaning, and its `retryable` value.
 - **Command paths.** Every command and subcommand name.
 - **Flags.** Every flag name and its meaning, including the reserved names `--output`, `--color`, `--no-input`,
   `--help`, and `--version`.

@@ -1,7 +1,7 @@
 # Documentation
 
 super-agent is in alpha. The repository holds its skeleton today: quality gates, governance rules, this
-documentation, and an empty plans folder. The command-line tool, `super-agent-cli`, arrives in the next pull
+documentation, and an empty plans folder. The command-line tool, `retriever-cli`, arrives in the next pull
 request. Until it does, the pages below explain the project and describe the repository work you can do now.
 
 ## Start here
