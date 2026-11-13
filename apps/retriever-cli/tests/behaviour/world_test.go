@@ -29,9 +29,6 @@ const (
 	levelE2E         level = "e2e"
 )
 
-// errNoSourcesAtUnit is the setup error of the unit level. It keeps every source command from reaching a gateway.
-var errNoSourcesAtUnit = errors.New("no source is wired at the unit level")
-
 // runResult is what the last command printed and returned.
 type runResult struct {
 	ran    bool
@@ -86,7 +83,7 @@ func (w *world) setup() error {
 	for _, k := range proxyVars {
 		w.env[k] = proxyRefusal
 	}
-	if w.level == levelIntegration {
+	if w.inProcess() {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
@@ -105,7 +102,7 @@ func (w *world) teardown() {
 		w.procKill[i]()
 	}
 	w.stubs.close()
-	if w.level == levelIntegration {
+	if w.inProcess() {
 		if w.cwd != "" {
 			_ = os.Chdir(w.cwd)
 		}
@@ -150,9 +147,7 @@ func (w *world) deps(stdout, stderr *bytes.Buffer) cli.Deps {
 // execute runs one command line, the argument vector after the program name, and records its result.
 func (w *world) execute(argv []string) error {
 	switch w.level {
-	case levelUnit:
-		return w.runUnit(argv)
-	case levelIntegration:
+	case levelUnit, levelIntegration:
 		if err := w.ensureStubs(); err != nil {
 			return err
 		}
@@ -163,16 +158,6 @@ func (w *world) execute(argv []string) error {
 		}
 		return w.runProcess(argv)
 	}
-}
-
-// runUnit calls the CLI adapter directly with no source wired. Every source command reports the setup error, so the
-// unit level can never reach a gateway, a stub, or the network.
-func (w *world) runUnit(argv []string) error {
-	var out, errb bytes.Buffer
-	deps := w.deps(&out, &errb)
-	deps.SetupErr = errNoSourcesAtUnit
-	w.record(cli.Run(argv, deps), &out, &errb)
-	return nil
 }
 
 // runProcess runs the built binary with exactly the scenario's environment, in the scenario's directory.
@@ -422,4 +407,10 @@ var controlByte = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
 // hasControlBytes reports whether text holds a control byte that a terminal would misread.
 func hasControlBytes(text string) bool {
 	return controlByte.MatchString(text)
+}
+
+// inProcess reports whether the scenario runs the adapters in this process against in-process stubs: the unit and the
+// integration levels do. Only the end-to-end level runs the built binary.
+func (w *world) inProcess() bool {
+	return w.level == levelUnit || w.level == levelIntegration
 }

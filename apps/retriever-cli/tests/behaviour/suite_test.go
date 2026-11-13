@@ -32,9 +32,6 @@ func runSuite(t *testing.T, lvl level, tag, binary string) {
 				if err := w.setup(); err != nil {
 					return bctx, err
 				}
-				if lvl == levelUnit {
-					return bctx, nil
-				}
 				var texts []string
 				for _, step := range sc.Steps {
 					texts = append(texts, step.Text)
