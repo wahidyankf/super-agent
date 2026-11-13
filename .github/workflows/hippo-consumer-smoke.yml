@@ -1,0 +1,66 @@
+name: HIPPO Consumer Smoke
+
+# Proves the pinned HIPPO wrapper resolves, verifies, and identifies itself on a clean machine. The local hooks
+# run with a warm cache, which cannot show a missing or altered release asset. The path filter keeps unrelated
+# pull requests free of this job, and the schedule re-checks the pin every day from an empty cache.
+on:
+  pull_request:
+    paths:
+      - hippo
+      - hippo.lock
+      - hippo.identity.json
+      - hippo.local.json.example
+      - .github/workflows/hippo-consumer-smoke.yml
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hippo-consumer-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  consumer:
+    name: Consumer (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js without workspace installation
+        uses: ./.github/actions/setup-node
+        with:
+          run-npm-ci: "false"
+
+      - name: Install and identify the pinned release
+        env:
+          HIPPO_INSTALL_CACHE: ${{ runner.temp }}/hippo-cache
+        run: ./hippo version --json > "${RUNNER_TEMP}/hippo-identity.json"
+
+      - name: Compare the installed identity with hippo.lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const lock = {};
+            for (const line of fs.readFileSync("hippo.lock", "utf8").split("\n")) {
+              const at = line.indexOf("=");
+              if (at > 0) lock[line.slice(0, at)] = line.slice(at + 1);
+            }
+            const id = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/hippo-identity.json", "utf8"));
+            if (id.version !== lock.version || id.commit !== lock.commit) {
+              console.error("hippo identity " + id.version + " " + id.commit + " differs from hippo.lock " + lock.version + " " + lock.commit);
+              process.exit(1);
+            }
+            console.log("hippo " + id.version + " matches hippo.lock");
+          '

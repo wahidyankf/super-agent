@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+**/build/
+.nx/
+
+# Generated files
+generated-reports/
+local-tmp/
+worktrees/
+
+# Generated harness routes: format the canonical `agents/` and `.agents/` sources, then regenerate.
+# Formatting a generated route directly would create a false adapter divergence.
+.claude/agents/
+.claude/skills/
+.codex/agents/
+.opencode/agents/
+.commandcode/agents/
+.muse/agents/
+
+# Command Code personal learning data
+.commandcode/taste/**
+
+# Generated adapter bytes owned by the pinned RHINO release.
+.agents/agents/*/AGENT.md
+.agents/agents/catalog.json
+.agents/agents/provenance.json

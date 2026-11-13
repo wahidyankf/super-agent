@@ -1,0 +1,154 @@
+name: PR Quality Gate
+
+# The server-side mirror of the local gates. A pull request can be opened from a checkout whose hooks never ran,
+# so the guarantees the hooks enforce are checked again here. Every repository command runs through the pinned
+# HIPPO wrapper, as it does locally.
+#
+# The single required status check is the quality-gate job at the bottom of this file. Branch protection names
+# that one context, so adding or splitting a job below never means editing the ruleset.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Detect affected projects
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      has-go: ${{ steps.detect.outputs.has-go }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      # Each affected project's lang:* tag decides which language job runs. With no Nx project yet, the list is
+      # empty and every language job is skipped. The aggregate below still requires detection to succeed.
+      - id: detect
+        name: Map affected projects to language tags
+        shell: bash
+        env:
+          NX_BASE: ${{ github.event.pull_request.base.sha }}
+          NX_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          has_go=false
+          affected="$(./hippo run --class ephemeral --resource-tier light --disk-path . -- \
+            npx nx show projects --affected --base="$NX_BASE" --head="$NX_HEAD")"
+          for project in $affected; do
+            tags="$(./hippo run --class ephemeral --resource-tier light --disk-path . -- \
+              npx nx show project "$project" --json | jq -r '.tags[]?')"
+            for tag in $tags; do
+              if [ "$tag" = "lang:go" ]; then
+                has_go=true
+              fi
+            done
+          done
+          echo "has-go=${has_go}" >> "$GITHUB_OUTPUT"
+          echo "Affected Go projects: ${has_go}"
+
+  repository-policy:
+    name: Repository policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      # The pull request head, not the synthetic merge commit: the tree that would be published is the tree
+      # that has to be screened.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      # The shellcheck, shfmt, and actionlint gates call their binaries from PATH. A missing gate binary fails
+      # rather than skips, so the pinned releases are installed before the lifecycle runs.
+      - uses: ./.github/actions/setup-lint-tools
+
+      # One typed lifecycle replay under the pinned RHINO. The base and head are the pull request's commits, so
+      # the public-safety range scan and the commit-message scan see exactly the history the pull request adds.
+      - name: Run the pull-request lifecycle under the pinned RHINO
+        env:
+          RHINO_BASE: ${{ github.event.pull_request.base.sha }}
+          RHINO_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          PATH="$GITHUB_WORKSPACE/node_modules/.bin:$PATH" ./hippo run --class ephemeral --resource-tier standard --disk-path . -- \
+            ./rhino gate run --surface pull-request --base "$RHINO_BASE" --head "$RHINO_HEAD"
+
+  go:
+    name: Go quality gate
+    needs: detect
+    if: needs.detect.outputs.has-go == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      - uses: ./.github/actions/setup-go
+
+      - name: Run the affected Go targets through Nx
+        env:
+          NX_BASE: ${{ github.event.pull_request.base.sha }}
+          NX_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- \
+            npx nx affected -t typecheck,lint,test:quick --base="$NX_BASE" --head="$NX_HEAD"
+
+  quality-gate:
+    name: Quality gate
+    # Only an explicit success from every required job may open the merge button. A skipped language job is a
+    # pass only when detection found no project of that language; any other result fails the aggregate.
+    needs: [detect, repository-policy, go]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      DETECT_RESULT: ${{ needs.detect.result }}
+      POLICY_RESULT: ${{ needs.repository-policy.result }}
+      GO_RESULT: ${{ needs.go.result }}
+      HAS_GO: ${{ needs.detect.outputs.has-go }}
+    steps:
+      - name: Check every gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "detect=${DETECT_RESULT} repository-policy=${POLICY_RESULT} go=${GO_RESULT} has-go=${HAS_GO}"
+          if [ "${DETECT_RESULT}" != "success" ]; then
+            echo "Affected-project detection did not succeed." >&2
+            exit 1
+          fi
+          if [ "${POLICY_RESULT}" != "success" ]; then
+            echo "Repository policy did not succeed." >&2
+            exit 1
+          fi
+          if [ "${HAS_GO}" = "true" ]; then
+            if [ "${GO_RESULT}" != "success" ]; then
+              echo "The Go quality gate did not succeed." >&2
+              exit 1
+            fi
+          elif [ "${GO_RESULT}" != "skipped" ]; then
+            echo "The Go quality gate ran without an affected Go project." >&2
+            exit 1
+          fi
+          echo "All quality gates passed."

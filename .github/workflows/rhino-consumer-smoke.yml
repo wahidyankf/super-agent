@@ -1,0 +1,66 @@
+name: RHINO Consumer Smoke
+
+# Proves the pinned RHINO wrapper resolves, verifies, and identifies itself on a clean machine, with the same
+# boundary as the HIPPO consumer smoke. The schedule re-installs the pin daily from an empty cache, so a withdrawn
+# or altered release asset surfaces here rather than in a contributor's hook.
+on:
+  pull_request:
+    paths:
+      - rhino
+      - rhino.lock
+      - .github/workflows/rhino-consumer-smoke.yml
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rhino-consumer-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  consumer:
+    name: Consumer (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js without workspace installation
+        uses: ./.github/actions/setup-node
+        with:
+          run-npm-ci: "false"
+
+      # The wrapper refuses to run a binary whose digest or reported identity differs from rhino.lock, so a
+      # successful identity call is the proof of the bootstrap.
+      - name: Install and identify the pinned release
+        env:
+          RHINO_INSTALL_CACHE: ${{ runner.temp }}/rhino-cache
+        run: ./rhino version --json > "${RUNNER_TEMP}/rhino-identity.json"
+
+      - name: Compare the installed identity with rhino.lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const lock = {};
+            for (const line of fs.readFileSync("rhino.lock", "utf8").split("\n")) {
+              const at = line.indexOf("=");
+              if (at > 0) lock[line.slice(0, at)] = line.slice(at + 1);
+            }
+            const id = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/rhino-identity.json", "utf8"));
+            if (id.version !== lock.version || id.commit !== lock.commit) {
+              console.error("rhino identity " + id.version + " " + id.commit + " differs from rhino.lock " + lock.version + " " + lock.commit);
+              process.exit(1);
+            }
+            console.log("rhino " + id.version + " matches rhino.lock");
+          '

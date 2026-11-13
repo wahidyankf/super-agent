@@ -3,6 +3,9 @@ node_modules/
 yarn.lock
 pnpm-lock.yaml
 
+# Husky runtime directory, written by `npm install` (package-lock.json is tracked)
+.husky/_/
+
 # Build outputs
 dist/
 build/
