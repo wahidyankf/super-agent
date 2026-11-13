@@ -54,17 +54,17 @@ func statReturning(info fs.FileInfo) func(string) (fs.FileInfo, error) {
 }
 
 // openReturning returns an open that hands back one fake file.
-func openReturning(f fileReader) func(string) (fileReader, error) {
-	return func(string) (fileReader, error) { return f, nil }
+func openReturning(f fs.File) func(string) (fs.File, error) {
+	return func(string) (fs.File, error) { return f, nil }
 }
 
 // noEnvironment is a process environment with no variable set.
 func noEnvironment(string) string { return "" }
 
 // unitCredentials returns Credentials that read the given environment and the given file calls, and no real file.
-func unitCredentials(getenv func(string) string, files fileOps) *Credentials {
-	if files.same == nil {
-		files.same = sameFake
+func unitCredentials(getenv func(string) string, files Files) *Credentials {
+	if files.SameFile == nil {
+		files.SameFile = sameFake
 	}
 	return &Credentials{envPath: "/work/project/.env.local", getenv: getenv, files: files}
 }
@@ -91,14 +91,14 @@ func mustIdentityRef(t *testing.T, name string) domain.IdentityRef {
 
 // untouchedFiles is a set of file calls that fail the test when a code path reads the file. A path that must not read
 // the file uses it, so a wrong read is caught.
-func untouchedFiles(t *testing.T) fileOps {
+func untouchedFiles(t *testing.T) Files {
 	t.Helper()
-	return fileOps{
-		lstat: func(string) (fs.FileInfo, error) {
+	return Files{
+		Lstat: func(string) (fs.FileInfo, error) {
 			t.Error("the env file was checked when it should not have been")
 			return nil, errFault
 		},
-		open: func(string) (fileReader, error) {
+		Open: func(string) (fs.File, error) {
 			t.Error("the env file was opened when it should not have been")
 			return nil, errFault
 		},
@@ -112,7 +112,7 @@ func TestNewKeepsTheAbsolutePathAndTheRealCalls(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New error = %v", err)
 	}
-	if c.envPath != "/work/project/.env.local" || c.getenv == nil || c.files.lstat == nil || c.files.open == nil {
+	if c.envPath != "/work/project/.env.local" || c.getenv == nil || c.files.Lstat == nil || c.files.Open == nil {
 		t.Fatalf("New = %+v; want the path with the real environment and file calls", c)
 	}
 }
@@ -151,9 +151,9 @@ func TestTheProcessValueWinsAndTheFileIsNotRead(t *testing.T) {
 // TestAMissingEnvFileIsAMissingKey checks that a missing env file is not an error: the key is reported as missing and
 // named by its variable only.
 func TestAMissingEnvFileIsAMissingKey(t *testing.T) {
-	files := fileOps{
-		lstat: func(string) (fs.FileInfo, error) { return nil, fs.ErrNotExist },
-		open:  func(string) (fileReader, error) { t.Error("a missing env file was opened"); return nil, errFault },
+	files := Files{
+		Lstat: func(string) (fs.FileInfo, error) { return nil, fs.ErrNotExist },
+		Open:  func(string) (fs.File, error) { t.Error("a missing env file was opened"); return nil, errFault },
 	}
 	c := unitCredentials(noEnvironment, files)
 	_, err := c.APIKey(mustCredentialRef(t, "OUTLINE_API_KEY"))
@@ -167,9 +167,9 @@ func TestAMissingEnvFileIsAMissingKey(t *testing.T) {
 // from the local env file, and no other variable is taken from it.
 func TestTheFileValueIsReadWhenTheProcessHasNone(t *testing.T) {
 	info := fakeFileInfo{mode: 0o600}
-	files := fileOps{
-		lstat: statReturning(info),
-		open: openReturning(&fakeOpenFile{
+	files := Files{
+		Lstat: statReturning(info),
+		Open: openReturning(&fakeOpenFile{
 			r:    strings.NewReader("OTHER_API_KEY=other\nOUTLINE_API_KEY=file-key\nJIRA_EMAIL=owner@example.test\n"),
 			info: info,
 		}),
@@ -187,61 +187,61 @@ func TestAFileFaultIsReturnedWithoutTheFileValue(t *testing.T) {
 	same := fakeFileInfo{mode: 0o600}
 	tests := []struct {
 		name    string
-		files   fileOps
+		files   Files
 		wantIs  error
 		wantMsg string
 	}{
 		{
 			name: "a check that fails for a reason other than a missing file is returned",
-			files: fileOps{
-				lstat: func(string) (fs.FileInfo, error) { return nil, errFault },
+			files: Files{
+				Lstat: func(string) (fs.FileInfo, error) { return nil, errFault },
 			},
 			wantIs: errFault,
 		},
 		{
 			name: "a path that is not a regular file is refused",
-			files: fileOps{
-				lstat: statReturning(fakeFileInfo{mode: fs.ModeSymlink}),
+			files: Files{
+				Lstat: statReturning(fakeFileInfo{mode: fs.ModeSymlink}),
 			},
 			wantMsg: "must be a regular file, not a symlink or a folder",
 		},
 		{
 			name: "a file that cannot be opened is returned",
-			files: fileOps{
-				lstat: statReturning(same),
-				open:  func(string) (fileReader, error) { return nil, errFault },
+			files: Files{
+				Lstat: statReturning(same),
+				Open:  func(string) (fs.File, error) { return nil, errFault },
 			},
 			wantIs: errFault,
 		},
 		{
 			name: "a file whose description fails after it opens is returned",
-			files: fileOps{
-				lstat: statReturning(same),
-				open:  openReturning(&fakeOpenFile{r: strings.NewReader("OUTLINE_API_KEY=value\n"), info: same, statErr: errFault}),
+			files: Files{
+				Lstat: statReturning(same),
+				Open:  openReturning(&fakeOpenFile{r: strings.NewReader("OUTLINE_API_KEY=value\n"), info: same, statErr: errFault}),
 			},
 			wantIs: errFault,
 		},
 		{
 			name: "a file that changes between the check and the open is refused",
-			files: fileOps{
-				lstat: statReturning(same),
-				open:  openReturning(&fakeOpenFile{r: strings.NewReader("OUTLINE_API_KEY=value\n"), info: fakeFileInfo{mode: 0o644}}),
+			files: Files{
+				Lstat: statReturning(same),
+				Open:  openReturning(&fakeOpenFile{r: strings.NewReader("OUTLINE_API_KEY=value\n"), info: fakeFileInfo{mode: 0o644}}),
 			},
 			wantMsg: "changed while it was being opened",
 		},
 		{
 			name: "a file that cannot be read is returned",
-			files: fileOps{
-				lstat: statReturning(same),
-				open:  openReturning(&fakeOpenFile{r: failingReader{}, info: same}),
+			files: Files{
+				Lstat: statReturning(same),
+				Open:  openReturning(&fakeOpenFile{r: failingReader{}, info: same}),
 			},
 			wantIs: errFault,
 		},
 		{
 			name: "a file that fails to close after a read is returned",
-			files: fileOps{
-				lstat: statReturning(same),
-				open: openReturning(&fakeOpenFile{
+			files: Files{
+				Lstat: statReturning(same),
+				Open: openReturning(&fakeOpenFile{
 					r:        strings.NewReader("OUTLINE_API_KEY=value\n"),
 					info:     same,
 					closeErr: errFault,
@@ -292,7 +292,7 @@ func TestAReadFaultInTheDotenvTextIsReturned(t *testing.T) {
 // TestIdentityReturnsTheFileFaultToo checks that Identity reads the env file by the same rules as APIKey, so a fault in
 // the file stops it before the address is checked.
 func TestIdentityReturnsTheFileFaultToo(t *testing.T) {
-	files := fileOps{lstat: func(string) (fs.FileInfo, error) { return nil, errFault }}
+	files := Files{Lstat: func(string) (fs.FileInfo, error) { return nil, errFault }}
 	c := unitCredentials(noEnvironment, files)
 	if _, err := c.Identity(mustIdentityRef(t, "JIRA_EMAIL")); !errors.Is(err, errFault) {
 		t.Fatalf("Identity error = %v, want the check fault", err)

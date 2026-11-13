@@ -49,8 +49,8 @@ func statReturning(info fs.FileInfo) func(string) (fs.FileInfo, error) {
 }
 
 // openReturning returns an open function that hands back one fake file.
-func openReturning(f fileReader) func(string) (fileReader, error) {
-	return func(string) (fileReader, error) { return f, nil }
+func openReturning(f fs.File) func(string) (fs.File, error) {
+	return func(string) (fs.File, error) { return f, nil }
 }
 
 // sameFake reports whether two fake descriptions are the same file. os.SameFile matches only real descriptions, so a unit
@@ -64,45 +64,45 @@ func TestALoadFaultIsReportedAsACatalogErrorNamingItsStep(t *testing.T) {
 	same := fakeStatInfo{mode: 0o600}
 	tests := []struct {
 		name  string
-		files fileOps
+		files Files
 		want  string
 	}{
 		{
 			name: "a check that fails for a reason other than a missing file is reported",
-			files: fileOps{
-				lstat: func(string) (fs.FileInfo, error) { return nil, errFault },
+			files: Files{
+				Lstat: func(string) (fs.FileInfo, error) { return nil, errFault },
 			},
 			want: "could not check the file",
 		},
 		{
 			name: "a file that cannot be opened is reported",
-			files: fileOps{
-				lstat: statReturning(regular),
-				open:  func(string) (fileReader, error) { return nil, errFault },
+			files: Files{
+				Lstat: statReturning(regular),
+				Open:  func(string) (fs.File, error) { return nil, errFault },
 			},
 			want: "could not open the file",
 		},
 		{
 			name: "a file whose description fails after it opens is reported",
-			files: fileOps{
-				lstat: statReturning(regular),
-				open:  openReturning(&fakeOpened{r: strings.NewReader("a: 1"), info: regular, statErr: errFault}),
+			files: Files{
+				Lstat: statReturning(regular),
+				Open:  openReturning(&fakeOpened{r: strings.NewReader("a: 1"), info: regular, statErr: errFault}),
 			},
 			want: "could not check the file",
 		},
 		{
 			name: "a file that changes between the check and the open is reported",
-			files: fileOps{
-				lstat: statReturning(regular),
-				open:  openReturning(&fakeOpened{r: strings.NewReader("a: 1"), info: fakeStatInfo{mode: 0o640}}),
+			files: Files{
+				Lstat: statReturning(regular),
+				Open:  openReturning(&fakeOpened{r: strings.NewReader("a: 1"), info: fakeStatInfo{mode: 0o640}}),
 			},
 			want: "changed while it was being opened",
 		},
 		{
 			name: "a file that cannot be read is reported",
-			files: fileOps{
-				lstat: statReturning(same),
-				open:  openReturning(&fakeOpened{r: failingReader{}, info: same}),
+			files: Files{
+				Lstat: statReturning(same),
+				Open:  openReturning(&fakeOpened{r: failingReader{}, info: same}),
 			},
 			want: "could not read the file",
 		},
@@ -110,7 +110,7 @@ func TestALoadFaultIsReportedAsACatalogErrorNamingItsStep(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			files := tt.files
-			files.same = sameFake
+			files.SameFile = sameFake
 			loader := &Loader{path: "/work/project/sources.yml", files: files}
 			_, err := loader.Load()
 			var catalogErr domain.CatalogError
