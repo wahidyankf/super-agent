@@ -13,7 +13,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// The read commands of the outline group are generated from the operation catalog (ADR 007 section 4). A row gives the
+// The read commands of the outline group are generated from the operation catalog. A row gives the
 // command path, its flags and positional argument, its help, and the shape of its output. attachOperations adds a
 // command for every row, and runRead runs any of them the same way. A command here parses nothing by hand.
 
@@ -42,7 +42,7 @@ const legacyRunnableGroup = "collections"
 
 // attachOperations adds one command for every catalog row of the kind under its group, the command whose first word is the
 // kind's name. A path word that no row has yet is a group, so "outline documents" and "kiwi test-cases" appear with their
-// subcommands. The rows of one kind never join another kind's group (ADR 009 section 3).
+// subcommands. The rows of one kind never join another kind's group.
 func attachOperations(group *command, kind domain.SourceKind) {
 	for _, row := range operations.RowsOf(kind) {
 		words := row.Path()[1:]
@@ -70,7 +70,7 @@ func attachOperations(group *command, kind domain.SourceKind) {
 
 // readLeaf returns the leaf that runs one catalog row. The usage line names path, which is the row's own path except for
 // an alias such as "outline tree". A row of a non-read effect is a write: its leaf names its source as required, takes
-// --dry-run, and runs through the write use case (ADR 007 section 3.4).
+// --dry-run, and runs through the write use case.
 func readLeaf(row operations.Row, path string) *leaf {
 	kind, _ := row.Kind()
 	positional := row.Positional()
@@ -106,13 +106,13 @@ func readLeaf(row operations.Row, path string) *leaf {
 		run = func(inv *invocation) error { return runWrite(inv, row) }
 	}
 	if row.NeedsYes() {
-		// A destructive or admin command takes --yes (ADR 007 section 3.4), and runs through the admin use case.
+		// A destructive or admin command takes --yes, and runs through the admin use case.
 		flags = append(flags, yesFlag)
 		usage.WriteString(" [" + yesFlag.name + "]")
 		run = func(inv *invocation) error { return runAdmin(inv, row) }
 	}
 	if row.Critical != nil {
-		// A critical command takes --confirm with the canonical target (ADR 007 section 3.5).
+		// A critical command takes --confirm with the canonical target.
 		confirm := flag{name: confirmFlagName, meta: "<value>", help: "the value the dry run prints for the target: " + row.Critical.Kind}
 		flags = append(flags, confirm)
 		usage.WriteString(" [" + confirm.name + " <value>]")

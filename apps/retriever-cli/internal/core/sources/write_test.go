@@ -78,7 +78,7 @@ func TestWriteRefusesEveryBadCallBeforeAnySourceIsAskedOrAnyRequestIsMade(t *tes
 	}
 }
 
-// TestWriteRefusesAReadSourceBeforeTheWriterIsAsked checks the access rule (ADR 007 section 3.1): a source below the
+// TestWriteRefusesAReadSourceBeforeTheWriterIsAsked checks the access rule: a source below the
 // level a write needs is refused, and a dry run is refused the same way.
 func TestWriteRefusesAReadSourceBeforeTheWriterIsAsked(t *testing.T) {
 	for _, dryRun := range []bool{false, true} {
@@ -98,7 +98,7 @@ func TestWriteRefusesAReadSourceBeforeTheWriterIsAsked(t *testing.T) {
 	}
 }
 
-// TestWriteDryRunMakesNoCallAndReportsThePlan checks the dry run (ADR 007 section 3.1): it asks no gateway, and its
+// TestWriteDryRunMakesNoCallAndReportsThePlan checks the dry run: it asks no gateway, and its
 // reply names the operation, the source, the arguments, and that nothing changed. Text is counted, never echoed.
 func TestWriteDryRunMakesNoCallAndReportsThePlan(t *testing.T) {
 	writer := &fakeWriter{reply: writtenDocument()}

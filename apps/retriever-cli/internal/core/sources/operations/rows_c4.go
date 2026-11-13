@@ -8,12 +8,12 @@ import (
 var oauthClientTypes = []string{"confidential", "public"}
 
 // The rows of stage c, slice c4: the OAuth authorizations and clients, revisions, shares, templates, and webhook
-// subscriptions (ADR 007 sections 3.1, 3.4, 3.5, and the inventory). Each changes the wiki with admin access, so a source below
+// subscriptions. Each changes the wiki with admin access, so a source below
 // admin refuses it, and each needs --yes on the CLI. The four critical rows, oauth-clients.create, oauth-clients.rotate-secret,
 // webhook-subscriptions.create, and webhook-subscriptions.update, have no MCP tool at any ceiling. An OAuth client's reply
 // carries the client secret, and a webhook's reply carries the signing secret: neither is projected, so neither reaches a
 // caller (the field references, oauthClient and webhook). A share's link is never a field of its reply. The webhook rows name
-// the host of their destination URL as the canonical value of --confirm (ADR 007 section 3.5). A webhook has no read of one
+// the host of their destination URL as the canonical value of --confirm. A webhook has no read of one
 // subscription by its ID (the wiki lists them), so its rows read no target, and their dry run shows the plan only.
 var adminRowsC4 = []Row{
 	{

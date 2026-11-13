@@ -18,7 +18,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// The MCP tools of the operation catalog are generated (ADR 007 section 4). A row with a tool name becomes one tool: its
+// The MCP tools of the operation catalog are generated. A row with a tool name becomes one tool: its
 // name, description, and input schema come from the row, its call goes through the one binder, and its answer is the
 // Record rendered in snake case. A list row is cut by fitRows, and a row with a body is paged by cutPage, and the
 // model reads the next page with the offset that the answer names.
@@ -89,7 +89,7 @@ func toolFor(row operations.Row) *sdk.Tool {
 	}
 }
 
-// rowAnnotations derives the hints of a catalog row (ADR 007 section 3.3). A read is read-only and idempotent. A write is
+// rowAnnotations derives the hints of a catalog row. A read is read-only and idempotent. A write is
 // not read-only, and it is never destructive in stage b. An update repeats the same change, so it is idempotent, unless
 // the row says that its repeat is a different change (NotIdempotent). A create is never idempotent.
 func rowAnnotations(row operations.Row) *sdk.ToolAnnotations {
@@ -125,14 +125,14 @@ func inputSchema(row operations.Row) map[string]any {
 	}
 	var required []string
 	if isWrite(row) {
-		// A change always names its source, and it takes dry_run, which returns the plan and sends no change (ADR 007 section 3.4).
+		// A change always names its source, and it takes dry_run, which returns the plan and sends no change.
 		props["source"] = map[string]any{"type": "string", "description": sourceWriteText}
 		props[dryRunParam] = map[string]any{"type": "boolean", "description": dryRunDescriptionOf(row)}
 		required = append(required, "source")
 	}
 	for _, p := range row.Params {
 		if p.CLIOnly {
-			// A CLI-only parameter, such as the permanent deletion, is not a property of the tool (ADR 007 section 3.5).
+			// A CLI-only parameter, such as the permanent deletion, is not a property of the tool.
 			continue
 		}
 		props[snakeCase(p.Name)] = propertySchema(p)
@@ -304,7 +304,7 @@ func runOperation(ctx context.Context, svc sources.Service, row operations.Row, 
 
 // runWriteOperation runs one write row for one call. The source is required, and the use case refuses a call without
 // one before any request. With dry_run the answer is the plan, and nothing is sent. The MCP tool of update_document also
-// requires last_revision when it replaces the text (ADR 007 section 2, item 9), which the CLI does not.
+// requires last_revision when it replaces the text, which the CLI does not.
 func runWriteOperation(ctx context.Context, svc sources.Service, row operations.Row, args map[string]any, sourceArg *string) (
 	out map[string]any, source, class string, public error) {
 	dryRun, err := dryRunOf(args)
@@ -341,7 +341,7 @@ func runWriteOperation(ctx context.Context, svc sources.Service, row operations.
 	return answer, id, outcomeOK, nil
 }
 
-// runAdminOperation runs one destructive or admin row for one call (ADR 007 sections 3.3 and 3.4). The MCP tool has no --yes
+// runAdminOperation runs one destructive or admin row for one call. The MCP tool has no --yes
 // and no confirm input: its controls are the ceiling, which registered the tool, the source's access, and dry_run. So the
 // call passes Yes as true, and the use case refuses nothing for want of a confirmation a model could only echo. A critical
 // row has no tool, so no call of it can reach this function.

@@ -75,7 +75,7 @@ var stageCTools = map[string]stageCHints{
 }
 
 // stageCToolCount is the number of MCP tools of stage c, and adminCeilingToolCount the number of tools an admin source offers
-// at the admin ceiling, with list_sources (ADR 007 section 3.3; specs mcp-destructive-tools.feature).
+// at the admin ceiling, with list_sources.
 const (
 	stageCToolCount       = 48
 	adminCeilingToolCount = 154

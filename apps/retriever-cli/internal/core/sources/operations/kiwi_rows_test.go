@@ -35,7 +35,7 @@ func TestRowsOfReturnsTheRowsOfOneKind(t *testing.T) {
 	}
 }
 
-// kiwiWant is the expected shape of one Kiwi row (ADR 009 section 2).
+// kiwiWant is the expected shape of one Kiwi row.
 type kiwiWant struct {
 	id     domain.OperationID
 	cli    string
@@ -183,7 +183,7 @@ func TestRowKindReadsTheFirstWordOfTheCLIPath(t *testing.T) {
 }
 
 // TestSupportsIsAnExplicitStatementPerKind checks that Outline supports every Outline row and no Kiwi row, and that
-// Kiwi supports exactly the six Kiwi rows (ADR 009 section 2).
+// Kiwi supports exactly the six Kiwi rows.
 func TestSupportsIsAnExplicitStatementPerKind(t *testing.T) {
 	outline, kiwi := 0, 0
 	for _, row := range Rows() {
@@ -251,7 +251,7 @@ func TestAnyOfIsEmptyOnRowsThatDoNotNeedIt(t *testing.T) {
 }
 
 // TestResourcesListOutlineRowsOnly checks that the --tools words come from Outline rows alone, so no Kiwi word joins
-// them (ADR 009 section 2).
+// them.
 func TestResourcesListOutlineRowsOnly(t *testing.T) {
 	for _, word := range []string{"products", "test-cases", "plans"} {
 		if slices.Contains(Resources(), word) {

@@ -4,7 +4,7 @@ package domain
 // uses the same name for an operation; the Outline adapter maps it to its wire method.
 type OperationID string
 
-// The read operations of stage a (ADR 007). A new operation is a new constant and one catalog row. The first seven
+// The read operations of stage a. A new operation is a new constant and one catalog row. The first seven
 // are the stage a part 1 reads; the rest are stage a part 2a.
 const (
 	OpCollectionsList      OperationID = "collections.list"
@@ -66,7 +66,7 @@ const (
 	OpUserMembershipsList      OperationID = "user-memberships.list"
 	OpViewsList                OperationID = "views.list"
 
-	// The admin-level reads of stage a (ADR 007 section 5). Each needs a source of access admin.
+	// The admin-level reads of stage a. Each needs a source of access admin.
 	OpAPIKeysList                 OperationID = "api-keys.list"
 	OpAuthenticationProvidersGet  OperationID = "authentication-providers.get"
 	OpAuthenticationProvidersList OperationID = "authentication-providers.list"
@@ -79,7 +79,7 @@ const (
 	OpWebhookSubscriptionsList    OperationID = "webhook-subscriptions.list"
 )
 
-// The write operations of stage b, the documents writes (ADR 007 section 5). Each is a non-destructive change with access
+// The write operations of stage b, the documents writes. Each is a non-destructive change with access
 // write. A new write is a new constant and one catalog row.
 const (
 	OpDocumentsCreate     OperationID = "documents.create"
@@ -135,8 +135,8 @@ const (
 	OpUsersNotificationsUnsubscribe OperationID = "users.notifications-unsubscribe"
 )
 
-// The destructive and admin operations of stage c (ADR 007 section 5). Each one changes the wiki with access admin; a
-// destructive one removes content, and a critical call (ADR 007 section 3.5) needs --confirm as well.
+// The destructive and admin operations of stage c. Each one changes the wiki with access admin; a
+// destructive one removes content, and a critical call needs --confirm as well.
 const (
 	OpDocumentsAddGroup    OperationID = "documents.add-group"
 	OpDocumentsAddUser     OperationID = "documents.add-user"
@@ -155,7 +155,7 @@ const (
 	OpCollectionsRemoveUser  OperationID = "collections.remove-user"
 )
 
-// The destructive and admin operations of stage c, slice c2: users, groups, and teams (ADR 007 section 5). The critical ones
+// The destructive and admin operations of stage c, slice c2: users, groups, and teams. The critical ones
 // are users.delete, groups.delete-all, and teams.delete (section 3.5), and they have no MCP tool.
 const (
 	OpUsersActivate      OperationID = "users.activate"
@@ -181,7 +181,7 @@ const (
 )
 
 // The destructive and admin operations of stage c, slice c3: access requests, attachments, sign-in providers, comments,
-// emojis, file operations, imports, and integrations (ADR 007 section 5). The critical ones are
+// emojis, file operations, imports, and integrations. The critical ones are
 // authentication-providers.delete, integrations.create, and integrations.update (section 3.5), and they have no MCP tool.
 const (
 	OpAccessRequestsApprove                 OperationID = "access-requests.approve"
@@ -200,7 +200,7 @@ const (
 	OpIntegrationsUpdate                    OperationID = "integrations.update"
 )
 
-// The Kiwi TCMS operations (ADR 009 section 2): three reads and three writes. Each names one row of rows_kiwi.go. Kiwi has
+// The Kiwi TCMS operations: three reads and three writes. Each names one row of rows_kiwi.go. Kiwi has
 // no admin and no destructive operation.
 const (
 	OpKiwiProductsList    OperationID = "kiwi.products.list"
@@ -222,7 +222,7 @@ const (
 )
 
 // The destructive and admin operations of stage c, slice c4: OAuth authorizations, OAuth clients, revisions, shares,
-// templates, and webhook subscriptions (ADR 007 section 5). The critical ones are oauth-clients.create,
+// templates, and webhook subscriptions. The critical ones are oauth-clients.create,
 // oauth-clients.rotate-secret, webhook-subscriptions.create, and webhook-subscriptions.update (section 3.5), and they have no
 // MCP tool.
 const (
@@ -241,7 +241,7 @@ const (
 	OpWebhookSubscriptionsUpdate OperationID = "webhook-subscriptions.update"
 )
 
-// Effect says what an operation does to the data it touches (ADR 007 section 2). Only read operations exist in
+// Effect says what an operation does to the data it touches. Only read operations exist in
 // stage a.
 type Effect string
 

@@ -9,7 +9,7 @@ import (
 )
 
 // TestSliceC2CriticalRowsHaveNoToolAndNameTheirCanonicalTarget checks the three critical rows of slice c2 against the table of
-// canonical targets (ADR 007 section 3.5): the user ID, the sign-in provider ID, and the team name read with auth.whoami.
+// canonical targets: the user ID, the sign-in provider ID, and the team name read with auth.whoami.
 // Each is critical on every call, needs --yes, and has no MCP tool at any ceiling.
 func TestSliceC2CriticalRowsHaveNoToolAndNameTheirCanonicalTarget(t *testing.T) {
 	cases := []struct {
@@ -41,7 +41,7 @@ func TestSliceC2CriticalRowsHaveNoToolAndNameTheirCanonicalTarget(t *testing.T) 
 }
 
 // TestSliceC2SelfRefusedRowsAreTheThreeUserChangesOfTheKeysOwnUser checks which rows the use case refuses for the user of the
-// API key (ADR 007 section 3.5, rule 6). Each names that user by its userId parameter, which is required.
+// API key. Each names that user by its userId parameter, which is required.
 func TestSliceC2SelfRefusedRowsAreTheThreeUserChangesOfTheKeysOwnUser(t *testing.T) {
 	var got []domain.OperationID
 	for _, r := range Rows() {
@@ -62,7 +62,7 @@ func TestSliceC2SelfRefusedRowsAreTheThreeUserChangesOfTheKeysOwnUser(t *testing
 }
 
 // TestSliceC2ToolsAndCriticalRowsCount checks the counts of slice c2: 18 rows, 15 with an MCP tool, and 3 critical rows with
-// none. Together with the stage c1 rows, they make the 134 tools of the admin ceiling (ADR 007 section 3.3).
+// none. Together with the stage c1 rows, they make the 134 tools of the admin ceiling.
 func TestSliceC2ToolsAndCriticalRowsCount(t *testing.T) {
 	if len(adminRowsC2) != 18 {
 		t.Fatalf("slice c2 holds %d rows, want 18", len(adminRowsC2))

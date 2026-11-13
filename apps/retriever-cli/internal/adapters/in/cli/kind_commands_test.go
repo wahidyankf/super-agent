@@ -114,7 +114,7 @@ func findChild(c *command, path ...string) *command {
 }
 
 // TestKiwiGroupIsGeneratedFromTheKiwiRows checks that the kiwi group holds the six Kiwi commands and the export, each
-// with its usage line, and that no Kiwi command sits under outline (ADR 009 section 3).
+// with its usage line, and that no Kiwi command sits under outline.
 func TestKiwiGroupIsGeneratedFromTheKiwiRows(t *testing.T) {
 	tree := commandTree()
 	want := map[string]string{
@@ -278,7 +278,7 @@ func TestKiwiExportWritesTheDocumentUnderTheOutFolder(t *testing.T) {
 }
 
 // TestKiwiExportFailureCarriesTheKiwiCode checks that a failed Kiwi export reports a JSON code with the kiwi prefix,
-// on the export path and not only on the reads (ADR 009 section 3).
+// on the export path and not only on the reads.
 func TestKiwiExportFailureCarriesTheKiwiCode(t *testing.T) {
 	setup := kiwiSetup(&kiwiWiki{})
 	setup.sink.err = fmt.Errorf("%w: %w", domain.ErrExportWriteFailed,

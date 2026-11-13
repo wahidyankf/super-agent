@@ -58,7 +58,7 @@ func recordingGateway(t *testing.T) (*Gateway, *wireRecorder) {
 }
 
 // recordingGatewayAt is recordingGateway for a source at the given access level. The admin-level reads need an admin
-// source, so their request reaches the wire; a read source refuses them before the network (ADR 007 section 3.2).
+// source, so their request reaches the wire; a read source refuses them before the network.
 func recordingGatewayAt(t *testing.T, access domain.Access) (*Gateway, *wireRecorder) {
 	t.Helper()
 	clock := newFakeClock()

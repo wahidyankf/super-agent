@@ -1,4 +1,4 @@
-// Package operations is the Retriever operation catalog (ADR 007). One Row describes one operation completely: its ID,
+// Package operations is the Retriever operation catalog. One Row describes one operation completely: its ID,
 // the command and tool that expose it, its effect and access, its parameters, and the shape of its result. The CLI
 // command tree, the MCP tools, the binder, and the use cases are all built from these rows, so an operation is added by
 // one row, one endpoint entry in the Outline adapter, and its scenarios, and no handler is written by hand.
@@ -12,7 +12,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// Kind is the type of one parameter. Each kind has one validator (ADR 007 section 2, item 7), so every inbound adapter
+// Kind is the type of one parameter. Each kind has one validator, so every inbound adapter
 // checks a value the same way.
 type Kind string
 
@@ -42,7 +42,7 @@ const (
 	KindIcon           Kind = "Icon"           // an icon: one emoji, a named icon, or an attachment UUID; a non-blank text
 	KindScore          Kind = "Score"          // a number from -1 to 1, as a JSON number or its text
 	KindReason         Kind = "Reason"         // at most 2000 characters, no control character; may be empty
-	KindEmail          Kind = "Email"          // one e-mail address (ADR 007 section 3.5); a dry run never shows it
+	KindEmail          Kind = "Email"          // one e-mail address; a dry run never shows it
 	KindEventList      Kind = "EventList"      // at most 50 event names, each `*` or a dotted name such as documents.create
 	KindURLList        Kind = "URLList"        // 1 to 10 HTTPS addresses, each at most 1024 characters (the redirect addresses)
 	KindIssueKey       Kind = "IssueKey"       // a Jira issue key, such as EXAMPLE-12; refused as an invalid document ID (ADR 010 section 2)
@@ -63,7 +63,7 @@ type Param struct {
 	Values []string
 	// Help is the one line the CLI shows for the flag and the MCP input describes.
 	Help string
-	// CLIOnly keeps the parameter off the MCP tool (ADR 007 section 3.5): the tool neither lists it nor accepts it. It is
+	// CLIOnly keeps the parameter off the MCP tool: the tool neither lists it nor accepts it. It is
 	// set on the permanent deletion of documents.delete, which only the CLI may request.
 	CLIOnly bool
 }
@@ -107,19 +107,19 @@ type Row struct {
 	// section 2).
 	AnyOf []string
 	// NotIdempotent marks an update whose repeat is not the same change, such as an append. Its tool says so in its hints
-	// (ADR 007 section 3.3). A create is never idempotent, and it needs no flag.
+	//. A create is never idempotent, and it needs no flag.
 	NotIdempotent bool
 	// SameOnRepeat marks a create whose repeat answers the same object, so its tool announces idempotent (ADR 007 section
 	// 3.3). It is set on shares.create, which returns the share of a document that is already shared.
 	SameOnRepeat bool
-	// Critical marks an operation, or one call of it, that needs the strictest confirmation (ADR 007 section 3.5). A
+	// Critical marks an operation, or one call of it, that needs the strictest confirmation. A
 	// critical operation has no MCP tool at any ceiling, so its Tool is empty.
 	Critical *Critical
-	// Target says how a dry run and a critical call name the target of the change (ADR 007 section 3.4). Nil means the
+	// Target says how a dry run and a critical call name the target of the change. Nil means the
 	// operation has no target to read.
 	Target *Target
 	// RefuseSelf marks a change to one user, named by the userId parameter, which the use case refuses when that user is the
-	// user of the API key (ADR 007 section 3.5, rule 6). Retriever reads the key's user with auth.whoami first.
+	// user of the API key. Retriever reads the key's user with auth.whoami first.
 	RefuseSelf bool
 }
 
@@ -130,11 +130,11 @@ type Critical struct {
 	When string
 	Kind string
 	// Host names a URL parameter whose host is the canonical value of the call, such as the host of settings.url for an
-	// integration (ADR 007 section 3.5). The value is then the host of that argument, lower-cased, and the target read, when
+	// integration. The value is then the host of that argument, lower-cased, and the target read, when
 	// the row has one, only confirms that the object exists. It is set on integrations.create and integrations.update.
 	Host string
 	// Text names a text parameter whose exact value is the canonical value of the call, such as the name of a new OAuth
-	// client, which no read returns before the create (ADR 007 section 3.5). The comparison is exact, without a change of
+	// client, which no read returns before the create. The comparison is exact, without a change of
 	// case. It is set on oauth-clients.create, and it has no target read.
 	Text string
 }
@@ -162,7 +162,7 @@ type Target struct {
 	Name  string
 }
 
-// NeedsYes reports whether a call of the row needs --yes (ADR 007 section 3.4): a destructive or an admin change. A
+// NeedsYes reports whether a call of the row needs --yes: a destructive or an admin change. A
 // dry run never needs it.
 func (r Row) NeedsYes() bool {
 	if r.Effect == domain.EffectRead {
@@ -171,7 +171,7 @@ func (r Row) NeedsYes() bool {
 	return r.Effect == domain.EffectDestructive || r.Access == domain.AccessAdmin
 }
 
-// IsCritical reports whether one call of the row, with the given bound or raw values, is critical (ADR 007 section 3.5).
+// IsCritical reports whether one call of the row, with the given bound or raw values, is critical.
 func (r Row) IsCritical(values map[string]any) bool {
 	if r.Critical == nil {
 		return false
@@ -191,7 +191,7 @@ func Rows() []Row {
 }
 
 // RowsOf returns a copy of the catalog rows of one source kind, in catalog order. The Outline adapter, the Outline command
-// tree, and the Outline tests use it, so a Kiwi row never joins the Outline surface (ADR 009 section 3).
+// tree, and the Outline tests use it, so a Kiwi row never joins the Outline surface.
 func RowsOf(kind domain.SourceKind) []Row {
 	var out []Row
 	for _, row := range rows {

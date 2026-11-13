@@ -9,7 +9,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// gatedRowCount is the number of catalog rows that need --yes (ADR 007 section 3.4): every destructive row and every admin
+// gatedRowCount is the number of catalog rows that need --yes: every destructive row and every admin
 // row. It is the stage c count of the catalog, so a row that silently stopped needing --yes changes it and fails the test.
 const gatedRowCount = 59
 

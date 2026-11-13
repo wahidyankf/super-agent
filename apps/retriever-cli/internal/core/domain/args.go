@@ -1,6 +1,6 @@
 package domain
 
-// Args is the validated input of one catalog operation (ADR 007 section 2). Only the operation catalog builds one, from
+// Args is the validated input of one catalog operation. Only the operation catalog builds one, from
 // the parameter rules of its row, so a value in Args has passed its kind's check. A parameter that the caller did not
 // set is absent; its getter returns the zero value.
 type Args struct {
@@ -77,7 +77,7 @@ type Field struct {
 	Value any
 }
 
-// Record is the neutral result of one catalog operation (ADR 007 section 2, item 3): an ordered list of named fields
+// Record is the neutral result of one catalog operation: an ordered list of named fields
 // for one object, or an ordered list of records for a list operation. It holds no wire type, so the renderers and the
 // MCP adapter read it the same way for every operation.
 type Record struct {
@@ -87,7 +87,7 @@ type Record struct {
 	page   Page
 }
 
-// Page is the continuation of one page of a paged list (ADR 007 section 3.4). A paged list carries its offset, and its
+// Page is the continuation of one page of a paged list. A paged list carries its offset, and its
 // hint says whether more rows may follow and at which offset they start. A full page may be followed by more rows, so
 // HasMore is true when the page holds as many rows as its limit; a short page is the last one.
 type Page struct {

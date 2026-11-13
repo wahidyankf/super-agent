@@ -25,7 +25,7 @@ type SourceReader interface {
 	Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error)
 }
 
-// SourceWriter runs the write operations of the catalog against one source (ADR 007 section 2, item 1). It is the write
+// SourceWriter runs the write operations of the catalog against one source. It is the write
 // port: a read operation sent to it returns domain.ErrWrongOperationClass, and an operation the writer does not serve
 // returns domain.ErrUnsupportedOperation. The use case binds the arguments, checks the access level, and runs a dry
 // run before it calls a writer. A writer that times out after it sent a request returns domain.ErrWriteOutcomeUnknown,
@@ -34,7 +34,7 @@ type SourceWriter interface {
 	Write(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error)
 }
 
-// SourceAdmin runs the destructive and admin operations of the catalog against one source (ADR 007 section 2, item 2). It
+// SourceAdmin runs the destructive and admin operations of the catalog against one source. It
 // is the admin port: an operation of another effect class returns domain.ErrWrongOperationClass, and an operation the
 // admin port does not serve returns domain.ErrUnsupportedOperation. The use case checks the access level, the --yes
 // confirmation, the critical tier, and the dry run before it calls an admin port, and it never retries a call after a

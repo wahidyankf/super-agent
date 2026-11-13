@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-// TestEveryCriticalRowNamesACanonicalValue pins the catalog rule that makes the critical tier safe (ADR 007 section 3.5): a
+// TestEveryCriticalRowNamesACanonicalValue pins the catalog rule that makes the critical tier safe: a
 // critical row names where its canonical value comes from, either a target read, a URL host argument, or a text argument.
 // A row with none of the three has nothing that --confirm can be compared with, so the use case would have no value to
 // check (m2). The test also checks that a Host or a Text names a parameter the row declares.

@@ -7,7 +7,7 @@ import (
 )
 
 // TestValidateIndexAcceptsOneToTwoHundredFiftySixPrintableCharacters checks the fractional index of a collection move
-// (ADR 007 section 2, the idx notation): 1 to 256 printable ASCII characters, from 0x20 to 0x7E.
+// : 1 to 256 printable ASCII characters, from 0x20 to 0x7E.
 func TestValidateIndexAcceptsOneToTwoHundredFiftySixPrintableCharacters(t *testing.T) {
 	cases := []struct {
 		name string

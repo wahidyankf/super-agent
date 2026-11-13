@@ -51,14 +51,14 @@ var stageAReads = []domain.OperationID{
 	domain.OpOAuthClientsGet, domain.OpOAuthClientsList, domain.OpWebhookSubscriptionsList,
 }
 
-// stageAAdminReads is the ten reads that need an admin source (ADR 007 section 5, stage a: "10 admin-level reads").
+// stageAAdminReads is the ten reads that need an admin source.
 var stageAAdminReads = []domain.OperationID{
 	domain.OpAPIKeysList, domain.OpAuthenticationProvidersGet, domain.OpAuthenticationProvidersList,
 	domain.OpImportsGet, domain.OpImportsList, domain.OpIntegrationsGet, domain.OpIntegrationsList,
 	domain.OpOAuthClientsGet, domain.OpOAuthClientsList, domain.OpWebhookSubscriptionsList,
 }
 
-// stageBWrites is the seven documents writes of stage b, class W (ADR 007 section 5), in catalog order. They follow the
+// stageBWrites is the seven documents writes of stage b, class W, in catalog order. They follow the
 // stage a reads.
 var stageBWrites = []domain.OperationID{
 	domain.OpDocumentsCreate, domain.OpDocumentsDuplicate, domain.OpDocumentsMove, domain.OpDocumentsRestore,
@@ -92,9 +92,9 @@ func TestCatalogHoldsEveryStageAReadInOrder(t *testing.T) {
 	}
 }
 
-// TestWriteRowsNeedWriteAccessAndAnEffectThatChanges checks the write rows (ADR 007 section 3.1): each one changes the
+// TestWriteRowsNeedWriteAccessAndAnEffectThatChanges checks the write rows: each one changes the
 // wiki, so each needs write access and an effect that is not read. Only documents.update repeats a different change,
-// so only it is NotIdempotent (ADR 007 section 3.3). Every write tool says that it changes data.
+// so only it is NotIdempotent. Every write tool says that it changes data.
 func TestWriteRowsNeedWriteAccessAndAnEffectThatChanges(t *testing.T) {
 	for _, id := range stageBWrites {
 		r := rowOf(t, id)
@@ -167,7 +167,7 @@ func TestWriteToolNamesAreTheFixedNames(t *testing.T) {
 // TestWritesFollowTheInventoryClass checks the CLI command, the effect, and the access of the collections and comments
 // writes against the inventory (outline-api-operations.md, collections and comments tables). The creates, the duplicate,
 // the export, and the add-reaction are additive; the move, the restore, the updates, the resolves, and the remove-reaction
-// are updates. Each one is a write (ADR 007 section 5).
+// are updates. Each one is a write.
 func TestWritesFollowTheInventoryClass(t *testing.T) {
 	want := map[domain.OperationID]struct {
 		cli    string
@@ -243,7 +243,7 @@ func TestEveryRowIsWellFormed(t *testing.T) {
 		if r.Access.String() == "" || r.Effect == "" {
 			t.Errorf("%s: an access level and an effect are required", r.ID)
 		}
-		// A read changes nothing, so it needs read access, or admin access when it shows admin data (ADR 007 section 5).
+		// A read changes nothing, so it needs read access, or admin access when it shows admin data.
 		if r.Effect == domain.EffectRead && r.Access != domain.AccessRead && r.Access != domain.AccessAdmin {
 			t.Errorf("%s: a read effect needs read access, or admin access for an admin read", r.ID)
 		}

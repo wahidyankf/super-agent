@@ -15,10 +15,10 @@ var startGroupSyncFields = []string{"started"}
 var integrationCreateServices = []string{"matomo", "umami"}
 
 // The rows of stage c, slice c3: the access requests, attachments, sign-in providers, comments, emojis, file operations,
-// imports, and integrations changes (ADR 007 sections 3.1, 3.4, 3.5, and the inventory). Each changes the wiki with access
+// imports, and integrations changes. Each changes the wiki with access
 // admin, so a source below admin refuses it, and each needs --yes on the CLI. The three critical rows,
 // authentication-providers.delete, integrations.create, and integrations.update, have no MCP tool at any ceiling. The
-// integrations rows name the host of their URL as the canonical value of --confirm (ADR 007 section 3.5). attachments.delete
+// integrations rows name the host of their URL as the canonical value of --confirm. attachments.delete
 // has no target read, because the catalog holds no read of one attachment by its ID, so its dry run shows the plan only.
 var adminRowsC3 = []Row{
 	{

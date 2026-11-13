@@ -9,7 +9,7 @@ import (
 )
 
 // TestKindErrorCodesCarryTheKindName checks that the JSON error code of a non-Outline kind names that kind, and that the
-// rest of the code is the code the Outline error has (ADR 009 section 1, ADR 010 section 7).
+// rest of the code is the code the Outline error has.
 func TestKindErrorCodesCarryTheKindName(t *testing.T) {
 	for _, e := range errorReasons {
 		if e.err == errNotConfigured {

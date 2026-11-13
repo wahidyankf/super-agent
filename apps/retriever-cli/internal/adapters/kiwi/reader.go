@@ -9,7 +9,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// ListCollections returns every product of the server as a collection (ADR 009 section 3). Kiwi has no pagination, so one
+// ListCollections returns every product of the server as a collection. Kiwi has no pagination, so one
 // Product.filter request returns them all.
 func (g *Gateway) ListCollections(ctx context.Context) ([]domain.Collection, error) {
 	cols, err := g.listCollections(ctx)
@@ -35,7 +35,7 @@ func (g *Gateway) listCollections(ctx context.Context) ([]domain.Collection, err
 	return out, nil
 }
 
-// CollectionTree returns the test plans and test cases of one product as a flat list, depth first (ADR 009 section 5).
+// CollectionTree returns the test plans and test cases of one product as a flat list, depth first.
 func (g *Gateway) CollectionTree(ctx context.Context, id domain.CollectionID) ([]domain.TreeNode, error) {
 	nodes, err := g.collectionTree(ctx, id)
 	if err != nil {
@@ -44,7 +44,7 @@ func (g *Gateway) CollectionTree(ctx context.Context, id domain.CollectionID) ([
 	return nodes, nil
 }
 
-// Document returns one test plan (plan-<n>) or one test case (case-<n>) with its Markdown (ADR 009 section 5).
+// Document returns one test plan (plan-<n>) or one test case (case-<n>) with its Markdown.
 func (g *Gateway) Document(ctx context.Context, id domain.DocumentID) (domain.SourceDocument, error) {
 	doc, err := g.document(ctx, id.String())
 	if err != nil {
@@ -53,7 +53,7 @@ func (g *Gateway) Document(ctx context.Context, id domain.DocumentID) (domain.So
 	return doc, nil
 }
 
-// Read runs one of the three Kiwi read operations and returns its Record (ADR 009 section 2). The use case has checked
+// Read runs one of the three Kiwi read operations and returns its Record. The use case has checked
 // the access level already.
 func (g *Gateway) Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
 	rec, err := g.read(ctx, op, args)

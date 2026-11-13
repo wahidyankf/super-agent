@@ -54,7 +54,7 @@ const (
 // the Markdown of a document. It is a read, so a read source may make it.
 const opExport domain.OperationID = "documents.export"
 
-// endpoint is one row of the Outline endpoint table (ADR 007 section 2, item 5). It names the Outline method of one
+// endpoint is one row of the Outline endpoint table. It names the Outline method of one
 // catalog operation, builds the JSON body from the operation's declared arguments only, and projects the decoded reply
 // onto the operation's Record, tolerant of null, missing, and extra fields.
 type endpoint struct {

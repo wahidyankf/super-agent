@@ -77,9 +77,9 @@ const (
 	methodWebhookSubscriptionsUpdate = "webhookSubscriptions.update"
 )
 
-// adminEndpoints maps the stage c operations of this slice (ADR 007 section 5, classes A and D) to their endpoints. It is
+// adminEndpoints maps the stage c operations of this slice to their endpoints. It is
 // kept apart from the read and write tables, so neither the reader nor the writer can reach an admin method. The access of
-// each row comes from the catalog, and the client's method allowlist checks it (ADR 007 section 3.2, layer 3). Each body
+// each row comes from the catalog, and the client's method allowlist checks it. Each body
 // names only the keys of the operation's parameters, and an argument that is not set is left out. A call is sent once; the
 // client retries it only after a 429.
 var adminEndpoints = map[domain.OperationID]endpoint{

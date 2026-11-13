@@ -190,7 +190,7 @@ var errorReasons = []struct {
 }
 
 // errorCode returns the code of a failed command: retriever.<area>.<reason>. The area is the source kind of a kind-named
-// error (ADR 009 section 3), and otherwise the area of the command. A code names the failure, never a value. The generic
+// error, and otherwise the area of the command. A code names the failure, never a value. The generic
 // code is used only for an error that no entry names.
 func errorCode(err error, area string) string {
 	prefix := "retriever." + areaFor(err, area) + "."

@@ -10,7 +10,7 @@ import (
 )
 
 // TestSliceC4CriticalRowsNameTheirCanonicalTarget checks the four critical rows of slice c4 against the table of canonical
-// targets (ADR 007 section 3.5). The OAuth client name is the new name itself, the OAuth client rotation names the client ID,
+// targets. The OAuth client name is the new name itself, the OAuth client rotation names the client ID,
 // and the two webhook rows name the host of their destination URL. Each is critical on every call, needs --yes, and has no
 // MCP tool at any ceiling.
 func TestSliceC4CriticalRowsNameTheirCanonicalTarget(t *testing.T) {
@@ -53,7 +53,7 @@ func TestSliceC4CriticalRowsNameTheirCanonicalTarget(t *testing.T) {
 }
 
 // TestSliceC4ToolsAndCriticalRowsCount checks the counts of slice c4: 13 rows, 9 with an MCP tool, and 4 critical rows with
-// none. With the rows of slices a to c3, the admin ceiling offers 154 tools (ADR 007 section 3.3).
+// none. With the rows of slices a to c3, the admin ceiling offers 154 tools.
 func TestSliceC4ToolsAndCriticalRowsCount(t *testing.T) {
 	if len(adminRowsC4) != 13 {
 		t.Fatalf("slice c4 holds %d rows, want 13", len(adminRowsC4))
@@ -72,7 +72,7 @@ func TestSliceC4ToolsAndCriticalRowsCount(t *testing.T) {
 	}
 }
 
-// TestCriticalRowsAreExactlyTheElevenOfTheADR pins the complete set of critical operations (ADR 007 section 3.5): eleven rows
+// TestCriticalRowsAreExactlyTheElevenOfTheADR pins the complete set of critical operations: eleven rows
 // that are critical on every call, and none of them has an MCP tool at any ceiling. documents.delete is the one row critical
 // only with permanent true, so it keeps its tool; a call of it without permanent has no critical value.
 func TestCriticalRowsAreExactlyTheElevenOfTheADR(t *testing.T) {
@@ -158,7 +158,7 @@ func TestSliceC4WebhookEventsAndRedirectsBindLikeTheirFieldReference(t *testing.
 }
 
 // TestSliceC4SharesCreateRepeatsTheSameShare checks the one row of the slice whose repeat answers the same object: a share
-// of a document that is already shared is the same share, so its tool announces idempotent (ADR 007 section 3.3). It is the
+// of a document that is already shared is the same share, so its tool announces idempotent. It is the
 // only row of the catalog with the flag.
 func TestSliceC4SharesCreateRepeatsTheSameShare(t *testing.T) {
 	for _, row := range Rows() {

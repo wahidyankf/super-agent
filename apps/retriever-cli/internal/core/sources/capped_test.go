@@ -36,7 +36,7 @@ func adminOutlineService(t *testing.T, reader *fakeReader) (Service, *fakeResolv
 	return Service{Catalog: cat, Gateways: res}, res
 }
 
-// TestCappedServiceRefusesAnAdminReadBeforeTheSourceIsAsked checks the cap (ADR 007 section 3.3): an admin source capped
+// TestCappedServiceRefusesAnAdminReadBeforeTheSourceIsAsked checks the cap: an admin source capped
 // to read refuses an admin-level read with the public text, and the source is never asked. The same read on the
 // uncapped service is not refused for its level.
 func TestCappedServiceRefusesAnAdminReadBeforeTheSourceIsAsked(t *testing.T) {

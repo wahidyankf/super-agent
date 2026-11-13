@@ -6,7 +6,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// stageCRows is the expected shape of each stage c row of this slice (ADR 007 section 5; the field reference, Part 1).
+// stageCRows is the expected shape of each stage c row of this slice.
 // Each entry holds the operation, its CLI path, its MCP tool ("" for none), its effect, and whether it is critical.
 var stageCRows = []struct {
 	op     domain.OperationID
@@ -28,7 +28,7 @@ var stageCRows = []struct {
 	{domain.OpCollectionsExportAll, "outline collections export-all", "export_collection_all", domain.EffectAdditive},
 	{domain.OpCollectionsRemoveGroup, "outline collections remove-group", "remove_collection_group", domain.EffectDestructive},
 	{domain.OpCollectionsRemoveUser, "outline collections remove-user", "remove_collection_user", domain.EffectDestructive},
-	// Slice c2: the users, groups, and teams rows. The three critical ones have no tool (ADR 007 section 3.5).
+	// Slice c2: the users, groups, and teams rows. The three critical ones have no tool.
 	{domain.OpUsersActivate, "outline users activate", "activate_user", domain.EffectUpdate},
 	{domain.OpUsersDelete, "outline users delete", "", domain.EffectDestructive},
 	{domain.OpUsersInvite, "outline users invite", "invite_users", domain.EffectAdditive},

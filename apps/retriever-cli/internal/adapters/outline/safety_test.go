@@ -166,7 +166,7 @@ func TestBaseWithoutAHostIsInvalidNotHTTPS(t *testing.T) {
 }
 
 // TestTheEndpointTableHoldsExactlyTheStageAReads checks the endpoint table against the stage a reads of the catalog
-// (ADR 007 section 3.2, layer 3): the sixty-six catalog reads of parts 1, 2a, and 2b, each with an endpoint, and no other.
+// : the sixty-six catalog reads of parts 1, 2a, and 2b, each with an endpoint, and no other.
 func TestTheEndpointTableHoldsExactlyTheStageAReads(t *testing.T) {
 	want := []domain.OperationID{
 		domain.OpAuthWhoami, domain.OpCollectionsInfo, domain.OpCollectionsList, domain.OpCollectionsDocuments,

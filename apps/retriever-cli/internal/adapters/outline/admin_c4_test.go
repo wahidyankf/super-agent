@@ -22,7 +22,7 @@ const (
 )
 
 // requestCasesC4 are the request-shape cases of slice c4: the OAuth authorizations and clients, revisions, shares, templates,
-// and webhook subscriptions rows (ADR 007 section 3.6). Each body is written by hand from the field reference and the wire
+// and webhook subscriptions rows. Each body is written by hand from the field reference and the wire
 // facts. A redirect list and an event list are sent as JSON arrays, whether the caller gives them as one comma-separated text
 // or as a list. The OAuth client's ID is the body's id, and the authorization's is oauthClientId.
 var requestCasesC4 = []requestCase{

@@ -15,7 +15,7 @@ import (
 type Builder func(source domain.Source) (ports.SourceGateway, error)
 
 // cacheKey names one gateway: the source and the access level it was built at. A source capped to a lower ceiling
-// (ADR 007 section 3.3) is a different source value, so it gets its own gateway, whose method allowlist is the capped
+// is a different source value, so it gets its own gateway, whose method allowlist is the capped
 // level. The two never share a gateway.
 type cacheKey struct {
 	id     domain.SourceID

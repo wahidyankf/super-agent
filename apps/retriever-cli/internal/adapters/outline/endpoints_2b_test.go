@@ -2,7 +2,7 @@ package outline
 
 import "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 
-// requestCases2b are the request-shape cases of the stage a part 2b reads (ADR 007 section 3.6): the eighteen reads of
+// requestCases2b are the request-shape cases of the stage a part 2b reads: the eighteen reads of
 // access read and the ten admin reads. Each body is the exact JSON the call sends, written by hand from the field
 // reference, so the test is not computed from the adapter's table. They join requestCases in init below.
 var requestCases2b = []requestCase{

@@ -58,7 +58,7 @@ var stageBIdempotent = map[string]bool{
 	"unsubscribe_user_notifications": false,
 }
 
-// TestStageBWriteToolsCarryTheHintsOfTheirCatalogRows pins the MCP set of stage b (ADR 007 sections 3.3 and 5). At the write
+// TestStageBWriteToolsCarryTheHintsOfTheirCatalogRows pins the MCP set of stage b. At the write
 // ceiling, with a write source, the tools are exactly the write rows of the catalog, and each tool carries the hints the
 // hand-written table gives: not read-only, never destructive, open to the world, and idempotent as the table says.
 func TestStageBWriteToolsCarryTheHintsOfTheirCatalogRows(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-// Limits of the parameter kinds (ADR 007 section 2, item 7). A catalog row names a kind, and the kind's validator
+// Limits of the parameter kinds. A catalog row names a kind, and the kind's validator
 // applies these limits, so a limit is written once.
 const (
 	// MaxIDLength is the most bytes any ID kind may hold: an ID is a path segment of the API, and every kind shares this bound.

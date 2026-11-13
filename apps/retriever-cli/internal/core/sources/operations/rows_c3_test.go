@@ -9,7 +9,7 @@ import (
 )
 
 // TestSliceC3CriticalRowsHaveNoToolAndNameTheirCanonicalTarget checks the three critical rows of slice c3 against the table of
-// canonical targets (ADR 007 section 3.5). The sign-in provider deletion names the provider ID, and the two integration
+// canonical targets. The sign-in provider deletion names the provider ID, and the two integration
 // changes name the host of their URL setting. Each is critical on every call, needs --yes, and has no MCP tool at any ceiling.
 func TestSliceC3CriticalRowsHaveNoToolAndNameTheirCanonicalTarget(t *testing.T) {
 	cases := []struct {
@@ -48,7 +48,7 @@ func TestSliceC3CriticalRowsHaveNoToolAndNameTheirCanonicalTarget(t *testing.T) 
 }
 
 // TestSliceC3ToolsAndCriticalRowsCount checks the counts of slice c3: 14 rows, 11 with an MCP tool, and 3 critical rows with
-// none. With the rows of slices c1 and c2, they make 145 tools at the admin ceiling (ADR 007 section 3.3).
+// none. With the rows of slices c1 and c2, they make 145 tools at the admin ceiling.
 func TestSliceC3ToolsAndCriticalRowsCount(t *testing.T) {
 	if len(adminRowsC3) != 14 {
 		t.Fatalf("slice c3 holds %d rows, want 14", len(adminRowsC3))
@@ -102,7 +102,7 @@ func TestSliceC3IntegrationsCreateTakesTheURLAsItsPositionalArgument(t *testing.
 	}
 }
 
-// TestSliceC3HostOfKeepsOnlyTheLowerCaseHost checks the canonical value of a URL (ADR 007 section 3.5): its host, lower-cased,
+// TestSliceC3HostOfKeepsOnlyTheLowerCaseHost checks the canonical value of a URL: its host, lower-cased,
 // without the path, the query, the port, or the user name. An address without a host gives the empty text.
 func TestSliceC3HostOfKeepsOnlyTheLowerCaseHost(t *testing.T) {
 	cases := map[string]string{

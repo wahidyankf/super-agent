@@ -210,7 +210,7 @@ func (g *Gateway) finish() {
 }
 
 // failedExchange maps an exchange that failed before a reply. A write whose request may have left the client has an
-// unknown outcome, so Retriever never retries it (ADR 009 section 5). A connection that was never made, or a TLS handshake
+// unknown outcome, so Retriever never retries it. A connection that was never made, or a TLS handshake
 // that failed, did not send the request, so its outcome is known and it maps as a read does.
 func failedExchange(ctx context.Context, err error, write, handshakeFailed bool) error {
 	if write && !notConnected(err) && !handshakeFailed {

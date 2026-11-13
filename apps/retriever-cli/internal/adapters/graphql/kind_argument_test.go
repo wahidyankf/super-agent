@@ -126,7 +126,7 @@ func TestCollectionsWithKindKiwiReadsOnlyTheKiwiSource(t *testing.T) {
 }
 
 // TestCollectionsWithoutKindStaysOnOutline checks the default: an omitted kind is outline, as every call before the
-// argument existed (ADR 009 section 4).
+// argument existed.
 func TestCollectionsWithoutKindStaysOnOutline(t *testing.T) {
 	outlineGW := &countingGateway{collections: []domain.Collection{{ID: "col-1", Name: "Engineering"}}}
 	kiwiGW := kiwiCases()

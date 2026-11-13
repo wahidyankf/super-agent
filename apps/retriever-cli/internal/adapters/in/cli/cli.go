@@ -38,7 +38,7 @@ const schemaVersion = 1
 // binds the listener, where port 0 picks a free port. It calls ready with the bound address once the listener is up.
 type ServeFunc func(ctx context.Context, port int, ready func(addr string)) error
 
-// MCPFunc runs one MCP session at the access ceiling that --max-access names (ADR 007 section 3.3), offering the tools of
+// MCPFunc runs one MCP session at the access ceiling that --max-access names, offering the tools of
 // the resources that --tools names (nil when the flag is absent, which offers every resource). It reads requests from in
 // and writes replies to out, until the client closes in or ctx ends. The composition root binds it to the source service
 // and the logger. The CLI passes the process streams.

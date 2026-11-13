@@ -35,7 +35,7 @@ func TestAdminRowsNameTheAdminLevelInTheirText(t *testing.T) {
 	}
 }
 
-// TestRefuseAdminReadOnAReadSourceNamesBothLevels checks the safe text of the admin refusal (ADR 007 section 3.1): the
+// TestRefuseAdminReadOnAReadSourceNamesBothLevels checks the safe text of the admin refusal: the
 // source ID and the two levels, and the sentinel ErrAccessLevelTooLow.
 func TestRefuseAdminReadOnAReadSourceNamesBothLevels(t *testing.T) {
 	src := sourceAt(t, domain.AccessRead)

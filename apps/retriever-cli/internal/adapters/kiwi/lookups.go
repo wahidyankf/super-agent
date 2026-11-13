@@ -7,7 +7,7 @@ import (
 )
 
 // lookupTables holds the category, priority, and status tables of one Kiwi server, keyed by ID. A case names its
-// category, priority, and status by ID, and a document shows their names (ADR 009 section 5).
+// category, priority, and status by ID, and a document shows their names.
 type lookupTables struct {
 	categories map[int]wireCategory
 	priorities map[int]wirePriority

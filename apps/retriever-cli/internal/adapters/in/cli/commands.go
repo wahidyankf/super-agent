@@ -155,7 +155,7 @@ func kindOf(raw string) (domain.SourceKind, error) {
 }
 
 // exportCommand returns the export command of one kind's group. It writes local files, so it is hand-written rather than
-// generated from the catalog, and it has no MCP tool (ADR 009 section 3).
+// generated from the catalog, and it has no MCP tool.
 func exportCommand(kind domain.SourceKind) *command {
 	return &command{
 		name:    "export",

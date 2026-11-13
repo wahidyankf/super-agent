@@ -2,7 +2,7 @@ package operations
 
 import "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 
-// kiwiOperations is the closed list of the Kiwi TCMS operations that Supports runs for the Kiwi kind (ADR 009 section 2).
+// kiwiOperations is the closed list of the Kiwi TCMS operations that Supports runs for the Kiwi kind.
 // A new Kiwi row is one entry here and one row in kiwiRows.
 var kiwiOperations = []domain.OperationID{
 	domain.OpKiwiProductsList,
@@ -15,7 +15,7 @@ var kiwiOperations = []domain.OperationID{
 
 // kiwiRows are the six operations of the Kiwi TCMS source: three reads and three writes. Kiwi has no admin, destructive, or
 // critical operation, and no MCP tool, so Tool and Critical stay empty. Retriever maps the provider's words to the domain's:
-// a product is a collection, a test plan is a tree node, and a test case is a document (ADR 009 section 3).
+// a product is a collection, a test plan is a tree node, and a test case is a document.
 var kiwiRows = []Row{
 	{
 		ID:          domain.OpKiwiProductsList,

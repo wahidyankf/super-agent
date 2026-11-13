@@ -9,7 +9,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// TestBindChecksEachKindOfParameter checks the rule of every parameter kind (ADR 007 section 2). One row is bound with one
+// TestBindChecksEachKindOfParameter checks the rule of every parameter kind. One row is bound with one
 // value; a value that passes returns its Go value, and a value that fails returns the kind's sentinel.
 func TestBindChecksEachKindOfParameter(t *testing.T) {
 	cases := []struct {

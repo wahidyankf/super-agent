@@ -9,13 +9,13 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// Confirmation is what the caller says about one destructive or admin call (ADR 007 sections 3.4 and 3.5).
+// Confirmation is what the caller says about one destructive or admin call.
 type Confirmation struct {
 	// DryRun returns the plan, with the target read from the wiki, and sends no change. It needs neither Yes nor Confirm,
 	// so a person can read the target and type it.
 	DryRun bool
 	// Yes is the --yes of the CLI. A call that is destructive or admin needs it. The MCP surface sets it, because an MCP
-	// tool has no --yes: its controls are the ceiling, the source's access, and dry_run (ADR 007 section 3.3).
+	// tool has no --yes: its controls are the ceiling, the source's access, and dry_run.
 	Yes bool
 	// Confirm is the --confirm value of a critical call. Nil means that none was given.
 	Confirm *string
@@ -90,14 +90,14 @@ func Administer(ctx context.Context, svc Service, op domain.OperationID, source 
 		return domain.Record{}, err
 	}
 	if !matchesRow(row, reply) {
-		// The wiki answered, so the change may have run, and its reply cannot be read (ADR 007 section 3.4): this is the
+		// The wiki answered, so the change may have run, and its reply cannot be read: this is the
 		// same outcome as a 2xx reply that is not a readable success, so the caller never retries it.
 		return domain.Record{}, domain.ErrWriteOutcomeUnknown
 	}
 	return reply, nil
 }
 
-// selfCheck refuses a change to the key's own user when the row marks it (ADR 007 section 3.5, rule 6). A row that does not
+// selfCheck refuses a change to the key's own user when the row marks it. A row that does not
 // mark it makes no read.
 func selfCheck(ctx context.Context, svc Service, row operations.Row, src domain.Source, args domain.Args) error {
 	if !row.RefuseSelf {
@@ -106,7 +106,7 @@ func selfCheck(ctx context.Context, svc Service, row operations.Row, src domain.
 	return refuseOwnUser(ctx, svc, src, args)
 }
 
-// confirmCritical checks the --confirm of a critical call against the canonical value of its target (ADR 007 section 3.5).
+// confirmCritical checks the --confirm of a critical call against the canonical value of its target.
 // The order is deliberate. A row with no canonical value at all stops with ErrUnsupportedOperation before any read. A
 // missing --confirm, or one that differs from a value the call already names, is refused before any read, so that refusal
 // sends no request. Only when the value must be read does the function read the target and compare the --confirm with the
@@ -152,7 +152,7 @@ func knownTarget(row operations.Row, src domain.Source, args domain.Args) (strin
 
 // readTarget reads the target of a change through the read port, so a dry run can name it and a critical call can
 // compare its --confirm with it. A row with no target returns nil, unless it names a URL host as its canonical value
-// (ADR 007 section 3.5): that value is then the host of the argument, and nothing is read, because the object does not
+// : that value is then the host of the argument, and nothing is read, because the object does not
 // exist yet. The target's canonical value is the reply field the row names, or the source ID when the row names none. A
 // URL host, when the row names one, replaces it. A target that does not resolve stops the call.
 func readTarget(ctx context.Context, svc Service, row operations.Row, src domain.Source, args domain.Args) (*resolvedTarget, error) {
@@ -207,7 +207,7 @@ func readTarget(ctx context.Context, svc Service, row operations.Row, src domain
 	return target, nil
 }
 
-// criticalValue returns the canonical value that a critical call names from its own arguments (ADR 007 section 3.5): the
+// criticalValue returns the canonical value that a critical call names from its own arguments: the
 // host of the URL argument the row names, or the exact text of the argument it names, such as the name of a new OAuth
 // client. It returns "" when the row names neither, so the target is read instead. Bind has already checked the URL kind,
 // so a bound URL always has a host.
@@ -249,7 +249,7 @@ func targetCountValue(target *resolvedTarget) any {
 	return target.Count
 }
 
-// refuseOwnUser refuses a change to the user of the API key (ADR 007 section 3.5, rule 6). It reads the key's user with
+// refuseOwnUser refuses a change to the user of the API key. It reads the key's user with
 // auth.whoami and compares the userId of the call with that user's ID, without a difference of case. A reply without the
 // user's ID is refused too, so the call never goes ahead on a guess. The refusal is ErrSelfTarget and makes no change.
 func refuseOwnUser(ctx context.Context, svc Service, src domain.Source, args domain.Args) error {

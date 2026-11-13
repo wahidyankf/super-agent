@@ -128,16 +128,16 @@ var (
 	ErrAccessLevelTooLow = errors.New("the source's access level is too low for this operation")
 	// ErrOperationUnavailable reports that the server does not offer the endpoint. OperationUnavailableError names it.
 	ErrOperationUnavailable = errors.New("this Outline server does not offer the endpoint")
-	// ErrSourceRequired refuses a write that names no source. A change always names where it goes (ADR 007 section 3.1).
+	// ErrSourceRequired refuses a write that names no source. A change always names where it goes.
 	ErrSourceRequired = errors.New("this operation changes the wiki, so name its source with --source or the source argument")
-	// ErrWrongOperationClass reports an operation that a port of another effect class was asked to run (ADR 007 section 2).
+	// ErrWrongOperationClass reports an operation that a port of another effect class was asked to run.
 	ErrWrongOperationClass = errors.New("the operation is not of this port's effect class")
 	// ErrWriteOutcomeUnknown reports a write whose request was sent but whose reply is missing or unusable: a timeout, a
 	// dropped connection, a 5xx reply, a 2xx reply that is not a readable success, or a body over the cap. The change may
-	// or may not have happened, so the write is never retried by Retriever (ADR 007 section 3.4).
+	// or may not have happened, so the write is never retried by Retriever.
 	ErrWriteOutcomeUnknown = errors.New("the change may or may not have happened; check before you retry")
 	// ErrLastRevisionRequired refuses an MCP document update that replaces the text without the revision it read
-	// (ADR 007 section 2, item 9).
+	//.
 	ErrLastRevisionRequired = errors.New("last_revision is required when text replaces the document; read the revision with get_document first")
 )
 
@@ -148,7 +148,7 @@ var (
 	// ErrDocumentNotFound reports that the source holds no document with the requested ID.
 	ErrDocumentNotFound = errors.New("document not found")
 	// ErrUnresolvedName reports that a name a write takes, such as a category or a priority, matches no entry, or more
-	// than one, in the source. The write sends nothing (ADR 009 section 5).
+	// than one, in the source. The write sends nothing.
 	ErrUnresolvedName = errors.New("a name matches no entry, or more than one, in the source")
 
 	// ErrNotFound reports that the server holds no item for the ID of a read whose kind has no own sentinel.

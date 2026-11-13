@@ -7,7 +7,7 @@ import (
 )
 
 // TestConfirmErrorMatchesItsKindOfRefusal checks that a missing --confirm matches only ErrConfirmRequired, and a wrong
-// --confirm matches only ErrConfirmMismatch (ADR 007 section 3.5).
+// --confirm matches only ErrConfirmMismatch.
 func TestConfirmErrorMatchesItsKindOfRefusal(t *testing.T) {
 	required := ConfirmError{Kind: "the document ID"}
 	if !errors.Is(required, ErrConfirmRequired) || errors.Is(required, ErrConfirmMismatch) {

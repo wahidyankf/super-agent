@@ -248,7 +248,7 @@ func (c Catalog) MaxAccess() Access {
 }
 
 // MaxAccessOf returns the highest access level of the sources whose kind is one of kinds. Sources of any other kind do
-// not count, so a kind's ceiling is not lifted by a source of another kind (ADR 009 section 4). With no kinds, or with no
+// not count, so a kind's ceiling is not lifted by a source of another kind. With no kinds, or with no
 // source of the kinds, it returns the zero Access, which allows nothing.
 func (c Catalog) MaxAccessOf(kinds ...SourceKind) Access {
 	var top Access

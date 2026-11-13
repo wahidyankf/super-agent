@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// caseDocument is the data of a test case document. The legacy fields are the ones Kiwi still returns (ADR 009 section 5).
+// caseDocument is the data of a test case document. The legacy fields are the ones Kiwi still returns.
 type caseDocument struct {
 	Summary   string
 	Status    string

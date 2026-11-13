@@ -7,7 +7,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// Read runs one catalog operation against the wiki and returns its Record (ADR 007 section 2, item 5). It first checks
+// Read runs one catalog operation against the wiki and returns its Record. It first checks
 // the arguments again with the catalog's rules, so a value that reaches a request has passed them, then sends the
 // operation's endpoint request. The use case has already checked the access level.
 func (g *Gateway) Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {

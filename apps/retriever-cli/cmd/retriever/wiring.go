@@ -34,7 +34,7 @@ type seamConfig struct {
 	timeout time.Duration
 }
 
-// seamSet holds the test seam of each source kind: one seamConfig per kind (ADR 009 section 5). A kind with no entry has
+// seamSet holds the test seam of each source kind: one seamConfig per kind. A kind with no entry has
 // its seam off. The variables of one kind never reach another kind's gateway.
 type seamSet map[domain.SourceKind]seamConfig
 
@@ -163,7 +163,7 @@ func wireSources(paths configpaths.Paths, seams seamSet) (sourceWiring, error) {
 		},
 	})
 	svc := sources.Service{Catalog: cat, Gateways: resolver}
-	// The GraphQL server reads only (ADR 007 section 3.3), so its catalog is capped to read. The MCP server takes its
+	// The GraphQL server reads only, so its catalog is capped to read. The MCP server takes its
 	// ceiling from --max-access when it starts.
 	return sourceWiring{
 		service: svc,
@@ -185,7 +185,7 @@ func buildOutline(src domain.Source, creds ports.Credentials, seam seamConfig) (
 	return gw, nil
 }
 
-// buildKiwi returns the gateway of one Kiwi source, under the same rule as buildOutline (ADR 009 section 5): the
+// buildKiwi returns the gateway of one Kiwi source, under the same rule as buildOutline: the
 // source's endpoint receives its key, and the seam, when it is on, replaces only the connection base.
 func buildKiwi(src domain.Source, creds ports.Credentials, seam seamConfig) (ports.SourceGateway, error) {
 	if !seam.on {

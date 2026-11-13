@@ -9,7 +9,7 @@ import (
 )
 
 // TestAdministerSelfCheckWithoutAReaderStopsTheChange checks that a change to a user is not sent when the source has no read
-// port, so the key's own user cannot be checked (ADR 007 section 3.5, rule 6): the source's refusal is returned, and nothing
+// port, so the key's own user cannot be checked: the source's refusal is returned, and nothing
 // is changed.
 func TestAdministerSelfCheckWithoutAReaderStopsTheChange(t *testing.T) {
 	admin := &fakeAdmin{reply: ackReply()}

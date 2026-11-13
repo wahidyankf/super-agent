@@ -128,7 +128,7 @@ func TestMCPSetupErrorExitsTwoBeforeTheServerStarts(t *testing.T) {
 }
 
 // TestMCPToolsDefaultsToEveryResource checks that a session with no --tools flag passes no resource list, so the server
-// offers every tool the ceiling allows (ADR 007, "As built (stage a complete)", tool count and context cost).
+// offers every tool the ceiling allows", tool count and context cost).
 func TestMCPToolsDefaultsToEveryResource(t *testing.T) {
 	fake := &fakeMCP{}
 	code, _, errOut := runMCPCLI(t, []string{"mcp"}, "", nil, fake.serve)

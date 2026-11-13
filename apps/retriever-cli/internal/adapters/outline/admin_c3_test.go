@@ -15,7 +15,7 @@ import (
 )
 
 // requestCasesC3 are the request-shape cases of slice c3: the access requests, attachments, sign-in providers, comments,
-// emojis, file operations, imports, and integrations rows (ADR 007 section 3.6). Each body is written by hand from the field
+// emojis, file operations, imports, and integrations rows. Each body is written by hand from the field
 // reference and the wire facts. The two update rows that replace stored values send the values read before the change (the
 // pre-reads of adminPreReads), so their bodies carry the values of the synthetic reads of the info methods.
 var requestCasesC3 = []requestCase{
@@ -351,7 +351,7 @@ func TestSliceC3AuthProviderUpdateKeepsTheSettingsItRead(t *testing.T) {
 
 // integrationInfoFixture is the reply of integrations.info for the integration of the update tests. Its settings hold keys that
 // the update must resend unchanged (measurementId, instanceUrl, scriptName, and a nested object), the channel and channel ID
-// the update keeps, and the address the update replaces. Its events are kept too. The values are synthetic (ADR 007 section 3.4).
+// the update keeps, and the address the update replaces. Its events are kept too. The values are synthetic.
 const integrationInfoFixture = `{"ok":true,"status":200,"data":{"id":"` + uuidOther + `","type":"analytics","service":"matomo",` +
 	`"events":["documents.create","documents.update"],"collectionId":null,"userId":"33333333-3333-4333-8333-333333333333",` +
 	`"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-02T00:00:00Z",` +

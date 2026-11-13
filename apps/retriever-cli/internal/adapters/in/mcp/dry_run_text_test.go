@@ -31,7 +31,7 @@ func schemaDryRunText(t *testing.T, schema any) (string, bool) {
 
 // TestDryRunTextMatchesWhatEachWriteToolSends checks the dry_run description of each write tool (finding m6). A write row's
 // dry run sends nothing and reads nothing, so its text says that no request is sent. An admin row's dry run sends no change,
-// but it may read the target and, for a change to a user, the key's own user (ADR 007 sections 3.4 and 3.5), so its text must
+// but it may read the target and, for a change to a user, the key's own user, so its text must
 // not say that no request is sent, and it must say that a read may happen.
 func TestDryRunTextMatchesWhatEachWriteToolSends(t *testing.T) {
 	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "admin")).Capped(domain.AccessAdmin)

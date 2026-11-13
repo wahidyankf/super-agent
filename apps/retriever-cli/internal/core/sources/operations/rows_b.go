@@ -6,7 +6,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// writeRows are the write operations of stage b, the documents writes of the inventory (ADR 007 section 5). Each one
+// writeRows are the write operations of stage b, the documents writes of the inventory. Each one
 // changes the wiki, so each has access write and a non-read effect. None is destructive, so none needs --yes. Each runs
 // through the same generic use case, and each has one endpoint entry in the Outline adapter (endpoints_b.go).
 var writeRows = []Row{
@@ -127,7 +127,7 @@ var writeRows = []Row{
 		Effect:      domain.EffectUpdate,
 		Access:      domain.AccessWrite,
 		OpensWorld:  true,
-		// An append or a patch repeats a different change, so the hint is not idempotent (ADR 007 section 3.3).
+		// An append or a patch repeats a different change, so the hint is not idempotent.
 		NotIdempotent: true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the document to change, from collection_tree"},

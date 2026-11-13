@@ -1,5 +1,5 @@
 // Package kiwistub is a scripted Kiwi TCMS server for tests. It answers POST /json-rpc/ with JSON-RPC 2.0 replies that
-// follow the envelope and the error shapes of the Kiwi adapter (ADR 009 section 5), from a dataset the test sets. It
+// follow the envelope and the error shapes of the Kiwi adapter, from a dataset the test sets. It
 // checks the Bearer key, records every request (never the key), and can answer with one fault at a time.
 //
 // The stub has no real-Kiwi knowledge. Its reply field names are the adapter's wire names (internal/adapters/kiwi,

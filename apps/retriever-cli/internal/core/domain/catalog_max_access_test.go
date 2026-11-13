@@ -28,7 +28,7 @@ func TestMaxAccessIsTheHighestLevelOfAnySource(t *testing.T) {
 }
 
 // TestMaxAccessOfCountsOnlyTheNamedKinds checks the ceiling of a set of kinds: a source of another kind does not lift it
-// (ADR 009 section 4). The MCP tools use it for the kinds that have tools, so a Kiwi write source adds no level for them.
+// . The MCP tools use it for the kinds that have tools, so a Kiwi write source adds no level for them.
 func TestMaxAccessOfCountsOnlyTheNamedKinds(t *testing.T) {
 	outline := tagged(t, testSource(t, "a", "outline", "a.example.com", "A_API_KEY"), AccessRead)
 	// testSource builds only outline and the package's other kind, so the Kiwi source is rebuilt with KindKiwi.

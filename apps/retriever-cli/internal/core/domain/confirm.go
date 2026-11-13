@@ -2,7 +2,7 @@ package domain
 
 import "errors"
 
-// The confirmation sentinels of the critical tier (ADR 007 section 3.5). ErrYesRequired refuses a destructive or admin
+// The confirmation sentinels of the critical tier. ErrYesRequired refuses a destructive or admin
 // call that has no --yes. ErrConfirmRequired and ErrConfirmMismatch refuse a critical call whose --confirm is missing
 // or does not equal the target that Retriever read.
 var (
@@ -15,11 +15,11 @@ var (
 )
 
 // ErrSelfTarget refuses a change to the user of the API key itself: deleting, suspending, or changing the role of that user
-// (ADR 007 section 3.5, rule 6). Retriever learns that user from auth.whoami, so a lockout by its own key is not reachable.
+// . Retriever learns that user from auth.whoami, so a lockout by its own key is not reachable.
 var ErrSelfTarget = errors.New("this is the user of the API key: Retriever does not change that user")
 
 // ConfirmError is the refusal of a critical call's --confirm. Its text names the kind of value to give, such as the
-// document ID, and never the value itself, so it is safe to show (ADR 007 section 3.5, item 5). It matches
+// document ID, and never the value itself, so it is safe to show. It matches
 // ErrConfirmRequired when Mismatch is false and ErrConfirmMismatch when it is true.
 type ConfirmError struct {
 	Kind     string

@@ -194,7 +194,7 @@ func TestAdministerPropagatesAFailedWhoamiRead(t *testing.T) {
 	}
 }
 
-// TestAdministerCriticalUsersDeleteConfirmsTheUserID checks the canonical target of users.delete (ADR 007 section 3.5): the
+// TestAdministerCriticalUsersDeleteConfirmsTheUserID checks the canonical target of users.delete: the
 // user ID that users.info reads, with no --confirm the call is refused, and a wrong value is refused too.
 func TestAdministerCriticalUsersDeleteConfirmsTheUserID(t *testing.T) {
 	reader := &fakeReader{reply: userRecord(otherUserID, "Ben"), byOp: map[domain.OperationID]domain.Record{
@@ -309,7 +309,7 @@ func TestAdministerTeamsDeleteNeedsItsCodeBeforeAnyRequest(t *testing.T) {
 }
 
 // TestAdministerDryRunOfAnInvitationNeverShowsTheAddress checks that the plan of users.invite names the e-mail address only
-// as a mark (ADR 007 section 3.5 and the redaction rules): the address appears nowhere in the plan.
+// as a mark: the address appears nowhere in the plan.
 func TestAdministerDryRunOfAnInvitationNeverShowsTheAddress(t *testing.T) {
 	reader := &fakeReader{reply: domain.NewRecord()}
 	admin := &fakeAdmin{reply: domain.NewRecord()}

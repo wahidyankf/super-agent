@@ -7,7 +7,7 @@ import (
 )
 
 // The projections of the endpoint table. Each one reads a decoded reply (encoding/json into any) and returns the
-// operation's Record. Decoding is tolerant (ADR 007 section 6.2): a field that is missing, null, or of another type
+// operation's Record. Decoding is tolerant: a field that is missing, null, or of another type
 // becomes the zero value and is left out of nothing, except an ID that is required and invalid, which makes the whole
 // reply unexpected. An extra field is ignored. A reply part that is not there is domain.ErrUnexpectedResponse.
 
@@ -216,7 +216,7 @@ func documentRecord(m map[string]any) (domain.Record, error) {
 }
 
 // documentRevisionRecord projects one document with its revision, which documents.info and the write replies carry. The
-// revision is the number a later documents.update names as last_revision (ADR 007 section 2, item 9).
+// revision is the number a later documents.update names as last_revision.
 func documentRevisionRecord(m map[string]any) (domain.Record, error) {
 	rec, err := documentRecord(m)
 	if err != nil {
@@ -309,7 +309,7 @@ func documentItems(data []any) (domain.Record, error) {
 }
 
 // projectAccount projects auth.info: the user's ID and name, and the team's name. The ID is what the use case compares
-// with a change's target (ADR 007 section 3.5, rule 6). The e-mail address and every other field are never read, so they
+// with a change's target. The e-mail address and every other field are never read, so they
 // never reach a caller.
 func projectAccount(root any) (domain.Record, error) {
 	m, err := dataObject(root)

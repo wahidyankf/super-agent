@@ -21,7 +21,7 @@ type c2Reply struct {
 	want  string
 }
 
-// c2Replies are the replies of the slice c2 rows, in the wire shapes of the router (ADR 007 section 6 and the wire facts).
+// c2Replies are the replies of the slice c2 rows, in the wire shapes of the router.
 // The user objects carry an e-mail address and the team carries preferences, because the router sends them; the projection
 // must drop them.
 var c2Replies = []c2Reply{
@@ -57,7 +57,7 @@ var c2Replies = []c2Reply{
 }
 
 // deniedC2Keys are keys that a projection of a slice c2 reply must never hold: the e-mail address, the avatar, the
-// preferences, the plan, the entitlements, the MCP guidance, and any secret (ADR 007 section 3.5 and the redaction rules).
+// preferences, the plan, the entitlements, the MCP guidance, and any secret.
 var deniedC2Keys = map[string]bool{
 	"email": true, "avatarUrl": true, "preferences": true, "plan": true, "entitlements": true, "guidanceMCP": true,
 	"secret": true, "clientSecret": true, "value": true, "token": true, "externalId": true,
@@ -112,7 +112,7 @@ func TestSliceC2RepliesAreReadLikeTheirRows(t *testing.T) {
 }
 
 // TestSliceC2ProjectionsDropTheEmailAddressesAndThePrivateSettings checks the redaction of the users, groups, and teams
-// replies (ADR 007 section 3.5): an e-mail address, an avatar, the preferences, the plan, the entitlements, the MCP guidance,
+// replies: an e-mail address, an avatar, the preferences, the plan, the entitlements, the MCP guidance,
 // and any secret never reach the record, however the router sent them.
 func TestSliceC2ProjectionsDropTheEmailAddressesAndThePrivateSettings(t *testing.T) {
 	for _, tc := range c2Replies {

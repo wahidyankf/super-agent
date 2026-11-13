@@ -15,7 +15,7 @@ import (
 )
 
 // BaseURLEnv names the environment variable that overrides the Kiwi base URL for tests. It is separate from the Outline
-// seam, so one stub never receives another kind's key (ADR 009 section 5).
+// seam, so one stub never receives another kind's key.
 const BaseURLEnv = "RETRIEVER_KIWI_TEST_BASE_URL"
 
 // CAFileEnv names the environment variable that gives the PEM CA file for an override base.

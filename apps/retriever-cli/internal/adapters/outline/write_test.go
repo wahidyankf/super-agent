@@ -15,7 +15,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
 )
 
-// requestCasesB are the request-shape cases of the seven documents writes of stage b (ADR 007 section 3.6). Each body is
+// requestCasesB are the request-shape cases of the seven documents writes of stage b. Each body is
 // the exact JSON the call sends, written by hand from the field reference. A body names only the keys the caller set.
 var requestCasesB = []requestCase{
 	{"documents.create as a draft", domain.OpDocumentsCreate,
@@ -348,7 +348,7 @@ func TestEveryWriteSendsItsExactRequest(t *testing.T) {
 }
 
 // TestEveryWriteIsAPostOfJSONWithTheAPIVersion checks the transport of a write: a POST with the JSON content type and
-// X-API-Version 2, and no X-Client-Version header, which Retriever never sends (ADR 007 section 6.3).
+// X-API-Version 2, and no X-Client-Version header, which Retriever never sends.
 func TestEveryWriteIsAPostOfJSONWithTheAPIVersion(t *testing.T) {
 	r := writeRig(t, []outlinestub.Option{outlinestub.WithDocuments(outlinestub.Document{ID: "doc-1", Title: "Plan"})})
 	r.stub.SetReply("documents.update", http.StatusOK, updatedDocument)
@@ -421,7 +421,7 @@ func TestAWriteStopsAfterThreeRetriesOf429(t *testing.T) {
 	}
 }
 
-// TestA409DocumentConflictIsItsOwnErrorAndIsNotRetried checks the last_revision refusal (ADR 007 section 2, item 9): a
+// TestA409DocumentConflictIsItsOwnErrorAndIsNotRetried checks the last_revision refusal: a
 // 409 with document_conflict is ErrDocumentConflict after one request, and any other 409 is an unexpected reply.
 func TestA409DocumentConflictIsItsOwnErrorAndIsNotRetried(t *testing.T) {
 	cases := []struct {

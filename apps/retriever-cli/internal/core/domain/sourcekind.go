@@ -10,7 +10,7 @@ type SourceKind struct {
 // KindOutline is the Outline wiki kind.
 var KindOutline = SourceKind{value: "outline"}
 
-// KindKiwi is the Kiwi TCMS kind, the test case management system of Example Org (ADR 009).
+// KindKiwi is the Kiwi TCMS kind, the test case management system of Example Org.
 var KindKiwi = SourceKind{value: "kiwi"}
 
 // KindJira is the Jira Cloud kind, read only, of Example Org (ADR 010).

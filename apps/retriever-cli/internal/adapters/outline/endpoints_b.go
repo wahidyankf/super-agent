@@ -60,7 +60,7 @@ const (
 	methodUsersNotificationsUnsubscribe = "users.notificationsUnsubscribe"
 )
 
-// writeEndpoints maps the stage b writes (ADR 007 section 5, class W) to their endpoints. It is kept apart from the
+// writeEndpoints maps the stage b writes to their endpoints. It is kept apart from the
 // read table, so the reader cannot reach a write method. Each body names only the keys of the operation's parameters, and
 // an argument that is not set is left out. A write sends its request once; the client retries it only after a 429.
 var writeEndpoints = map[domain.OperationID]endpoint{

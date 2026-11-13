@@ -8,7 +8,7 @@ import (
 // sharing and sign-in settings, and its URL. The preferences, the avatar, the plan, and the default collection are dropped.
 var teamFields = []string{"id", "name", "description", "sharing", "documentEmbeds", "memberCollectionCreate", "memberTeamCreate", "defaultUserRole", "inviteRequired", "guestSignin", "passkeysEnabled", "subdomain", "domain", "url"}
 
-// The rows of stage c, slice c2: the users, groups, and teams changes (ADR 007 sections 3.1, 3.4, 3.5, and the inventory). Each
+// The rows of stage c, slice c2: the users, groups, and teams changes. Each
 // changes the wiki with access admin, so a source below admin refuses it, and each needs --yes on the CLI. The three
 // critical rows, users.delete, groups.delete-all, and teams.delete, have no MCP tool at any ceiling. A change to the user of
 // the API key is refused by the use case (RefuseSelf, ErrSelfTarget). Every row that names one object reads it first

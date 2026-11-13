@@ -10,18 +10,18 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// The write commands of the outline group are generated from the same catalog rows as the reads (ADR 007 section 3.4).
+// The write commands of the outline group are generated from the same catalog rows as the reads.
 // A write names its source, because a change always says where it goes, and it accepts --dry-run, which prints the plan
 // and makes no request. A write has no --yes: none of stage b's writes is destructive.
 
 // dryRunFlag is the --dry-run switch every write command accepts. A dry run runs the checks, and prints what would change.
 var dryRunFlag = flag{name: "--dry-run", help: "print the change that would be made and make no request"}
 
-// yesFlag is the --yes switch of a destructive or admin command (ADR 007 section 3.4). Without it such a command refuses
+// yesFlag is the --yes switch of a destructive or admin command. Without it such a command refuses
 // before any request. There is no interactive prompt.
 var yesFlag = flag{name: "--yes", help: "run a change that deletes, removes, or grants access; without it the command refuses"}
 
-// confirmFlagName is the --confirm option of a critical command (ADR 007 section 3.5). Its value is the canonical target,
+// confirmFlagName is the --confirm option of a critical command. Its value is the canonical target,
 // which the dry run prints. It has no other source: no prompt, no standard input, no environment variable.
 const confirmFlagName = "--confirm"
 
@@ -57,7 +57,7 @@ func runWrite(inv *invocation, row operations.Row) error {
 
 // writeDryRun prints the plan of a dry run: the operation, the source, the target when the change names one, and each
 // argument, then the line that says nothing changed. A text argument shows its byte count, which the use case put in the
-// plan. The target is the value --confirm must equal for a critical call (ADR 007 section 3.5), so a person can read it.
+// plan. The target is the value --confirm must equal for a critical call, so a person can read it.
 func writeDryRun(w io.Writer, plan domain.Record) {
 	fmt.Fprintf(w, "dry run of %s on source %s\n", plan.Str("operation"), plan.Str("source"))
 	labels := []struct{ field, label string }{
@@ -72,7 +72,7 @@ func writeDryRun(w io.Writer, plan domain.Record) {
 	fmt.Fprintln(w, "nothing was changed")
 }
 
-// runAdmin runs one destructive or admin row against the named source (ADR 007 sections 3.1, 3.4, and 3.5). The --yes
+// runAdmin runs one destructive or admin row against the named source. The --yes
 // switch and the --confirm value are passed to the use case, which refuses a call that lacks them before any request. With
 // --dry-run it prints the plan, the target included, and makes no change.
 func runAdmin(inv *invocation, row operations.Row) error {

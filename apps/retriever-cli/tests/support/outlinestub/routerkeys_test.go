@@ -104,8 +104,8 @@ func TestReplayFixturesUseOnlyTheRouterKeys(t *testing.T) {
 }
 
 // writeMethods are the wire methods of every built write, destructive, and admin row: the stage b writes and the stage c1
-// admin rows (ADR 007 section 5). Each one has a router key entry and a verified envelope, so a stated or synthetic reply
-// of a write is checked against the keys the router sends (ADR 007 section 7).
+// admin rows. Each one has a router key entry and a verified envelope, so a stated or synthetic reply
+// of a write is checked against the keys the router sends.
 var writeMethods = []string{
 	"documents.create", "documents.duplicate", "documents.move", "documents.restore", "documents.templatize",
 	"documents.unpublish", "documents.update",

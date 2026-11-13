@@ -62,7 +62,7 @@ func fieldNames(rec domain.Record) []string {
 	return names
 }
 
-// TestEveryReadProjectionHoldsExactlyItsFields is the projection tripwire (ADR 007 section 2, item 3). For every read
+// TestEveryReadProjectionHoldsExactlyItsFields is the projection tripwire. For every read
 // operation of the catalog it projects the router-faithful synthetic reply, checks that the reply holds only keys the
 // router sends, and checks that the projected fields are exactly the row's Fields: no extra field and no missing one.
 // A row and a projection that drift apart fail here, before any scenario runs.

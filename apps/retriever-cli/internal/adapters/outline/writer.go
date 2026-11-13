@@ -7,7 +7,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// Write runs one write operation against the wiki and returns the Record of its reply (ADR 007 section 2, item 5). It
+// Write runs one write operation against the wiki and returns the Record of its reply. It
 // checks the arguments again with the catalog's rules, so a value that reaches a request has passed them, then sends the
 // operation's request once. The use case has checked the source and its access level already; the client checks the
 // level again (layer 3, ADR 007 section 3.2), and a read source never sends a write.

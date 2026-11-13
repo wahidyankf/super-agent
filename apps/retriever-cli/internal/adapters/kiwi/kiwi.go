@@ -1,4 +1,4 @@
-// Package kiwi is the source adapter for one Kiwi TCMS server (ADR 009). It speaks JSON-RPC 2.0 over HTTPS to
+// Package kiwi is the source adapter for one Kiwi TCMS server. It speaks JSON-RPC 2.0 over HTTPS to
 // POST /json-rpc/, one request at a time with a delay between requests. It reads and, for three writes, changes test
 // plans and test cases. It never prints, returns, or stores the API key outside a request, and it never retries a write
 // after its outcome could be unknown.
@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	// endpointPath is the one path the adapter calls. A reply or an argument never changes it (ADR 009 section 5).
+	// endpointPath is the one path the adapter calls. A reply or an argument never changes it.
 	endpointPath    = "/json-rpc/"
 	maxRetries      = 3
 	maxRetryAfter   = 60 // seconds
@@ -61,7 +61,7 @@ type Gateway struct {
 	hasLast bool
 	nextID  int64
 
-	// lookups caches the small static tables that name categories, priorities, and statuses (ADR 009 section 5).
+	// lookups caches the small static tables that name categories, priorities, and statuses.
 	lookupMu sync.Mutex
 	lookups  *lookupTables
 }

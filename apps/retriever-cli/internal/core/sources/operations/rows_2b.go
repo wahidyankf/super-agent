@@ -2,7 +2,7 @@ package operations
 
 import "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 
-// part2bRows are the rest of the stage a reads (ADR 007 section 5): the eighteen reads of access read, then the ten
+// part2bRows are the rest of the stage a reads: the eighteen reads of access read, then the ten
 // admin-level reads of access admin. They are kept in their own file so the part 1 and part 2a table stays as it was.
 // The init below appends them to the catalog, and the order is the catalog order.
 var part2bRows = []Row{
@@ -490,7 +490,7 @@ var (
 	webhookFields             = []string{"id", "name", "urlHost", "events", "enabled", "createdById", "createdAt", "updatedAt"}
 )
 
-// The closed lists of the stage a part 2b parameters, from the v1.12.0 server (ADR 007 section 2, item 7).
+// The closed lists of the stage a part 2b parameters, from the v1.12.0 server.
 var (
 	notificationEventTypes = []string{
 		"documents.publish", "documents.update", "documents.add_user", "collections.add_user", "groups.add_user",

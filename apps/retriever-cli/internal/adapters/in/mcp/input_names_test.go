@@ -17,7 +17,7 @@ func TestEveryGeneratedInputMapsBackToItsCatalogName(t *testing.T) {
 		}
 		for _, p := range row.Params {
 			if p.CLIOnly {
-				// A CLI-only parameter is not an input of the tool (ADR 007 section 3.5), so the schema must not list it.
+				// A CLI-only parameter is not an input of the tool, so the schema must not list it.
 				if _, ok := props[snakeCase(p.Name)]; ok {
 					t.Errorf("%s: the schema advertises the CLI-only parameter %q", row.Tool, p.Name)
 				}

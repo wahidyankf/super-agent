@@ -21,9 +21,9 @@ import (
 )
 
 // call sends the request of one operation and decodes a 2xx reply into out. The operation must be one the source's
-// access level allows (ADR 007 section 3.2, layer 3), so a write method on a read source never reaches the network. It
+// access level allows, so a write method on a read source never reaches the network. It
 // retries a 429 reply after its Retry-After wait, at most maxRetries times. A write is retried for no other reason
-// (ADR 007 section 3.4). The request lock is held for the whole call, wait included, so no other request goes out while
+// . The request lock is held for the whole call, wait included, so no other request goes out while
 // the source asks for a pause.
 func (g *Gateway) call(ctx context.Context, op domain.OperationID, method string, in, out any) error {
 	if !g.permits(op) {
@@ -180,7 +180,7 @@ func interpret(method string, status int, retryAfter string, raw []byte, out any
 	case status == http.StatusNoContent:
 		return 0, false, noContentFor(method)
 	case status == http.StatusConflict:
-		// A write with last_revision is refused when the document moved on (ADR 007 section 2, item 9).
+		// A write with last_revision is refused when the document moved on.
 		if apiErrorID(raw) == "document_conflict" {
 			return 0, false, domain.ErrDocumentConflict
 		}
@@ -209,14 +209,14 @@ func apiErrorID(raw []byte) string {
 }
 
 // writes reports whether an operation changes the wiki, which is every operation of a non-read effect. Its failed
-// exchange has an unknown outcome (ADR 007 section 3.4).
+// exchange has an unknown outcome.
 func writes(op domain.OperationID) bool {
 	row, ok := operations.Lookup(op)
 	return ok && row.Effect != domain.EffectRead
 }
 
 // failedExchange maps an exchange that failed before a reply. A write whose request may have left the client has an
-// unknown outcome: the wiki may have run it, so Retriever never retries it (ADR 007 section 3.4). A connection that was
+// unknown outcome: the wiki may have run it, so Retriever never retries it. A connection that was
 // never made, or a TLS handshake that failed, did not send the request, so its outcome is known and it maps as a read
 // does (finding m2).
 func failedExchange(ctx context.Context, err error, write, handshakeFailed bool) error {
@@ -241,7 +241,7 @@ func endpointUnavailable(raw []byte) bool {
 	return json.Unmarshal(raw, &body) == nil && body.Message == endpointNotFoundMessage
 }
 
-// notFoundFor names the not-found sentinel for a 404 that is not the router's catch-all (ADR 007 section 6.2). A read of
+// notFoundFor names the not-found sentinel for a 404 that is not the router's catch-all. A read of
 // a collection or a document has its own sentinel, so the message names what is missing. Every other read answers
 // ErrNotFound, whatever the list or object it asked for, so no 404 becomes an unexpected reply.
 func notFoundFor(method string) error {

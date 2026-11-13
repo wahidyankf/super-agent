@@ -6,7 +6,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// The object projections of the stage a part 2b reads (ADR 007 section 3.5 and the field reference). Each spec keeps only
+// The object projections of the stage a part 2b reads. Each spec keeps only
 // the fields of its row and drops the redacted ones: a key value and a secret, a signing secret, a client secret, the
 // full address of a webhook or an integration (only its host stays), an e-mail address, a storage address, and an actor's
 // IP address. The reply rules of decode.go apply: a missing or null optional field is the zero value, and a required ID

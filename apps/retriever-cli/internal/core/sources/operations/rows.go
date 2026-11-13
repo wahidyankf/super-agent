@@ -64,7 +64,7 @@ var rows = []Row{
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the document ID, from collection_tree"},
 		},
-		// The revision is the number documents.update names as last_revision (ADR 007 section 2, item 9).
+		// The revision is the number documents.update names as last_revision.
 		Fields: []string{"id", "title", "url", "collectionId", "revision", "markdown"},
 		Body:   "markdown",
 	},
@@ -654,7 +654,7 @@ var rows = []Row{
 }
 
 // The field sets of the stage a part 2a reads. Each one is the projection of the Outline object, in the order of the
-// reference (ADR 007 section 3.5). The Outline adapter returns exactly these names.
+// reference. The Outline adapter returns exactly these names.
 var (
 	docListFields         = []string{"id", "title", "url", "collectionId"}
 	treeFields            = []string{"id", "title", "url", "parentId", "depth"}
@@ -674,7 +674,7 @@ var (
 	subscriptionFields    = []string{"id", "userId", "documentId", "collectionId", "event", "createdAt", "updatedAt"}
 )
 
-// The closed lists of the stage a part 2a parameters, from the v1.12.0 server (ADR 007 section 2, item 7).
+// The closed lists of the stage a part 2a parameters, from the v1.12.0 server.
 var (
 	documentSorts       = []string{"createdAt", "updatedAt", "publishedAt", "index", "title", "popularityScore"}
 	documentPermissions = []string{"read", "read_write", "admin"}

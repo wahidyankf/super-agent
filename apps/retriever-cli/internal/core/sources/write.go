@@ -52,7 +52,7 @@ func Write(ctx context.Context, svc Service, op domain.OperationID, source *stri
 	}
 	if !matchesRow(row, reply) {
 		// The request was sent, so the change may have run, and its reply is unusable: the outcome is unknown, as a reply
-		// that the adapter could not read is (ADR 007 section 3.4). The write is never retried.
+		// that the adapter could not read is. The write is never retried.
 		return domain.Record{}, domain.ErrWriteOutcomeUnknown
 	}
 	return reply, nil
@@ -83,7 +83,7 @@ func dryRunPlan(row operations.Row, src domain.Source, args domain.Args, extra .
 }
 
 // planValue returns the value a dry run shows for one argument: the byte count for a text, a fixed mark for an e-mail
-// address (ADR 007 section 3.5 and the redaction rules of the field reference), the host alone for a URL, which may carry
+// address, the host alone for a URL, which may carry
 // a secret in its path, and the value itself for any other kind.
 func planValue(row operations.Row, name string, value any) any {
 	param, ok := row.Param(name)

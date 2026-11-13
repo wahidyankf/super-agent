@@ -13,7 +13,7 @@ type Resolver struct {
 }
 
 // kindArg returns the source kind a query names. An omitted kind is outline, so every call that predates the argument
-// keeps its meaning (ADR 009 section 4). A kind the code does not know is ErrUnknownSourceKind, before any request.
+// keeps its meaning. A kind the code does not know is ErrUnknownSourceKind, before any request.
 func kindArg(kind *string) (domain.SourceKind, error) {
 	if kind == nil {
 		return domain.KindOutline, nil

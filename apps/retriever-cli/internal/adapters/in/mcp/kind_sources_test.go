@@ -60,7 +60,7 @@ func threeKindService(t *testing.T, gw *fakeGateway) sources.Service {
 }
 
 // TestKindsOtherThanOutlineAddNoToolAtAnyCeiling checks that a catalog with Kiwi and Jira sources offers exactly the
-// tools of an Outline-only catalog, at every ceiling (ADR 009 section 4, ADR 010 section 4).
+// tools of an Outline-only catalog, at every ceiling.
 func TestKindsOtherThanOutlineAddNoToolAtAnyCeiling(t *testing.T) {
 	for _, ceiling := range []domain.Access{domain.AccessRead, domain.AccessWrite, domain.AccessAdmin} {
 		outlineOnly := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "admin")).Capped(ceiling)
@@ -81,7 +81,7 @@ func TestKindsOtherThanOutlineAddNoToolAtAnyCeiling(t *testing.T) {
 
 // TestAKiwiWriteSourceDoesNotRaiseTheToolCeiling checks the case the ceiling must get right: an Outline source at read
 // beside a Kiwi source at write. At every ceiling the server offers exactly the tools of the Outline source alone, so the
-// Kiwi write adds no Outline write tool (ADR 009 section 4).
+// Kiwi write adds no Outline write tool.
 func TestAKiwiWriteSourceDoesNotRaiseTheToolCeiling(t *testing.T) {
 	for _, ceiling := range []domain.Access{domain.AccessRead, domain.AccessWrite, domain.AccessAdmin} {
 		outlineOnly := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "read")).Capped(ceiling)

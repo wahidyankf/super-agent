@@ -67,7 +67,7 @@ func kiwiDocumentReply() domain.Record {
 }
 
 // TestSelectSourceIsKindAware checks that every caller's kind picks a source of that kind, and that a source ID of another
-// kind is refused before any gateway call (ADR 009 section 1).
+// kind is refused before any gateway call.
 func TestSelectSourceIsKindAware(t *testing.T) {
 	cat := kindedCatalog(t,
 		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
@@ -98,7 +98,7 @@ func TestSelectSourceIsKindAware(t *testing.T) {
 }
 
 // TestDefaultRulePerKind checks the default rule for each kind: exactly one source of the kind, or the typed error that
-// names the kind (ADR 009 section 1).
+// names the kind.
 func TestDefaultRulePerKind(t *testing.T) {
 	two := kindedCatalog(t,
 		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
@@ -159,7 +159,7 @@ func TestListGetAndExportTakeTheKind(t *testing.T) {
 }
 
 // TestReadTakesTheKindOfTheRow checks that a Kiwi row runs on a Kiwi source, and that the Outline catalog is not searched
-// for it (ADR 009 section 1).
+// for it.
 func TestReadTakesTheKindOfTheRow(t *testing.T) {
 	cat := kindedCatalog(t,
 		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
@@ -241,7 +241,7 @@ func TestWriteTakesTheKindOfTheRow(t *testing.T) {
 }
 
 // TestWriteUpdateNeedsOneField checks the at-least-one rule in a dry run as well as a real call: an update with none of its
-// fields is refused with ErrMissingArgument before any writer call (ADR 009 section 2).
+// fields is refused with ErrMissingArgument before any writer call.
 func TestWriteUpdateNeedsOneField(t *testing.T) {
 	cat := kindedCatalog(t, kindedSource{"kiwi", domain.KindKiwi, domain.AccessWrite})
 	writer := &fakeWriter{reply: domain.NewRecord(
@@ -274,7 +274,7 @@ func TestRowOfRefusesAnUnknownOperation(t *testing.T) {
 }
 
 // TestFileStemPerKind checks the file name stem of an export: Outline keeps the title slug, and Kiwi puts the document ID
-// first, so cases with the same title get different files (ADR 009 section 3).
+// first, so cases with the same title get different files.
 func TestFileStemPerKind(t *testing.T) {
 	cases := []struct {
 		name  string

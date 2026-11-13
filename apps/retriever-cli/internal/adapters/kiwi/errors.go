@@ -7,7 +7,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// JSON-RPC 2.0 error codes that name a bad request (ADR 009 section 5).
+// JSON-RPC 2.0 error codes that name a bad request.
 const (
 	rpcInvalidRequest = -32600
 	rpcMethodNotFound = -32601
@@ -26,7 +26,7 @@ func kindErr(err error) error {
 
 // rpcError maps a JSON-RPC error object, received inside an HTTP 200 reply, to a sentinel. The code decides a request
 // error; for a server error (-32603) the message is matched, never shown. write marks a method that changes Kiwi: a reply
-// that matches nothing on a write has an unknown outcome, so the caller never retries it (ADR 009 section 5).
+// that matches nothing on a write has an unknown outcome, so the caller never retries it.
 func rpcError(method string, code int, message string, write bool) error {
 	switch code {
 	case rpcInvalidRequest, rpcMethodNotFound, rpcInvalidParams:
@@ -75,7 +75,7 @@ func notFoundFor(method string) error {
 }
 
 // statusError maps a non-2xx HTTP reply to a sentinel, before the body is read as JSON-RPC. A 429 is retried by the
-// client and never reaches here. A 5xx reply to a write has an unknown outcome (ADR 009 section 5, as corrected).
+// client and never reaches here. A 5xx reply to a write has an unknown outcome.
 func statusError(status int, write bool) error {
 	switch {
 	case status >= 300 && status < 400:

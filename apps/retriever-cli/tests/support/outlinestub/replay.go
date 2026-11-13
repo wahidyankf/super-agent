@@ -225,7 +225,7 @@ func (sn snapshot) collectionTree(collectionID string) reply {
 	return jsonReply(http.StatusOK, map[string]any{"data": build(roots)}, nil)
 }
 
-// documentInfo answers documents.info in the shape the X-API-Version header asks for (ADR 007, section 6.1):
+// documentInfo answers documents.info in the shape the X-API-Version header asks for:
 // below 2 the document is the data itself with its Markdown text; 2 wraps it in data.document with the text; 3 or
 // higher wraps it and sends editor data with no text. A server that ignores the header answers the unwrapped shape.
 // editorOnly forces the version-3 shape.

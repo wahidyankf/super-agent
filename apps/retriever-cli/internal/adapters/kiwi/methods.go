@@ -6,7 +6,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
-// The ten Kiwi JSON-RPC methods the adapter may call (ADR 009 section 5). The list is closed: a method outside it never
+// The ten Kiwi JSON-RPC methods the adapter may call. The list is closed: a method outside it never
 // reaches the network, and no remove, delete, or Auth method is here, because Kiwi's remove with an empty query matches
 // every case.
 const (
@@ -43,7 +43,7 @@ func permittedMethod(method string, level domain.Access) bool {
 }
 
 // forbiddenKeys are argument names that Kiwi refuses. The adapter builds every key from fixed names in the code, and this
-// guard stops a key of these names from reaching the network at any depth (ADR 009 section 5).
+// guard stops a key of these names from reaching the network at any depth.
 var forbiddenKeys = map[string]bool{
 	"password": true,
 	"token":    true,

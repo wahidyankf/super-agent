@@ -38,7 +38,7 @@ func (a Access) String() string {
 	return a.value
 }
 
-// AccessLevelError reports that a source's level is below the level an operation needs (ADR 007 section 3.1). Its text
+// AccessLevelError reports that a source's level is below the level an operation needs. Its text
 // names the source ID and the two levels, which are closed, validated values, so the text is safe to show. It matches
 // ErrAccessLevelTooLow. Nothing upstream was called.
 type AccessLevelError struct {

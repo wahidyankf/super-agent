@@ -14,7 +14,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
 )
 
-// requestCasesC are the request-shape cases of the stage c operations of this slice (ADR 007 section 3.6). Each body is
+// requestCasesC are the request-shape cases of the stage c operations of this slice. Each body is
 // the exact JSON the call sends, written by hand from the field reference. A body names only the keys the caller set,
 // and the wire names are Outline's: id for the document or collection, and the group or user key.
 var requestCasesC1 = []requestCase{
@@ -62,7 +62,7 @@ var requestCasesC1 = []requestCase{
 		`{"id":"col-1","userId":"` + uuidUser + `"}`},
 }
 
-// requestCasesC2 are the request-shape cases of slice c2: the users, groups, and teams rows (ADR 007 section 3.6). Each body is
+// requestCasesC2 are the request-shape cases of slice c2: the users, groups, and teams rows. Each body is
 // written by hand from the field reference and the wire facts. users.invite sends one invitation in its list, and the
 // e-mail address is sent in the body only; it is never in a reply that Retriever returns.
 var requestCasesC2 = []requestCase{

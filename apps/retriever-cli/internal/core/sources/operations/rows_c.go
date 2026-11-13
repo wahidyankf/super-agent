@@ -5,8 +5,8 @@ import (
 )
 
 // adminRows are the destructive and admin operations of stage c that this slice builds: the document and collection
-// members, archives, and deletions (ADR 007 section 5). Each one changes the wiki with access admin, so a source below
-// admin refuses it. A destructive or admin call needs --yes on the CLI (ADR 007 section 3.4), and documents.empty-trash
+// members, archives, and deletions. Each one changes the wiki with access admin, so a source below
+// admin refuses it. A destructive or admin call needs --yes on the CLI, and documents.empty-trash
 // and a permanent documents.delete are critical (section 3.5). Each runs through the admin use case and has one endpoint
 // entry in the Outline adapter (endpoints_c.go).
 var adminRows = []Row{
