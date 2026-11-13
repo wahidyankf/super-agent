@@ -25,7 +25,7 @@ super-agent/
 ├── .opencode/               generated OpenCode adapters
 ├── .serena/                 Serena policy; only its README is tracked
 ├── agents/                  canonical agent definitions
-├── apps/                    applications; none yet
+├── apps/                    applications; retriever-cli is the command-line tool
 ├── docs/                    documentation, organised by Diátaxis
 │   ├── explanation/         why the project is shaped this way
 │   ├── how-to/              task-oriented guides
@@ -37,7 +37,7 @@ super-agent/
 ├── plans/                   planned work: ideas, backlog, in-progress, done
 ├── repo-governance/         conventions, principles, workflows, and development practice
 ├── scripts/                 wrapper scripts and the public-safety gate
-├── specs/                   specifications; none yet
+├── specs/                   specifications for the command-line tool
 ├── worktrees/               one checkout per task; ignored by Git
 ├── AGENTS.md                rules for coding agents and contributors
 ├── CHANGELOG.md             release history and breaking changes

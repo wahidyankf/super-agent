@@ -19,10 +19,37 @@ This page lists variable names only. Values never belong in a tracked file.
   fill in values.
 - Any other `.env*` file is refused from staging by the `env-validate` gate.
 
-## Connector variables
+## Command-line tool variables
 
-No connector variable exists yet. The connector variables arrive with the command-line tool in PR 2, and this page
-and `.env.example` will list them then.
+The `retriever` command-line tool reads these variables. Each one is optional.
+
+- `RETRIEVER_CATALOG`: the path of the sources catalog. It is used when `--catalog` is not given.
+- `RETRIEVER_ENV_FILE`: the path of the env file that holds source keys. It is used when `--env-file` is not given.
+- `XDG_CONFIG_HOME`: the base folder for the user configuration. The tool reads `retriever/` inside it. When it is unset
+  or empty, the tool reads `~/.config/retriever`.
+
+The tool reads no variable named `NO_COLOR`. Its output has no colour, so it has nothing to switch off.
+
+### Source keys
+
+A source's key variable is named by the catalog, in the `credential_env` field, and a Jira source also names an account
+e-mail variable in `identity_env`. The names must match `*_API_KEY` or `*_API_TOKEN`, and `*_EMAIL` for an e-mail. The
+example catalog uses these names, which hold no value:
+
+- `EXAMPLE_OUTLINE_API_KEY`
+- `EXAMPLE_KIWI_API_KEY`
+- `EXAMPLE_JIRA_API_TOKEN`
+- `EXAMPLE_JIRA_EMAIL`
+
+Your own catalog names its own variables. See [the catalog format](./retriever-cli-catalog-format.md).
+
+### Test seams
+
+Nine variables exist for the repository's own tests. Each source kind has three: `RETRIEVER_<KIND>_TEST_BASE_URL`,
+`RETRIEVER_<KIND>_TEST_CA_FILE`, and `RETRIEVER_<KIND>_TEST_TIMEOUT`, where `<KIND>` is `OUTLINE`, `KIWI`, or
+`JIRA`. They
+point that kind at a local HTTPS test server, and they accept a loopback host only. Do not set them in a real
+environment. They are not a supported setting.
 
 ## Names read by repository tooling
 

@@ -10,7 +10,7 @@ tags:
 
 # Cut an alpha pre-release
 
-No release exists yet. The first release follows the command-line tool, which arrives in the next pull request. This
+No release exists yet. The command-line tool in `apps/retriever-cli` is the first thing a release would publish. This
 guide lists the manual steps a release uses. The repository has no release automation yet. If automation is added
 later, it replaces this guide.
 
@@ -32,8 +32,10 @@ request](./deliver-a-change-with-a-pull-request.md).
 
 ## 3. Build the archives
 
-No build exists yet. When the command-line tool exists, a release will publish one archive per platform, plus a
-`checksums.txt` file. The archive names and the build steps will be documented with the tool.
+No archive build exists yet. The `build` target in `apps/retriever-cli/project.json` writes one binary,
+`dist/retriever`,
+for the host platform only. A release that publishes archives for each platform, plus a `checksums.txt` file, needs a
+build step that this repository does not have. Document that step here when it exists.
 
 ## 4. Write the checksum list
 
