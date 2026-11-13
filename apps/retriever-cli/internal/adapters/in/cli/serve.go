@@ -37,16 +37,50 @@ func serveGraphQL(inv *invocation) error {
 		return errNotConfigured
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	sig := stopOnSignal(ctx, cancel)
 	listening := false
 	err := rt.serve(ctx, port, func(addr string) {
 		listening = true
 		fmt.Fprintf(rt.out, "retriever serve listening on %s\n", addr)
 	})
+	cancel()
+	if signalled, ok := <-sig; ok {
+		// The listener shut down because a signal ended the session, so the status names the signal, as mcp does.
+		return exitStatus{code: signalExitStatus(signalled)}
+	}
 	if err != nil && !listening {
 		// The listener never came up, so the environment refused the start before any work began (exit status 125).
 		return refusedError{err: fmt.Errorf("could not listen on the loopback address: %w", err)}
 	}
 	return err
+}
+
+// stopOnSignal cancels ctx when SIGINT or SIGTERM arrives. The returned channel yields the signal once, or closes without
+// a value when ctx ends first, so the caller can tell a signal from an ordinary shutdown.
+func stopOnSignal(ctx context.Context, cancel context.CancelFunc) <-chan os.Signal {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+	out := make(chan os.Signal, 1)
+	go func() {
+		defer close(out)
+		defer signal.Stop(sigs)
+		select {
+		case s := <-sigs:
+			out <- s
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return out
+}
+
+// signalExitStatus maps a signal onto the status retriever serve and retriever mcp report: 130 for an interrupt and 143
+// for SIGTERM.
+func signalExitStatus(s os.Signal) int {
+	if s == syscall.SIGTERM {
+		return mcpExitTerm
+	}
+	return mcpExitInterrupt
 }

@@ -74,7 +74,8 @@ func baseCommandTree() *command {
 					flags: []flag{
 						{name: "--port", meta: "<port>", help: "loopback port to listen on; 0 picks a free port (default: 0)"},
 					},
-					run: serveGraphQL,
+					signals: true,
+					run:     serveGraphQL,
 				},
 			},
 			{

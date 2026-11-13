@@ -28,8 +28,8 @@ lists the statuses it can return.
   on the caller.
 
 The CLI returns `0`, `1`, `2`, `124`, and `125` from its own logic. It returns `130` and `143` only from
-[`retriever mcp`](./retriever-cli-commands.md#mcp), which reports an interrupt and `SIGTERM` as explicit statuses. Any
-other signal that ends the process shows up as `128+N` in the shell.
+[`retriever mcp`](./retriever-cli-commands.md#mcp) and [`retriever serve`](./retriever-cli-commands.md), which report an
+interrupt and `SIGTERM` as explicit statuses. Any other signal that ends the process shows up as `128+N` in the shell.
 
 ## Which commands return which statuses
 
@@ -39,8 +39,8 @@ other signal that ends the process shows up as `128+N` in the shell.
   status is set, so a caller can read it.
 - **`retriever mcp`** returns `0` when the client closes its input, `2` for a usage or setup error, `130` on an
   interrupt, and `143` on `SIGTERM`.
-- **`retriever serve`** returns `0` after a shutdown caused by `SIGINT` or `SIGTERM`, and `125` when the loopback port
-  cannot be bound. Its help page lists `0`, `2`, `124`, and `125`.
+- **`retriever serve`** returns `0` when its server ends without a signal, `130` on an interrupt, `143` on `SIGTERM`, and
+  `125` when the loopback port cannot be bound. Its help page lists `0`, `2`, `124`, `125`, `130`, and `143`.
 
 The CLI never returns `126` or `127`, because it starts no child process.
 
@@ -58,12 +58,9 @@ failure body with the code `retriever.panic`. In text mode it writes one line th
 
 ## Signals and closed pipes
 
-`serve` catches `SIGINT` and `SIGTERM` and shuts down cleanly, so it exits `0`. `mcp` reports the same two signals as
-`130` and `143`, because it ends its session rather than shutting down a listener. The two commands therefore differ on
-an interrupt. This difference is recorded as an open question in the changelog.
-
-A closed standard output pipe relies on the Go runtime's default behaviour, which ends the process by `SIGPIPE`. A shell
-reports that as `141`. No test in the repository checks this path.
+`serve` and `mcp` both catch `SIGINT` and `SIGTERM`, shut down, and report them as `130` and `143`. A process that ends by
+`SIGPIPE`, which happens when standard output is a pipe with no reader, is reported by the shell as `141`. The
+repository's end-to-end suite checks that path against the built binary.
 
 ## Related
 

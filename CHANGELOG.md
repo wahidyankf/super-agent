@@ -22,5 +22,5 @@ upgrade.
   schemas, configuration, and catalog format. The
   [migration table](docs/reference/retriever-cli-migration-from-butler.md)
   maps each behaviour of the older Butler tool to its `retriever` counterpart.
-  - Open question: `serve` exits `0` on `SIGINT` and `SIGTERM`, but `mcp` exits `130` and `143` on the same signals.
-    The owner decides whether the two commands keep different statuses.
+  - `serve` and `mcp` now share one signal rule: `SIGINT` exits `130` and `SIGTERM` exits `143`, and a closed standard
+    output pipe ends the process by `SIGPIPE` (shell status `141`).

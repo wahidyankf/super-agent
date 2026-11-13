@@ -145,7 +145,8 @@ A query over the depth,
 complexity, or size limit is refused before any source is called. The served schema is described in
 [the sourcing layer](../explanation/sourcing-layer.md).
 
-`serve` stops on `SIGINT` or `SIGTERM` after a graceful shutdown, and it exits `0`.
+`serve` stops on `SIGINT` or `SIGTERM` after a graceful shutdown. It exits `130` on `SIGINT` and `143` on `SIGTERM`, the
+same statuses as `mcp`. It exits `0` when its server ends without a signal.
 
 ### mcp
 
