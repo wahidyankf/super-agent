@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "description": "Scenario counts of the behaviour specs, by feature file and by test level. A Scenario Outline counts once here; the test runner runs each of its Examples rows as its own scenario. A scenario that carries more than one level tag counts at each of those levels. Counts come from the feature files; test results are not recorded here.",
+  "specs": "specs/behaviours",
+  "totals": {
+    "scenarios": 151,
+    "unit": 16,
+    "integration": 132,
+    "e2e": 151
+  },
+  "features": [
+    {
+      "path": "specs/behaviours/catalog/sources-catalog.feature",
+      "scenarios": 15,
+      "unit": 0,
+      "integration": 15,
+      "e2e": 15
+    },
+    {
+      "path": "specs/behaviours/cli/cli-contract.feature",
+      "scenarios": 15,
+      "unit": 15,
+      "integration": 15,
+      "e2e": 15
+    },
+    {
+      "path": "specs/behaviours/credentials/credentials.feature",
+      "scenarios": 13,
+      "unit": 0,
+      "integration": 13,
+      "e2e": 13
+    },
+    {
+      "path": "specs/behaviours/export/export-markdown-files.feature",
+      "scenarios": 9,
+      "unit": 0,
+      "integration": 9,
+      "e2e": 9
+    },
+    {
+      "path": "specs/behaviours/graphql/graphql-serve.feature",
+      "scenarios": 8,
+      "unit": 0,
+      "integration": 0,
+      "e2e": 8
+    },
+    {
+      "path": "specs/behaviours/jira/jira-operations.feature",
+      "scenarios": 13,
+      "unit": 1,
+      "integration": 13,
+      "e2e": 13
+    },
+    {
+      "path": "specs/behaviours/kiwi/kiwi-operations.feature",
+      "scenarios": 11,
+      "unit": 0,
+      "integration": 11,
+      "e2e": 11
+    },
+    {
+      "path": "specs/behaviours/mcp/mcp-server.feature",
+      "scenarios": 11,
+      "unit": 0,
+      "integration": 0,
+      "e2e": 11
+    },
+    {
+      "path": "specs/behaviours/outline/outline-critical-actions.feature",
+      "scenarios": 14,
+      "unit": 0,
+      "integration": 14,
+      "e2e": 14
+    },
+    {
+      "path": "specs/behaviours/outline/outline-reads.feature",
+      "scenarios": 16,
+      "unit": 0,
+      "integration": 16,
+      "e2e": 16
+    },
+    {
+      "path": "specs/behaviours/outline/outline-redaction.feature",
+      "scenarios": 8,
+      "unit": 0,
+      "integration": 8,
+      "e2e": 8
+    },
+    {
+      "path": "specs/behaviours/outline/outline-writes.feature",
+      "scenarios": 6,
+      "unit": 0,
+      "integration": 6,
+      "e2e": 6
+    },
+    {
+      "path": "specs/behaviours/transport/https-and-limits.feature",
+      "scenarios": 12,
+      "unit": 0,
+      "integration": 12,
+      "e2e": 12
+    }
+  ]
+}
