@@ -18,7 +18,7 @@ Feature: Jira reads
         "Token": "synthetic-jira-token",
         "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
         "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
-        "Issues": [{"Key": "EXAMPLE-1", "Summary": "Synthetic issue", "Type": "Task", "Status": "To Do", "Priority": "Medium", "Reporter": "Synthetic Person", "Created": "2026-01-01T00:00:00Z", "Updated": "2026-01-02T00:00:00Z", "Description": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Synthetic description"}]}]}}],
+        "Issues": [{"ID": "10010", "Key": "EXAMPLE-1", "Summary": "Synthetic issue", "Type": "Task", "Status": "To Do", "Priority": "Medium", "Reporter": "Synthetic Person", "Created": "2026-01-01T00:00:00.000+0000", "Updated": "2026-01-02T00:00:00.000+0000", "Description": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Synthetic description"}]}]}}],
         "Comments": {"EXAMPLE-1": [{"ID": "20001", "Body": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Synthetic comment"}]}]}}]}
       }
       """
@@ -85,7 +85,7 @@ Feature: Jira reads
         "Token": "synthetic-jira-token",
         "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
         "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
-        "Issues": [{"Key": "EXAMPLE-2", "Summary": "Hostile issue", "Description": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "<script>alert(1)</script>", "marks": [{"type": "link", "attrs": {"href": "javascript:alert(1)"}}]}]}]}}],
+        "Issues": [{"ID": "10020", "Key": "EXAMPLE-2", "Summary": "Hostile issue", "Description": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "<script>alert(1)</script>", "marks": [{"type": "link", "attrs": {"href": "javascript:alert(1)"}}]}]}]}}],
         "Comments": {}
       }
       """

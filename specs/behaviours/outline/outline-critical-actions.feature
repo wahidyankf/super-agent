@@ -84,6 +84,10 @@ Feature: Outline critical actions
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
       | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+    And the stub Outline server answers "users.info" with the body:
+      """
+      {"data": {"id": "5e52e52e-0000-4000-8000-000000000002", "name": "Synthetic user", "role": "member"}}
+      """
     When I run "retriever outline users delete 5e52e52e-0000-4000-8000-000000000002 --yes --confirm 5e52e52e-0000-4000-8000-000000000002 --source example-outline"
     Then the exit status is 0
     And the stub Outline server received 1 request to "users.delete"
@@ -93,6 +97,10 @@ Feature: Outline critical actions
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
       | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+    And the stub Outline server answers "auth.info" with the body:
+      """
+      {"data": {"user": {"id": "5e5e5e5e-0000-4000-8000-000000000001", "name": "Synthetic owner", "role": "admin"}, "team": {"id": "7e7e7e7e-0000-4000-8000-000000000001", "name": "Synthetic team"}}}
+      """
     When I run "retriever --output json outline users delete 5e5e5e5e-0000-4000-8000-000000000001 --yes --confirm 5e5e5e5e-0000-4000-8000-000000000001 --source example-outline"
     Then the exit status is 2
     And the standard error is a JSON error with the code "retriever.outline.self_target" and retryable false
@@ -157,6 +165,10 @@ Feature: Outline critical actions
     And the stub Outline server answers "oauthClients.rotateSecret" with the body:
       """
       {"data": {"id": "0c0c0c0c-0000-4000-8000-000000000001", "name": "Synthetic client", "clientSecret": "synthetic-client-secret"}}
+      """
+    And the stub Outline server answers "oauthClients.info" with the body:
+      """
+      {"data": {"id": "0c0c0c0c-0000-4000-8000-000000000001", "name": "Synthetic client"}}
       """
     When I run "retriever --output json outline oauth-clients rotate-secret 0c0c0c0c-0000-4000-8000-000000000001 --yes --confirm 0c0c0c0c-0000-4000-8000-000000000001 --source example-outline"
     Then the exit status is 0

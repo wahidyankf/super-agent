@@ -59,7 +59,7 @@ Feature: Outline reply redaction
   Scenario: The webhook list JSON document never holds the signing secret or the URL path
     Given the stub Outline server answers "webhookSubscriptions.list" with the body:
       """
-      {"data": [{"id": "w1", "name": "Synthetic hook", "url": "https://hooks.example.test/synthetic/path", "secret": "synthetic-signing-secret", "enabled": true}], "pagination": {"offset": 0, "limit": 25}}
+      {"data": [{"id": "b6000000-0000-4000-8000-000000000021", "name": "Synthetic hook", "url": "https://hooks.example.test/synthetic/path?token=synthetic-query-token", "secret": "synthetic-signing-secret", "enabled": true, "events": ["documents.update"], "createdById": "33333333-3333-4333-8333-333333333333", "createdBy": {"id": "33333333-3333-4333-8333-333333333333", "name": "Synthetic Person"}, "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-02T00:00:00Z"}], "pagination": {"offset": 0, "limit": 25}}
       """
     When I run "retriever --output json outline webhook-subscriptions list"
     Then the exit status is 0

@@ -112,8 +112,19 @@ Feature: Transport safety and bounded requests
     And the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
       | example-kiwi | kiwi | write  | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+    And the stub Kiwi server holds this dataset:
+      """
+      {
+        "Products":   [{"ID": 3, "Name": "Synthetic product"}],
+        "Plans":      [{"ID": 12, "Name": "Synthetic plan", "Product": 3, "Parent": 0, "Text": "Plan text"}],
+        "Cases":      [{"ID": 40, "Summary": "Synthetic case", "Text": "Case text", "Plans": [12], "Sortkey": 10, "Status": 1, "Priority": 1, "Category": 1}],
+        "Categories": [{"ID": 1, "Name": "Functional", "Product": 3}],
+        "Priorities": [{"ID": 1, "Value": "High"}],
+        "Statuses":   [{"ID": 1, "Name": "PROPOSED"}]
+      }
+      """
     And the stub Kiwi server redirects "test-cases.create" to "https://elsewhere.example.test/"
-    When I run "retriever --output json --catalog reviewed.yml kiwi test-cases create Synthetic --product product-1 --category Functional --priority High --source example-kiwi"
+    When I run "retriever --output json --catalog reviewed.yml kiwi test-cases create Synthetic --product product-3 --category Functional --priority High --source example-kiwi"
     Then the exit status is 2
     And the standard error is a JSON error with the code "retriever.kiwi.redirected" and retryable false
     And the stub Kiwi server received 1 request to "test-cases.create"

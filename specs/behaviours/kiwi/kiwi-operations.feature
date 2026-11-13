@@ -17,7 +17,7 @@ Feature: Kiwi test management operations
         "Plans":      [{"ID": 12, "Name": "Synthetic plan", "Product": 3, "Parent": 0, "Text": "Plan text"}],
         "Cases":      [{"ID": 40, "Summary": "Synthetic case", "Text": "Case text", "Plans": [12], "Sortkey": 10, "Status": 1, "Priority": 1, "Category": 1}],
         "Categories": [{"ID": 1, "Name": "Functional", "Product": 3}],
-        "Priorities": [{"ID": 1, "Name": "High"}],
+        "Priorities": [{"ID": 1, "Value": "High"}],
         "Statuses":   [{"ID": 1, "Name": "PROPOSED"}]
       }
       """
@@ -88,11 +88,11 @@ Feature: Kiwi test management operations
     And the standard error does not contain "synthetic upstream detail"
 
   @integration @e2e
-  Scenario: A rejected write is sent once and is not retried
+  Scenario: A write that Kiwi answers with a server error is sent once and its outcome is unknown
     Given the stub Kiwi server answers "TestCase.create" with status 500
     When I run "retriever --output json kiwi test-cases create Synthetic-case --product product-3 --category Functional --priority High --source example-kiwi"
     Then the exit status is 2
-    And the standard error is a JSON error with the code "retriever.kiwi.upstream_failure" and retryable false
+    And the standard error is a JSON error with the code "retriever.kiwi.write_outcome_unknown" and retryable false
     And the stub Kiwi server received 1 request to "TestCase.create"
 
   @integration @e2e

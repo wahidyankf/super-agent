@@ -103,11 +103,11 @@ Feature: Export to Markdown files
         "Token": "synthetic-jira-token",
         "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
         "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
-        "Issues": [{"Key": "EXAMPLE-1", "Summary": "Synthetic issue", "Description": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Synthetic description"}]}]}}],
+        "Issues": [{"ID": "10010", "Key": "EXAMPLE-1", "Summary": "Synthetic issue", "Description": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Synthetic description"}]}]}}],
         "Comments": {}
       }
       """
-    When I run "retriever --catalog reviewed.yml jira export EXAMPLE-1 --out out"
+    When I run "retriever --catalog reviewed.yml jira export issue-EXAMPLE-1 --out out"
     Then the exit status is 0
     And the output folder "out" holds exactly 1 Markdown file
     And the Markdown file in the output folder "out" contains "Synthetic description"
