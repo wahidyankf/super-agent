@@ -34,8 +34,8 @@ jobs:
 
       - uses: ./.github/actions/setup-node
 
-      # Each affected project's lang:* tag decides which language job runs. With no Nx project yet, the list is
-      # empty and every language job is skipped. The aggregate below still requires detection to succeed.
+      # Each affected project's lang:* tag decides which language job runs. With no affected Go project, every Go
+      # job is skipped. The aggregate below still requires detection to succeed.
       - id: detect
         name: Map affected projects to language tags
         shell: bash
@@ -90,11 +90,21 @@ jobs:
             ./rhino gate run --surface pull-request --base "$RHINO_BASE" --head "$RHINO_HEAD"
 
   go:
-    name: Go quality gate
+    name: Go quality gate (${{ matrix.os }})
     needs: detect
     if: needs.detect.outputs.has-go == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu runs the full set. macOS runs the targets whose behaviour depends on the platform: signals, exit
+          # statuses, the user configuration directory, atomic renames, file modes, symbolic links, and port binding.
+          - os: ubuntu-24.04
+            targets: "lint typecheck test:unit test:integration test:e2e test:conformance bdd:check deps:audit"
+          - os: macos-15
+            targets: "test:unit test:e2e test:conformance"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -105,21 +115,79 @@ jobs:
       - uses: ./.github/actions/setup-node
 
       - uses: ./.github/actions/setup-go
+        with:
+          cache-dependency-path: apps/retriever-cli/go.sum
 
-      - name: Run the affected Go targets through Nx
-        env:
-          NX_BASE: ${{ github.event.pull_request.base.sha }}
-          NX_HEAD: ${{ github.event.pull_request.head.sha }}
+      # The module names its release in the toolchain line, and the setup-go pin must install exactly that release. The
+      # go line only sets the minimum language version, so it is not compared.
+      - name: Check that the installed Go matches the go.mod toolchain
+        shell: bash
         run: |
           set -euo pipefail
-          ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- \
-            npx nx affected -t typecheck,lint,test:quick --base="$NX_BASE" --head="$NX_HEAD"
+          toolchain="$(sed -n 's/^toolchain //p' apps/retriever-cli/go.mod)"
+          if [ -z "$toolchain" ]; then
+            echo "apps/retriever-cli/go.mod has no toolchain line" >&2
+            exit 1
+          fi
+          installed="$(go env GOVERSION)"
+          if [ "$installed" != "$toolchain" ]; then
+            echo "installed ${installed} differs from the go.mod toolchain ${toolchain}" >&2
+            exit 1
+          fi
+          echo "Go toolchain ${installed} matches go.mod"
+
+      - name: Run the Go targets through Nx
+        shell: bash
+        env:
+          TARGETS: ${{ matrix.targets }}
+        run: |
+          set -euo pipefail
+          for target in $TARGETS; do
+            ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- \
+              npx nx run "retriever-cli:${target}"
+          done
+
+  cross-compile:
+    name: Cross-compile check
+    needs: detect
+    if: needs.detect.outputs.has-go == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+        with:
+          run-npm-ci: "false"
+
+      - uses: ./.github/actions/setup-go
+        with:
+          cache-dependency-path: apps/retriever-cli/go.sum
+
+      # Builds only. Binaries go under the runner's temporary directory, and nothing is uploaded or published.
+      - name: Cross-compile for the four release platforms
+        shell: bash
+        env:
+          OUT_DIR: ${{ runner.temp }}/cross-compile
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUT_DIR"
+          for platform in darwin/arm64 darwin/amd64 linux/amd64 linux/arm64; do
+            goos="${platform%/*}"
+            goarch="${platform#*/}"
+            ./hippo run --class ephemeral --resource-tier standard --disk-path . -- \
+              env CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+              go -C apps/retriever-cli build -trimpath -o "$OUT_DIR/retriever-${goos}-${goarch}" ./cmd/retriever
+          done
 
   quality-gate:
     name: Quality gate
     # Only an explicit success from every required job may open the merge button. A skipped language job is a
     # pass only when detection found no project of that language; any other result fails the aggregate.
-    needs: [detect, repository-policy, go]
+    needs: [detect, repository-policy, go, cross-compile]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -127,13 +195,15 @@ jobs:
       DETECT_RESULT: ${{ needs.detect.result }}
       POLICY_RESULT: ${{ needs.repository-policy.result }}
       GO_RESULT: ${{ needs.go.result }}
+      CROSS_RESULT: ${{ needs.cross-compile.result }}
       HAS_GO: ${{ needs.detect.outputs.has-go }}
     steps:
       - name: Check every gate
         shell: bash
         run: |
           set -euo pipefail
-          echo "detect=${DETECT_RESULT} repository-policy=${POLICY_RESULT} go=${GO_RESULT} has-go=${HAS_GO}"
+          echo "detect=${DETECT_RESULT} repository-policy=${POLICY_RESULT} go=${GO_RESULT}" \
+            "cross-compile=${CROSS_RESULT} has-go=${HAS_GO}"
           if [ "${DETECT_RESULT}" != "success" ]; then
             echo "Affected-project detection did not succeed." >&2
             exit 1
@@ -147,8 +217,12 @@ jobs:
               echo "The Go quality gate did not succeed." >&2
               exit 1
             fi
-          elif [ "${GO_RESULT}" != "skipped" ]; then
-            echo "The Go quality gate ran without an affected Go project." >&2
+            if [ "${CROSS_RESULT}" != "success" ]; then
+              echo "The cross-compile check did not succeed." >&2
+              exit 1
+            fi
+          elif [ "${GO_RESULT}" != "skipped" ] || [ "${CROSS_RESULT}" != "skipped" ]; then
+            echo "A Go job ran without an affected Go project." >&2
             exit 1
           fi
           echo "All quality gates passed."
