@@ -1,0 +1,17 @@
+{
+  "data": {
+    "id": "col-1",
+    "urlId": "plan-wiki",
+    "url": "/collection/plan-wiki",
+    "name": "Plan Wiki",
+    "description": "Restored",
+    "permission": "read",
+    "sharing": false,
+    "commenting": false,
+    "templateManagement": "admin",
+    "index": "P",
+    "createdAt": "2026-01-01T00:00:00Z",
+    "updatedAt": "2026-01-03T00:00:00Z"
+  },
+  "policies": []
+}

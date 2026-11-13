@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "id": "fixture-collection-0001",
+      "name": "Fixture Collection",
+      "description": "Sanitized example collection.",
+      "color": "#4E5BD8",
+      "icon": null,
+      "permission": "read",
+      "sort": { "field": "index", "direction": "asc" },
+      "url": "/collection/fixture-collection-0001",
+      "urlId": "fixture0001",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "pagination": { "offset": 0, "limit": 25 }
+}

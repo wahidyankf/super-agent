@@ -1,0 +1,15 @@
+{
+  "data": {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "name": "Support",
+    "description": null,
+    "color": "#3a7bd5",
+    "icon": null,
+    "memberCount": 0,
+    "disableMentions": false,
+    "createdAt": "2026-01-04T00:00:00Z",
+    "updatedAt": "2026-01-04T00:00:00Z",
+    "externalId": null
+  },
+  "policies": []
+}

@@ -1,0 +1,17 @@
+{
+  "data": {
+    "id": "col-1",
+    "urlId": "plan-wiki",
+    "url": "/collection/plan-wiki",
+    "name": "Wiki 2",
+    "description": "Updated",
+    "permission": "read",
+    "sharing": true,
+    "commenting": false,
+    "templateManagement": "read_write",
+    "index": "P",
+    "createdAt": "2026-01-01T00:00:00Z",
+    "updatedAt": "2026-01-03T00:00:00Z"
+  },
+  "policies": []
+}

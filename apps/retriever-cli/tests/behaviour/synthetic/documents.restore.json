@@ -1,0 +1,11 @@
+{
+  "data": {
+    "id": "doc-1",
+    "title": "Plan",
+    "url": "/doc/plan",
+    "collectionId": "col-1",
+    "revision": 3,
+    "text": "# Plan\n"
+  },
+  "policies": []
+}

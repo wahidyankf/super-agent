@@ -1,0 +1,28 @@
+{
+  "data": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "documentId": "66666666-6666-4666-8666-666666666666",
+    "parentCommentId": null,
+    "createdById": "33333333-3333-4333-8333-333333333333",
+    "resolvedById": null,
+    "resolvedAt": null,
+    "createdAt": "2026-01-01T00:00:00Z",
+    "updatedAt": "2026-01-01T00:00:00Z",
+    "data": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Looks good"
+            }
+          ]
+        }
+      ]
+    },
+    "anchorText": null
+  },
+  "policies": []
+}

@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "data": {
+    "fileOperation": {
+      "id": "a6000000-0000-4000-8000-000000000006",
+      "type": "export",
+      "format": "json",
+      "name": "All",
+      "state": "creating",
+      "error": null,
+      "size": 0,
+      "collectionId": null,
+      "documentId": null,
+      "user": {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "Ann"
+      },
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "data": {
+    "user": {
+      "id": "fixture-user-0001",
+      "name": "Fixture User",
+      "role": "admin"
+    },
+    "team": {
+      "id": "fixture-team-0001",
+      "name": "Fixture Team"
+    }
+  }
+}

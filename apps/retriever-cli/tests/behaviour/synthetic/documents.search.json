@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "ranking": 0.5,
+      "context": "Sanitized example snippet.",
+      "document": {
+        "id": "fixture-document-0001",
+        "urlId": "fixture0001",
+        "url": "/doc/fixture-document-0001",
+        "title": "Fixture Document",
+        "collectionId": "fixture-collection-0001",
+        "parentDocumentId": null,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-01T00:00:00.000Z",
+        "publishedAt": "2026-01-01T00:00:00.000Z",
+        "archivedAt": null,
+        "deletedAt": null,
+        "revision": 1,
+        "createdBy": {
+          "id": "fixture-user-0001"
+        },
+        "updatedBy": {
+          "id": "fixture-user-0001"
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "offset": 0,
+    "limit": 25
+  }
+}

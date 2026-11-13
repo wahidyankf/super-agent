@@ -1,0 +1,14 @@
+{
+  "data": {
+    "groupMemberships": [
+      {
+        "id": "a7000000-0000-4000-8000-000000000001",
+        "groupId": "77777777-7777-4777-8777-777777777777",
+        "documentId": null,
+        "collectionId": "11111111-1111-4111-8111-111111111111",
+        "permission": "read_write",
+        "sourceId": null
+      }
+    ]
+  }
+}
