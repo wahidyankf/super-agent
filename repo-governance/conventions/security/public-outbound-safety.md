@@ -1,0 +1,99 @@
+---
+description: >-
+  Requires every outbound artifact from a public repository to pass a safety screen first, with no allowlist,
+  suppression, or bypass, plus a full read of each change before commit, synthetic fixtures, and a disclosure response.
+when_to_use: >-
+  Use before any commit, push, pull request, comment, release, or published log, when adding a publication surface or
+  writing examples or fixtures, and after something unsafe was published.
+---
+
+# Public Outbound Safety
+
+Nothing leaves a public repository without being screened first. Files, filenames, commit messages, branch and tag
+names, pull-request titles and bodies, comments, release notes, and published logs are all outbound.
+
+Deletion is no remedy: anything published may already be cached, cloned, indexed, or mirrored, so only a control that
+runs before publication works.
+
+## Surfaces
+
+| Outbound artifact         | Screened input                                    |
+| ------------------------- | ------------------------------------------------- |
+| tracked content           | every tracked file, plus file and directory names |
+| a staged or pushed change | added content and changed names                   |
+| a commit                  | the commit message                                |
+| a branch or tag           | the name                                          |
+| a pull request or comment | the title and the body                            |
+| a release                 | tag annotation, title, notes, changelog excerpt   |
+| a log or evidence record  | the text before it is written                     |
+
+Names are screened like content: a branch named after an internal host publishes that host, and no diff review reads
+branch names. Commit author and committer identity is not screened; see [git
+identity](../../development/workflow/git-identity.md).
+
+## What Is Prohibited
+
+Never publish secrets or credentials; identifiers of private repositories or groups; internal host names and addresses,
+and internal network layout; absolute paths bound to a person or machine; personal data nobody deliberately made public;
+or raw scanner output able to reproduce any of these.
+
+Exception: a private repository name and URL its owner deliberately made public, recorded where they appear. Its
+contents, paths, and internals stay private.
+
+Also prohibited unless deliberately public: usernames, device names, hardware addresses, serial numbers, private network
+names, local mount paths, and account or project identifiers.
+
+Prefer a repository-relative path or a documented environment variable to a placeholder where either keeps the meaning;
+see [No Machine-Specific Values](no-machine-specific-values.md).
+
+Swap prohibited values for semantic placeholders: `<repository-path>`, `<private-host>`, `<api-token>`. If swapping
+leaves the artifact meaningless, it stays private.
+
+## Review Still Reads the Change
+
+A screen matches shapes. It cannot tell a deliberately public value, such as the repository's canonical address, from a
+plausible one copied from somewhere real.
+
+Before every commit, read the whole proposed change: staged content, intended untracked files, generated artifacts, and
+the message. Ignore rules are not a security boundary; see [No Secrets in Tracked
+Files](no-secrets-in-tracked-files.md).
+
+## Fixtures Are Unmistakably Synthetic
+
+Examples, fixtures, logs, and screenshots use values nobody could take for real: placeholders, reserved example domains
+([RFC 2606](https://www.rfc-editor.org/rfc/rfc2606)), obviously invented names. Evidence captured from a real machine
+describes that machine; capture it from one holding nothing private, or say it cannot be shown.
+
+## Three Outcomes, Two Refusals
+
+| Exit | Means      | Publication      |
+| ---: | ---------- | ---------------- |
+|    0 | clean      | may proceed      |
+|    1 | blocked    | must not proceed |
+|    2 | scan error | must not proceed |
+
+The refusals differ only in knowledge: under `1` the problem is known, under `2` it is not. A screen that failed to run
+passed nothing; treating an error as clean reduces the one guard that must be dependable to a formality.
+
+## No Bypass
+
+No allowlist, no suppression comment, no environment variable, no `--force`. A screen that can be turned off will be
+turned off, in a hurry, by someone who is certain it is a false positive.
+
+A genuine false positive is fixed by narrowing the rule, in a change that is reviewed like any other.
+
+## Runs First
+
+Where a repository has gates, this runs first on every surface it applies to. Screening after a formatter rewrote the
+file, or after a push, screens the wrong thing at the wrong time.
+
+## Scanner Output Is Itself Sensitive
+
+Reports record the file, the rule, and the location — never the matched value, which would publish it again in the
+record of catching it.
+
+## If Something Lands Anyway
+
+Treat it as disclosed. Preserve evidence of the exposure without recording the value, and report the affected scope. A
+history rewrite never substitutes for rotation; [No Secrets in Tracked Files](no-secrets-in-tracked-files.md) owns
+rotation and history rewriting.
