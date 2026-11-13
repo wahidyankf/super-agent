@@ -1,0 +1,113 @@
+# Lint rules for retriever-cli. The rules apply once golangci-lint is adopted as a tool directive in go.mod; until then the
+# lint target runs go vet and gofmt.
+version: "2"
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra:
+        group-params: true
+
+linters:
+  default: all
+  disable:
+    # Fixture literals stay resilient when domain structs gain fields.
+    - exhaustruct
+    # Method placement is organized by lifecycle flow, not export visibility.
+    - funcorder
+    # Immutable finding codes and command metadata are clearer as package-level declarations.
+    - gochecknoglobals
+    # gomodguard is deprecated; its maintained gomodguard_v2 replacement stays enabled.
+    - gomodguard
+    # gofmt deliberately does not wrap long declarations or composite literals.
+    - lll
+    # Numeric values are exit statuses, signal numbers, and port numbers.
+    - mnd
+    # gofumpt owns whitespace; mandatory blank lines before returns add no signal.
+    - nlreturn
+    # Splitting short error checks into declarations adds scope without clarifying the flow.
+    - noinlineerr
+    # Filesystem and process lifecycle tests are intentionally serialized.
+    - paralleltest
+    # The JSON payload uses the camelCase field names the CLI convention prescribes (schemaVersion).
+    - tagliatelle
+    # wsl is deprecated; gofumpt owns whitespace and statement layout.
+    - wsl
+    # Subjective statement cuddling adds churn without correctness value.
+    - wsl_v5
+    # No closed domain type has a complete-literal pattern yet.
+    - exhaustruct_v5
+  settings:
+    cyclop:
+      max-complexity: 25
+      package-average: 0
+    depguard:
+      rules:
+        production:
+          files:
+            - $all
+            - "!$test"
+            - "!**/tests/**/*.go"
+          allow:
+            - $gostd
+            - github.com/wahidyankf/super-agent/apps/retriever-cli
+            - github.com/99designs/gqlgen
+            - github.com/modelcontextprotocol/go-sdk
+            - github.com/vektah/gqlparser/v2
+            - go.yaml.in/yaml/v3
+        test-support:
+          files:
+            - $test
+            - "**/tests/**/*.go"
+          allow:
+            - $gostd
+            - github.com/wahidyankf/super-agent/apps/retriever-cli
+            - github.com/99designs/gqlgen
+            - github.com/modelcontextprotocol/go-sdk
+            - github.com/vektah/gqlparser/v2
+            - go.yaml.in/yaml/v3
+    goconst:
+      # Scenario data should state its inputs instead of hiding them behind production constants.
+      ignore-tests: true
+    gosec:
+      excludes:
+        # The loopback test seam launches an explicitly supplied command in tests only.
+        - G204
+        # Caller-selected local paths are the intended interface of the export command.
+        - G304
+        # Private directories need owner execute permission.
+        - G306
+    funlen:
+      lines: 120
+      statements: 80
+    gocognit:
+      min-complexity: 30
+    govet:
+      enable:
+        # A pointer dereferenced where it is known to be nil, or compared with nil twice, is a defect.
+        - nilness
+    nolintlint:
+      allow-unused: false
+      require-explanation: true
+      require-specific: true
+    revive:
+      # Keep ordinary defaults while making exported documentation a hard failure.
+      enable-default-rules: true
+      severity: error
+      rules:
+        - name: exported
+          severity: error
+  exclusions:
+    generated: strict
+    warn-unused: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+run:
+  modules-download-mode: readonly
+  relative-path-mode: gomod
