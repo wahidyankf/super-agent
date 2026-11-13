@@ -86,7 +86,7 @@
     "test:conformance": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go test -count=1 ./tests/conformance/... ./tests/architecture/...",
+        "command": "go test -count=1 -tags integration ./tests/conformance/... ./tests/architecture/...",
         "cwd": "apps/retriever-cli"
       },
       "cache": true,
