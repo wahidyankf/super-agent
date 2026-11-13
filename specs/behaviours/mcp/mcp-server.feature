@@ -92,7 +92,7 @@ Feature: MCP tool server
     And an MCP client starts "retriever mcp --max-access read"
     When the client calls the tool "get_document" with these arguments:
       """
-      {"documentId": "d0c1d0c1-0000-4000-8000-000000000001"}
+      {"document_id": "d0c1d0c1-0000-4000-8000-000000000001"}
       """
     Then the tool result is not an error
     And the tool result text contains no control characters except line breaks
@@ -103,7 +103,7 @@ Feature: MCP tool server
     And an MCP client starts "retriever mcp --max-access read"
     When the client calls the tool "get_document" with these arguments:
       """
-      {"documentId": "d0c1d0c1-0000-4000-8000-000000000001"}
+      {"document_id": "d0c1d0c1-0000-4000-8000-000000000001"}
       """
     Then the tool result is an error
     And the whole tool result is at most 1048576 bytes
