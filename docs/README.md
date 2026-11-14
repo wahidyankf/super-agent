@@ -62,7 +62,7 @@ question.
   - [Software-factory note](./explanation/software-factory-note.md) records a later direction. It is out of scope
     now.
   - [Decision records](./explanation/decisions/) hold the architecture decisions. ADR 001 covers planned user-defined
-    connectors and profiles.
+    connectors and profiles, and ADR 002 covers the planned extensions of the spec language.
 
 ## Related
 
