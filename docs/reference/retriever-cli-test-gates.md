@@ -7,8 +7,9 @@ in the repository's standards.
 ## Targets
 
 Each Nx project has its own targets, and each runs in its module's folder. The app is `retriever-cli`, in
-`apps/retriever-cli`. The six libraries are `retriever-contract`, `retriever-runtime`, `retriever-testkit`,
-`retriever-connector-outline`, `retriever-connector-kiwi`, and `retriever-connector-jira`, in their folders under
+`apps/retriever-cli`. The seven libraries are `retriever-contract`, `retriever-runtime`, `retriever-testkit`,
+`retriever-connector-outline`, `retriever-connector-kiwi`, `retriever-connector-jira`, and `retriever-spec`, in their
+folders under
 `libs/`. The targets below come from each `project.json`.
 
 ### App targets (`retriever-cli`)
@@ -202,7 +203,7 @@ HIPPO run under the row's resource tier. The targets run in the order listed:
 
 Each project's `test:unit` runs its own coverage gate over its own module. No profile merges two modules.
 
-The tier follows the work. The Ubuntu row runs whole suites of seven projects, which is heavy work. The macOS row runs
+The tier follows the work. The Ubuntu row runs whole suites of eight projects, which is heavy work. The macOS row runs
 one project's tests, which is standard work. A `macos-15` runner has 3 CPUs and about 7 GiB of memory, less than the
 `heavy` tier's minimum reservation of 4 CPUs and 8192 MiB, so a `heavy` reservation does not fit that runner.
 
@@ -217,7 +218,7 @@ A cross-compile check, on `ubuntu-24.04`, builds the app's `./cmd/retriever` for
 and nothing is uploaded or published. The app's `replace` directives name the libraries' folders in the checkout, so the
 build uses the libraries of the working tree.
 
-The Go toolchain is pinned by the `toolchain` line of each `go.mod`, which is `go1.27.4` in all seven modules. The `go`
+The Go toolchain is pinned by the `toolchain` line of each `go.mod`, which is `go1.27.4` in all eight modules. The `go`
 line sets the minimum language version, `1.27.0`. The Go setup fails when the installed toolchain differs from any
 module's `toolchain` line, or when two modules declare different `go` lines. The module cache is keyed on
 every `go.sum`.
