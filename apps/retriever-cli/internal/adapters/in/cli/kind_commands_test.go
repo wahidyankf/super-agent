@@ -245,10 +245,10 @@ func TestKiwiExportWritesTheDocumentUnderTheOutFolder(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit %d, stderr %q", code, stderr)
 	}
-	if len(setup.sink.names) != 1 || !strings.HasPrefix(setup.sink.names[0], "case-40-") {
-		t.Fatalf("exported %v, want one file named with case-40", setup.sink.names)
+	if len(setup.sink.names) != 1 || setup.sink.names[0] != "case-40.md" {
+		t.Fatalf("exported %v, want one file named case-40.md", setup.sink.names)
 	}
-	if !strings.HasPrefix(stdout, "Wrote notes/kiwi/case-40-") {
+	if stdout != "Wrote notes/kiwi/case-40.md\n" {
 		t.Fatalf("stdout %q does not print the written location", stdout)
 	}
 }

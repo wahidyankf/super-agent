@@ -120,8 +120,9 @@ retriever outline export <documentId> --out <dir> [--source <id>]
 ```
 
 Writes one Outline document as a Markdown file into the folder named by `--out`. The folder is created when it is
-missing. The file is plain Markdown with no front matter. A write replaces an existing file of the same name through a
-temporary file and a rename. Text mode prints `Wrote <path>`. JSON mode prints `schemaVersion` and `location`.
+missing. The file is named by the document ID, `<documentId>.md`, with no title in the name. The file is plain Markdown
+with no front matter. A file of the same name is always replaced: the write goes through a temporary file and a rename,
+and no check for a collision runs. Text mode prints `Wrote <path>`. JSON mode prints `schemaVersion` and `location`.
 
 ### kiwi export and jira export
 
@@ -141,8 +142,11 @@ retriever serve [--port <port>]
 Serves the GraphQL API on `127.0.0.1` only. Port `0` (the default) picks a free port. The first line on standard output
 names the address: `retriever serve listening on 127.0.0.1:<port>`. The API is read-only. It exposes the `sources`,
 `collections`, `collectionTree`, and `document` queries and has no mutation. Introspection is off.
-A query over the depth,
-complexity, or size limit is refused before any source is called. The served schema is described in
+
+A request is checked in this order, and a refused request never reaches a source. The `Host` header must name a loopback
+host with the served port. The method must be `POST`, and the content type must be JSON. A request that carries an
+`Origin` header is refused, and the server sends no `Access-Control-` header. The body is capped at 1 MiB. A query over
+the depth, complexity, or size limit is refused before any source is called. The served schema is described in
 [the sourcing layer](../explanation/sourcing-layer.md).
 
 `serve` stops on `SIGINT` or `SIGTERM` after a graceful shutdown. It exits `130` on `SIGINT` and `143` on `SIGTERM`, the

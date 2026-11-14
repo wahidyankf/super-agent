@@ -47,8 +47,11 @@ Each entry gives the Butler behaviour first, then the retriever behaviour.
 - **Error codes.** Butler: not the `retriever.<area>.<reason>` form. retriever: `retriever.<area>.<reason>`, a closed
   list.
 - **Export.** Butler: a vault export that needed a vault layout. retriever: `outline export`, `kiwi export`, and
-  `jira export` need `--out <dir>`. The file is plain Markdown with no front matter. A write replaces an existing file
-  atomically. JSON mode prints `schemaVersion` and `location`.
+  `jira export` need `--out <dir>`. The file is plain Markdown with no front matter. It is named by the document ID, not
+  by a title, and a file of the same name is always replaced, with no collision check. JSON mode prints `schemaVersion`
+  and `location`.
+- **GraphQL export.** Butler: a write operation on the GraphQL server that exported a document. retriever: no mutation.
+  `serve` is read-only, so a caller runs `outline export`, `kiwi export`, or `jira export` and reads the file it writes.
 - **Credentials.** Butler: names such as `BUTLER_RO_API_KEY`. retriever: a key variable ends in `_API_KEY` or
   `_API_TOKEN`. Jira's account address ends in `_EMAIL`.
 - **Removed commands.** Butler: the job report, PDF, GitHub, and vault commands, which stay in Butler. retriever: not
@@ -82,7 +85,8 @@ These are the places where retriever behaves differently on purpose, beyond a re
 4. Read `error.code` from the JSON failure body, not the text. Branch on `error.retryable` for `124` and for network
    failures.
 5. Drop `-v`, `-q`, and `--no-color`. Use `--color never` if you need plain output.
-6. For an export, pass `--out <dir>`, and expect a plain Markdown file.
+6. For an export, pass `--out <dir>`, and expect a plain Markdown file named by the document ID. A script that looked for
+   a file by its title must look for `<id>.md` instead.
 7. For a dashboard that reads content, use `retriever serve`. It is read only.
 
 ## Related

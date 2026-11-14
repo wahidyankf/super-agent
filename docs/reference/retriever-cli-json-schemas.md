@@ -12,9 +12,8 @@ tags:
 # retriever JSON schemas
 
 With `--output json`, `retriever` prints one JSON document per command on standard output. Every document carries
-`schemaVersion`, which is `1` in this release. A caller may branch on it. JSON output never contains escape
-sequences and
-never contains progress text.
+`schemaVersion`. In this release it is `2` for `sources list` and `1` for every other document. A caller may branch on
+it. JSON output never contains escape sequences and never contains progress text.
 
 Fields are added compatibly. A field is not removed, renamed, or given a new meaning under the same version. A breaking
 change raises the version and is listed in the [changelog](../../CHANGELOG.md).
@@ -29,7 +28,7 @@ whether output is a terminal.
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "sources": [
     { "id": "example-jira", "kind": "jira", "tags": ["tickets"] },
     { "id": "example-kiwi", "kind": "kiwi", "tags": ["tests"] }
@@ -43,6 +42,9 @@ whether output is a terminal.
 - `tags`: an array of the source's tags. It is empty when the source has none.
 
 The endpoint and the credential names are never printed.
+
+The version of this document is `2`. Removing the `access` field is a breaking change, and a breaking change raises the
+version. The other documents keep version `1`.
 
 ### document get
 
@@ -83,10 +85,11 @@ help of the command's catalog row, and the exact set is the one the source retur
 ### export
 
 ```json
-{ "schemaVersion": 1, "location": "/path/to/folder/example-document.md" }
+{ "schemaVersion": 1, "location": "/path/to/folder/doc-1.md" }
 ```
 
-`location` is the path of the file the export wrote. It is the only field.
+`location` is the path of the file the export wrote. It is the only field. The file is named by the document ID, so the
+name holds no title.
 
 ## The failure body
 

@@ -121,8 +121,8 @@ func TestSourcesListJSONPrintsEverySource(t *testing.T) {
 			ID string `json:"id"`
 		} `json:"sources"`
 	}
-	if code != 0 || json.Unmarshal([]byte(out), &doc) != nil || doc.SchemaVersion != 1 || len(doc.Sources) != 2 {
-		t.Fatalf("want two sources in a schemaVersion 1 document, got %q (exit %d, stderr %q)", out, code, errOut)
+	if code != 0 || json.Unmarshal([]byte(out), &doc) != nil || doc.SchemaVersion != 2 || len(doc.Sources) != 2 {
+		t.Fatalf("want two sources in a schemaVersion 2 document, got %q (exit %d, stderr %q)", out, code, errOut)
 	}
 }
 
@@ -169,7 +169,7 @@ func TestExportJSONPrintsTheLocation(t *testing.T) {
 		SchemaVersion int    `json:"schemaVersion"`
 		Location      string `json:"location"`
 	}
-	if code != 0 || json.Unmarshal([]byte(out), &doc) != nil || doc.Location != "notes/outline/getting-started.md" {
+	if code != 0 || json.Unmarshal([]byte(out), &doc) != nil || doc.Location != "notes/outline/doc-1.md" {
 		t.Fatalf("want the location in a JSON document, got %q (exit %d, stderr %q)", out, code, errOut)
 	}
 }

@@ -116,10 +116,10 @@ func TestOutlineExportWritesTheFileAndPrintsItsLocation(t *testing.T) {
 
 	code, out, errOut := runRetriever(t, []string{"outline", "export", "doc-1", "--out", "notes/outline"}, setup)
 
-	if code != 0 || out != "Wrote notes/outline/getting-started.md\n" {
+	if code != 0 || out != "Wrote notes/outline/doc-1.md\n" {
 		t.Fatalf("want the written location and exit 0, got %q (exit %d, stderr %q)", out, code, errOut)
 	}
-	written := string(setup.sink.bodies["getting-started.md"])
+	written := string(setup.sink.bodies["doc-1.md"])
 	if !strings.Contains(written, "Welcome to the wiki.") {
 		t.Fatalf("the file must hold the Markdown, got %q", written)
 	}

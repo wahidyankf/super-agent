@@ -202,9 +202,9 @@ func TestRowOfRefusesAnUnknownOperation(t *testing.T) {
 	}
 }
 
-// TestFileStemPerKind checks the file name stem of an export: Outline keeps the title slug, and Kiwi puts the document ID
-// first, so cases with the same title get different files.
-func TestFileStemPerKind(t *testing.T) {
+// TestExportFileNameIsTheDocumentID checks that every kind names its export file by the document ID alone. The title never
+// decides the name, so a second export of one document replaces the first, and two documents never share a file.
+func TestExportFileNameIsTheDocumentID(t *testing.T) {
 	cases := []struct {
 		name  string
 		kind  domain.SourceKind
@@ -212,33 +212,36 @@ func TestFileStemPerKind(t *testing.T) {
 		id    string
 		want  string
 	}{
-		{"outline keeps the slug", domain.KindOutline, "Getting Started", "doc-1", "getting-started"},
-		{"outline uses the ID without a slug", domain.KindOutline, "!!!", "doc-1", "doc-1"},
-		{"kiwi puts the ID before the slug", domain.KindKiwi, "Login works", "case-12", "case-12-login-works"},
-		{"kiwi uses the ID without a slug", domain.KindKiwi, "!!!", "case-12", "case-12"},
+		{"outline names the file by its ID", domain.KindOutline, "Getting Started", "doc-1", "doc-1.md"},
+		{"outline ignores a title with no slug", domain.KindOutline, "!!!", "doc-1", "doc-1.md"},
+		{"kiwi names the file by its case ID", domain.KindKiwi, "Login works", "case-12", "case-12.md"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			id, err := domain.NewDocumentID(tc.id)
-			if err != nil {
-				t.Fatalf("NewDocumentID(%q): %v", tc.id, err)
+			cat := kindedCatalog(t, kindedSource{"src", tc.kind})
+			gw := &fakeGateway{doc: domain.SourceDocument{ID: tc.id, Title: tc.title, Markdown: "Body.\n"}}
+			svc, _ := kindedService(t, cat, gw, nil, nil)
+			sink := newFakeSink()
+			got, err := ExportDocument(context.Background(), svc, sink, tc.kind, nil, tc.id)
+			if err != nil || got != tc.want {
+				t.Fatalf("ExportDocument(%s) = %q, %v; want %s", tc.kind, got, err, tc.want)
 			}
-			if got := fileStem(tc.kind, tc.title, id); got != tc.want {
-				t.Fatalf("fileStem(%s, %q, %s) = %q, want %q", tc.kind, tc.title, tc.id, got, tc.want)
+			if _, ok := sink.bodies[tc.want]; !ok {
+				t.Fatalf("the file %s was not written", tc.want)
 			}
 		})
 	}
 }
 
-// TestExportDocumentNamesAKiwiCaseByIDAndTitle checks the whole export: the file of a Kiwi case is named by its ID and
-// its title slug.
-func TestExportDocumentNamesAKiwiCaseByIDAndTitle(t *testing.T) {
+// TestExportDocumentNamesAKiwiCaseByID checks the whole export: the file of a Kiwi case is named by its ID, whatever its
+// title.
+func TestExportDocumentNamesAKiwiCaseByID(t *testing.T) {
 	cat := kindedCatalog(t, kindedSource{"kiwi", domain.KindKiwi})
 	gw := &fakeGateway{doc: domain.SourceDocument{ID: "case-12", Title: "Login works", Markdown: "Body.\n"}}
 	svc, _ := kindedService(t, cat, gw, nil, nil)
 	sink := newFakeSink()
 	got, err := ExportDocument(context.Background(), svc, sink, domain.KindKiwi, nil, "case-12")
-	const want = "case-12-login-works.md"
+	const want = "case-12.md"
 	if err != nil || got != want {
 		t.Fatalf("ExportDocument(kiwi) = %q, %v; want %s", got, err, want)
 	}

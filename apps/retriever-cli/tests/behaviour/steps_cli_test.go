@@ -3,6 +3,7 @@ package behaviour
 import (
 	"errors"
 	"fmt"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -107,8 +108,24 @@ func registerCLISteps(ctx *godog.ScenarioContext, cur func() *world) {
 		}
 		return nil
 	})
+	ctx.Step(`^the sources catalog file "([^"]*)" holds this text:$`, func(name string, doc *godog.DocString) error {
+		_, err := cur().writeInput(name, doc.Content)
+		return err
+	})
+	ctx.Step(`^the sources catalog file "([^"]*)" is (\d+) KiB of comment lines$`, func(name, kib string) error {
+		return cur().writeCommentCatalog(name, kib)
+	})
+	ctx.Step(`^the sources catalog in the user configuration folder holds these sources:$`, func(tbl *godog.Table) error {
+		return cur().writeUserCatalog(tbl)
+	})
+	ctx.Step(`^the working directory is the folder "([^"]*)"$`, func(rel string) error {
+		return cur().setWorkdir(rel)
+	})
 	ctx.Step(`^the env file "([^"]*)" holds these lines:$`, func(name string, doc *godog.DocString) error {
 		return cur().writeEnvFile(name, doc.Content)
+	})
+	ctx.Step(`^the env file "([^"]*)" in the folder "([^"]*)" holds these lines:$`, func(name, folder string, doc *godog.DocString) error {
+		return cur().writeEnvFileIn(folder, name, doc.Content)
 	})
 
 	ctx.Step(`^the output folder "([^"]*)" holds exactly (\d+) Markdown files?$`, func(folder, want string) error {
@@ -412,11 +429,21 @@ func tagList(cell string) string {
 	return strings.Join(tags, ", ")
 }
 
-// writeEnvFile writes an env file and points the scenario at it. The values it holds are remembered, so the secret scan
+// writeEnvFile writes an env file into the scenario folder. It sets no variable: the file is found by the rule for the
+// working directory, so a scenario that uses it proves that rule. The values it holds are remembered, so the secret scan
 // can look for them.
 func (w *world) writeEnvFile(name, content string) error {
-	path, err := w.writeInput(name, content)
-	if err != nil {
+	return w.writeEnvFileIn("", name, content)
+}
+
+// writeEnvFileIn writes an env file into a folder of the scenario, creating the folder first, and remembers its values.
+func (w *world) writeEnvFileIn(folder, name, content string) error {
+	if folder != "" {
+		if err := w.be.mkdir(w.absPath(folder)); err != nil {
+			return err
+		}
+	}
+	if _, err := w.writeInput(path.Join(folder, name), content); err != nil {
 		return err
 	}
 	for _, line := range strings.Split(content, "\n") {
@@ -428,8 +455,47 @@ func (w *world) writeEnvFile(name, content string) error {
 			w.envFileVars[strings.TrimSpace(k)] = strings.TrimSpace(v)
 		}
 	}
-	w.env["RETRIEVER_ENV_FILE"] = path
 	return nil
+}
+
+// setWorkdir makes a folder of the scenario the working directory of the commands that follow.
+func (w *world) setWorkdir(rel string) error {
+	if err := w.be.mkdir(w.absPath(rel)); err != nil {
+		return err
+	}
+	w.cwd = rel
+	return nil
+}
+
+// writeUserCatalog writes a sources catalog into the user configuration folder, which the scenario points at through
+// XDG_CONFIG_HOME.
+func (w *world) writeUserCatalog(tbl *godog.Table) error {
+	rows, err := tableRows(tbl)
+	if err != nil {
+		return err
+	}
+	if err := w.be.mkdir(w.absPath("config/retriever")); err != nil {
+		return err
+	}
+	_, err = w.writeInput("config/retriever/sources.yml", renderCatalog(rows))
+	return err
+}
+
+// writeCommentCatalog writes a catalog that is only comment lines, padded to the size in KiB. It is valid YAML of the
+// wrong size, so the size rule is what refuses it.
+func (w *world) writeCommentCatalog(name, kib string) error {
+	n, err := strconv.Atoi(kib)
+	if err != nil {
+		return err
+	}
+	var b strings.Builder
+	b.WriteString("version: 1\nsources: []\n")
+	line := "# " + strings.Repeat("x", 61) + "\n"
+	for b.Len() < n*1024 {
+		b.WriteString(line)
+	}
+	_, err = w.writeInput(name, b.String())
+	return err
 }
 
 // checkMarkdownCount checks how many Markdown files an output folder holds directly.

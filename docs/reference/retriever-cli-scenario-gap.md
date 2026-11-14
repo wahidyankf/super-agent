@@ -15,7 +15,7 @@ This page maps each feature file of the older Butler CLI specs to the retriever 
 and it lists what is not ported. It states facts. It ports no scenario.
 
 Butler's specs hold 98 feature files and 1013 scenario headings, 170 of them outlines. The retriever specs under
-`specs/behaviours` hold 13 feature files and 220 scenario headings. Both counts count `Scenario` and `Scenario Outline`
+`specs/behaviours` hold 14 feature files and 264 scenario headings. Both counts count `Scenario` and `Scenario Outline`
 lines. The retriever count matches `apps/retriever-cli/behaviour-coverage.json`, which `bdd:check` verifies.
 
 ## Status
@@ -134,8 +134,8 @@ File names omit the `.feature` suffix. The number in brackets is the Butler scen
 | pdf-split (19)                                | not in retriever                        | Out      |
 | pdf-unprotect (15)                            | not in retriever                        | Out      |
 | repo-governance-workflows-naming-validate (5) | not in retriever                        | Out      |
-| serve-graphql (28)                            | graphql-serve (10 scenarios)            | Partly   |
-| sources-catalog (55)                          | sources-catalog (15 scenarios)          | Partly   |
+| serve-graphql (28)                            | graphql-serve (26 scenarios)            | Partly   |
+| sources-catalog (55)                          | sources-catalog (29 scenarios)          | Partly   |
 | test-coverage-validate (3)                    | not in retriever                        | Out      |
 | vault-write-confinement (9)                   | not in retriever                        | Deferred |
 
@@ -153,6 +153,21 @@ scenario covers its behaviour.
   decides what a change may do, so no ceiling is ported. See [who guards what](../explanation/who-guards-what.md).
 - **Vault layouts** (in `jira-export`, `kiwi-export`, and `outline-document-export`): the vault layout stays in Butler.
   retriever writes plain Markdown with `--out`. The Partly status covers only that Markdown export.
+
+## Covered differently on purpose
+
+These Butler headings describe a behaviour that retriever does not have, or has changed on purpose. Their scenarios
+assert the retriever behaviour, so the Butler text is not ported as written.
+
+- **Export file names** (in `jira-export`, `kiwi-export`, and `outline-document-export`): Butler names the file from the
+  title and refuses to overwrite an existing file. retriever names it by the document ID and always replaces it. Butler
+  ownership and vault refusals on export are not ported.
+- **Removed guards**: a scenario that asserts a check the CLI no longer runs, such as a confirmation flag, an access
+  ceiling, or a self-target refusal, is out. The [changelog](../../CHANGELOG.md) lists the removed checks.
+- **Subcommand listing**: a bare `retriever` exits `2` and reports on standard error. The command-line convention allows
+  a listing of subcommands but does not require one, so a Butler scenario that requires the list on standard output is
+  out.
+- **GraphQL mutation**: the served API has no write operation, so a Butler scenario that calls an export mutation is out.
 
 ## Deferred
 
@@ -175,3 +190,7 @@ grow from 194 to 235 scenario headings. This change does not recount the Butler 
 an unexpected response: search reads one page and marks it truncated. Each remaining row closes in its own change, with
 its scenario written first. The outline-secret-never-printed row stays Partly until its Outline logs check has a
 scenario.
+
+Batches B2 (root CLI and catalog rules), B3 (GraphQL hardening), and B11 (export) add scenarios in this change. The
+retriever specs grow from 220 to 264 scenario headings. The Partly and Gap rows keep their status, because each one still
+has open headings.

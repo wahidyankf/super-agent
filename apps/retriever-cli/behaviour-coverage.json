@@ -3,25 +3,32 @@
   "description": "Scenario counts of the behaviour specs, by feature file and by test level. A Scenario Outline counts once here; the test runner runs each of its Examples rows as its own scenario. A scenario that carries more than one level tag counts at each of those levels. Counts come from the feature files; test results are not recorded here.",
   "specs": "specs/behaviours",
   "totals": {
-    "scenarios": 220,
-    "unit": 220,
-    "integration": 220,
-    "e2e": 220
+    "scenarios": 264,
+    "unit": 264,
+    "integration": 264,
+    "e2e": 264
   },
   "features": [
     {
+      "path": "specs/behaviours/catalog/config-discovery.feature",
+      "scenarios": 9,
+      "unit": 9,
+      "integration": 9,
+      "e2e": 9
+    },
+    {
       "path": "specs/behaviours/catalog/sources-catalog.feature",
-      "scenarios": 14,
-      "unit": 14,
-      "integration": 14,
-      "e2e": 14
+      "scenarios": 29,
+      "unit": 29,
+      "integration": 29,
+      "e2e": 29
     },
     {
       "path": "specs/behaviours/cli/cli-contract.feature",
-      "scenarios": 17,
-      "unit": 17,
-      "integration": 17,
-      "e2e": 17
+      "scenarios": 18,
+      "unit": 18,
+      "integration": 18,
+      "e2e": 18
     },
     {
       "path": "specs/behaviours/credentials/credentials.feature",
@@ -32,17 +39,17 @@
     },
     {
       "path": "specs/behaviours/export/export-markdown-files.feature",
-      "scenarios": 9,
-      "unit": 9,
-      "integration": 9,
-      "e2e": 9
+      "scenarios": 12,
+      "unit": 12,
+      "integration": 12,
+      "e2e": 12
     },
     {
       "path": "specs/behaviours/graphql/graphql-serve.feature",
-      "scenarios": 10,
-      "unit": 10,
-      "integration": 10,
-      "e2e": 10
+      "scenarios": 26,
+      "unit": 26,
+      "integration": 26,
+      "e2e": 26
     },
     {
       "path": "specs/behaviours/jira/jira-operations.feature",
