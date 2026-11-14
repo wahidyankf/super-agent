@@ -198,7 +198,7 @@ func TestOutlineFailureMessagesAreTheFixedTexts(t *testing.T) {
 			code, _, errOut := runRetriever(t, []string{"outline", "collections"}, setup)
 
 			wantCode := 2
-			if tc.err == domain.ErrTimedOut {
+			if tc.err == domain.ErrTimedOut || tc.err == domain.ErrSourceRateLimited {
 				wantCode = 124
 			}
 			if code != wantCode || !strings.Contains(errOut, tc.want) {
