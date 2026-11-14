@@ -9,6 +9,16 @@ upgrade.
 
 ## Unreleased
 
+### Breaking
+
+- **Breaking**: the source kinds are no longer a closed list in the contract. `retriever-contract` is at `0.4.0`, and
+  `catalog.NewWithFiles` takes the registered kinds as a third argument. A Go caller passes `domain.BuiltinKinds()` to
+  keep the built-in set. The contract adds `KindSet`, `KindDefinition`, and `NewKindSet`, and `operations` adds
+  `NewCatalog` and `BuiltinCatalog`.
+- The catalog's unknown-kind message lists the registered kinds in alphabetical order. For the built-in set it reads
+  `unknown kind (known: jira, kiwi, outline)` in place of `unknown kind (known: outline, kiwi, jira)`. The stable code
+  `retriever.sources.unknown_source_kind` does not change, and the `--kind` flag and GraphQL messages keep their text.
+
 ### Changed
 
 - The repository page shows the root `README.md`. The `.github/README.md` file is removed, because GitHub shows that
@@ -16,7 +26,7 @@ upgrade.
   reference](docs/reference/repository-layout.md).
 - The retriever code moves out of the app into six Go modules under `libs/`: `retriever-contract`, `retriever-runtime`,
   `retriever-testkit`, `retriever-connector-outline`, `retriever-connector-kiwi`, and `retriever-connector-jira`. The
-  libraries are at `v0.3.0`, and the contract's `ContractVersion` is `0.3.0`. No library tag is cut yet, so an outside
+  libraries are at `v0.4.0`, and the contract's `ContractVersion` is `0.4.0`. No library tag is cut yet, so an outside
   build cannot require the libraries until one is.
 - The split changes no behaviour of the `retriever` command-line tool: no command, flag, exit status, or JSON output
   changes.

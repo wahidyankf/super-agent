@@ -23,15 +23,18 @@ Adding a source kind changes the contract. The contract's version rises by a min
 
 In `libs/retriever-contract/domain/sourcekind.go`:
 
-- add a `SourceKind` variable for the new kind, with its name;
-- add the variable to `knownKinds`, which lists every kind that `NewSourceKind` accepts; and
-- add an entry to `traits`, and set `usesIdentity` when the source needs an account e-mail beside its key.
+- add a `SourceKind` variable for the new kind, with its name and its display name;
+- add the variable to the list that `BuiltinKinds` returns, and set `usesIdentity` when the source needs an account
+  e-mail beside its key; and
+- add the name to the text of `ErrUnknownSourceKind`, which the flags and the GraphQL arguments show.
 
-The set of kinds is closed in code. A kind missing from `knownKinds` is refused.
+The composition root registers the built-in set. A catalog that names a kind outside the registered set is refused,
+and the message lists the registered kinds in alphabetical order.
 
 ## 2. Add the operation rows
 
-Add a `rows_<name>.go` file in `libs/retriever-contract/operations/`, with one row for each operation the source offers.
+Add a `rows_<name>.go` file in `libs/retriever-contract/operations/`, with one row for each operation the source
+offers. Add the slice to the list in `builtinRows`, in `catalog.go`, so the built-in catalog holds it.
 `rows_kiwi.go` and `rows_jira.go` show the form. A row names the operation, its parameters, and its effect, and the
 command-line tool and the MCP tools are built from it. If a row needs a parameter kind that does not exist, add a
 validator and a test for it, as the package comment asks.
