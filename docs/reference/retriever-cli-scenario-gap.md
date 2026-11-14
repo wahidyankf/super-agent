@@ -15,7 +15,7 @@ This page maps each feature file of the older Butler CLI specs to the retriever 
 and it lists what is not ported. It states facts. It ports no scenario.
 
 Butler's specs hold 98 feature files and 1013 scenario headings, 170 of them outlines. The retriever specs under
-`specs/behaviours` hold 13 feature files and 156 scenario headings. Both counts count `Scenario` and `Scenario Outline`
+`specs/behaviours` hold 13 feature files and 194 scenario headings. Both counts count `Scenario` and `Scenario Outline`
 lines. The retriever count matches `apps/retriever-cli/behaviour-coverage.json`, which `bdd:check` verifies.
 
 ## Status
@@ -23,14 +23,16 @@ lines. The retriever count matches `apps/retriever-cli/behaviour-coverage.json`,
 - **Partly**: retriever has scenarios for part of the behaviour. The rest is a gap.
 - **Gap**: the command ships in the operation catalog, but no retriever scenario covers it.
 - **Out**: the behaviour stays in Butler by design. The reasons are below the table.
+- **Covered**: every heading of the Butler feature has a retriever scenario that asserts the same behaviour.
 - **Deferred**: the behaviour is planned for a later release.
 
 Every **Partly** and **Gap** row is a follow-up that must close before the v0.1.0 release. Each one closes in its own
 change, with its scenario written first and its binding tags set, as the [test gates](./retriever-cli-test-gates.md)
 describe.
 
-The match uses scenario titles only. Nothing here was run. A row says **Partly** when a retriever title names the same
-behaviour as a Butler title, and it does not claim that the two behave the same in every case.
+The table matches by title only, so it maps the features and does not count behaviour. Nothing here was run. A row says
+**Partly** when a retriever title names the same behaviour as a Butler title, and it does not claim that the two behave
+the same in every case.
 
 ## Table
 
@@ -43,21 +45,21 @@ File names omit the `.feature` suffix. The number in brackets is the Butler scen
 | jira-adf-rendering (14)                       | jira-operations: issue Markdown         | Partly   |
 | jira-api-errors (13)                          | jira-operations: failures, retry        | Partly   |
 | jira-comments-read (9)                        | jira-operations: comments               | Partly   |
-| jira-credentials (11)                         | credentials: Jira e-mail address        | Partly   |
+| jira-credentials (11)                         | credentials: Jira e-mail address        | Covered  |
 | jira-export (9)                               | export-markdown-files: Jira issue       | Partly   |
 | jira-issues-read (11)                         | jira-operations: issue read             | Partly   |
 | jira-issues-search (12)                       | jira-operations: JQL search             | Partly   |
 | jira-projects-read (7)                        | jira-operations: projects               | Partly   |
-| jira-secret-never-printed (5)                 | credentials: Jira token                 | Partly   |
+| jira-secret-never-printed (5)                 | credentials: Jira token                 | Covered  |
 | jira-transport-safety (10)                    | jira-operations, https-and-limits       | Partly   |
 | jira-whoami (7)                               | jira-operations: account read           | Partly   |
 | job-report (12)                               | not in retriever                        | Out      |
 | kiwi-collections-read (10)                    | kiwi-operations: products, plans        | Partly   |
-| kiwi-credentials (8)                          | credentials: Kiwi key                   | Partly   |
+| kiwi-credentials (8)                          | credentials: Kiwi key                   | Covered  |
 | kiwi-documents-read (9)                       | kiwi-operations: documents              | Partly   |
 | kiwi-export (14)                              | export-markdown-files: test case        | Partly   |
 | kiwi-jsonrpc-errors (10)                      | kiwi-operations: JSON-RPC error         | Partly   |
-| kiwi-secret-never-printed (9)                 | credentials: Kiwi key                   | Partly   |
+| kiwi-secret-never-printed (9)                 | credentials: Kiwi key                   | Covered  |
 | kiwi-transport-safety (13)                    | kiwi-operations, https-and-limits       | Partly   |
 | kiwi-writes (17)                              | kiwi-operations: create, update         | Partly   |
 | lang-source-naming-validate (4)               | not in retriever                        | Out      |
@@ -81,7 +83,7 @@ File names omit the `.feature` suffix. The number in brackets is the Butler scen
 | outline-comments-destructive (6)              | no scenario; tools ship                 | Gap      |
 | outline-comments-read (4)                     | no scenario; tools ship                 | Gap      |
 | outline-comments-writes (12)                  | outline-writes: comment                 | Partly   |
-| outline-credentials (6)                       | credentials: Outline key                | Partly   |
+| outline-credentials (6)                       | credentials: Outline key                | Covered  |
 | outline-critical-tier (49)                    | outline-critical-actions (14)           | Partly   |
 | outline-document-export (9)                   | export-markdown-files: Outline          | Partly   |
 | outline-document-tree (6)                     | graphql-serve: flat tree                | Partly   |
@@ -157,5 +159,13 @@ scenario covers its behaviour.
 
 ## Follow-up
 
-Of the 98 Butler feature files, 51 are Partly and 37 are Gap. These 88 rows must close before the v0.1.0 release. Nine
-are Out, and one is Deferred.
+The figures below come from a count by heading, which the title table above does not measure. Each Butler scenario
+heading has one verdict. Before batch B1, 817 Butler headings were open: 768 with no retriever scenario, and 49 covered
+only in part.
+
+Batch B1 (trust boundary) covers 106 of those open headings in 13 Butler files. Its first part, B1a (credentials and
+secret redaction), closes 53 of the 106 and adds 38 scenarios. Some closed headings are asserted by existing scenarios,
+and some of those scenarios were strengthened. After B1a, 764 headings stay open. Of those, 53 are in B1: the
+transport, rate-limit, JSON-RPC error, and Jira API error rows, plus two redaction rows, one for a hostile reply through
+an MCP tool and one for the OAuth authentications tool. Each remaining row closes in its own change, with its scenario
+written first. The outline-secret-never-printed row stays Partly until its Outline logs check has a scenario.

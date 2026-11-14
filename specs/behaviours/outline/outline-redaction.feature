@@ -32,6 +32,41 @@ Feature: Outline reply redaction
     And the standard output contains no control characters except line breaks
 
   @integration @e2e @unit
+  Scenario Outline: A hostile title never prints a control byte in the text output, whichever one it holds
+    Given the stub Outline server answers "documents.info" with the body:
+      """
+      {"data": {"id": "d0c1d0c1-0000-4000-8000-000000000001", "title": "<control>Red title", "text": "Synthetic body", "url": "/doc/d0c1d0c1-0000-4000-8000-000000000001", "collectionId": "1c1c1c1c-0000-4000-8000-000000000001", "revision": 1}}
+      """
+    When I run "retriever outline documents get d0c1d0c1-0000-4000-8000-000000000001"
+    Then the exit status is 0
+    And the standard output contains no control characters except line breaks
+
+    Examples:
+      | control |
+      | \u0007  |
+      | \u0008  |
+      | \u000c  |
+      | \u007f  |
+
+  @integration @e2e @unit
+  Scenario Outline: A hostile reply in JSON mode never shows a raw control byte, whichever one it holds
+    Given the stub Outline server answers "documents.info" with the body:
+      """
+      {"data": {"id": "d0c1d0c1-0000-4000-8000-000000000001", "title": "<control>Cleared", "text": "Synthetic body", "url": "/doc/d0c1d0c1-0000-4000-8000-000000000001", "collectionId": "1c1c1c1c-0000-4000-8000-000000000001", "revision": 1}}
+      """
+    When I run "retriever --output json outline documents get d0c1d0c1-0000-4000-8000-000000000001"
+    Then the exit status is 0
+    And the standard output is a JSON document with schemaVersion 1
+    And the standard output contains no control characters except line breaks
+
+    Examples:
+      | control |
+      | \u0007  |
+      | \u0008  |
+      | \u001b  |
+      | \u000c  |
+
+  @integration @e2e @unit
   Scenario: A hostile reply in JSON mode is still a single JSON document with no raw control byte
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -68,6 +103,75 @@ Feature: Outline reply redaction
     And the standard output does not contain "/synthetic/path"
 
   @integration @e2e @unit
+  Scenario: A webhook list on a server without the endpoint reports it as unavailable and prints no secret
+    Given the stub Outline server answers "webhookSubscriptions.list" with status 404 and the body:
+      """
+      {"ok": false, "status": 404, "error": "not_found", "message": "Endpoint not found", "secret": "synthetic-signing-secret"}
+      """
+    When I run "retriever --output json outline webhook-subscriptions list"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.outline.operation_unavailable" and retryable false
+    And the standard error does not contain "synthetic-signing-secret"
+
+  @integration @e2e @unit
+  Scenario Outline: A read never prints a value that its reply holds and the rules forbid
+    Given the stub Outline server answers "<method>" with the body:
+      """
+      {"data": [{"id": "b6000000-0000-4000-8000-000000000021", "name": "Synthetic item", "value": "<secret>", "clientSecret": "<secret>", "secret": "<secret>", "clientId": "synthetic-client-id", "clientType": "confidential", "redirectUris": [], "published": false, "scope": ["read"], "url": "https://hooks.example.test/synthetic/path", "enabled": true, "events": [], "createdById": "33333333-3333-4333-8333-333333333333", "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-02T00:00:00Z"}], "pagination": {"offset": 0, "limit": 25}}
+      """
+    When I run "<command>"
+    Then the exit status is 0
+    And the standard output does not contain "<secret>"
+
+    Examples:
+      | method                    | command                                     | secret                   |
+      | apiKeys.list              | retriever outline api-keys list             | synthetic-key-value      |
+      | oauthClients.list         | retriever outline oauth-clients list        | synthetic-client-secret  |
+      | webhookSubscriptions.list | retriever outline webhook-subscriptions list | synthetic-signing-secret |
+
+  @integration @e2e @unit
+  Scenario: An integration list on an admin source prints the host of each address and never its path or query
+    Given the stub Outline server answers "integrations.list" with the body:
+      """
+      {"data": [{"id": "b6000000-0000-4000-8000-000000000031", "type": "webhook", "service": "slack", "events": ["documents.update"], "settings": {"url": "https://hooks.example.test/synthetic/secret-path?token=synthetic-query-token", "channel": "#synthetic"}, "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-02T00:00:00Z"}], "pagination": {"offset": 0, "limit": 25}}
+      """
+    When I run "retriever --output json outline integrations list"
+    Then the exit status is 0
+    And the standard output is a JSON document with schemaVersion 1
+    And the standard output contains "hooks.example.test"
+    And the standard output does not contain "/synthetic/secret-path"
+    And the standard output does not contain "synthetic-query-token"
+
+  @integration @e2e @unit
+  Scenario: The JSON document of an API key list keeps the last four characters and never the key value
+    Given the stub Outline server answers "apiKeys.list" with the body:
+      """
+      {"data": [{"id": "b6000000-0000-4000-8000-000000000041", "userId": "33333333-3333-4333-8333-333333333333", "name": "Synthetic key", "scope": ["read"], "last4": "wxyz", "value": "synthetic-key-value", "hash": "synthetic-key-hash", "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-02T00:00:00Z", "expiresAt": null}], "pagination": {"offset": 0, "limit": 25}}
+      """
+    When I run "retriever --output json outline api-keys list"
+    Then the exit status is 0
+    And the standard output is a JSON document with schemaVersion 1
+    And the standard output contains "wxyz"
+    And the standard output does not contain "synthetic-key-value"
+    And the standard output does not contain "synthetic-key-hash"
+
+  @integration @e2e @unit
+  Scenario Outline: The OAuth authentications list never prints a client secret that its reply holds, in text or in JSON
+    Given the stub Outline server answers "oauthAuthentications.list" with the body:
+      """
+      {"data": [{"id": "b6000000-0000-4000-8000-000000000051", "oauthClientId": "0c0c0c0c-0000-4000-8000-000000000001", "scope": ["read"], "createdAt": "2026-01-01T00:00:00Z", "lastActiveAt": null, "clientSecret": "synthetic-client-secret", "oauthClient": {"id": "0c0c0c0c-0000-4000-8000-000000000001", "name": "Synthetic client", "clientSecret": "synthetic-client-secret"}}], "pagination": {"offset": 0, "limit": 25}}
+      """
+    When I run "<command>"
+    Then the exit status is 0
+    And the standard output does not contain "synthetic-client-secret"
+
+    Examples:
+      | command                                                     |
+      | retriever outline oauth-authentications list                |
+      | retriever --output json outline oauth-authentications list  |
+
+  @integration @e2e @unit
   Scenario Outline: A failing Outline response never prints the key
     Given the stub Outline server answers "collections.list" with status <status>
     When I run "retriever --output json outline collections list"
@@ -95,3 +199,58 @@ Feature: Outline reply redaction
     When I run "retriever --output json outline auth whoami"
     Then the exit status is 0
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
+
+  @integration @e2e @unit
+  Scenario: An Outline source that cannot be reached is reported as unreachable and never prints the key
+    Given no stub Outline server is listening
+    When I run "retriever --output json outline collections list"
+    Then the exit status is 2
+    And the standard error is a JSON error with the code "retriever.outline.unreachable" and retryable true
+    And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
+
+  @integration @e2e @unit
+  Scenario: Outline rate-limit exhaustion never prints the key
+    Given the stub Outline server answers "collections.list" with status 429 and Retry-After "0"
+    When I run "retriever --output json outline collections list"
+    Then the exit status is 2
+    And the standard error is a JSON error with the code "retriever.outline.rate_limited" and retryable true
+    And the stub Outline server received 4 requests to "collections.list"
+    And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
+
+  @integration @e2e @unit
+  Scenario Outline: A rejected Outline key is reported by every catalog read and never printed
+    Given the stub Outline server answers "<method>" with status 401
+    When I run "<command>"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.outline.key_rejected" and retryable false
+    And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
+
+    Examples:
+      | method            | command                                                    |
+      | collections.list  | retriever --output json outline collections list           |
+      | documents.info    | retriever --output json outline documents get d0c1d0c1-0000-4000-8000-000000000001 |
+
+  @integration @e2e @unit
+  Scenario: A GraphQL error for a rejected Outline key never includes the key
+    Given the stub Outline server answers "documents.info" with status 401
+    And retriever serve is running on the loopback address
+    When retriever serve receives this GraphQL request:
+      """
+      query { document(id: "d0c1d0c1-0000-4000-8000-000000000001") { id } }
+      """
+    Then the HTTP status is 200
+    And the GraphQL response has an error
+    And the GraphQL response does not contain "synthetic-outline-key"
+
+  @integration @e2e @unit
+  Scenario: A GraphQL reply to a failing Outline server never includes the key it echoed
+    Given the stub Outline server echoes the Authorization header in a non-JSON reply to "documents.info"
+    And retriever serve is running on the loopback address
+    When retriever serve receives this GraphQL request:
+      """
+      query { document(id: "d0c1d0c1-0000-4000-8000-000000000001") { id } }
+      """
+    Then the HTTP status is 200
+    And the GraphQL response has an error
+    And the GraphQL response does not contain "synthetic-outline-key"

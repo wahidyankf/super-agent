@@ -3,10 +3,10 @@
   "description": "Scenario counts of the behaviour specs, by feature file and by test level. A Scenario Outline counts once here; the test runner runs each of its Examples rows as its own scenario. A scenario that carries more than one level tag counts at each of those levels. Counts come from the feature files; test results are not recorded here.",
   "specs": "specs/behaviours",
   "totals": {
-    "scenarios": 156,
-    "unit": 156,
-    "integration": 156,
-    "e2e": 156
+    "scenarios": 194,
+    "unit": 194,
+    "integration": 194,
+    "e2e": 194
   },
   "features": [
     {
@@ -25,10 +25,10 @@
     },
     {
       "path": "specs/behaviours/credentials/credentials.feature",
-      "scenarios": 13,
-      "unit": 13,
-      "integration": 13,
-      "e2e": 13
+      "scenarios": 39,
+      "unit": 39,
+      "integration": 39,
+      "e2e": 39
     },
     {
       "path": "specs/behaviours/export/export-markdown-files.feature",
@@ -81,10 +81,10 @@
     },
     {
       "path": "specs/behaviours/outline/outline-redaction.feature",
-      "scenarios": 8,
-      "unit": 8,
-      "integration": 8,
-      "e2e": 8
+      "scenarios": 20,
+      "unit": 20,
+      "integration": 20,
+      "e2e": 20
     },
     {
       "path": "specs/behaviours/outline/outline-writes.feature",

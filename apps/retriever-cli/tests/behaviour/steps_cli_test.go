@@ -31,6 +31,15 @@ func registerCLISteps(ctx *godog.ScenarioContext, cur func() *world) {
 	ctx.Step(`^the standard output is (empty|not empty)$`, func(state string) error {
 		return cur().checkEmptiness("stdout", state)
 	})
+	ctx.Step(`^the standard error contains "([^"]*)"$`, func(text string) error {
+		return cur().checkContains("stderr", text, true)
+	})
+	ctx.Step(`^I keep the standard error as "([^"]*)"$`, func(name string) error {
+		return cur().keepStderr(name)
+	})
+	ctx.Step(`^the standard error is the same as the one kept as "([^"]*)"$`, func(name string) error {
+		return cur().checkKeptStderr(name)
+	})
 	ctx.Step(`^the standard error is (empty|not empty)$`, func(state string) error {
 		return cur().checkEmptiness("stderr", state)
 	})
@@ -208,6 +217,39 @@ func (w *world) checkContains(stream, text string, want bool) error {
 			return fmt.Errorf("the %s does not contain %q: %q", stream, text, got)
 		}
 		return fmt.Errorf("the %s contains %q: %q", stream, text, got)
+	}
+	return nil
+}
+
+// keepStderr stores the standard error of the last command under a name, so a later command can be compared with it.
+func (w *world) keepStderr(name string) error {
+	text, err := w.streamText("stderr")
+	if err != nil {
+		return err
+	}
+	if w.kept == nil {
+		w.kept = map[string]string{}
+	}
+	w.kept[name] = text
+	return nil
+}
+
+// checkKeptStderr checks that the standard error of the last command is the text kept under the name. An empty text is
+// refused, so the check is never true because nothing was written.
+func (w *world) checkKeptStderr(name string) error {
+	want, ok := w.kept[name]
+	if !ok {
+		return fmt.Errorf("no standard error was kept as %q", name)
+	}
+	got, err := w.streamText("stderr")
+	if err != nil {
+		return err
+	}
+	if got == "" || want == "" {
+		return errors.New("an empty standard error cannot be compared")
+	}
+	if got != want {
+		return fmt.Errorf("the standard error is %q, want the kept text %q", got, want)
 	}
 	return nil
 }
