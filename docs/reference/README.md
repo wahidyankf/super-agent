@@ -35,6 +35,8 @@ walkthrough, start with the [how-to guides](../how-to/).
   versions, and the tag format.
 - [Operation and spec JSON Schema](./operation-json-schema.md) is PLANNED. It says what the schema will cover and that
   no schema file exists yet.
+- [Connector spec fields](./connector-spec-fields.md) is PLANNED. It drafts the fields of a declarative connector spec.
+- [Profile layout](./profile-layout.md) is PLANNED. It drafts the folders and rules of work and personal profiles.
 
 ## Glossary
 

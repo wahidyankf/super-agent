@@ -29,6 +29,8 @@ repository.
   design note, and it is out of scope now.
 - [Library layering](./library-layering.md) explains which Go modules may import which, and why the app and the
   libraries are split this way.
+- [Decision records](./decisions/) hold the architecture decisions, starting with user-defined connectors and profiles.
+  Their threat model, module layout, and pull-request split are planned.
 
 ## Next steps
 
