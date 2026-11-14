@@ -103,7 +103,7 @@ Feature: Sources catalog
     When I run "retriever --output json --catalog missing.yml sources list"
     Then the exit status is 2
     And the standard output is empty
-    And the standard error is a JSON error with a code other than "retriever.sources.failed"
+    And the standard error is a JSON error with the code "retriever.sources.catalog_missing" and retryable false
 
   @integration @e2e @unit
   Scenario: Two sources with the same ID are refused when the catalog loads

@@ -9,12 +9,23 @@ upgrade.
 
 ## Unreleased
 
+### Breaking
+
+- **Breaking**: a `retriever` read on Outline, Kiwi, or Jira that a rate limit stops now exits `124`, not `2`. Exit
+  `124` means a bounded wait ended in a retryable failure, the same status a timeout uses, and the JSON error still
+  says `retryable: true`. A `Retry-After` longer than 60 seconds still exits `2`, because that failure is not
+  retryable. Scripts that test for `2` after a rate limit must test for `124`.
+
 ### Changed
 
+- The behaviour specs add 41 scenarios, from 194 to 235, for the transport limits (HTTPS, redirects, timeouts,
+  rate-limit waits and spacing, and reply size), the Kiwi and Jira error codes, the Jira search and projects reads, and
+  the redaction of MCP replies. The behaviour harness now drives the in-process Outline, Kiwi, and Jira stubs with a
+  fake clock, so the waits are checked without real sleeping at the unit and integration levels.
 - `retriever` unit tests no longer read or write real files, read or change the process environment, change the working
   directory, or start child processes. The tests that need those move to files with the `integration` build tag. The
   unit tests reach the file system and the environment through fakes at the seams of the catalog, the credentials, the
-  Markdown sink, the source seams, and the composition root. The behaviour harness runs its 156 `@unit` scenarios in
+  Markdown sink, the source seams, and the composition root. The behaviour harness runs its 235 `@unit` scenarios in
   memory, through an in-memory file tree and an in-memory export sink. The integration and end-to-end levels keep the
   real disk, the real environment at the integration level, and the built binary at the end-to-end level. The synthetic
   Outline replies move to `tests/support/synthetic`.
@@ -31,6 +42,9 @@ upgrade.
   binaries name the standard library's `crypto/x509` type `local` in that form, so the `internal-hostname` rule blocked
   every binary although it names no host. The rule now skips only that shape. URLs, absolute paths, dotted or hyphenated
   paths, and bare host names still block. The release procedure now screens the unpacked binaries.
+- `retriever mcp` no longer exits `0` when a session is cancelled before any signal arrives. A race between the end of
+  the session and its cancellation made the exit status depend on scheduling. A cancelled session now exits `2`, as the
+  exit-code contract says.
 
 ## v0.1.0
 

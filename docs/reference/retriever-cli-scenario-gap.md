@@ -15,7 +15,7 @@ This page maps each feature file of the older Butler CLI specs to the retriever 
 and it lists what is not ported. It states facts. It ports no scenario.
 
 Butler's specs hold 98 feature files and 1013 scenario headings, 170 of them outlines. The retriever specs under
-`specs/behaviours` hold 13 feature files and 194 scenario headings. Both counts count `Scenario` and `Scenario Outline`
+`specs/behaviours` hold 13 feature files and 235 scenario headings. Both counts count `Scenario` and `Scenario Outline`
 lines. The retriever count matches `apps/retriever-cli/behaviour-coverage.json`, which `bdd:check` verifies.
 
 ## Status
@@ -167,5 +167,9 @@ Batch B1 (trust boundary) covers 106 of those open headings in 13 Butler files. 
 secret redaction), closes 53 of the 106 and adds 38 scenarios. Some closed headings are asserted by existing scenarios,
 and some of those scenarios were strengthened. After B1a, 764 headings stay open. Of those, 53 are in B1: the
 transport, rate-limit, JSON-RPC error, and Jira API error rows, plus two redaction rows, one for a hostile reply through
-an MCP tool and one for the OAuth authentications tool. Each remaining row closes in its own change, with its scenario
-written first. The outline-secret-never-printed row stays Partly until its Outline logs check has a scenario.
+an MCP tool and one for the OAuth authentications tool. Batch B1b adds scenarios for those rows, and the retriever specs
+grow from 194 to 235 scenario headings. This change does not recount the Butler headings it closes, so the figure of
+764 open headings is the last counted one and is not restated here. The Jira repeated-page-token row does not close as
+an unexpected response: search reads one page and marks it truncated. Each remaining row closes in its own change, with
+its scenario written first. The outline-secret-never-printed row stays Partly until its Outline logs check has a
+scenario.

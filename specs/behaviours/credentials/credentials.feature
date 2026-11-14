@@ -414,7 +414,7 @@ Feature: Source credentials
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server answers every request with status 429 and Retry-After "0"
     When I run "retriever --output json kiwi products list"
-    Then the exit status is 2
+    Then the exit status is 124
     And the standard error is a JSON error with the code "retriever.kiwi.rate_limited" and retryable true
     And the stub Kiwi server received 4 requests
     And the value of "EXAMPLE_KIWI_API_KEY" never appears in the standard output, the standard error, or the output folder
