@@ -10,8 +10,8 @@ when_to_use: >-
 ## Directory Map
 
 - [Repository Adapter](./repository-adapter.md): how stacks, projects, and gates fit together.
-- [Golang Standards](./golang-standards.md): the Go version, module path, tools, layering, errors, and tests for the
-  CLI.
+- [Golang Standards](./golang-standards.md): the Go version, module paths, tools, layering, errors, and tests for the
+  CLI and its six libraries.
 - [Shell Standards](./shell-standards.md): the prologue, checks, exit status, and portability rules for scripts and
   hooks.
 
