@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 	"strings"
 	"time"
 )
@@ -52,6 +52,9 @@ type jsonErrorSpec struct {
 	Retryable     bool   `json:"retryable"`
 }
 
+// conformanceNow is the fixed instant the checks read as the clock, so no check reads the real clock.
+var conformanceNow = time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+
 // failureBody is the decoded failure body of the CLI, as domain documentation names it.
 type failureBody struct {
 	SchemaVersion int    `json:"schemaVersion"`
@@ -73,7 +76,7 @@ func runCheck(a assertion) []string {
 		Stdout:   &out,
 		Stderr:   &errb,
 		Getenv:   func(string) string { return "" },
-		Now:      time.Now,
+		Now:      func() time.Time { return conformanceNow },
 		SetupErr: errNoSource,
 	}
 	status := cli.Run(a.Argv, deps)

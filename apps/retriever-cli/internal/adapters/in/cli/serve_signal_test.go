@@ -2,40 +2,38 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"syscall"
 	"testing"
-	"time"
 )
 
-// serveSignalled returns a serve function that is ready at once and then sends sig to this process, as a terminal or a
-// supervisor would. The signal is caught by the serve command, which cancels the context the server runs under.
-func serveSignalled(sig syscall.Signal) func(ctx context.Context, _ int, ready func(string)) error {
-	return func(ctx context.Context, _ int, ready func(string)) error {
-		ready("127.0.0.1:1")
-		if err := syscall.Kill(syscall.Getpid(), sig); err != nil {
-			return err
-		}
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-time.After(10 * time.Second):
-			return errors.New("the signal did not reach the serve command")
-		}
-	}
+// signalledContext returns a context that is already cancelled with the cause of sig, as the composition root cancels the
+// serve context when that signal arrives. The serve command reads the cause and maps it to an exit status, so no real
+// signal is sent.
+func signalledContext(sig syscall.Signal) context.Context {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	cancel(SignalCause(sig))
+	return ctx
 }
 
-// TestServeStopsOnSIGTERMWithStatus143 proves that SIGTERM ends serve with 143, as retriever mcp does.
+// serveUntilEnded is a serve function that is ready at once and returns when its context ends, as a server does.
+func serveUntilEnded(ctx context.Context, _ int, ready func(string)) error {
+	ready("127.0.0.1:1")
+	<-ctx.Done()
+	return nil
+}
+
+// TestServeStopsOnSIGTERMWithStatus143 proves that a SIGTERM cause ends serve with 143, as retriever mcp does. The
+// real signal that sets this cause is delivered by the integration test of the same file name.
 func TestServeStopsOnSIGTERMWithStatus143(t *testing.T) {
-	code, _, errOut := runRetriever(t, []string{"serve"}, outlineSetup{serve: serveSignalled(syscall.SIGTERM)})
+	code, _, errOut := runRetriever(t, []string{"serve"}, outlineSetup{serve: serveUntilEnded, ctx: signalledContext(syscall.SIGTERM)})
 	if code != 143 {
 		t.Fatalf("SIGTERM must end serve with exit 143, got exit %d (stderr %q)", code, errOut)
 	}
 }
 
-// TestServeStopsOnSIGINTWithStatus130 proves that an interrupt ends serve with 130, as retriever mcp does.
+// TestServeStopsOnSIGINTWithStatus130 proves that an interrupt cause ends serve with 130, as retriever mcp does.
 func TestServeStopsOnSIGINTWithStatus130(t *testing.T) {
-	code, _, errOut := runRetriever(t, []string{"serve"}, outlineSetup{serve: serveSignalled(syscall.SIGINT)})
+	code, _, errOut := runRetriever(t, []string{"serve"}, outlineSetup{serve: serveUntilEnded, ctx: signalledContext(syscall.SIGINT)})
 	if code != 130 {
 		t.Fatalf("SIGINT must end serve with exit 130, got exit %d (stderr %q)", code, errOut)
 	}

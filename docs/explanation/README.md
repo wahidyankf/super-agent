@@ -27,6 +27,8 @@ repository.
   enter it.
 - [Software-factory note](./software-factory-note.md) records a later direction for orchestrating agents. It is a
   design note, and it is out of scope now.
+- [Library layering](./library-layering.md) explains which Go modules may import which, and why the app and the
+  libraries are split this way.
 
 ## Next steps
 

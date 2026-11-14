@@ -99,16 +99,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Ubuntu runs the full set. macOS runs the targets whose behaviour depends on the platform: signals, exit
-          # statuses, the user configuration directory, atomic renames, file modes, symbolic links, and port binding.
-          # Each row's tier follows its work. Ubuntu runs a whole project's suite, which is heavy work. macOS runs a
-          # subset of one project's tests, which is standard work, and a macos-15 runner (3 CPUs, about 7 GiB) has less
-          # than the heavy tier's minimum reservation of 4 CPUs and 8192 MiB.
+          # Each row selects its Nx projects by tag, so a Go module joins a row through its tags alone. Ubuntu runs every
+          # Go project (lang:go) through the full set. A target runs only in the projects that declare it, so the
+          # app-only targets run for the app. macOS runs the application (type:app) through the targets whose behaviour
+          # depends on the platform: signals, exit statuses, the user configuration directory, atomic renames, file
+          # modes, symbolic links, and port binding. The application's end-to-end and conformance suites run the built
+          # binary, which includes the libraries, so they cover the libraries on macOS. The libraries' integration tests
+          # use the real file system and processes, and they run on Ubuntu only, as the application's integration tests
+          # do. Each row's tier follows its work. Ubuntu runs whole suites of seven projects, which is heavy work. macOS
+          # runs one project's tests, which is standard work, and a macos-15 runner (3 CPUs, about 7 GiB) has less than
+          # the heavy tier's minimum reservation of 4 CPUs and 8192 MiB.
           - os: ubuntu-24.04
             tier: heavy
+            projects: "tag:lang:go"
             targets: "lint typecheck test:unit test:integration test:e2e test:conformance bdd:check deps:audit"
           - os: macos-15
             tier: standard
+            projects: "tag:type:app"
             targets: "test:unit test:e2e test:conformance"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -119,40 +126,44 @@ jobs:
 
       - uses: ./.github/actions/setup-node
 
+      # The setup-go action checks the installed Go against the toolchain line of every go.mod, and keys the module
+      # cache on every go.sum, so a library's dependencies are cached as the app's are.
       - uses: ./.github/actions/setup-go
         with:
-          cache-dependency-path: apps/retriever-cli/go.sum
-
-      # The module names its release in the toolchain line, and the setup-go pin must install exactly that release. The
-      # go line only sets the minimum language version, so it is not compared.
-      - name: Check that the installed Go matches the go.mod toolchain
-        shell: bash
-        run: |
-          set -euo pipefail
-          toolchain="$(sed -n 's/^toolchain //p' apps/retriever-cli/go.mod)"
-          if [ -z "$toolchain" ]; then
-            echo "apps/retriever-cli/go.mod has no toolchain line" >&2
-            exit 1
-          fi
-          installed="$(go env GOVERSION)"
-          if [ "$installed" != "$toolchain" ]; then
-            echo "installed ${installed} differs from the go.mod toolchain ${toolchain}" >&2
-            exit 1
-          fi
-          echo "Go toolchain ${installed} matches go.mod"
+          cache-dependency-path: |
+            apps/**/go.sum
+            libs/**/go.sum
 
       # One HIPPO run admits the whole row, so its targets do not queue for capacity between themselves. A run
-      # admitted between two targets can be deferred after the first one has loaded the host.
+      # admitted between two targets can be deferred after the first one has loaded the host. Each target is one
+      # run-many over the row's projects. A target skips the projects that do not declare it. A selector that matches
+      # no project fails, so a renamed tag cannot pass without running anything.
       - name: Run the Go targets through Nx
         shell: bash
         env:
+          PROJECTS: ${{ matrix.projects }}
           TARGETS: ${{ matrix.targets }}
           TIER: ${{ matrix.tier }}
         run: |
           set -euo pipefail
           read -r -a targets <<< "$TARGETS"
+          # shellcheck disable=SC2016 # the inner bash expands its own arguments, so its script stays in single quotes
           ./hippo run --class ephemeral --resource-tier "$TIER" --disk-path . -- \
-            bash -c "for target in \"\$@\"; do npx nx run \"retriever-cli:\${target}\" || exit \$?; done" bash "${targets[@]}"
+            bash -c '
+              set -euo pipefail
+              projects=$1
+              shift
+              selected="$(npx nx show projects --projects="$projects")"
+              if [ -z "$selected" ]; then
+                echo "No Nx project matches ${projects}" >&2
+                exit 1
+              fi
+              echo "Nx projects for ${projects}:"
+              printf "  %s\n" $selected
+              for target in "$@"; do
+                npx nx run-many --targets="$target" --projects="$projects" --parallel=1 --nxBail || exit $?
+              done
+            ' bash "$PROJECTS" "${targets[@]}"
 
   cross-compile:
     name: Cross-compile check
@@ -172,9 +183,13 @@ jobs:
 
       - uses: ./.github/actions/setup-go
         with:
-          cache-dependency-path: apps/retriever-cli/go.sum
+          cache-dependency-path: |
+            apps/**/go.sum
+            libs/**/go.sum
 
-      # Builds only. Binaries go under the runner's temporary directory, and nothing is uploaded or published.
+      # Builds only. Binaries go under the runner's temporary directory, and nothing is uploaded or published. The app
+      # is the only package built. Its go.mod replace directives name the libraries' folders in this checkout, so the
+      # build resolves them from the working tree.
       - name: Cross-compile for the four release platforms
         shell: bash
         env:

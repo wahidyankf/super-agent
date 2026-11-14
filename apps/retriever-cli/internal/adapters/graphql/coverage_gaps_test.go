@@ -146,26 +146,21 @@ func TestCollectionTreeReportsAnUpstreamFailureWithoutItsText(t *testing.T) {
 // TestServeReportsAListenerThatFailsBeforeCancel checks that a listener which stops serving before the context ends is
 // reported as an error, not a clean shutdown.
 func TestServeReportsAListenerThatFailsBeforeCancel(t *testing.T) {
-	l, err := Listen(0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := l.Close(); err != nil {
-		t.Fatal(err)
-	}
+	// The fake listener's Accept fails at once, as a listener that was closed before it started does.
+	l := tcpListener(loopbackIP, testPort)
 	if err := Serve(t.Context(), l, http.NotFoundHandler()); err == nil {
 		t.Fatal("Serve returned nil for a listener that was closed before it started")
 	}
 }
 
 // TestServeReportsAShutdownThatTimesOut checks that a request still running when the context ends is reported as a
-// shutdown failure. The handler blocks until the test releases it, so the graceful shutdown runs out of its time limit,
-// which is five seconds.
+// shutdown failure. The handler blocks until the test releases it, and the shutdown time limit has already run out when
+// shutdown starts, so no real time is waited. The request travels over an in-memory pipe.
 func TestServeReportsAShutdownThatTimesOut(t *testing.T) {
-	l, err := Listen(0)
-	if err != nil {
-		t.Fatal(err)
-	}
+	saved := shutdownTimeout
+	shutdownTimeout = 0
+	t.Cleanup(func() { shutdownTimeout = saved })
+	l := newPipeListener()
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	t.Cleanup(func() { close(release) })
@@ -182,14 +177,15 @@ func TestServeReportsAShutdownThatTimesOut(t *testing.T) {
 		if reqErr != nil {
 			return
 		}
-		resp, doErr := (&http.Client{}).Do(req)
+		client := &http.Client{Transport: &http.Transport{DialContext: l.dial}}
+		resp, doErr := client.Do(req)
 		if doErr == nil {
 			_ = resp.Body.Close()
 		}
 	}()
 	<-entered
 	cancel()
-	err = <-serveErr
+	err := <-serveErr
 	if err == nil || !strings.Contains(err.Error(), "shutdown of the GraphQL server") {
 		t.Fatalf("Serve error = %v, want the shutdown failure", err)
 	}

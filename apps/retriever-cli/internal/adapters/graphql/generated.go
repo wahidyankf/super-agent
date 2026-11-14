@@ -15,7 +15,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/introspection"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // region    ***************************** api!.gotpl *****************************

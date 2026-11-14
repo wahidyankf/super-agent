@@ -6,8 +6,8 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 )
 
 // stageBIdempotent is the expected idempotent hint of every write tool of stage b, written out by hand (finding A3). An

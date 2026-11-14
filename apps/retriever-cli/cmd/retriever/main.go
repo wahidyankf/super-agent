@@ -6,25 +6,23 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/configpaths"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/out/markdownfiles"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 )
 
 func main() {
-	os.Exit(run(os.Args[1:], os.Getenv))
+	os.Exit(run(os.Args[1:], os.Getenv, realHost))
 }
 
-// run builds the dependencies, runs one command line, and returns the process exit code. The command line and the
-// environment are parameters, so a test runs any command line without changing the real process.
-func run(argv []string, getenv func(string) string) int {
+// run builds the dependencies, runs one command line, and returns the process exit code. The command line, the
+// environment, and the host are parameters, so a test runs any command line with fakes and changes no real process state.
+func run(argv []string, getenv func(string) string, h host) int {
 	// An invalid test seam of any kind stops every command. It must never fall back to a production host.
 	seams, err := readSeams(getenv)
 	if err != nil {
-		return startupFailure(os.Stderr, argv, err)
+		return startupFailure(h.stderr, argv, err)
 	}
 
 	// A malformed command line is reported by cli.Run, which parses it again, so the path options are read best-effort here.
@@ -32,20 +30,20 @@ func run(argv []string, getenv func(string) string) int {
 
 	deps := cli.Deps{
 		Ports:  ports.Ports{},
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Stdin:  h.stdin,
+		Stdout: h.stdout,
+		Stderr: h.stderr,
 		Getenv: cli.SecretLookup(getenv),
-		Now:    time.Now,
-		Sink:   exportSink,
+		Now:    h.now,
+		Sink:   h.exportSink,
 	}
-	deps.SetupErr = attachSourcesFrom(&deps, globals, seams, getenv, os.Getwd)
+	deps.SetupErr = attachSourcesFrom(&deps, globals, seams, getenv, h)
 	return cli.Run(argv, deps)
 }
 
 // exportSink returns the sink that writes the exported Markdown files into the folder the --out flag names.
 func exportSink(dir string) ports.ExportSink {
-	return markdownfiles.New(dir)
+	return exportFolder(dir)
 }
 
 // startupFailure reports a failure that stops the process before the CLI runs, and returns its exit status. The message
@@ -56,20 +54,20 @@ func startupFailure(stderr io.Writer, argv []string, err error) int {
 }
 
 // attachSourcesFrom resolves the configuration paths and wires the sources of every kind into deps. The environment and
-// the working directory are passed in, so a test can set the path rules without changing the real process. A failure is
+// the host are passed in, so a test can set the path rules and the files without changing the real process. A failure is
 // returned, so the CLI records it as the setup error, and only the commands that need the sources report it.
-func attachSourcesFrom(deps *cli.Deps, g cli.Globals, seams seamSet, getenv func(string) string, getwd func() (string, error)) error {
+func attachSourcesFrom(deps *cli.Deps, g cli.Globals, seams seamSet, getenv func(string) string, h host) error {
 	paths, err := configpaths.Resolve(configpaths.Inputs{
 		CatalogFlag: g.Catalog,
 		EnvFileFlag: g.EnvFile,
 		Getenv:      getenv,
-		Getwd:       getwd,
-		Exists:      regularFileExists,
+		Getwd:       h.getwd,
+		Exists:      h.exists,
 	})
 	if err != nil {
 		return err
 	}
-	w, err := wireSources(paths, seams)
+	w, err := wireSources(paths, seams, h)
 	if err != nil {
 		return err
 	}

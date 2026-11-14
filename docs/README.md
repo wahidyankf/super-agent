@@ -37,6 +37,7 @@ question.
   - [Dispatch a task to another machine](./how-to/dispatch-a-task-to-another-machine.md) follows the remote-dispatch
     rule.
   - [Cut an alpha pre-release](./how-to/cut-an-alpha-pre-release.md) lists the steps for a GitHub pre-release.
+  - [Add a connector](./how-to/add-a-connector.md) lists the steps to add a source connector as a library module.
 - [Reference](./reference/) states facts exactly:
   - [Repository layout](./reference/repository-layout.md) shows the real directory tree.
   - [Environment variables](./reference/environment-variables.md) lists variable names and where values go.

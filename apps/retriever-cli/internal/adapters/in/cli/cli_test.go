@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/configpaths"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 )
 
 // fixedNow is the clock the tests give the CLI.

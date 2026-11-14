@@ -3,14 +3,20 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"encoding/pem"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/catalog"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/configpaths"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/envfile"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/jira"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/kiwi"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/outline"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"net"
+	"strings"
+
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -33,10 +39,54 @@ func newSeamFixture(t *testing.T) seamFixture {
 	return seamFixture{base: srv.URL, ca: ca}
 }
 
+// client returns an HTTP client that trusts the fixture's certificate, as the seam does. The CA file is read from disk, so
+// the method lives in this integration file.
+func (f seamFixture) client(t *testing.T) *http.Client {
+	t.Helper()
+	seam, err := outline.TestSeamFromEnvWithFiles(mapEnv(map[string]string{outline.BaseURLEnv: f.base, outline.CAFileEnv: f.ca}), os.ReadFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return seam.Client
+}
+
+// TestGraphQLServeReportsABusyPort checks, over a real socket, that a port another process holds fails the serve command.
+func TestGraphQLServeReportsABusyPort(t *testing.T) {
+	held, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = held.Close() })
+	port := held.Addr().(*net.TCPAddr).Port
+	serve := graphqlServe(sources.Service{}, &bytes.Buffer{}, graphql.Listen)
+	if err := serve(t.Context(), port, func(string) {}); err == nil {
+		t.Fatal("serve on a busy port returned no error")
+	}
+}
+
+// TestGraphQLServeBindsLoopbackAndStopsWhenCancelled checks, over a real socket, that the serve function binds a loopback
+// address, reports it, and returns cleanly once its context ends.
+func TestGraphQLServeBindsLoopbackAndStopsWhenCancelled(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	var addr string
+	serve := graphqlServe(sources.Service{}, &bytes.Buffer{}, graphql.Listen)
+	err := serve(ctx, 0, func(bound string) {
+		addr = bound
+		cancel()
+	})
+	if err != nil {
+		t.Fatalf("serve: %v", err)
+	}
+	if !strings.HasPrefix(addr, "127.0.0.1:") {
+		t.Fatalf("the bound address = %q, want a loopback address", addr)
+	}
+}
+
 // testCreds returns credentials that read an empty env file, so no key is present.
 func testCreds(t *testing.T) *envfile.Credentials {
 	t.Helper()
-	creds, err := envfile.New(filepath.Join(t.TempDir(), ".env.local"))
+	creds, err := openEnvFile(filepath.Join(t.TempDir(), ".env.local"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +149,7 @@ func TestCheckSeamsAcceptsAnOnSeamWithAGoodBase(t *testing.T) {
 func TestWireSourcesStopsOnABadSeam(t *testing.T) {
 	paths := configpaths.Paths{Catalog: absPath(t, exampleCatalog), EnvFile: filepath.Join(t.TempDir(), ".env.local")}
 	seams := seamSet{domain.KindJira: seamConfig{on: true, base: "http://127.0.0.1:1"}}
-	if _, err := wireSources(paths, seams); err == nil {
+	if _, err := wireSources(paths, seams, realHost); err == nil {
 		t.Fatal("wireSources accepted a bad seam")
 	}
 }
@@ -108,10 +158,10 @@ func TestWireSourcesStopsOnABadSeam(t *testing.T) {
 func TestWireSourcesRefusesARelativePath(t *testing.T) {
 	absolute := absPath(t, exampleCatalog)
 	envPath := filepath.Join(t.TempDir(), ".env.local")
-	if _, err := wireSources(configpaths.Paths{Catalog: absolute, EnvFile: "relative.env"}, seamSet{}); err == nil {
+	if _, err := wireSources(configpaths.Paths{Catalog: absolute, EnvFile: "relative.env"}, seamSet{}, realHost); err == nil {
 		t.Fatal("wireSources accepted a relative env file path")
 	}
-	if _, err := wireSources(configpaths.Paths{Catalog: "sources.yml", EnvFile: envPath}, seamSet{}); err == nil {
+	if _, err := wireSources(configpaths.Paths{Catalog: "sources.yml", EnvFile: envPath}, seamSet{}, realHost); err == nil {
 		t.Fatal("wireSources accepted a relative catalog path")
 	}
 }
@@ -122,7 +172,7 @@ func TestWireSourcesReportsAMissingCatalog(t *testing.T) {
 		Catalog: filepath.Join(t.TempDir(), "sources.yml"),
 		EnvFile: filepath.Join(t.TempDir(), ".env.local"),
 	}
-	if _, err := wireSources(paths, seamSet{}); err == nil {
+	if _, err := wireSources(paths, seamSet{}, realHost); err == nil {
 		t.Fatal("wireSources accepted a missing catalog")
 	}
 }
@@ -131,7 +181,7 @@ func TestWireSourcesReportsAMissingCatalog(t *testing.T) {
 // resolves to a gateway through the registry, with every seam off.
 func TestWireSourcesBuildsAGatewayForEverySourceOfTheExampleCatalog(t *testing.T) {
 	paths := configpaths.Paths{Catalog: absPath(t, exampleCatalog), EnvFile: filepath.Join(t.TempDir(), ".env.local")}
-	w, err := wireSources(paths, seamSet{})
+	w, err := wireSources(paths, seamSet{}, realHost)
 	if err != nil {
 		t.Fatalf("wireSources: %v", err)
 	}
@@ -153,7 +203,7 @@ func TestWireSourcesBuildsSeamGatewaysForEveryKind(t *testing.T) {
 	for _, kind := range seamKinds {
 		seams[kind] = seamConfig{on: true, base: f.base, client: f.client(t), timeout: time.Second}
 	}
-	w, err := wireSources(paths, seams)
+	w, err := wireSources(paths, seams, realHost)
 	if err != nil {
 		t.Fatalf("wireSources: %v", err)
 	}
@@ -226,7 +276,7 @@ func TestRunReturnsTheStatusOfTheCommandLine(t *testing.T) {
 		"RETRIEVER_CATALOG":  absPath(t, exampleCatalog),
 		"RETRIEVER_ENV_FILE": filepath.Join(t.TempDir(), ".env.local"),
 	})
-	if status := run([]string{"--version"}, getenv); status != 0 {
+	if status := run([]string{"--version"}, getenv, realHost); status != 0 {
 		t.Fatalf("run(--version) = %d, want 0", status)
 	}
 }
@@ -235,7 +285,7 @@ func TestRunReturnsTheStatusOfTheCommandLine(t *testing.T) {
 // command runs.
 func TestRunStopsWhenASeamVariableIsInvalid(t *testing.T) {
 	getenv := envOf(map[string]string{"RETRIEVER_JIRA_TEST_TIMEOUT": "1s"})
-	if status := run([]string{"--version"}, getenv); status != 2 {
+	if status := run([]string{"--version"}, getenv, realHost); status != 2 {
 		t.Fatalf("run with an invalid seam = %d, want 2", status)
 	}
 }
@@ -276,7 +326,7 @@ func absPath(t *testing.T, rel string) string {
 // exampleSources loads the example catalog and returns its sources.
 func exampleSources(t *testing.T) []domain.Source {
 	t.Helper()
-	loader, err := catalog.New(absPath(t, exampleCatalog))
+	loader, err := openCatalog(absPath(t, exampleCatalog))
 	if err != nil {
 		t.Fatal(err)
 	}

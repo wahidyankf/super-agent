@@ -23,6 +23,11 @@ const servePrefix = "retriever serve listening on "
 // replyTimeout bounds every wait on a session, so a hung session fails the scenario instead of the whole run.
 const replyTimeout = 15 * time.Second
 
+// replyDeadline returns the channel that ends a wait on a session. At the unit level it is nil: the in-memory session always
+// answers, so a wait ends with its answer and no timer is armed. The disk levels set it to a real timer, in the tagged file
+// backend_disk_test.go, so a hung process fails its scenario instead of the whole run.
+var replyDeadline = func() <-chan time.Time { return nil }
+
 // endState is how a session ends. Its status arrives once on exited, and is kept in code after that.
 type endState struct {
 	exited chan int
@@ -37,7 +42,7 @@ func (e *endState) wait() (int, error) {
 		select {
 		case e.code = <-e.exited:
 			e.done = true
-		case <-time.After(replyTimeout):
+		case <-replyDeadline():
 			e.kill()
 			return 0, errors.New("the server did not exit in time")
 		}
@@ -108,7 +113,7 @@ func awaitServeLine(lines <-chan string) (string, error) {
 			return "", fmt.Errorf("retriever serve did not report a listening address, it printed %q", line)
 		}
 		return strings.TrimSpace(strings.TrimPrefix(line, servePrefix)), nil
-	case <-time.After(replyTimeout):
+	case <-replyDeadline():
 		return "", errors.New("retriever serve did not report a listening address in time")
 	}
 }
@@ -195,7 +200,7 @@ func (w *world) sendGraphQL(method string, headers map[string]string, body []byt
 		}
 		req.Header.Set(name, value)
 	}
-	client := &http.Client{Timeout: replyTimeout}
+	client := w.be.httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("query the served GraphQL endpoint: %w", err)
@@ -351,7 +356,7 @@ func (m *mcpSession) requestReply(method string, params any) (map[string]any, er
 	if err := m.write(map[string]any{"jsonrpc": "2.0", "id": id, "method": method, "params": params}); err != nil {
 		return nil, err
 	}
-	deadline := time.After(replyTimeout)
+	deadline := replyDeadline()
 	for {
 		select {
 		case line, ok := <-m.lines:

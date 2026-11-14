@@ -3,7 +3,7 @@ package mcp
 import (
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 )
 
 // TestEveryGeneratedInputMapsBackToItsCatalogName covers finding F4: each snake_case input the model sees is advertised

@@ -15,6 +15,6 @@ Quality rules say how the code and its tests must look and what a check must pro
 - [Three-Level Testing Standard](./three-level-testing-standard.md): the unit, integration, and end-to-end levels and
   what each may touch.
 - [Testing](./testing/README.md): the rules for coverage and what a coverage number measures.
-- [Nx Targets](./nx-targets.md): the target names that every project exposes and what each must do.
+- [Nx Targets](./nx-targets.md): the target names that projects expose and what each must do.
 - [Stacks](./stacks/README.md): the standards for the Go code, the shell scripts, and how the repository applies stack
   packs.

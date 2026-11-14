@@ -4,19 +4,21 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/configpaths"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/outline"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
 	"net"
-	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"testing"
+
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // seamFixture is a loopback HTTPS server and the PEM file that trusts it. A test turns a seam on with these two values.
+// The integration files start the server and write the file; this file never does.
 type seamFixture struct {
 	base string
 	ca   string
@@ -25,6 +27,30 @@ type seamFixture struct {
 // mapEnv reads the variables of vars, and every other variable as unset.
 func mapEnv(vars map[string]string) func(string) string {
 	return func(name string) string { return vars[name] }
+}
+
+// memListener is a loopback listener that never accepts a connection. Serve starts on it and stops when its context
+// ends, so the serve path runs with no socket.
+type memListener struct {
+	done chan struct{}
+	once sync.Once
+}
+
+// Accept waits until the listener is closed, and then reports that it is closed.
+func (l *memListener) Accept() (net.Conn, error) {
+	<-l.done
+	return nil, net.ErrClosed
+}
+
+// Close ends Accept. A second Close does nothing.
+func (l *memListener) Close() error {
+	l.once.Do(func() { close(l.done) })
+	return nil
+}
+
+// Addr returns a fixed loopback address, which Serve accepts as a loopback listener.
+func (l *memListener) Addr() net.Addr {
+	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 40123}
 }
 
 // TestReadSeamRefusesAKindWithNoSeam checks that a kind with no seam, here the zero kind, is an error and never a silent
@@ -45,20 +71,10 @@ func TestCheckSeamsRejectsAnOnSeamWithABadBase(t *testing.T) {
 	}
 }
 
-// client returns an HTTP client that trusts the fixture's certificate, as the seam does.
-func (f seamFixture) client(t *testing.T) *http.Client {
-	t.Helper()
-	seam, err := outline.TestSeamFromEnv(mapEnv(map[string]string{outline.BaseURLEnv: f.base, outline.CAFileEnv: f.ca}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	return seam.Client
-}
-
 // TestGraphQLServeReportsAnInvalidPort checks that a port outside the range fails before anything is bound, and that
-// the ready callback is not called.
+// the ready callback is not called. The real listen function refuses the port before it opens a socket.
 func TestGraphQLServeReportsAnInvalidPort(t *testing.T) {
-	serve := graphqlServe(sources.Service{})
+	serve := graphqlServe(sources.Service{}, &bytes.Buffer{}, graphql.Listen)
 	called := false
 	err := serve(t.Context(), -1, func(string) { called = true })
 	if err == nil || called {
@@ -66,27 +82,20 @@ func TestGraphQLServeReportsAnInvalidPort(t *testing.T) {
 	}
 }
 
-// TestGraphQLServeReportsABusyPort checks that a port another process holds fails the serve command.
-func TestGraphQLServeReportsABusyPort(t *testing.T) {
-	held, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = held.Close() })
-	port := held.Addr().(*net.TCPAddr).Port
-	serve := graphqlServe(sources.Service{})
-	if err := serve(t.Context(), port, func(string) {}); err == nil {
-		t.Fatal("serve on a busy port returned no error")
-	}
-}
-
-// TestGraphQLServeStartsOnLoopbackAndStopsWhenCancelled checks that the serve function binds a loopback address, reports
-// it, and returns cleanly once its context ends.
+// TestGraphQLServeStartsOnLoopbackAndStopsWhenCancelled checks that the serve function asks its listen function for the
+// requested port, reports the address that listener is bound to, and returns cleanly once its context ends. The listener
+// is in memory, so no socket opens; the real loopback bind is checked in the integration tests.
 func TestGraphQLServeStartsOnLoopbackAndStopsWhenCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
+	var requested int
 	var addr string
-	serve := graphqlServe(sources.Service{})
+	listener := &memListener{done: make(chan struct{})}
+	listen := func(port int) (net.Listener, error) {
+		requested = port
+		return listener, nil
+	}
+	serve := graphqlServe(sources.Service{}, &bytes.Buffer{}, listen)
 	err := serve(ctx, 0, func(bound string) {
 		addr = bound
 		cancel()
@@ -94,8 +103,11 @@ func TestGraphQLServeStartsOnLoopbackAndStopsWhenCancelled(t *testing.T) {
 	if err != nil {
 		t.Fatalf("serve: %v", err)
 	}
-	if !strings.HasPrefix(addr, "127.0.0.1:") {
-		t.Fatalf("the bound address = %q, want a loopback address", addr)
+	if requested != 0 {
+		t.Fatalf("the listen function was asked for port %d, want 0", requested)
+	}
+	if addr != "127.0.0.1:40123" {
+		t.Fatalf("the bound address = %q, want the listener's loopback address", addr)
 	}
 }
 
@@ -115,7 +127,7 @@ func TestMCPServeWritesNothingToStandardOutputWithoutARequest(t *testing.T) {
 func TestAttachSourcesRefusesWhenTheWorkingDirectoryCannotBeRead(t *testing.T) {
 	var deps cli.Deps
 	getwd := func() (string, error) { return "", os.ErrNotExist }
-	err := attachSourcesFrom(&deps, cli.Globals{}, seamSet{}, emptyEnv, getwd)
+	err := attachSourcesFrom(&deps, cli.Globals{}, seamSet{}, emptyEnv, testHostWithGetwd(getwd))
 	if err == nil || !errors.Is(err, configpaths.ErrRefused) {
 		t.Fatalf("attachSourcesFrom error = %v, want configpaths.ErrRefused", err)
 	}

@@ -1,0 +1,2 @@
+# Coverage exclusions for libs/retriever-connector-jira, read by scripts/go-coverage-gate.sh. One entry per line: kind, path,
+# and reason, separated by tabs. The only allowed kind is generated. This module has no generated file, so it excludes nothing.

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // TestEveryPublicErrorIsShownWithTheKindNameInGraphQL checks that a Kiwi failure reaches a GraphQL client with the

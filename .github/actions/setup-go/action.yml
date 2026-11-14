@@ -1,12 +1,12 @@
 name: "Setup Go"
-description: "Install the pinned Go toolchain for Go projects"
+description: "Install the pinned Go toolchain for Go projects, then check it against every Go module"
 inputs:
   go-version:
     description: "Go toolchain version. Keep it equal to the toolchain line of each Go module."
     required: false
     default: "1.27.4"
   cache-dependency-path:
-    description: "go.sum used as the module-cache key; empty leaves the setup-go cache off"
+    description: "Dependency-file glob, or one glob per line, used as the module-cache key; empty leaves the setup-go cache off"
     required: false
     default: ""
 runs:
@@ -20,3 +20,44 @@ runs:
         go-version: ${{ inputs.go-version }}
         cache: ${{ inputs.cache-dependency-path != '' }}
         cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+    # The go command downloads any other release that a toolchain line names, so the installed Go must equal the
+    # line of every go.mod under apps and libs. The modules must also agree on their go line. Every module is read,
+    # so a module added later is held to the same pin without an edit here.
+    - name: Check that the installed Go matches every go.mod
+      shell: bash
+      run: |
+        set -euo pipefail
+        installed="$(go env GOVERSION)"
+        checked=0
+        first_module=""
+        first_go=""
+        while IFS= read -r gomod; do
+          toolchain="$(sed -n 's/^toolchain //p' "$gomod")"
+          go_line="$(sed -n 's/^go //p' "$gomod")"
+          if [ -z "$toolchain" ]; then
+            echo "${gomod} has no toolchain line" >&2
+            exit 1
+          fi
+          if [ -z "$go_line" ]; then
+            echo "${gomod} has no go line" >&2
+            exit 1
+          fi
+          if [ "$toolchain" != "$installed" ]; then
+            echo "${gomod} names toolchain ${toolchain}, but the installed Go is ${installed}" >&2
+            exit 1
+          fi
+          if [ -z "$first_module" ]; then
+            first_module="$gomod"
+            first_go="$go_line"
+          elif [ "$go_line" != "$first_go" ]; then
+            echo "${gomod} declares go ${go_line}, but ${first_module} declares go ${first_go}" >&2
+            exit 1
+          fi
+          checked=$((checked + 1))
+        done < <(find apps libs -name go.mod -type f -not -path '*/node_modules/*' | sort)
+        if [ "$checked" -eq 0 ]; then
+          echo "no go.mod found under apps or libs" >&2
+          exit 1
+        fi
+        echo "Go toolchain ${installed} matches the toolchain line of ${checked} go.mod files"

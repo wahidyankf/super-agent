@@ -26,6 +26,8 @@ If you are still learning what super-agent is, start with the [explanation pages
   control, under the remote-dispatch rule.
 - [Cut an alpha pre-release](./cut-an-alpha-pre-release.md) prepares the changelog, the tag, the checksum list, and
   the GitHub pre-release.
+- [Add a connector](./add-a-connector.md) adds a source connector as a library module, wires it into the app, and tests
+  it.
 
 ## Next steps
 

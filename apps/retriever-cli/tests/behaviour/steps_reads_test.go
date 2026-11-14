@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/cucumber/godog"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/outlinestub"
 )
 
 // registerReadSteps binds the steps of the read scenarios of every source: the stub switches for an unoffered endpoint,

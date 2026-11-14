@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // The tests in this file reach the branches that the command-line tests do not: each one calls a function directly, or runs

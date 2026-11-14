@@ -9,17 +9,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/configpaths"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 	mcpadapter "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/mcp"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/jira"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/kiwi"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/outline"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/registry"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/registry"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // The in-process levels mirror the composition root in cmd/retriever (main.go and wiring.go). The root is in package
@@ -196,16 +196,16 @@ func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) erro
 		return err
 	}
 	deps.Service = svc
-	deps.Serve = serveFunc(svc)
+	deps.Serve = serveFunc(svc, w.be.listenPort)
 	deps.MCP = mcpFunc(svc)
 	return nil
 }
 
 // serveFunc is the server of the serve command, as the composition root wires it: the GraphQL API over the sources.
 // Both levels run graphql.Run, the same body the root runs.
-func serveFunc(svc sources.Service) cli.ServeFunc {
+func serveFunc(svc sources.Service, listen graphql.ListenFunc) cli.ServeFunc {
 	return func(ctx context.Context, port int, ready func(addr string)) error {
-		return graphql.Run(ctx, svc, port, slog.New(slog.DiscardHandler), ready)
+		return graphql.Run(ctx, svc, port, listen, slog.New(slog.DiscardHandler), ready)
 	}
 }
 
@@ -229,11 +229,11 @@ func (w *world) protocolDeps(ctx context.Context, stdin io.Reader, stdout io.Wri
 		Stdout:  stdout,
 		Stderr:  io.Discard,
 		Getenv:  w.getenv,
-		Now:     time.Now,
+		Now:     w.clock.Now,
 		Sink:    w.be.sink,
 		Context: ctx,
 	}
-	seams, err := readSeams(w.getenv, w.be.readFile)
+	seams, err := w.readSeamSet()
 	if err != nil {
 		deps.SetupErr = err
 		return deps
@@ -252,7 +252,7 @@ func (w *world) runIntegration(argv []string) error {
 	if w.stdoutClosed {
 		deps.Stdout = brokenPipe{}
 	}
-	seams, err := readSeams(w.getenv, w.be.readFile)
+	seams, err := w.readSeamSet()
 	if err != nil {
 		fmt.Fprintf(&errb, "retriever: %v\n", err)
 		w.record(cli.StartupStatus(argv), &out, &errb)
@@ -262,4 +262,21 @@ func (w *world) runIntegration(argv []string) error {
 	deps.SetupErr = w.attachSources(&deps, globals, seams)
 	w.record(cli.Run(argv, deps), &out, &errb)
 	return nil
+}
+
+// readSeamSet reads the seam of every kind through the scenario environment. Each seam client is replaced by the level's
+// client, so a gateway dials only what the level holds: the in-memory network at the unit level, the real network at the
+// disk levels.
+func (w *world) readSeamSet() (seamSet, error) {
+	seams, err := readSeams(w.getenv, w.be.readFile)
+	if err != nil {
+		return nil, err
+	}
+	for kind, seam := range seams {
+		if seam.client != nil {
+			seam.client = w.be.seamClient(seam.client)
+			seams[kind] = seam
+		}
+	}
+	return seams, nil
 }

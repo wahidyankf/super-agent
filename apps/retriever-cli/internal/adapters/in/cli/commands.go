@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // baseCommandTree returns the retriever command tree as the command table lists it. commandTree adds the generated read

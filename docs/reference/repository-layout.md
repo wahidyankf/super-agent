@@ -31,7 +31,7 @@ super-agent/
 │   ├── how-to/              task-oriented guides
 │   ├── reference/           exact names, gate ids, and layout
 │   └── tutorials/           lessons; none yet
-├── libs/                    shared libraries; none yet
+├── libs/                    shared Go libraries: contract, runtime, testkit, and three connectors
 ├── local-tmp/               local working state; ignored by Git
 ├── node_modules/            npm packages; ignored by Git
 ├── plans/                   planned work: ideas, backlog, in-progress, done

@@ -12,7 +12,7 @@ import (
 
 	gql "github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/v2/gqlerror"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // internalMessage is the only text returned for an error outside the typed set. The raw text of such an

@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/vektah/gqlparser/v2/gqlerror"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 )
 
 // rawSecret stands in for upstream text that could carry the API key. It must never reach a response.

@@ -26,8 +26,10 @@ working directory and the process environment.
 - `backend_test.go`: where a level keeps a scenario; the in-memory backend and its export sink.
 - `backend_disk_test.go`: the disk backend and the built binary, tagged `integration || e2e`.
 - `inprocess_wiring_test.go`: the in-process wiring, mirrored from `cmd/retriever`.
-- `stubs_test.go`: the stub lifecycle and the seam variables; it loads the synthetic Outline replies.
+- `stubs_test.go`: the stub lifecycle and the seam variables. It loads the synthetic Outline replies.
 - `process_test.go`: the `serve` and `mcp` sessions and the GraphQL request.
 - `steps_cli_test.go`, `steps_stub_test.go`, `steps_process_test.go`: the step definitions.
 - `suite_test.go`, `unit_suite_test.go`, `integration_suite_test.go`, `e2e_suite_test.go`: the suite entry points.
-- [support/synthetic/](../support/synthetic/README.md): synthetic Outline replies for the write and admin methods, embedded.
+- The stub servers come from [libs/retriever-testkit](../../../../libs/retriever-testkit/README.md). The synthetic
+  Outline replies for the write and admin methods are in
+  [synthetic/](../../../../libs/retriever-testkit/synthetic/README.md).

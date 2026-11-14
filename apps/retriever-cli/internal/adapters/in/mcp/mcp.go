@@ -10,7 +10,7 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // instructions is the server's short guidance to the model. It says what the text is, not what to do with it.

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 )
 
 // TestANoticeRowPrintsItsNoticeInPlaceOfTheOffset checks that a truncated list with no offset to go on prints the row's

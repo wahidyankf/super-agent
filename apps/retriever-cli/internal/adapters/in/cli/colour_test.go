@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 )
 
 // helpWithEnvironment runs the CLI in process with the given environment and returns its status and standard output.

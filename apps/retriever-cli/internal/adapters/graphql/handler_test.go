@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	usecases "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	usecases "github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 const (

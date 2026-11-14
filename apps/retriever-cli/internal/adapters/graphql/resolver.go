@@ -1,8 +1,8 @@
 package graphql
 
 import (
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	usecases "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	usecases "github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // Resolver is the dependency-injection root of the GraphQL server. Its resolvers call the core use

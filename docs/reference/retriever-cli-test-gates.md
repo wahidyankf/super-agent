@@ -1,109 +1,176 @@
-# Retriever CLI test gates
+# Retriever test gates
 
-This page records what each test target of `apps/retriever-cli` runs, what the coverage gate measures and excludes,
-what the binding check enforces, and which targets CI runs on each platform. It states facts. The rules that govern them
-live in the repository's standards.
+This page records what each test target of the app and of each library runs, what the coverage gate measures and
+excludes, what the binding check enforces, and which targets CI runs. It states facts. The rules that govern them live
+in the repository's standards.
 
 ## Targets
 
-| Target             | Runs                                                                                                           |
-| ------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `lint`             | `go vet` with the integration and e2e tags, then a `gofmt` check                                               |
-| `typecheck`        | `go build ./...`, then compiles every test package with those tags, without running                            |
-| `test:unit`        | a check that no `_test.go` file calls `.Skip(`, the gate self-test, the gate, then the release build self-test |
-| `test:quick`       | `lint`, `typecheck`, then `test:unit`                                                                          |
-| `test:integration` | `go test -count=1 -tags integration ./...`                                                                     |
-| `test:e2e`         | `go test -count=1 -tags e2e ./tests/behaviour/...`; the suite builds the binary first                          |
-| `test:conformance` | `go test -count=1 -tags integration ./tests/conformance/... ./tests/architecture/...`                          |
-| `bdd:check`        | the binding check of `specs/behaviours`, described below                                                       |
-| `test:coverage`    | `scripts/coverage-gate.sh`, the same gate as `test:unit` without the skip check                                |
-| `build`            | `go build -trimpath -o dist/retriever ./cmd/retriever`                                                         |
-| `build:release`    | `scripts/build-release.sh`: the four platform archives and `SHA256SUMS` of one tag                             |
-| `deps:audit`       | `go tool govulncheck ./...`, which reads vuln.go.dev and needs the network                                     |
+Each Nx project has its own targets, and each runs in its module's folder. The app is `retriever-cli`, in
+`apps/retriever-cli`. The six libraries are `retriever-contract`, `retriever-runtime`, `retriever-testkit`,
+`retriever-connector-outline`, `retriever-connector-kiwi`, and `retriever-connector-jira`, in their folders under
+`libs/`. The targets below come from each `project.json`.
+
+### App targets (`retriever-cli`)
+
+| Target             | Runs                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------- |
+| `lint`             | `go vet` with the integration and e2e tags, then a `gofmt` check                      |
+| `typecheck`        | `go build ./...`, then compiles every test package with those tags, without running   |
+| `install`          | `go mod download`                                                                     |
+| `build`            | `go build -trimpath -o dist/retriever ./cmd/retriever`                                |
+| `build:release`    | `scripts/build-release.sh`: the four platform archives and `SHA256SUMS` of one tag    |
+| `format`           | `gofmt -w .`                                                                          |
+| `format:check`     | `gofmt -l`, which fails when it lists a file                                          |
+| `test:unit`        | skip check, gate self-test, gate, release build self-test; see below                  |
+| `test:quick`       | `lint`, `typecheck`, then `test:unit`                                                 |
+| `test:integration` | `go test -count=1 -tags integration ./...`                                            |
+| `test:e2e`         | `go test -count=1 -tags e2e ./tests/behaviour/...`; the suite builds the binary first |
+| `test:conformance` | `go test -count=1 -tags integration ./tests/conformance/... ./tests/architecture/...` |
+| `bdd:check`        | the binding check of `specs/behaviours`, described below                              |
+| `test:coverage`    | `sh ../../scripts/go-coverage-gate.sh`, the gate without its self-test or skip check  |
+| `deps:audit`       | `go tool govulncheck ./...`, which reads vuln.go.dev and needs the network            |
+
+The skip check fails when a `_test.go` file under `internal`, `cmd`, or `tests` calls `.Skip(`.
+
+### Library targets
+
+Every library has the same targets. None of them runs the behaviour, conformance, or binding checks.
+
+| Target             | Runs                                                                                |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| `install`          | `go mod download`                                                                   |
+| `build`            | `go build ./...`                                                                    |
+| `lint`             | `go vet` with the integration and e2e tags, then a `gofmt` check                    |
+| `typecheck`        | `go build ./...`, then compiles every test package with those tags, without running |
+| `format`           | `gofmt -w .`                                                                        |
+| `format:check`     | `gofmt -l`, which fails when it lists a file                                        |
+| `test:unit`        | skip check, then the coverage gate with `COVERAGE_PACKAGES='./...'`                 |
+| `test:quick`       | `lint`, `typecheck`, then `test:unit`                                               |
+| `test:integration` | `go test -count=1 -tags integration ./...`                                          |
+| `test:coverage`    | the coverage gate with `COVERAGE_PACKAGES='./...'`, without the skip check          |
 
 ## Coverage gate
 
-`test:unit` and `test:coverage` run `scripts/coverage-gate.sh`. `test:unit` runs the gate's self-test,
-`scripts/coverage-gate_test.sh`, first. The gate measures unit-level statement coverage of the whole module:
+Each module has its own coverage gate, and each one is held to its own 99 percent floor. The app and each library are
+gated separately. No profile merges two modules, so one module's packages never count toward another module's figure.
 
-- It makes one instrumented run of the untagged tests, with `-race`.
-- It measures every production package under `internal/` and `cmd/`. A test in one package counts the statements it runs
-  in another.
-- The Gherkin unit binding, `TestUnitBehaviours`, is untagged, so every `@unit` scenario counts.
-- The integration tests (tag `integration`) and the end-to-end tests (tag `e2e`) are outside the number. The
-  integration and e2e targets run them.
-- It computes statement coverage over the merged profile. The floor is 99 percent, and the `COVERAGE_MINIMUM`
-  environment variable can change it.
+`scripts/go-coverage-gate.sh` is the one gate script. Each module runs it from its own module root:
 
-It fails when a test fails, when no statement is measured, and when a production package has statements but no test
-file, because nothing would measure that package. Its `--check-only` option validates the exclusions and the package
-list without running any test.
+- the app runs `sh ../../scripts/go-coverage-gate.sh`, which measures the `./internal/...` and `./cmd/...` packages
+  by default;
+- each library runs `COVERAGE_PACKAGES='./...' sh ../../scripts/go-coverage-gate.sh`, which measures every package of
+  its module.
+
+The script does this, in order:
+
+1. It reads the module's `scripts/coverage-exclusions.tsv` and checks each entry. It also checks that every production
+   package with statements has a test file, because a package without one is never measured. `--check-only` runs only
+   these checks.
+2. It makes one instrumented run of the module's untagged tests, with `-race`. The `-coverpkg` flag covers the listed
+   packages, so a test in one package counts the statements it runs in another.
+3. It drops the profile blocks of excluded files, and it adds up the statements that the profile covers.
+4. It fails when a test fails, when no statement is measured, or when the total is below `COVERAGE_MINIMUM`. The
+   default minimum is 99.
+
+The app's gate self-test, `scripts/go-coverage-gate_test.sh`, runs the `--check-only` mode against small fixture
+modules. The app's `test:unit` target runs it first. The library targets do not run it.
+
+This page records no coverage figure. A figure comes from a run of the target on a given tree, and it belongs with the
+change that produced it.
 
 ### Exclusions
 
-The exclusions are data in `scripts/coverage-exclusions.tsv`. Each line holds a kind, a path, and a reason, separated by
-tabs. Two kinds are allowed:
+The exclusions are data in each module's `scripts/coverage-exclusions.tsv`. Each line holds a kind, a path, and a
+reason, separated by tabs. The only kind allowed is `generated`: a Go file whose `Code generated ... DO NOT EDIT.` line
+comes before its package clause.
 
-- `generated`: a Go file whose `Code generated ... DO NOT EDIT.` line comes before its package clause. Two entries
-  qualify, `internal/adapters/graphql/generated.go` and `models_gen.go`, which gqlgen writes. The graphql unit and
-  integration tests run them.
-- `test-support`: the `tests/support` directory of test doubles, stub servers, and stub commands. The behaviour suites
-  use them, and they are test code.
+- The app excludes two files, `internal/adapters/graphql/generated.go` and
+  `internal/adapters/graphql/models_gen.go`, which gqlgen writes.
+- No library excludes anything, because none has a generated Go file.
 
-The gate fails on any other kind, on an entry with no reason, on a path pattern, on a path that does not exist, on a
-`generated` file without the header before its package clause, and on a production package with no test file.
-`scripts/coverage-gate_test.sh` runs each of these cases against fixture modules.
+The gate fails on any other kind, on an entry with no reason, on a path pattern, on a path that does not exist, and on a
+`generated` file without the header before its package clause. Test support is not an exclusion. The testkit is a module
+of its own, and its packages are measured by its own gate.
 
-`internal/adapters/graphql/schema.resolvers.go` is not excluded. Its gqlgen line comes after the package clause, so under
-the Go convention it is not a generated-code file, and the gate counts its statements. A file without the header is
-counted even when its name says generated. The MCP tool table, `internal/adapters/in/mcp/operation_tools.go`, was named
-`generated.go` before. It is hand-written, and the gate counts it.
+## Unit tests
 
-A package with no statements, such as the interface-only `internal/core/ports`, adds nothing to the total.
+### What an untagged test may do
 
-### What unit tests may do
-
-Unit tests run in process, beside their package, and they do not reach outside the process. An untagged unit test does
-not read or write a file, does not read or change the process environment, does not change the working directory, does
-not start a child process, and does not open a pipe. It may open a loopback `httptest` server. The registry tests have
-no build tag, so they run at the unit level.
+An untagged test runs in process, beside its package, and it does not reach outside the process. It does not read or
+write a file, does not read or change the process environment, does not change the working directory, does not start a
+child process, and does not open a pipe. It opens no socket: it starts no listener, dials no address, and starts no
+`httptest` server. It reads no clock and waits on no timer: it calls no `time.Now`, `time.Sleep`, or `time.After`, and
+it starts no timer or ticker. A listener, a server, or a time that the test needs is supplied by the test, in memory.
 
 The file system, the environment, and the child processes reach the code through seams: a field or a parameter that
-holds a function or an interface. The production code takes the seam, and a unit test supplies a fake. Examples are the
-`Files` of the catalog and the credentials, the `folderOps` of the Markdown sink, the `getenv` parameter of `run` in
-`cmd/retriever`, and the `readFile` parameter of each source's `TestSeamFromEnvWithFiles`. A test that needs the real file
-system, the real environment, or a real child process carries the `integration` build tag, in a file named
-`*_integration_test.go`, or the `integration || e2e` tag for a shared file. Those tests run in `test:integration` and
-`test:conformance`.
+holds a function or an interface. The production code takes the seam, and a unit test supplies a fake. A test that needs
+the real file system, the real environment, or a real child process carries the `integration` build tag. It sits in a
+file named `*_integration_test.go`, or it carries the `integration || e2e` tag when one file serves both levels.
 
-The behaviour harness follows the same rule. Its unit level, `TestUnitBehaviours`, runs the 333 `@unit` scenarios in
-memory. Each scenario keeps its files in an in-memory tree (`tests/support/memfs`), reads the working directory and the
-environment from the scenario, writes exports to an in-memory sink, and serves the stub certificates from memory. The
-synthetic Outline replies are embedded from `tests/support/synthetic`. The integration level, `TestIntegrationBehaviours`,
-and the end-to-end level run the same step definitions on the real disk: with the real environment at the integration
-level, and as the built binary at the end-to-end level. The disk backend, and the code that starts a process, sit in
-`tests/behaviour/backend_disk_test.go`, which carries the `integration || e2e` tag.
+### The hermetic guard
 
-The architecture guard reads the source of every untagged test file, so it covers the helpers of a package too. It flags
-each use of `t.TempDir` and `t.Setenv`; each `os` call that reaches the file system, the environment, the working
-directory, or a pipe, such as `os.Setenv`, `os.Clearenv`, `os.Chdir`, `os.Getenv`, `os.WriteFile`, and `os.Pipe`; each
-member of `os/exec`; and the `filepath.Walk`, `WalkDir`, `Glob`, `Abs`, and `EvalSymlinks` calls. It flags a reference as
-well as a call, so a function value stored in a field is caught. Pure uses, such as `filepath.Join`, `os.SameFile`,
-`os.ErrNotExist`, and the `embed` package, are allowed. The guard has no exemption. Its rule is in
-`tests/architecture/hermetic_test.go`, and its repository walk, `TestUntaggedTestsStayHermetic`, is in
-`hermetic_integration_test.go`, so it runs in `test:integration` and `test:conformance`. The negative tests of the rule
-are untagged, so `test:unit` runs them.
+The architecture guard reads the source of every untagged test file in the app and in every library, so it covers the
+helpers of a package too. It flags:
 
-The rule reads the code of each test file. It does not follow a call into production code. A production function that
-touches the disk stays outside the rule, and a test reaches it only through the seams above.
+- `t.TempDir` and `t.Setenv`, as method calls;
+- each `os` function that reaches the file system, the environment, the working directory, or a pipe, such as
+  `os.Setenv`, `os.Getwd`, `os.WriteFile`, `os.DirFS`, and `os.Pipe`;
+- each member of `os/exec`;
+- `filepath.Walk`, `WalkDir`, `Glob`, `Abs`, and `EvalSymlinks`;
+- each `net` listener and dialer, `net/http.ListenAndServe` and `ListenAndServeTLS`, and the `httptest` server
+  constructors `NewServer`, `NewTLSServer`, and `NewUnstartedServer`; and
+- each clock read and timer in `time`: `Now`, `Since`, `Until`, `Sleep`, `After`, `AfterFunc`, `Tick`, `NewTimer`, and
+  `NewTicker`.
 
-This page records no coverage figure. A figure comes from a run of `npx nx run retriever-cli:test:coverage` on a given
-tree, and it belongs with the change that produced it.
+The guard matches a method by its name on any receiver, so `t.TempDir`, `t.Setenv`, and the method calls `Listen`,
+`ListenAndServe`, `ListenAndServeTLS`, and `Dial` are flagged. An in-memory helper must not reuse those names. The guard
+does not match `DialContext`, which names a field of `http.Transport` as well as a method of `net.Dialer`.
+
+It flags a reference as well as a call, so a function value stored in a field is caught. Pure uses, such as
+`filepath.Join`, `os.SameFile`, `os.ErrNotExist`, and the `embed` package, are allowed. The rule has no exemption. It
+does not follow a call into production code. The rule lives in `apps/retriever-cli/tests/architecture/hermetic_test.go`,
+and the walk over the repository lives in `hermetic_integration_test.go`, which carries the `integration` build tag.
+
+### Where the real wrappers sit
+
+The composition root, `apps/retriever-cli/cmd/retriever`, holds the real calls to the process: the standard streams, the
+environment, the disk, and the clock. Its integration tests, `wiring_closures_integration_test.go` and
+`wiring_files_integration_test.go`, exercise those wrappers under the `integration` tag.
+
+The two gaps that earlier versions named are closed. `disk_open_test.go` keeps only the hermetic checks, and
+the real opener is tested in `disk_open_integration_test.go`. Each connector's `seam.go` takes a `getenv` function and a
+file reader, and the composition root passes `os.ReadFile`.
+
+Known gaps, not yet fixed:
+
+- The guard does not follow a call into production code. A production default that a test leaves unset can still open
+  a socket or read the clock: `cli.run` uses `time.Now` when `Deps.Now` is nil, `outlinestub.NewTLSServer` and
+  `jirastub.NewTLSServer` use the real loopback listener and clock by default, and `kiwistub` uses `net.Listen` by
+  default.
+- The guard matches names, not types. A call through a `DialContext` field is not matched.
+
+### Integration and end-to-end tests
+
+Integration tests carry the `integration` tag, and end-to-end tests carry the `e2e` tag. The `test:integration` target
+runs the first, and `test:e2e` runs the second. Neither produces a coverage figure. The pre-push gate runs no Go target,
+so no integration test runs before a push.
+
+## Unit coverage by module
+
+The figure that the gate holds to 99 percent means different things for the app and for a library.
+
+- **The app.** Its unit coverage counts the behaviour scenarios that run at the unit level, plus the plain unit tests
+  outside the behaviour suite. `TestUnitBehaviours` is untagged, so it runs the `@unit` scenarios in memory. The gate
+  counts the statements that those scenarios execute.
+- **A library.** Its unit coverage counts its plain unit tests. A library has no behaviour suite of its own.
+
+Integration and end-to-end tests stay outside the figure for both.
 
 ## Binding check
 
 `bdd:check` runs two tests of `tests/conformance` with the `bdd` build tag. They read every feature file under
-`specs/behaviours`:
+`specs/behaviours`. These rules apply to the app's feature files:
 
 - Every `Scenario` and `Scenario Outline` needs an `@unit` tag. No exemption exists for it.
 - Every scenario needs an `@integration` tag or an `@e2e` tag, or the matching exempt tag, `@integration-exempt` or
@@ -122,29 +189,43 @@ tree, and it belongs with the change that produced it.
 
 ## CI runs
 
-The Go job runs only when an affected Nx project carries the `lang:go` tag. Within that job, each row admits its targets
-once, through one HIPPO run under the row's resource tier, and runs them in order:
+The Go job runs when an affected Nx project carries the `lang:go` tag. Each row selects its projects from the Nx project
+graph by tag, runs each target as one `nx run-many` over those projects, and admits the whole row once, through one
+HIPPO run under the row's resource tier. The targets run in the order listed:
 
 - `ubuntu-24.04` runs `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `test:conformance`,
-  `bdd:check`, and `deps:audit`, under the `heavy` tier.
-- `macos-15` runs `test:unit`, `test:e2e`, and `test:conformance`, under the `standard` tier.
+  `bdd:check`, and `deps:audit` for every project tagged `lang:go`, under the `heavy` tier. A target runs only in the
+  projects that declare it. Each library declares `lint`, `typecheck`, `test:unit`, and `test:integration`, and none
+  declares `test:e2e`, `test:conformance`, `bdd:check`, or `deps:audit`, so those four run in the app alone.
+- `macos-15` runs `test:unit`, `test:e2e`, and `test:conformance` for the projects tagged `type:app`, which is the
+  application alone, under the `standard` tier.
 
-The tier follows the work. The Ubuntu row runs a whole project's suite, which is heavy work. The macOS row runs a subset
-of one project's tests, which is standard work. A `macos-15` runner has 3 CPUs and about 7 GiB of memory, less than the
+Each project's `test:unit` runs its own coverage gate over its own module. No profile merges two modules.
+
+The tier follows the work. The Ubuntu row runs whole suites of seven projects, which is heavy work. The macOS row runs
+one project's tests, which is standard work. A `macos-15` runner has 3 CPUs and about 7 GiB of memory, less than the
 `heavy` tier's minimum reservation of 4 CPUs and 8192 MiB, so a `heavy` reservation does not fit that runner.
 
 The macOS targets cover the behaviour that depends on the platform: signals, exit statuses 130, 141, and 143, the user
-configuration directory, atomic renames, file modes, symbolic links, and port binding.
+configuration directory, atomic renames, file modes, symbolic links, and port binding. The application's end-to-end and
+conformance suites run the built binary, which includes the libraries, so they cover the libraries on macOS. The
+libraries' integration tests use the real file system and processes, and they run on Ubuntu only, as the application's
+integration tests do.
 
-A cross-compile check, on `ubuntu-24.04`, builds `./cmd/retriever` for `darwin/arm64`, `darwin/amd64`, `linux/amd64`,
-and `linux/arm64`. It builds only. Nothing is uploaded or published.
+A cross-compile check, on `ubuntu-24.04`, builds the app's `./cmd/retriever` for `darwin/arm64`, `darwin/amd64`,
+`linux/amd64`, and `linux/arm64`, with one HIPPO run per platform under the `standard` tier, as before. It builds only,
+and nothing is uploaded or published. The app's `replace` directives name the libraries' folders in the checkout, so the
+build uses the libraries of the working tree.
 
-The Go toolchain is pinned once, by the `toolchain` line of `apps/retriever-cli/go.mod` (`go1.27.4`). The `go` line sets
-the minimum language version. The Go job fails when the installed toolchain differs from the `toolchain` line.
+The Go toolchain is pinned by the `toolchain` line of each `go.mod`, which is `go1.27.4` in all seven modules. The `go`
+line sets the minimum language version, `1.27.0`. The Go setup fails when the installed toolchain differs from any
+module's `toolchain` line, or when two modules declare different `go` lines. The module cache is keyed on
+every `go.sum`.
 
 Windows is not supported. See the [exit codes](./retriever-cli-exit-codes.md#supported-platforms).
 
-## Pull-request gate
+## Pull-request and pre-push gates
 
 `./rhino gate run --surface pull-request` does not run any target on this page. It runs the repository's own checks,
-such as format, README index, emoji, and public-safety checks.
+such as format, README index, emoji, and public-safety checks. The `pre-push` surface runs its own set of repository
+checks, and it runs no Go target.

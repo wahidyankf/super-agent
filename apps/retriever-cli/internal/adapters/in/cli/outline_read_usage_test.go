@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 )
 
 // TestUsageShowsRequiredFlagsWithoutBrackets checks the usage line of every generated command of every kind: the first

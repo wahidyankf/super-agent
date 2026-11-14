@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // TestListenBindsLoopbackOnly checks that a real listener is bound to 127.0.0.1 and nothing wider.

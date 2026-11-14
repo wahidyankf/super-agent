@@ -3,9 +3,9 @@ package graphql
 import (
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
-	usecases "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	usecases "github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // byKindResolver serves one gateway per kind, so a test shows which kind a query reached. A kind with no gateway is

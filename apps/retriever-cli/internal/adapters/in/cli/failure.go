@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // errNotConfigured reports a command whose collaborator the composition root did not supply.

@@ -63,7 +63,7 @@
     "test:unit": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "if grep -rn --include='*_test.go' -E '\\.Skip\\(' internal cmd tests; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; sh ./scripts/coverage-gate_test.sh && ./scripts/coverage-gate.sh && sh ./scripts/build-release_test.sh",
+        "command": "if grep -rn --include='*_test.go' -E '\\.Skip\\(' internal cmd tests; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; sh ../../scripts/go-coverage-gate_test.sh && sh ../../scripts/go-coverage-gate.sh && sh ./scripts/build-release_test.sh",
         "cwd": "apps/retriever-cli"
       },
       "cache": true,
@@ -72,6 +72,8 @@
         "{projectRoot}/scripts/**",
         "{projectRoot}/go.mod",
         "{projectRoot}/go.sum",
+        "{workspaceRoot}/scripts/go-coverage-gate.sh",
+        "{workspaceRoot}/scripts/go-coverage-gate_test.sh",
         "{workspaceRoot}/specs/behaviours/**/*.feature"
       ]
     },
@@ -90,7 +92,13 @@
         "cwd": "apps/retriever-cli"
       },
       "cache": true,
-      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+      "inputs": [
+        "{projectRoot}/**/*.go",
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum",
+        "{workspaceRoot}/libs/**/*.go",
+        "{workspaceRoot}/libs/**/go.mod"
+      ]
     },
     "bdd:check": {
       "executor": "nx:run-commands",
@@ -111,7 +119,14 @@
         "command": "go test -count=1 -tags e2e ./tests/behaviour/...",
         "cwd": "apps/retriever-cli"
       },
-      "cache": false
+      "cache": false,
+      "inputs": [
+        "{projectRoot}/**/*.go",
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum",
+        "{workspaceRoot}/specs/behaviours/**/*.feature",
+        "{workspaceRoot}/specs/fixtures/**/*"
+      ]
     },
     "deps:audit": {
       "executor": "nx:run-commands",
@@ -127,7 +142,7 @@
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "./scripts/coverage-gate.sh",
+        "command": "sh ../../scripts/go-coverage-gate.sh",
         "cwd": "apps/retriever-cli"
       },
       "cache": false
@@ -164,5 +179,13 @@
       "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
     }
   },
-  "tags": ["type:app", "platform:cli", "lang:go", "domain:retriever"]
+  "tags": ["type:app", "platform:cli", "lang:go", "domain:retriever"],
+  "implicitDependencies": [
+    "retriever-contract",
+    "retriever-runtime",
+    "retriever-testkit",
+    "retriever-connector-outline",
+    "retriever-connector-kiwi",
+    "retriever-connector-jira"
+  ]
 }

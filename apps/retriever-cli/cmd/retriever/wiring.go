@@ -9,19 +9,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/catalog"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/configpaths"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/envfile"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 	mcpadapter "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/mcp"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/jira"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/kiwi"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/outline"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/registry"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/registry"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // seamConfig is the loopback test seam for the connection base of one source kind. When it is off, each source's own
@@ -77,19 +75,19 @@ type sourceWiring struct {
 func readSeam(kind domain.SourceKind, getenv func(string) string) (seamConfig, error) {
 	switch kind {
 	case domain.KindOutline:
-		seam, err := outline.TestSeamFromEnv(getenv)
+		seam, err := outline.TestSeamFromEnvWithFiles(getenv, os.ReadFile)
 		if err != nil {
 			return seamConfig{}, err
 		}
 		return seamConfig{base: seam.BaseURL, client: seam.Client, on: seam.Enabled, timeout: seam.Timeout}, nil
 	case domain.KindKiwi:
-		seam, err := kiwi.TestSeamFromEnv(getenv)
+		seam, err := kiwi.TestSeamFromEnvWithFiles(getenv, os.ReadFile)
 		if err != nil {
 			return seamConfig{}, err
 		}
 		return seamConfig{base: seam.BaseURL, client: seam.Client, on: seam.Enabled, timeout: seam.Timeout}, nil
 	case domain.KindJira:
-		seam, err := jira.TestSeamFromEnv(getenv)
+		seam, err := jira.TestSeamFromEnvWithFiles(getenv, os.ReadFile)
 		if err != nil {
 			return seamConfig{}, err
 		}
@@ -134,15 +132,15 @@ func checkSeams(seams seamSet) error {
 // wireSources loads the sources catalog, builds the gateway registry, and returns the source service and the serve and
 // MCP functions for the configuration paths the caller resolved. The catalog is read once here. A catalog error stops the
 // sources commands, and the process still starts for every other command.
-func wireSources(paths configpaths.Paths, seams seamSet) (sourceWiring, error) {
+func wireSources(paths configpaths.Paths, seams seamSet, h host) (sourceWiring, error) {
 	if err := checkSeams(seams); err != nil {
 		return sourceWiring{}, err
 	}
-	creds, err := envfile.New(paths.EnvFile)
+	creds, err := h.openEnvFile(paths.EnvFile)
 	if err != nil {
 		return sourceWiring{}, err
 	}
-	loader, err := catalog.New(paths.Catalog)
+	loader, err := h.openCatalog(paths.Catalog)
 	if err != nil {
 		return sourceWiring{}, err
 	}
@@ -165,8 +163,8 @@ func wireSources(paths configpaths.Paths, seams seamSet) (sourceWiring, error) {
 	// The GraphQL server serves the reads of the catalog only: its schema has no mutation.
 	return sourceWiring{
 		service: svc,
-		serve:   graphqlServe(svc),
-		mcp:     mcpServe(svc, os.Stderr),
+		serve:   graphqlServe(svc, h.stderr, graphql.Listen),
+		mcp:     mcpServe(svc, h.stderr),
 	}, nil
 }
 
@@ -210,12 +208,13 @@ func buildJira(src domain.Source, secrets jira.Secrets, seam seamConfig) (ports.
 	return gw, nil
 }
 
-// graphqlServe returns the function the serve command runs. It binds the loopback listener, mounts the GraphQL
-// handler, reports the bound address, and shuts down gracefully when ctx ends.
-func graphqlServe(svc sources.Service) cli.ServeFunc {
-	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+// graphqlServe returns the function the serve command runs. It opens the listener with listen, mounts the GraphQL handler,
+// reports the bound address, and shuts down gracefully when ctx ends. The composition root passes graphql.Listen, the real
+// loopback socket; a unit test passes an in-memory listener.
+func graphqlServe(svc sources.Service, stderr io.Writer, listen graphql.ListenFunc) cli.ServeFunc {
+	logger := slog.New(slog.NewTextHandler(stderr, nil))
 	return func(ctx context.Context, port int, ready func(addr string)) error {
-		return graphql.Run(ctx, svc, port, logger, ready)
+		return graphql.Run(ctx, svc, port, listen, logger, ready)
 	}
 }
 

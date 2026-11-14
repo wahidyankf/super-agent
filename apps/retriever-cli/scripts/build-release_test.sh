@@ -152,7 +152,8 @@ retriever_v0.1.0_darwin_amd64.tar.gz
 retriever_v0.1.0_darwin_arm64.tar.gz
 retriever_v0.1.0_linux_amd64.tar.gz
 retriever_v0.1.0_linux_arm64.tar.gz'
-assert "the output holds exactly the four archives and SHA256SUMS" "$expected_names" "$(ls -A "$first" | LC_ALL=C sort)"
+# shellcheck disable=SC2012 # the listed names are fixed archive names, so ls is safe here.
+assert "the output holds exactly the four archives and SHA256SUMS" "$expected_names" "$(LC_ALL=C ls -A "$first" | LC_ALL=C sort)"
 
 if verify_sums "$first"; then
 	assert "SHA256SUMS verifies every archive" "ok" "ok"

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // TestKindErrorCodesCarryTheKindName checks that the JSON error code of a non-Outline kind names that kind, and that the

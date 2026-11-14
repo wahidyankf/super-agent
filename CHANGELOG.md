@@ -14,6 +14,14 @@ upgrade.
 - The repository page shows the root `README.md`. The `.github/README.md` file is removed, because GitHub shows that
   file in place of the root one. Its content moved to the [repository layout
   reference](docs/reference/repository-layout.md).
+- The retriever code moves out of the app into six Go modules under `libs/`: `retriever-contract`, `retriever-runtime`,
+  `retriever-testkit`, `retriever-connector-outline`, `retriever-connector-kiwi`, and `retriever-connector-jira`. The
+  libraries are at `v0.3.0`, and the contract's `ContractVersion` is `0.3.0`. No library tag is cut yet, so an outside
+  build cannot require the libraries until one is.
+- The split changes no behaviour of the `retriever` command-line tool: no command, flag, exit status, or JSON output
+  changes.
+- Each Go module has its own coverage gate, held to a 99 percent floor. The app and each library are measured
+  separately, and no profile merges them.
 
 ## v0.2.0
 
