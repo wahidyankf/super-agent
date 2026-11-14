@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/jirastub"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/kiwistub"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/jirastub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/kiwistub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/outlinestub"
 )
 
 // tolerance is how far above an exact wait the end-to-end level accepts a real gap. The in-process levels read the fake
@@ -147,7 +147,7 @@ func (w *world) stubClockOutline() []outlinestub.Option {
 	if !w.inProcess() {
 		return nil
 	}
-	return []outlinestub.Option{outlinestub.WithClock(w.clock.Now)}
+	return []outlinestub.Option{outlinestub.WithClock(w.clock.Now), outlinestub.WithCertificateClock(w.clock.Now)}
 }
 
 // registerTransportSteps binds the steps about the transport of each stub: the TLS, host, and name of each request, the

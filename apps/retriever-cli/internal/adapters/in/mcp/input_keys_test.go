@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 )
 
 // TestAnUndeclaredInputNameIsRefusedBeforeAnyCall covers finding M3. A tool takes only the snake_case names it lists, the

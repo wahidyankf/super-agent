@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // command is one node of the retriever command tree. A node either groups other commands (children) or is a leaf that

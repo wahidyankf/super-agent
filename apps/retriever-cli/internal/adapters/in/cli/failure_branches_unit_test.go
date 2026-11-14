@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // TestTypedFailuresKeepTheirTextAndTheirCode checks each typed failure that a command can return from a flag or a source

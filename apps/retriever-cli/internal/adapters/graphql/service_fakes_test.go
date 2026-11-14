@@ -1,9 +1,9 @@
 package graphql
 
 import (
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
-	usecases "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	usecases "github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // fixedResolver serves one gateway for every source, as the registry would for a single outline source.

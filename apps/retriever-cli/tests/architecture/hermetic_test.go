@@ -38,14 +38,44 @@ var forbiddenMembers = map[string]map[string]bool{
 	),
 	"io/ioutil":     set("ReadFile", "WriteFile", "ReadDir", "TempDir", "TempFile"),
 	"path/filepath": set("Walk", "WalkDir", "Glob", "Abs", "EvalSymlinks"),
+	"net": set(
+		// Sockets that a test opens on the loopback or any other address, and the configuration that opens them.
+		"Listen", "ListenPacket", "ListenConfig", "ListenTCP", "ListenUDP", "ListenUnix", "ListenUnixgram",
+		"ListenMulticastUDP", "ListenIP",
+		// Outgoing connections, and the dialer that makes them.
+		"Dial", "DialTimeout", "DialTCP", "DialUDP", "DialIP", "DialUnix", "Dialer",
+	),
+	"net/http": set(
+		// A plain server that listens on an address when it starts.
+		"ListenAndServe", "ListenAndServeTLS",
+	),
+	"net/http/httptest": set(
+		// Servers that listen on a socket, which is a real listener even on the loopback address.
+		"NewServer", "NewTLSServer", "NewUnstartedServer",
+	),
+	"time": set(
+		// The real clock, which a test reads through a function value or a call.
+		"Now", "Since", "Until",
+		// Waits and timers on the real clock. A test waits on a fake clock or an injected channel instead.
+		"Sleep", "After", "AfterFunc", "Tick", "NewTimer", "NewTicker",
+	),
 }
 
 // forbiddenMethods are method names that an untagged test may not call on any receiver. testing.T.TempDir and
-// testing.T.Setenv are the two that reach the disk or the environment. The check matches the name, so it needs no type
-// information. A value of another type that shares one of these names is renamed, not excepted.
+// testing.T.Setenv are the two that reach the disk or the environment. The listen and dial methods reach a socket.
+// The check matches the name, so it needs no type information. A value of another type that shares one of these
+// names is renamed, not excepted.
+//
+// DialContext is not here. It is the name of a field of http.Transport as well as of net.Dialer's method, and a test
+// that only reads the field, to check that a production transport has a dialer, opens no connection. A test that
+// dials reaches net.Dialer, which the type reference in forbiddenMembers flags.
 var forbiddenMethods = map[string]bool{
-	"TempDir": true,
-	"Setenv":  true,
+	"TempDir":           true,
+	"Setenv":            true,
+	"Listen":            true,
+	"ListenAndServe":    true,
+	"ListenAndServeTLS": true,
+	"Dial":              true,
 }
 
 // set returns the names as a set.
@@ -177,11 +207,15 @@ func untaggedFile(decls string) string {
 // harnessImports is the import block of the fixture files: the packages whose uses the rule names, and testing.
 const harnessImports = `import (
 	"io/fs"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
 	"testing"
+	"time"
 )`
 
 // TestGuardFlagsEveryForbiddenForm proves, on in-memory source, that the rule flags each form it names. Each case is
@@ -211,6 +245,33 @@ func TestGuardFlagsEveryForbiddenForm(t *testing.T) {
 		{"exec Command", "os/exec.Command", untaggedFile(`func TestA(t *testing.T) { _ = exec.Command("true").Run() }`)},
 		{"filepath Walk", "path/filepath.Walk", untaggedFile(`func TestA(t *testing.T) { _ = filepath.Walk("d", nil) }`)},
 		{"filepath WalkDir as a value", "path/filepath.WalkDir", untaggedFile(`var walk = filepath.WalkDir`)},
+		{"net Listen", "net.Listen", untaggedFile(`func TestA(t *testing.T) { _, _ = net.Listen("tcp", "127.0.0.1:0") }`)},
+		{"net ListenConfig as a type", "net.ListenConfig", untaggedFile(`var listen net.ListenConfig`)},
+		{"ListenConfig Listen as a method", "method Listen",
+			untaggedFile(`func TestA(t *testing.T) { _, _ = lc.Listen(t.Context(), "tcp", "127.0.0.1:0") }`)},
+		{"net Dial", "net.Dial", untaggedFile(`func TestA(t *testing.T) { _, _ = net.Dial("tcp", "127.0.0.1:1") }`)},
+		{"net DialTimeout as a value", "net.DialTimeout", untaggedFile(`var dial = net.DialTimeout`)},
+		{"net Dialer as a type", "net.Dialer", untaggedFile(`var dialer = net.Dialer{}`)},
+		{"Dialer Dial as a method", "method Dial",
+			untaggedFile(`func TestA(t *testing.T) { _, _ = d.Dial("tcp", "127.0.0.1:1") }`)},
+		{"httptest NewServer", "net/http/httptest.NewServer", untaggedFile(`func TestA(t *testing.T) { _ = httptest.NewServer(nil) }`)},
+		{"httptest NewTLSServer", "net/http/httptest.NewTLSServer",
+			untaggedFile(`func TestA(t *testing.T) { _ = httptest.NewTLSServer(nil) }`)},
+		{"httptest NewUnstartedServer", "net/http/httptest.NewUnstartedServer",
+			untaggedFile(`func TestA(t *testing.T) { _ = httptest.NewUnstartedServer(nil) }`)},
+		{"http ListenAndServe", "net/http.ListenAndServe",
+			untaggedFile(`func TestA(t *testing.T) { _ = http.ListenAndServe("127.0.0.1:0", nil) }`)},
+		{"method ListenAndServe", "method ListenAndServe", untaggedFile(`func TestA(t *testing.T) { _ = srv.ListenAndServe() }`)},
+		{"time Sleep", "time.Sleep", untaggedFile(`func TestA(t *testing.T) { time.Sleep(time.Millisecond) }`)},
+		{"time Now", "time.Now", untaggedFile(`func TestA(t *testing.T) { _ = time.Now() }`)},
+		{"time Now as a value", "time.Now", untaggedFile(`var clock = time.Now`)},
+		{"time Since", "time.Since", untaggedFile(`func TestA(t *testing.T) { _ = time.Since(time.Time{}) }`)},
+		{"time Until", "time.Until", untaggedFile(`func TestA(t *testing.T) { _ = time.Until(time.Time{}) }`)},
+		{"time After", "time.After", untaggedFile(`func TestA(t *testing.T) { <-time.After(time.Second) }`)},
+		{"time AfterFunc", "time.AfterFunc", untaggedFile(`func TestA(t *testing.T) { _ = time.AfterFunc(time.Second, nil) }`)},
+		{"time Tick", "time.Tick", untaggedFile(`func TestA(t *testing.T) { _ = time.Tick(time.Second) }`)},
+		{"time NewTimer", "time.NewTimer", untaggedFile(`func TestA(t *testing.T) { _ = time.NewTimer(time.Second) }`)},
+		{"time NewTicker", "time.NewTicker", untaggedFile(`func TestA(t *testing.T) { _ = time.NewTicker(time.Second) }`)},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -257,6 +318,15 @@ func TestGuardAllowsPureAndEmbeddedUses(t *testing.T) {
 	var _ os.FileMode
 	_ = fs.ErrNotExist
 	_ = syscall.EPIPE
+	_ = time.Duration(1)
+	_ = time.Unix(0, 0)
+	_ = time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
+	_ = time.Millisecond
+	_ = net.ParseIP("127.0.0.1")
+	_, _ = net.Pipe()
+	_ = httptest.NewRequest(http.MethodGet, "/", nil)
+	_ = httptest.NewRecorder()
+	_ = tr.DialContext == nil
 }`)
 	findings, err := analyzeDir(map[string][]byte{"allowed_test.go": []byte(src)})
 	if err != nil {

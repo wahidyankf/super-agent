@@ -8,8 +8,8 @@ package graphql
 import (
 	"context"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	usecases "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	usecases "github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // Sources is the resolver for the sources field. It lists the configured sources that match the kind and every given

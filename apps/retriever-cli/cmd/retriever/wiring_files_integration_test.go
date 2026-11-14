@@ -36,7 +36,7 @@ func TestAttachSourcesReportsAMissingCatalog(t *testing.T) {
 	var deps cli.Deps
 	catalog := filepath.Join(t.TempDir(), "sources.yml")
 	err := attachSourcesFrom(&deps, cli.Globals{Catalog: catalog, EnvFile: filepath.Join(t.TempDir(), ".env.local")},
-		seamSet{}, emptyEnv, os.Getwd)
+		seamSet{}, emptyEnv, realHost)
 	if err == nil || !strings.Contains(err.Error(), "sources catalog: not found") {
 		t.Fatalf("attachSourcesFrom error = %v, want the missing-catalog error", err)
 	}
@@ -46,7 +46,7 @@ func TestAttachSourcesReportsAMissingCatalog(t *testing.T) {
 func TestAttachSourcesWiresTheExampleCatalog(t *testing.T) {
 	var deps cli.Deps
 	err := attachSourcesFrom(&deps, cli.Globals{Catalog: filepath.Join("..", "..", "examples", "sources.example.yml"),
-		EnvFile: filepath.Join(t.TempDir(), ".env.local")}, seamSet{}, emptyEnv, os.Getwd)
+		EnvFile: filepath.Join(t.TempDir(), ".env.local")}, seamSet{}, emptyEnv, realHost)
 	if err != nil {
 		t.Fatalf("attachSourcesFrom: %v", err)
 	}

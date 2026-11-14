@@ -4,9 +4,10 @@ import (
 	"context"
 	"log/slog"
 	"net"
+	"sync"
 	"sync/atomic"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // countingGateway is an in-memory ports.SourceGateway that counts every upstream call.
@@ -53,6 +54,51 @@ func (l *fakeListener) Addr() net.Addr { return l.addr }
 // tcpListener returns a fake listener on the given IP and port.
 func tcpListener(ip string, port int) *fakeListener {
 	return &fakeListener{addr: &net.TCPAddr{IP: net.ParseIP(ip), Port: port}}
+}
+
+// pipeListener is a loopback net.Listener whose connections are in-memory pipes. Its dial hands the server end of a new
+// pipe to Accept and returns the client end, so a test serves and queries HTTP with no socket.
+type pipeListener struct {
+	conns chan net.Conn
+	done  chan struct{}
+	once  sync.Once
+}
+
+// newPipeListener returns an open pipe listener.
+func newPipeListener() *pipeListener {
+	return &pipeListener{conns: make(chan net.Conn), done: make(chan struct{})}
+}
+
+// Accept returns the server end of the next dialled pipe, or net.ErrClosed after Close.
+func (l *pipeListener) Accept() (net.Conn, error) {
+	select {
+	case c := <-l.conns:
+		return c, nil
+	case <-l.done:
+		return nil, net.ErrClosed
+	}
+}
+
+// Close ends Accept. A second Close does nothing.
+func (l *pipeListener) Close() error {
+	l.once.Do(func() { close(l.done) })
+	return nil
+}
+
+// Addr returns the loopback address the listener reports, so Serve accepts it as a loopback listener.
+func (l *pipeListener) Addr() net.Addr {
+	return &net.TCPAddr{IP: net.ParseIP(loopbackIP), Port: testPort}
+}
+
+// dial returns the client end of a new pipe whose server end Accept receives.
+func (l *pipeListener) dial(context.Context, string, string) (net.Conn, error) {
+	client, server := net.Pipe()
+	select {
+	case l.conns <- server:
+		return client, nil
+	case <-l.done:
+		return nil, net.ErrClosed
+	}
 }
 
 // discardLogger returns a logger whose records go nowhere, for tests that do not read logs.

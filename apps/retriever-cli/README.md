@@ -5,7 +5,9 @@ Outline wikis, Kiwi test management, and Jira Cloud, and writes Markdown exports
 GraphQL API (`serve`) and a Model Context Protocol server (`mcp`). The tool is alpha, and breaking changes are allowed
 in any release.
 
-The Go module path is `github.com/wahidyankf/super-agent/apps/retriever-cli`. The binary is `retriever`.
+The Go module path is `github.com/wahidyankf/super-agent/apps/retriever-cli`. The binary is `retriever`. The module
+requires the six libraries under [libs/](../../libs/README.md) at `v0.3.0`, and it replaces each one with its local
+folder.
 
 ## Prerequisites
 
@@ -39,8 +41,8 @@ Run each target from the repository root with `npx nx run retriever-cli:<target>
   it.
 - `format`: runs `gofmt -w .`.
 - `format:check`: checks that `gofmt -l` reports no file.
-- `test:unit`: refuses a test that calls `.Skip(`, then runs the coverage gate, then the self-test of the release build.
-  The gate measures unit-level statement coverage of the whole module, with a 99 percent floor.
+- `test:unit`: refuses a test that calls `.Skip(`, then runs the gate's self-test, then the coverage gate of this
+  module with its 99 percent floor, then the self-test of the release build.
 - `test:integration`: runs `go test -tags integration ./...`.
 - `test:e2e`: runs the end-to-end suite in `tests/behaviour` against the binary that the suite builds.
 - `test:conformance`: runs the conformance and architecture tests, with the `integration` tag.
@@ -50,8 +52,9 @@ Run each target from the repository root with `npx nx run retriever-cli:<target>
 - `test:quick`: runs `lint`, `typecheck`, and `test:unit`, in order.
 - `deps:audit`: runs `govulncheck`, which reads the Go vulnerability database and needs the network.
 - `build:release`: builds the release archives and `SHA256SUMS` for the annotated tag named by `RELEASE_VERSION`, into
-  the empty directory named by `RELEASE_OUT`. The [alpha pre-release how-to](../../docs/how-to/cut-an-alpha-pre-release.md)
-  runs it. CI never runs it, and nothing is published by it.
+  the empty directory named by `RELEASE_OUT`. The
+  [alpha pre-release how-to](../../docs/how-to/cut-an-alpha-pre-release.md) runs it. CI never runs it, and nothing is
+  published by it.
 
 The [test gates](../../docs/reference/retriever-cli-test-gates.md) page describes what each target runs, the coverage
 gate rules, the binding rules, and the platforms and HIPPO resource tiers that each target runs under in CI.
@@ -61,17 +64,23 @@ The CI cross-compile check builds four platforms and publishes nothing.
 
 ## Layout
 
-- `cmd/` holds the composition root. See [cmd](./cmd/README.md).
+- `cmd/retriever/` holds the composition root: the real wrappers of the process, and the wiring of the connectors. See
+  [cmd](./cmd/README.md).
+- `internal/adapters/` holds the inbound adapters: the command-line interface, the MCP server, and the GraphQL service.
+  See [internal](./internal/README.md).
 - `examples/` holds the example sources catalog, `sources.example.yml`. See [examples](./examples/README.md).
-- `internal/` holds the core, the adapters, and their unit tests. See [internal](./internal/README.md).
-- `tests/` holds the behaviour tests, the conformance and architecture tests, and the stub servers that the tests use.
-- `scripts/coverage-gate.sh` is the coverage gate that `test:unit` and `test:coverage` run.
-- `scripts/build-release.sh` builds the release archives for `build:release`, and `scripts/build-release_test.sh` tests it.
+- `tests/` holds the behaviour tests, the conformance tests, and the architecture tests. See [tests](./tests/README.md).
+- `scripts/` holds the release build, its self-test, and the coverage exclusions of the app. See
+  [scripts](./scripts/README.md). The shared coverage gate is `scripts/go-coverage-gate.sh` at the repository root.
 - `behaviour-coverage.json` records the scenario counts that the binding check compares with the feature files.
 - `.golangci.yml` is the lint configuration, written for a later golangci-lint adoption.
 - `.gitignore` ignores `dist/`, `sources.yml`, and the env files.
 - `go.mod` and `go.sum` pin the module and its dependencies.
 - `project.json` declares the Nx targets above.
+
+The domain types, the ports, the operation catalog, the use cases, the source connectors, and the testkit are not in
+this folder. They are libraries under [libs/](../../libs/README.md). See
+[library layering](../../docs/explanation/library-layering.md).
 
 ## Related
 
@@ -81,5 +90,6 @@ The CI cross-compile check builds four platforms and publishes nothing.
 - [Configuration](../../docs/reference/retriever-cli-configuration.md)
 - [Catalog format](../../docs/reference/retriever-cli-catalog-format.md)
 - [Test gates](../../docs/reference/retriever-cli-test-gates.md)
+- [Go modules and tags](../../docs/reference/go-modules-and-tags.md)
 - [Migrating from Butler](../../docs/reference/retriever-cli-migration-from-butler.md)
 - [Scenario gap](../../docs/reference/retriever-cli-scenario-gap.md)

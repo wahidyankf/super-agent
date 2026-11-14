@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // outlineService returns a service whose one source is a plain outline source.

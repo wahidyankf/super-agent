@@ -3,6 +3,7 @@ package behaviour
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/pem"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -10,13 +11,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/jira"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/kiwi"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/outline"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/jirastub"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/kiwistub"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/synthetic"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
+	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/jirastub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/kiwistub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/outlinestub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/synthetic"
 )
 
 // Names of the environment variables that hold the synthetic keys the stubs check.
@@ -72,7 +73,7 @@ var datasetMethods = map[string]bool{
 // outlineStub returns the Outline stub, starting it on first use with the synthetic replies loaded.
 func (w *world) outlineStub() *outlinestub.Stub {
 	if w.stubs.outline == nil {
-		s := outlinestub.Start(w.outer, w.stubClockOutline()...)
+		s := outlinestub.Start(w.outer, append(w.stubClockOutline(), outlinestub.WithListener(w.be.listenTCP))...)
 		if err := loadSyntheticReplies(s); err != nil {
 			w.outer.Fatalf("load the synthetic Outline replies: %v", err)
 		}
@@ -107,7 +108,7 @@ func loadSyntheticReplies(s *outlinestub.Stub) error {
 // keeps for every request.
 func (w *world) kiwiStub() (*kiwistub.Stub, error) {
 	if w.stubs.kiwi == nil {
-		opts := []kiwistub.Option{kiwistub.WithAnyBearer()}
+		opts := []kiwistub.Option{kiwistub.WithAnyBearer(), kiwistub.WithListener(w.be.listenTCP)}
 		if w.inProcess() {
 			opts = append(opts, kiwistub.WithClock(w.clock.Now))
 		}
@@ -127,7 +128,7 @@ func (w *world) jiraStub() (*jirastub.Stub, error) {
 		if w.inProcess() {
 			s.SetClock(w.clock.Now)
 		}
-		srv, err := jirastub.NewTLSServer(s)
+		srv, err := jirastub.NewTLSServerWith(s, w.be.listenTCP, w.be.clockOf(w.clock))
 		if err != nil {
 			return nil, fmt.Errorf("start the Jira stub: %w", err)
 		}
@@ -199,11 +200,10 @@ func (w *world) ensureStubs() error {
 			w.stubs.jira.SetCredentials(w.env[jiraEmailVar], w.env[jiraTokenVar])
 		}
 		if !w.stubs.seamed[jiraKind] {
-			pem, err := jirastub.CertificatePEM()
-			if err != nil {
-				return fmt.Errorf("read the Jira certificate: %w", err)
-			}
-			path, err := w.writeInput("jira-ca.pem", string(pem))
+			// The CA is the certificate this server presents, which is dated by the scenario clock. The cached default of
+			// jirastub is dated by the real clock, so a client that verifies at the scenario clock would reject it.
+			caPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: w.stubs.jiraSrv.Certificate().Raw})
+			path, err := w.writeInput("jira-ca.pem", string(caPEM))
 			if err != nil {
 				return err
 			}

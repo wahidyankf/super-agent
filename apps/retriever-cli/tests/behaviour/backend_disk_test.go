@@ -7,18 +7,22 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/catalog"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/envfile"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/out/markdownfiles"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/markdownfiles"
 )
 
 // errNoBinary is the error of a process at a level without a built binary.
@@ -163,21 +167,23 @@ func (d *diskBackend) dirFiles(name string) (map[string]string, error) {
 // credentials reads the env file with the real environment, as the composition root does. The process environment is
 // the scenario environment, because adoptEnv made it so.
 func (d *diskBackend) credentials(name string, _ func(string) string) (*envfile.Credentials, error) {
-	return envfile.New(name)
+	return envfile.NewWithFiles(name, os.Getenv, envfile.Files{FS: os.DirFS(filepath.Dir(name)), SameFile: os.SameFile})
 }
 
 // loadCatalog reads the catalog from the real disk, as the composition root does.
 func (d *diskBackend) loadCatalog(name string) (domain.Catalog, error) {
-	loader, err := catalog.New(name)
+	loader, err := catalog.NewWithFiles(name, catalog.Files{FS: os.DirFS(filepath.Dir(name)), SameFile: os.SameFile})
 	if err != nil {
 		return domain.Catalog{}, err
 	}
 	return loader.Load()
 }
 
-// sink returns the Markdown sink that writes into dir on the real disk.
+// sink returns the Markdown sink that writes into dir on the real disk, as the composition root builds it.
 func (d *diskBackend) sink(dir string) ports.ExportSink {
-	return markdownfiles.New(dir)
+	return markdownfiles.New(dir, func(dir, pattern string) (markdownfiles.TempFile, error) {
+		return os.CreateTemp(dir, pattern)
+	}, markdownfiles.Folder{MkdirAll: os.MkdirAll, Rename: os.Rename, Remove: os.Remove})
 }
 
 // spawnServe starts the built binary as retriever serve, with the scenario environment, in the scenario folder.
@@ -298,4 +304,33 @@ func exitCodeOf(err error) int {
 		return 128 + int(st.Signal())
 	}
 	return exitErr.ExitCode()
+}
+
+// init arms the reply deadline of the disk levels: a real timer that fails a scenario whose process never answers. The
+// unit level keeps the nil deadline of process_test.go and arms no timer.
+func init() {
+	replyDeadline = func() <-chan time.Time { return time.After(replyTimeout) }
+}
+
+// listenPort opens the real loopback listener of a port, as retriever serve does.
+func (d *diskBackend) listenPort(port int) (net.Listener, error) { return graphql.Listen(port) }
+
+// listenTCP opens a real listener for a stub.
+func (d *diskBackend) listenTCP(network, address string) (net.Listener, error) {
+	return net.Listen(network, address)
+}
+
+// seamClient returns the seam's client unchanged: the disk levels dial the real loopback stubs.
+func (d *diskBackend) seamClient(c *http.Client) *http.Client { return c }
+
+// httpClient returns a client with the reply timeout, which queries the real served endpoint.
+func (d *diskBackend) httpClient() *http.Client { return &http.Client{Timeout: replyTimeout} }
+
+// clockOf returns the scenario clock for an in-process level. The end-to-end level runs the built binary against stubs in
+// this process, so its stubs date their certificates from the real clock the binary also reads.
+func (d *diskBackend) clockOf(c *fakeClock) func() time.Time {
+	if d.inProc {
+		return c.Now
+	}
+	return time.Now
 }

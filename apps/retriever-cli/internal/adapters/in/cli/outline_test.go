@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/sourcecontract"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/sourcecontract"
 )
 
 // collectionsOf returns a dataset with one collection per name, IDed col-1, col-2, and so on, and no documents.

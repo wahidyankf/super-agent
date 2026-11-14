@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 )
 
 // Exit statuses of retriever mcp, from the exit-status contract. A client that closes its input ends the server with 0.

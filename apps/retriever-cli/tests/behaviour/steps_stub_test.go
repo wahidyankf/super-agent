@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/cucumber/godog"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/jirastub"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/kiwistub"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/jirastub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/kiwistub"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/outlinestub"
 )
 
 // registerStubSteps binds the steps that give each stub its data, its faults, and its account, and the steps that check

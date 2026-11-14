@@ -962,3 +962,27 @@ extensions:
         path: apps/retriever-cli
         kind: app
         stacks: [golang]
+      retriever-contract:
+        path: libs/retriever-contract
+        kind: contract
+        stacks: [golang]
+      retriever-runtime:
+        path: libs/retriever-runtime
+        kind: runtime
+        stacks: [golang]
+      retriever-testkit:
+        path: libs/retriever-testkit
+        kind: testkit
+        stacks: [golang]
+      retriever-connector-outline:
+        path: libs/retriever-connector-outline
+        kind: connector
+        stacks: [golang]
+      retriever-connector-kiwi:
+        path: libs/retriever-connector-kiwi
+        kind: connector
+        stacks: [golang]
+      retriever-connector-jira:
+        path: libs/retriever-connector-jira
+        kind: connector
+        stacks: [golang]

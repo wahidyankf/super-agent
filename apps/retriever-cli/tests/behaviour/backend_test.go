@@ -4,16 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
 	"path"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/catalog"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/envfile"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/out/markdownfiles"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/memfs"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/markdownfiles"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/memfs"
 )
 
 // backend is where one level keeps a scenario: its files, its working directory, the process environment, and the
@@ -55,6 +58,16 @@ type backend interface {
 	spawnMCP(w *world, argv []string) (*mcpSession, error)
 	// runBinary runs the built binary once and records its result.
 	runBinary(w *world, argv []string) error
+	// listenPort opens the loopback listener of a port, as retriever serve does.
+	listenPort(port int) (net.Listener, error)
+	// listenTCP opens a listener for a stub, which asks for a free loopback port.
+	listenTCP(network, address string) (net.Listener, error)
+	// seamClient returns the client a seam gateway uses, given the client that the seam reader built.
+	seamClient(c *http.Client) *http.Client
+	// httpClient returns the client a scenario uses to query the served endpoint.
+	httpClient() *http.Client
+	// clockOf returns the clock a stub dates its certificate and replies with, given the scenario clock.
+	clockOf(c *fakeClock) func() time.Time
 }
 
 // errNoProcess is the error of a process at a level that runs commands in this process.
@@ -67,11 +80,12 @@ const memRoot = "/scenario"
 // scenario folder. No disk, environment, or child process is touched.
 type memoryBackend struct {
 	files *memfs.FS
+	net   *memNet
 }
 
 // newMemoryBackend returns an empty in-memory backend for one scenario.
 func newMemoryBackend(*testing.T) backend {
-	return &memoryBackend{files: memfs.New()}
+	return &memoryBackend{files: memfs.New(), net: newMemNet(nil)}
 }
 
 // start creates the scenario folder in the tree and returns it.
@@ -140,19 +154,13 @@ func toText(files map[string][]byte) map[string]string {
 
 // credentials reads the env file through the given lookup and the in-memory files, as envfile.NewWithFiles does.
 func (m *memoryBackend) credentials(name string, getenv func(string) string) (*envfile.Credentials, error) {
-	return envfile.NewWithFiles(name, getenv, m.envFiles())
+	return envfile.NewWithFiles(name, getenv, envfile.Files{FS: m.files.Folder(path.Dir(name)), SameFile: m.files.SameFile})
 }
 
-// envFiles are the file calls of the in-memory tree, in the form the envfile adapter takes.
-func (m *memoryBackend) envFiles() envfile.Files {
-	return envfile.Files{Lstat: m.files.Lstat, Open: m.files.Open, SameFile: m.files.SameFile}
-}
-
-// loadCatalog reads the catalog from the in-memory tree, as catalog.NewWithFiles does.
+// loadCatalog reads the catalog from the in-memory tree, as catalog.NewWithFiles does, through the folder of the file.
 func (m *memoryBackend) loadCatalog(name string) (domain.Catalog, error) {
 	loader, err := catalog.NewWithFiles(name, catalog.Files{
-		Lstat:    m.files.Lstat,
-		Open:     m.files.Open,
+		FS:       m.files.Folder(path.Dir(name)),
 		SameFile: m.files.SameFile,
 	})
 	if err != nil {
@@ -217,3 +225,20 @@ func checkExportName(name string) error {
 	}
 	return nil
 }
+
+// listenPort opens the loopback listener of a port in the scenario's in-memory network.
+func (m *memoryBackend) listenPort(port int) (net.Listener, error) { return m.net.listenPort(port) }
+
+// listenTCP opens a stub's listener in the scenario's in-memory network.
+func (m *memoryBackend) listenTCP(network, address string) (net.Listener, error) {
+	return m.net.open(network, address)
+}
+
+// seamClient returns the seam's client with its dialer replaced by the in-memory network.
+func (m *memoryBackend) seamClient(c *http.Client) *http.Client { return m.net.seamClient(c) }
+
+// httpClient returns a client that dials only the in-memory network.
+func (m *memoryBackend) httpClient() *http.Client { return m.net.client() }
+
+// clockOf returns the scenario clock, which the in-memory level uses for every stub.
+func (m *memoryBackend) clockOf(c *fakeClock) func() time.Time { return c.Now }

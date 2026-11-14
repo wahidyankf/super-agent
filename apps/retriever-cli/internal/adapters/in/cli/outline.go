@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // outlineWiring returns the source service the source commands need. A setup error from the composition root is returned

@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	usecases "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	usecases "github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // unixListener is a listener whose address is not TCP. The GraphQL handler refuses such a listener, so the serve path

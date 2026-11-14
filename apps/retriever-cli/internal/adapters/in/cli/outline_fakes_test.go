@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/sourcecontract"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-testkit/sourcecontract"
 )
 
 // memSink is an in-memory ports.ExportSink. It keeps the file names and bodies a test exports, and can fail every write.
@@ -87,6 +87,9 @@ type outlineSetup struct {
 	sink     *memSink
 	setupErr error
 	serve    ServeFunc
+	// ctx is the parent context of serve and mcp. A test ends a serve command as a signal would, by cancelling it with
+	// SignalCause. Nil means Background.
+	ctx context.Context
 }
 
 // wikiWith returns a setup whose Outline gateway serves dataset and whose export sink is empty.
@@ -111,6 +114,7 @@ func runRetriever(t *testing.T, argv []string, setup outlineSetup) (int, string,
 		Service:  setup.service,
 		Serve:    setup.serve,
 		SetupErr: setup.setupErr,
+		Context:  setup.ctx,
 	}
 	if setup.sink != nil {
 		deps.Sink = func(dir string) ports.ExportSink {

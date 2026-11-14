@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // emptyEnv reads every variable as unset, so no test seam is on.

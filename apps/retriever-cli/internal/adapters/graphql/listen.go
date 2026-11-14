@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	usecases "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	usecases "github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 const (
@@ -19,10 +19,12 @@ const (
 	readHeaderTimeout = 5 * time.Second
 	readTimeout       = 30 * time.Second
 	// writeTimeout covers an export that waits out Outline's Retry-After: up to three waits of 60 seconds.
-	writeTimeout    = 5 * time.Minute
-	idleTimeout     = 60 * time.Second
-	shutdownTimeout = 5 * time.Second
+	writeTimeout = 5 * time.Minute
+	idleTimeout  = 60 * time.Second
 )
+
+// shutdownTimeout bounds the graceful shutdown. A variable so a unit test can end it at once, without a real wait.
+var shutdownTimeout = 5 * time.Second
 
 var (
 	errPortRange   = errors.New("port must be between 0 and 65535")
@@ -49,11 +51,15 @@ func Listen(port int) (net.Listener, error) {
 	return net.Listen("tcp", addr.String())
 }
 
-// Run is the body of retriever serve. It binds the loopback listener at port, mounts the GraphQL handler over svc, calls
-// ready with the bound address, and serves until ctx ends. The composition root and the behaviour tests both call it, so
-// every level runs the same wiring.
-func Run(ctx context.Context, svc usecases.Service, port int, logger *slog.Logger, ready func(addr string)) error {
-	listener, err := Listen(port)
+// ListenFunc opens the listener of a port. The composition root passes Listen, which binds a real loopback socket. A test
+// passes an in-memory listener, so the same serve path runs with no socket.
+type ListenFunc func(port int) (net.Listener, error)
+
+// Run is the body of retriever serve. It opens the listener at port with listen, mounts the GraphQL handler over svc,
+// calls ready with the bound address, and serves until ctx ends. The composition root and the behaviour tests both call
+// it, so every level runs the same wiring.
+func Run(ctx context.Context, svc usecases.Service, port int, listen ListenFunc, logger *slog.Logger, ready func(addr string)) error {
+	listener, err := listen(port)
 	if err != nil {
 		return err
 	}

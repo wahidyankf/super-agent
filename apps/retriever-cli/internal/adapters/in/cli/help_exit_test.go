@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 )
 
 // TestEveryNoMatchCommandDocumentsExitStatusOne checks the help page of every catalog read that can match nothing (its

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 )
 
 // fakeMCP stands in for the composition root's MCP server. It reads the whole input, writes one message, and records

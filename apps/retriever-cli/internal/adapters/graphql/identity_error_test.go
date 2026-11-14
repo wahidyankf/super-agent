@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
 // TestInvalidIdentityIsPublicWithItsVariableNameOnly checks the GraphQL text of a malformed e-mail variable: the variable name, never the value, directly or wrapped.

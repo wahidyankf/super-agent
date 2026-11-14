@@ -1,6 +1,5 @@
-# Coverage exclusions for apps/retriever-cli, read by scripts/coverage-gate.sh. One entry per line: kind, path, and reason,
-# separated by tabs. The allowed kinds are generated (a Go file whose "Code generated ... DO NOT EDIT." line comes before
-# its package clause) and test-support (the tests/support directory). Any other entry fails the gate.
+# Coverage exclusions for apps/retriever-cli, read by scripts/go-coverage-gate.sh. One entry per line: kind, path, and reason,
+# separated by tabs. The only allowed kind is generated (a Go file whose "Code generated ... DO NOT EDIT." line comes before
+# its package clause). Any other entry fails the gate.
 generated	internal/adapters/graphql/generated.go	gqlgen output with a DO NOT EDIT header; the graphql unit and integration tests run it.
 generated	internal/adapters/graphql/models_gen.go	gqlgen output with a DO NOT EDIT header; the graphql unit and integration tests run it.
-test-support	tests/support	test doubles, stub servers, and stub commands that the behaviour suites run; test code, not product behaviour.

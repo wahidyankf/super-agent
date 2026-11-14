@@ -3,7 +3,7 @@ package graphql
 import (
 	"testing"
 
-	usecases "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources"
+	usecases "github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // sendServed sends one query to a handler over svc and returns the decoded reply.

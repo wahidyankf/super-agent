@@ -11,10 +11,9 @@ import (
 	"strings"
 	"syscall"
 	"testing"
-	"time"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 )
 
 // level names the test level a scenario runs at. The same step definitions serve every level. Only the place the
@@ -67,6 +66,10 @@ type world struct {
 
 // newWorld returns the state of one scenario at the given level, kept by the given backend.
 func newWorld(lvl level, outer *testing.T, be backend) *world {
+	clk := newFakeClock()
+	if m, ok := be.(*memoryBackend); ok {
+		m.net.now = clk.Now
+	}
 	return &world{
 		level:       lvl,
 		outer:       outer,
@@ -75,7 +78,7 @@ func newWorld(lvl level, outer *testing.T, be backend) *world {
 		inputs:      map[string]bool{},
 		envFileVars: map[string]string{},
 		stubs:       stubSet{seamed: map[string]bool{}},
-		clock:       newFakeClock(),
+		clock:       clk,
 	}
 }
 
@@ -138,7 +141,7 @@ func (w *world) deps(stdout, stderr *bytes.Buffer) cli.Deps {
 		Stdout: stdout,
 		Stderr: stderr,
 		Getenv: w.getenv,
-		Now:    time.Now,
+		Now:    w.clock.Now,
 		Sink:   w.be.sink,
 	}
 }
