@@ -1,7 +1,7 @@
-// Package replay is an HTTP round tripper that answers from the read examples of a connector spec. A test gives it to the
-// engine in place of the network, so the engine runs the requests of a read without a socket or a clock. The stub
-// records every request it receives, so a test can check the method, the path, the query, and the headers that were
-// sent. It never answers a write, because a write example is replayed only by a later pull request.
+// Package replay is an HTTP round tripper that answers from the examples of a connector spec. A test gives it to the
+// engine in place of the network, so the engine runs the requests of a read or a write without a socket or a clock. The
+// stub records every request it receives, so a test can check the method, the path, the query, the headers, and the body
+// that were sent.
 package replay
 
 import (
@@ -27,12 +27,13 @@ type Reply struct {
 	Body   []byte
 }
 
-// Request is one request that the stub received: the method, the escaped path, the raw query, and the headers.
+// Request is one request that the stub received: the method, the escaped path, the raw query, the headers, and the body.
 type Request struct {
 	Method string
 	Path   string
 	Query  string
 	Header http.Header
+	Body   []byte
 }
 
 // step is one scripted outcome: a reply, or a transport error.
@@ -53,14 +54,12 @@ type Stub struct {
 // Stub is a round tripper.
 var _ http.RoundTripper = (*Stub)(nil)
 
-// New returns a stub that answers the read examples of a validated spec. An example whose request the operation catalog
-// would refuse fails New, so the stub never serves a request the engine could not send.
+// New returns a stub that answers the examples of a validated spec, read and write alike. An example whose request the
+// operation catalog would refuse fails New, so the stub never serves a request the engine could not send. When two
+// examples name the same method and target, the first one answers, because a request is matched by its method and target.
 func New(s *spec.Spec) (*Stub, error) {
 	stub := &Stub{examples: map[string]Reply{}, scripts: map[string][]step{}}
 	for _, o := range s.Operations {
-		if o.Access != "read" {
-			continue
-		}
 		for _, ex := range o.Examples {
 			method, target, err := engine.ExampleTarget(s, o, ex.Request)
 			if err != nil {
@@ -118,8 +117,9 @@ func (s *Stub) setScript(method, target string, steps []step) {
 // names the request, the matching read example answers it. A request with neither is recorded and fails with
 // ErrNoExchange.
 func (s *Stub) RoundTrip(req *http.Request) (*http.Response, error) {
+	var body []byte
 	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
+		body, _ = io.ReadAll(req.Body)
 		_ = req.Body.Close()
 	}
 	target := req.URL.EscapedPath()
@@ -134,6 +134,7 @@ func (s *Stub) RoundTrip(req *http.Request) (*http.Response, error) {
 		Path:   req.URL.Path,
 		Query:  req.URL.RawQuery,
 		Header: req.Header.Clone(),
+		Body:   body,
 	})
 	if st, scripted := s.nextStep(key); scripted {
 		s.mu.Unlock()

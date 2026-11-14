@@ -1,8 +1,9 @@
-// Package engine runs the read operations of a validated connector spec against one source. It renders each request from
-// the spec, authenticates it with a key that the caller supplies through a port, sends it over HTTPS with the safeguards
-// of ADR 001, and maps the reply to the declared fields. It reads no environment variable, no file, and no process: the
-// caller passes the key, the identity, the clock, and the dialer through Ports. Writes, lookups, and the Markdown
-// converters are not served yet, and each one fails with a stable unsupported error before any request is sent.
+// Package engine runs the operations of a validated connector spec against one source. It renders each request from the
+// spec, authenticates it with a key that the caller supplies through a port, sends it over HTTPS with the safeguards of
+// ADR 001, and maps the reply to the declared fields. Reads and writes share those safeguards. A write is sent once, and
+// a name that a write declares is resolved by one read first. It reads no environment variable, no file, and no process:
+// the caller passes the key, the identity, the clock, and the dialer through Ports. The Markdown converters are not served
+// yet, and an operation that needs one fails with a stable unsupported error before any request is sent.
 package engine
 
 import (
@@ -157,8 +158,9 @@ func refuseRedirects(*http.Request, []*http.Request) error {
 	return http.ErrUseLastResponse
 }
 
-// Read runs one read operation of the spec with its validated arguments. A write, a lookup, or a Markdown converter
-// fails before any request is sent. An argument the spec does not declare, or one of the wrong kind, fails the same way.
+// Read runs one read operation of the spec with its validated arguments. A write is refused, and a lookup or a Markdown
+// converter fails before any request is sent. An argument the spec does not declare, or one of the wrong kind, fails the
+// same way.
 func (e *Engine) Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
 	o, ok := e.ops[op]
 	if !ok {
@@ -269,16 +271,25 @@ func (e *Engine) fetch(ctx context.Context, o spec.Operation, args domain.Args, 
 	return e.send(ctx, o, req)
 }
 
-// unsupported refuses an operation that needs a part of a later pull request: a Markdown converter, or a lookup that
-// resolves a name. It returns nil for an operation that the engine serves.
+// unsupported refuses a read that needs a part the engine does not serve: a Markdown converter, or a lookup, which only a
+// write may declare. It returns nil for a read that the engine serves.
 func unsupported(o spec.Operation) error {
-	for _, f := range o.Response.Fields {
-		if f.Convert == "markdown-from-html" || f.Convert == "markdown-from-adf" {
-			return domain.ErrUnsupportedOperation
-		}
+	if err := converterUnsupported(o); err != nil {
+		return err
 	}
 	for _, p := range o.Params {
 		if p.Resolve != nil {
+			return domain.ErrUnsupportedOperation
+		}
+	}
+	return nil
+}
+
+// converterUnsupported refuses an operation whose reply needs a Markdown converter. The converters are not served yet, so
+// the operation fails closed before any request is sent.
+func converterUnsupported(o spec.Operation) error {
+	for _, f := range o.Response.Fields {
+		if f.Convert == "markdown-from-html" || f.Convert == "markdown-from-adf" {
 			return domain.ErrUnsupportedOperation
 		}
 	}

@@ -157,14 +157,14 @@ func TestExchangeSendsABodyAndRefusesAnInvalidMethod(t *testing.T) {
 	}
 	rep, err := e.exchange(context.Background(), request{
 		method: "POST", target: "/v1/docs", header: http.Header{}, body: []byte(`{"a":1}`),
-	})
+	}, false)
 	if err != nil || rep.status != http.StatusOK || string(rep.body) != "{}" {
 		t.Fatalf("exchange = %+v, %v; want a 200 reply with the body", rep, err)
 	}
 	if gotType != "application/json" || gotBody != `{"a":1}` {
 		t.Fatalf("the request carried type %q and body %q", gotType, gotBody)
 	}
-	if _, err := e.exchange(context.Background(), request{method: "BAD METHOD", target: "/v1/docs", header: http.Header{}}); err == nil {
+	if _, err := e.exchange(context.Background(), request{method: "BAD METHOD", target: "/v1/docs", header: http.Header{}}, false); err == nil {
 		t.Fatal("a request with an invalid method was built")
 	}
 }
