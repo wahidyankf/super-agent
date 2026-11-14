@@ -47,6 +47,7 @@ type Loader struct {
 	files   Files
 	kinds   domain.KindSet
 	digests map[string]string
+	pinned  map[string]bool
 }
 
 var _ ports.CatalogLoader = (*Loader)(nil)
@@ -112,6 +113,7 @@ func NewWithFiles(path string, files Files, kinds domain.KindSet) (*Loader, erro
 // Load reads the catalog file once. A missing file, a file that is not a regular file, a file that is too large, and a
 // file that is invalid each return a domain.CatalogError.
 func (l *Loader) Load() (domain.Catalog, error) {
+	l.pinned = map[string]bool{}
 	data, found, err := l.read()
 	if err != nil {
 		return domain.Catalog{}, err
@@ -119,7 +121,17 @@ func (l *Loader) Load() (domain.Catalog, error) {
 	if !found {
 		return domain.Catalog{}, catalogCause("not found: set --catalog or RETRIEVER_CATALOG, or create ./sources.yml", domain.ErrCatalogMissing)
 	}
-	return parse(data, l.kinds, l.digests)
+	return parse(data, l.kinds, l.digests, l.pinned)
+}
+
+// PinnedKinds returns the spec kinds that the last Load found pinned: a kind counts only when every source of that kind
+// pins its spec with spec_sha256. A kind with no source is not pinned. The map is a copy, so a caller may change it.
+func (l *Loader) PinnedKinds() map[string]bool {
+	out := make(map[string]bool, len(l.pinned))
+	for kind, pinned := range l.pinned {
+		out[kind] = pinned
+	}
+	return out
 }
 
 // read returns the file bytes. found is false when no file exists at the path, with no error.
@@ -181,8 +193,8 @@ type sourceEntry struct {
 }
 
 // parse decodes data strictly and maps it onto a domain.Catalog. Each source kind is resolved through kinds, and each
-// spec_sha256 pin is checked against digests.
-func parse(data []byte, kinds domain.KindSet, digests map[string]string) (domain.Catalog, error) {
+// spec_sha256 pin is checked against digests. pinned receives, for each kind, whether every source of that kind pins it.
+func parse(data []byte, kinds domain.KindSet, digests map[string]string, pinned map[string]bool) (domain.Catalog, error) {
 	dec := yaml.NewDecoder(bytes.NewReader(data))
 	dec.KnownFields(true)
 	var doc fileDoc
@@ -206,6 +218,12 @@ func parse(data []byte, kinds domain.KindSet, digests map[string]string) (domain
 			return domain.Catalog{}, err
 		}
 		list = append(list, src)
+		name := src.Kind().String()
+		pins := entry.SpecSHA256 != nil
+		if seen, ok := pinned[name]; ok {
+			pins = pins && seen
+		}
+		pinned[name] = pins
 	}
 	cat, err := domain.NewCatalog(list)
 	if err != nil {
