@@ -165,6 +165,46 @@ func buildCatalog(kinds domain.KindSet, specRows []operations.Row) operations.Ca
 	return catalog
 }
 
+// WithPinned returns the set with the write hints of each POST read of a pinned kind cleared. pinned holds, for each spec
+// kind, whether every source of that kind pins the spec with spec_sha256, as the catalog loader reports it. A kind that is
+// missing from pinned, or false there, keeps its write hints. A row keeps its routing as it was, and the built-in rows are
+// kept as they are.
+func (s Set) WithPinned(pinned map[string]bool) Set {
+	// A spec row is found by the operation IDs of the loaded specs, never by its prefix: a built-in row such as
+	// collections.list shares its first word with a spec kind of the same name.
+	specIDs := make(map[domain.OperationID]bool)
+	for _, sp := range s.Specs {
+		for _, op := range sp.Model.Operations {
+			specIDs[domain.OperationID(op.ID)] = true
+		}
+	}
+	pinRow := func(row operations.Row) operations.Row {
+		if pinned[kindOf(row)] {
+			row.WriteHints = false
+		}
+		return row
+	}
+	var specRows []operations.Row
+	for _, row := range s.Operations.Rows() {
+		if specIDs[row.ID] {
+			specRows = append(specRows, pinRow(row))
+		}
+	}
+	out := s
+	out.Operations = buildCatalog(s.Kinds, specRows)
+	out.CLIRows = make([]operations.Row, 0, len(s.CLIRows))
+	for _, row := range s.CLIRows {
+		out.CLIRows = append(out.CLIRows, pinRow(row))
+	}
+	return out
+}
+
+// kindOf returns the source kind of a row, which is the first part of its operation ID.
+func kindOf(row operations.Row) string {
+	kind, _, _ := strings.Cut(string(row.ID), ".")
+	return kind
+}
+
 // rowsOf returns the catalog rows of one spec and the rows its command-line tool offers. It refuses an operation whose ID
 // does not start with the kind, a command path or a tool name that another operation already holds, and a list that maps
 // no field. cliPaths and toolNames hold the names of the operations loaded so far, and they are updated here.
@@ -209,6 +249,8 @@ func rowOf(kind string, op spec.Operation) operations.Row {
 		Effect:      effectOf(op),
 		OpensWorld:  true,
 		Fields:      slices.Sorted(maps.Keys(op.Response.Fields)),
+		// A POST read is announced with write hints until its source pins the spec. WithPinned clears the flag then.
+		WriteHints: op.ReadOverPost,
 	}
 	for _, p := range op.Params {
 		row.Params = append(row.Params, paramOf(p))

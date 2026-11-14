@@ -1,6 +1,8 @@
 package behaviour
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path"
@@ -31,6 +33,13 @@ func registerConnectorSteps(ctx *godog.ScenarioContext, cur func() *world) {
 		func(dir, name string) error {
 			return cur().writeSpec(dir, name, specWithConverter())
 		})
+	ctx.Step(`^the connectors folder "([^"]*)" holds the example wiki spec with a POST read as "([^"]*)"$`,
+		func(dir, name string) error {
+			return cur().writeSpec(dir, name, specWithPostRead())
+		})
+	ctx.Step(`^the spec source's one request was a POST with the JSON body:$`, func(doc *godog.DocString) error {
+		return cur().checkSpecPost(doc.Content)
+	})
 	ctx.Step(`^the connectors folder "([^"]*)" holds the example wiki spec as "([^"]*)" with the kind "([^"]*)"$`,
 		func(dir, name, kind string) error {
 			return cur().writeSpec(dir, name, specWithKind(kind))
@@ -82,6 +91,34 @@ func (w *world) checkSpecRequests(want int) error {
 	}
 	if got != want {
 		return fmt.Errorf("the spec source received %d requests, want %d", got, want)
+	}
+	return nil
+}
+
+// checkSpecPost checks that the spec source received one request, that the request was a POST, and that its body is the
+// JSON of want, compared in compact form. Only the unit and integration levels keep the requests of a source, so the
+// scenario that uses this step is exempt from the end-to-end level.
+func (w *world) checkSpecPost(want string) error {
+	if w.level == levelE2E {
+		return errors.New("the built binary keeps no spec requests, so a POST cannot be checked at the end-to-end level")
+	}
+	if w.spec == nil {
+		return errors.New("the spec source received no request")
+	}
+	sent := w.spec.received()
+	if len(sent) != 1 {
+		return fmt.Errorf("the spec source received %d requests, want 1", len(sent))
+	}
+	got := sent[0]
+	if got.Method != "POST" {
+		return fmt.Errorf("the spec source received a %s request, want POST", got.Method)
+	}
+	var compact bytes.Buffer
+	if err := json.Compact(&compact, []byte(want)); err != nil {
+		return fmt.Errorf("the expected body is not JSON: %w", err)
+	}
+	if !bytes.Equal(got.Body, compact.Bytes()) {
+		return fmt.Errorf("the spec source received the body %s, want %s", got.Body, compact.Bytes())
 	}
 	return nil
 }

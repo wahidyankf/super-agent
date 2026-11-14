@@ -65,6 +65,11 @@ func (s *Server) Hits() int {
 	return int(s.hits.Load())
 }
 
+// Sent returns every request the server has received, in order, with its method and body.
+func (s *Server) Sent() []replay.Request {
+	return s.stub.Requests()
+}
+
 // serve answers one request from the replay stub. A request with no exchange gets a 404, and the stub records it.
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	s.hits.Add(1)
