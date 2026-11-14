@@ -409,6 +409,7 @@
         "summary": { "$ref": "#/$defs/text" },
         "access": { "enum": ["read", "write", "admin"] },
         "method": { "enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"] },
+        "read_over_post": { "const": true },
         "path": { "$ref": "#/$defs/path" },
         "params": {
           "type": "array",
@@ -446,11 +447,31 @@
       "allOf": [
         {
           "if": { "properties": { "access": { "const": "read" } }, "required": ["access"] },
-          "then": { "properties": { "method": { "enum": ["GET", "HEAD"] } } }
+          "then": { "properties": { "method": { "enum": ["GET", "HEAD", "POST"] } } }
         },
         {
-          "if": { "properties": { "access": { "const": "write" } }, "required": ["access"] },
-          "then": { "properties": { "method": { "enum": ["POST", "PUT", "PATCH", "DELETE"] } } }
+          "if": { "properties": { "access": { "enum": ["write", "admin"] } }, "required": ["access"] },
+          "then": {
+            "properties": { "method": { "enum": ["POST", "PUT", "PATCH", "DELETE"] }, "read_over_post": false }
+          }
+        },
+        {
+          "if": { "properties": { "method": { "enum": ["GET", "HEAD"] } }, "required": ["method"] },
+          "then": { "properties": { "access": { "const": "read" }, "read_over_post": false } }
+        },
+        {
+          "if": {
+            "properties": { "access": { "const": "read" }, "method": { "const": "POST" } },
+            "required": ["access", "method"]
+          },
+          "then": { "required": ["read_over_post", "body"] }
+        },
+        {
+          "if": { "required": ["read_over_post"] },
+          "then": {
+            "properties": { "access": { "const": "read" }, "method": { "const": "POST" } },
+            "required": ["access", "method", "body"]
+          }
         }
       ]
     }

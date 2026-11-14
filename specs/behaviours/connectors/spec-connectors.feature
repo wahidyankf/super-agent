@@ -147,3 +147,20 @@ Feature: Connector specs
     Then the exit status is 2
     And the standard error is a JSON error with the code "retriever.example-wiki.unsupported_operation" and retryable false
     And the spec source received no requests
+
+  # Exemption(e2e): the built binary has no test seam that trusts the stub certificate or lifts the private-network refusal, so a POST read cannot reach a loopback stub there; alternative-proof: the integration binding sends the same request to tests/specstub over loopback HTTPS and checks its method and body.
+  @unit @integration @e2e-exempt
+  Scenario: A spec read sent over POST makes one request whose body is its declared slot
+    Given the connectors folder "connectors" holds the example wiki spec with a POST read as "example-wiki.yml"
+    And the sources catalog holds these sources:
+      | id   | kind         | tags | endpoint                  | credential_env       | identity_env |
+      | wiki | example-wiki | docs | https://wiki.example.test | EXAMPLE_WIKI_API_KEY |              |
+    And the environment variable "EXAMPLE_WIKI_API_KEY" is set to "example-key"
+    When I run "retriever --connectors-dir connectors example-wiki docs search draft"
+    Then the exit status is 0
+    And the standard output contains "doc-1"
+    And the spec source received 1 request
+    And the spec source's one request was a POST with the JSON body:
+      """
+      {"text":"draft"}
+      """

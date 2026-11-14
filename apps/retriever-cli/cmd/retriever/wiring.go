@@ -165,6 +165,8 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 	if err != nil {
 		return sourceWiring{}, err
 	}
+	// The pins are known only now, so a POST read takes the read hints of a spec that every source pins.
+	set = set.WithPinned(loader.PinnedKinds())
 	builders := map[domain.SourceKind]registry.Builder{
 		domain.KindOutline: func(src domain.Source) (ports.SourceGateway, error) {
 			return buildOutline(src, creds, seams[domain.KindOutline])

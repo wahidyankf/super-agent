@@ -187,15 +187,16 @@ func TestExampleTargetRendersAnExampleOfAReadOnly(t *testing.T) {
 	}
 }
 
-// TestCheckSpecShapeNamesTheFirstFault checks that a model the spec would refuse gives a finding that names the path.
+// TestCheckSpecShapeNamesTheFirstFault checks that a model the spec would refuse gives a finding that names the path. The
+// operations name a valid label and method, so the access matrix finds nothing and only the path is at fault.
 func TestCheckSpecShapeNamesTheFirstFault(t *testing.T) {
-	s := &spec.Spec{Operations: []spec.Operation{{Path: "/docs/x{id}"}}}
+	s := &spec.Spec{Operations: []spec.Operation{{Path: "/docs/x{id}", Access: "read", Method: "GET"}}}
 	err := checkSpecShape(s)
 	var invalid *spec.InvalidError
 	if !errors.As(err, &invalid) || len(invalid.Findings) != 1 || invalid.Findings[0].Path != "/operations/0/path" {
 		t.Fatalf("checkSpecShape = %v, want one finding at /operations/0/path", err)
 	}
-	if err := checkSpecShape(&spec.Spec{Operations: []spec.Operation{{Path: "/docs"}}}); err != nil {
+	if err := checkSpecShape(&spec.Spec{Operations: []spec.Operation{{Path: "/docs", Access: "read", Method: "GET"}}}); err != nil {
 		t.Fatalf("a plain path was refused: %v", err)
 	}
 }

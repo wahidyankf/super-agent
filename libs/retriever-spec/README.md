@@ -19,7 +19,9 @@ A document passes three checks, in order. A later check runs only when the earli
 2. The JSON Schema (`schema.go`, with the file in [schema/](./schema/README.md)) checks the shape and the per-value
    rules.
 3. The Go rules (`semantic.go`) check what a schema cannot state, because each one compares two fields of the document.
-   Examples are an operation id against the kind, a slot against a parameter, and a resolve against an operation.
+   Examples are an operation id against the kind, a slot against a parameter, and a resolve against an operation. The
+   access matrix (`matrix.go`) pairs each label with its method and the POST marker, and it holds the rules of a POST
+   read: a body, no `Content-Type` header, no resolve, and a nesting depth of at most 8 levels.
 
 A refusal returns findings. Each finding names a JSON pointer, such as `/operations/1/access`, a fixed rule, and the
 stable code `retriever.connector.spec_invalid`. No finding shows a value of the spec, and a field name that is not a

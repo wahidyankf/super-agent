@@ -104,6 +104,10 @@ type Row struct {
 	NotIdempotent bool
 	// SameOnRepeat marks a create whose repeat answers the same object, so its tool announces idempotent. It is set on shares.create, which returns the share of a document that is already shared.
 	SameOnRepeat bool
+	// WriteHints marks a read whose tool announces the hints of a write, not those of a read. A read sent as POST by a user
+	// spec has it until every source of its kind pins the spec (ADR 002, E1). The row still routes as a read, so the
+	// engine serves it as one, and the flag changes only the hints of its tool.
+	WriteHints bool
 }
 
 // Rows returns a copy of the built-in catalog, in catalog order. A registered catalog reads its rows through Catalog.Rows.

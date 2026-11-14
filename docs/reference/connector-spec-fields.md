@@ -52,7 +52,7 @@ spec. Each operation id starts with the `kind` of its spec, followed by a dot.
 | `id`         | yes      | `<kind>.<group>.<verb>`, unique in the spec.                                        |
 | `summary`    | yes      | One line for help and MCP descriptions.                                             |
 | `access`     | yes      | `read`, `write`, or `admin`. A label, never a ceiling.                              |
-| `method`     | yes      | A read takes `GET` or `HEAD`. A write takes `POST`, `PUT`, `PATCH`, or `DELETE`.    |
+| `method`     | yes      | `GET` or `HEAD`, or `POST` with `read_over_post`. See POST reads.                   |
 | `path`       | yes      | Under `base_path`. A `{name}` slot fills one segment. No segment starts with a dot. |
 | `params`     | no       | Typed parameters. See below.                                                        |
 | `headers`    | no       | A constant, or the whole `{name}` of a parameter. See below.                        |
@@ -62,6 +62,31 @@ spec. Each operation id starts with the `kind` of its spec, followed by a dot.
 | `role`       | no       | `list-collections`, `collection-tree`, or `get-document`, for the gateway reads.    |
 | `cli`, `mcp` | no       | A boolean, default `true`, or a custom name, which turns the surface on.            |
 | `examples`   | yes      | At least one. See below.                                                            |
+
+## Access and method
+
+The `access` label and the `method` must form one of these pairs. Any other pair fails validation.
+
+- A read takes `GET` or `HEAD`, and no `read_over_post` marker.
+- A read takes `POST` only with `read_over_post: true`. The marker is refused on any other pair.
+- A write or an admin operation takes `POST`, `PUT`, `PATCH`, or `DELETE`, and no marker. An admin operation with `GET`
+  is refused.
+
+## POST reads
+
+A read may send its request as `POST` when the operation sets `read_over_post: true`, which is the only value the field
+takes. The request is a read: it is not sent as a write, and it has no side effect that the engine knows of. The spec
+must meet these rules, or it is refused with `retriever.connector.spec_invalid`:
+
+- The operation has a `body`, a JSON object. `{}` is allowed. Each value is a constant or a whole `{{name}}` slot of an
+  `in: body` parameter, at any depth.
+- `headers` may not set `Content-Type`. The engine sends `application/json` for a POST read.
+- No parameter has `resolve`. A POST read claims no side effect, and a resolve would be one.
+- The body that is rendered is at most 64 KiB and nests at most 8 levels, counting the top-level object as level 1. A
+  body over either limit fails at run time with `retriever.<kind>.body_limit`, before any request. A spec field does
+  not change these limits.
+
+The review text lists each POST read in its own block, with its path and the slots that its body takes.
 
 ## Parameters
 
@@ -120,8 +145,8 @@ none. The bundled fixture uses `example.test` names only.
 
 The language cannot yet express the Outline reads, so they still run on the Go gateway. Four limits block them:
 
-- Outline sends every call as a `POST` with a JSON body. A `read` operation takes only `GET` or `HEAD`, so no Outline
-  read can be a spec read.
+- Outline sends every call as a `POST` with a JSON body. A read may now use `POST` with `read_over_post`, which is
+  described in [POST reads](#post-reads), so this limit no longer blocks a read.
 - Outline paging puts `offset` and `limit` in the body. A paging rule names query parameters only.
 - A field is never required. A missing field maps to null, where the Go connectors refuse a reply with no ID.
 - A field holds one scalar. A nested record, the first item of a list, a list merged from several lists, a tree with a
@@ -144,6 +169,7 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 ## Planned extensions
 
 [ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
-that the Outline, Kiwi, and Jira connectors can run as specs. None of them is built. The list of limits for the Outline
-reads, where the main branch has it, describes the language before ADR 002. This page documents only what the module
-accepts today, and each extension moves here when its pull request lands.
+that the Outline, Kiwi, and Jira connectors can run as specs. The first of them, POST reads (E1), is built and described
+above. The other eight are not built. The limits of the Outline reads, above, describe the language before ADR 002 for
+the paging, the fields, and the shapes that the other extensions cover. This page documents only what the module accepts
+today, and each extension moves here when its pull request lands.

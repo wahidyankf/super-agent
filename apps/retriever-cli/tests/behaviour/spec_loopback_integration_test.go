@@ -41,6 +41,7 @@ func init() {
 			roots:   srv.Roots,
 			options: []engine.Option{engine.AllowPrivateNetwork()},
 			hits:    srv.Hits,
+			sent:    srv.Sent,
 		}, nil
 	}
 }

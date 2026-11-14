@@ -88,6 +88,9 @@ default folder that does not exist is not an error.
   value. It names a variable only.
 - A write has no confirmation step. The API token's own access limits what the source allows, so give a spec's token
   only the access that the spec needs.
+- A read that a source expects over `POST` sets `read_over_post: true`, and its body holds only declared body
+  parameters. The rules are in [POST reads](../reference/connector-spec-fields.md#post-reads). Such a read shows a
+  write's MCP hints until its catalog source pins the spec with `spec_sha256`.
 - A field may name a Markdown converter, `markdown-from-html` or `markdown-from-adf`, but the engine does not serve one
   yet. Such an operation fails with `retriever.<kind>.unsupported_operation` and sends no request. Use `plain` until then.
 

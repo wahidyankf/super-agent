@@ -100,3 +100,40 @@ func specWithKind(kind string) string {
 func specWithConverter() string {
 	return wikiSpec + wikiConverterOperation
 }
+
+// wikiPostReadOperation is a read sent over POST, with the marker. Its body holds one declared slot, and its example
+// answers the request. The text of the query is the only value the body carries.
+const wikiPostReadOperation = `  - id: example-wiki.docs.search
+    summary: Search documents by text.
+    access: read
+    method: POST
+    read_over_post: true
+    path: /docs/search
+    params:
+      - name: query
+        type: Query
+        in: body
+        required: true
+    body:
+      text: "{{query}}"
+    response:
+      items: /items
+      fields:
+        id:
+          pointer: /id
+    examples:
+      - request:
+          query: draft
+        response:
+          status: 200
+          body:
+            items:
+              - id: doc-1
+        expect:
+          id: doc-1
+`
+
+// specWithPostRead is the example spec with one more operation, a read over POST.
+func specWithPostRead() string {
+	return wikiSpec + wikiPostReadOperation
+}

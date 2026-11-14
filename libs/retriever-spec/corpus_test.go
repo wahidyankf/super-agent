@@ -33,6 +33,10 @@ var validCorpus = []struct {
 	{"a constant body value and a list in a body", fx("      text: \"{{text}}\"",
 		"      text: \"{{text}}\"\n      format: markdown\n      labels: [\"one\", \"{{text}}\"]")},
 	{"a reply size limit", fx("  max_pages: 5\noperations:", "  max_pages: 5\n  max_reply_bytes: 1048576\noperations:")},
+	{"a POST read with its marker and a body of declared slots", func() string { return postFixtureWith() }},
+	{"a POST read with an eight-level body", func() string {
+		return postFixtureWith(`      collectionId: "{{collection_id}}"`, "      collectionId: {a: {b: {c: {d: {e: {f: {g: 1}}}}}}}")
+	}},
 	{"a resolve that names a read of its own field", fx("    params:\n      - name: id\n        type: ID\n        in: path",
 		"    params:\n      - name: id\n        type: ID\n        in: path\n        resolve:\n          operation: example-wiki.docs.list\n          field: id")},
 }

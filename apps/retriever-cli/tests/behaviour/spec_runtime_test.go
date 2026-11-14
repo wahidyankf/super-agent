@@ -33,6 +33,7 @@ type specRuntime struct {
 	roots     *x509.CertPool
 	options   []engine.Option
 	hits      func() int
+	sent      func() []replay.Request
 }
 
 // requests returns how many requests the spec sources of the scenario received.
@@ -41,6 +42,15 @@ func (rt specRuntime) requests() int {
 		return 0
 	}
 	return rt.hits()
+}
+
+// received returns the requests that the spec sources of the scenario received, in order. A runtime with no source that
+// keeps its requests returns none.
+func (rt specRuntime) received() []replay.Request {
+	if rt.sent == nil {
+		return nil
+	}
+	return rt.sent()
 }
 
 // loopbackSpecRuntime starts the loopback stub of one spec and returns the runtime that reaches it. Only the integration
@@ -72,6 +82,15 @@ func (p replayPool) requests() int {
 		total += len(stub.Requests())
 	}
 	return total
+}
+
+// sent returns the requests that every stub of the pool received, stub by stub, in the order each stub received them.
+func (p replayPool) sent() []replay.Request {
+	var all []replay.Request
+	for _, stub := range p {
+		all = append(all, stub.Requests()...)
+	}
+	return all
 }
 
 // refusingNetwork is the network of the unit level: every call is refused, so no spec source reaches a socket.
@@ -129,7 +148,7 @@ func (w *world) buildSpecRuntime(set connectorspec.Set) (specRuntime, error) {
 			}
 			pool = append(pool, stub)
 		}
-		return specRuntime{network: refusingNetwork(), transport: pool, hits: pool.requests}, nil
+		return specRuntime{network: refusingNetwork(), transport: pool, hits: pool.requests, sent: pool.sent}, nil
 	case levelIntegration:
 		if len(set.Specs) > 1 {
 			return specRuntime{}, errors.New("the integration level serves one spec per scenario")

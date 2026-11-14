@@ -18,6 +18,9 @@ upgrade.
 - The catalog's unknown-kind message lists the registered kinds in alphabetical order. For the built-in set it reads
   `unknown kind (known: jira, kiwi, outline)` in place of `unknown kind (known: outline, kiwi, jira)`. The stable code
   `retriever.sources.unknown_source_kind` does not change, and the `--kind` flag and GraphQL messages keep their text.
+- **Breaking**: the access matrix of a connector spec is strict. An `admin` operation with `GET` is now refused at load,
+  where it was accepted before. A read takes `GET` or `HEAD`, or `POST` with `read_over_post: true`, and a write or an
+  admin takes `POST`, `PUT`, `PATCH`, or `DELETE`. The bundled example uses none of the refused pairs.
 
 ### Added
 
@@ -50,6 +53,15 @@ upgrade.
   request. In this release the `--kind` filter of `sources list` and GraphQL accept the built-in kinds only, and a spec
   kind's sources appear in an unfiltered `sources list`. The `connector validate` and `connector test` commands are not
   built yet.
+- A connector spec read may be sent as `POST`, with `access: read`, `method: POST`, and `read_over_post: true` (ADR 002,
+  E1). Its body is a JSON object of constants and declared body parameters, sent with `Content-Type: application/json`.
+  A spec may not set `Content-Type` or `resolve` on such a read. The body is capped at 64 KiB and at 8 levels of
+  nesting, and a body over either cap fails with `retriever.<kind>.body_limit` before any request. The review text lists
+  each POST read. The bundled example adds `example-wiki docs find`, a read over POST.
+- An MCP tool of a POST read reports the hints of a write, so no client runs it as read-only, until every source of its
+  kind pins the spec with `spec_sha256`. Then it reports read hints. The command line and the routing do not change.
+- `retriever-contract` adds the field `Row.WriteHints`, and `retriever-runtime` adds `Loader.PinnedKinds()`, which the
+  `retriever` command uses for the hint rule.
 
 ### Changed
 
@@ -62,6 +74,8 @@ upgrade.
   build cannot require the libraries until one is.
 - The split changes no behaviour of the `retriever` command-line tool: no command, flag, exit status, or JSON output
   changes.
+- `retriever-spec` and `retriever-engine` are at `v0.5.0`, and the other libraries stay at `v0.4.0`. The connector spec
+  language gains POST reads, and the engine gains the `body_limit` code.
 - Each Go module has its own coverage gate, held to a 99 percent floor. The app and each library are measured
   separately, and no profile merges them.
 

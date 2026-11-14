@@ -45,7 +45,7 @@ The written probe of Kiwi and Jira that this pull request was to carry is part o
 [Kiwi](./010-kiwi-probe.md) and [Jira](./011-jira-probe.md). The probes found gaps, so the ports in pull requests 19 and
 20 are gated. The Outline path, pull requests 7 to 18, is not affected.
 
-## 7. E1: POST reads
+## 7. E1: POST reads (done)
 
 Scope: the marker, the method matrix, the body rules, the review block, and the hint rule. This pull request bumps
 `retriever-spec` and `retriever-engine` to `v0.5.0`. Gate: the owner confirms the hint rule for unpinned user specs,

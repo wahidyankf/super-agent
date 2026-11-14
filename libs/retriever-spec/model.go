@@ -65,6 +65,8 @@ type Operation struct {
 	Access string `json:"access"`
 	// Method is the HTTP method of the request.
 	Method string `json:"method"`
+	// ReadOverPost is the marker of a read that is sent as POST. Only a read over POST takes it, and it is true or absent.
+	ReadOverPost bool `json:"read_over_post,omitempty"`
 	// Path is the operation path under the base path. A {name} slot fills one whole segment.
 	Path string `json:"path"`
 	// Params are the typed parameters of the operation.

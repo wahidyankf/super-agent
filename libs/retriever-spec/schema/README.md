@@ -9,7 +9,8 @@ so a reference to another document fails.
 The named parts sit under `$defs`. They cover the kind, the text, the constant and body values, the names of keys and
 slots, the parameter types, the endpoint, the authentication, the limits, the parameter, the response, the pagination,
 the example, and the operation. The parameter types are the 21 kinds of the operation catalog, and a test checks that
-list against the catalog.
+list against the catalog. The operation holds the access matrix as `allOf` rules, which pair each label with its method
+and the `read_over_post` marker. The corpus test checks that the schema and the Go matrix agree on every row.
 
 ## Key names
 
@@ -22,6 +23,8 @@ validator library reports a name-level failure at a location that a later field 
 - A reserved header name, such as `Authorization`, as a key of `headers`. The schema refuses it only as the value of
   `auth.header_name`. The Go rules refuse it as a key, without regard to case.
 - A rule that compares two fields of one document. Those are in [semantic.go](../semantic.go).
+- The nesting depth of a POST read's body. The schema cannot count levels, so [matrix.go](../matrix.go) checks it. The
+  engine checks the size of the rendered body, because a slot can fill a list.
 
 ## Changing the file
 

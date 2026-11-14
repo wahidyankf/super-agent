@@ -63,16 +63,22 @@ func toolFor(row operations.Row) *sdk.Tool {
 
 // rowAnnotations derives the hints of a catalog row. A read is read-only and idempotent. A write is
 // not read-only, and it is never destructive in stage b. An update repeats the same change, so it is idempotent, unless
-// the row says that its repeat is a different change (NotIdempotent). A create is never idempotent.
+// the row says that its repeat is a different change (NotIdempotent). A create is never idempotent. A read that the row
+// flags with WriteHints, a POST read whose source does not pin its spec, takes the hints of a create, so no client runs it
+// as read-only (ADR 002, E1).
 func rowAnnotations(row operations.Row) *sdk.ToolAnnotations {
 	world := row.OpensWorld
-	switch row.Effect {
+	effect := row.Effect
+	if row.WriteHints {
+		effect = domain.EffectAdditive
+	}
+	switch effect {
 	case domain.EffectAdditive:
 		return &sdk.ToolAnnotations{IdempotentHint: row.SameOnRepeat, DestructiveHint: ptr(false), OpenWorldHint: &world}
 	case domain.EffectUpdate:
 		return &sdk.ToolAnnotations{IdempotentHint: !row.NotIdempotent, DestructiveHint: ptr(false), OpenWorldHint: &world}
 	}
-	return annotationsOf(row.Effect, row.OpensWorld)
+	return annotationsOf(effect, row.OpensWorld)
 }
 
 // isWrite reports whether a row changes the wiki, so its tool takes the write input and runs through the write use case.

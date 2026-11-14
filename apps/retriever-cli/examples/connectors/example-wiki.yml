@@ -107,3 +107,36 @@ operations:
         response:
           status: 204
         expect: {}
+  - id: example-wiki.docs.find
+    summary: Find documents in a collection.
+    access: read
+    method: POST
+    read_over_post: true
+    path: /docs/find
+    params:
+      - name: collection_id
+        type: ID
+        in: body
+        required: false
+        help: The collection to search. When it is left out, the search covers every collection.
+    body:
+      collectionId: "{{collection_id}}"
+    response:
+      items: /items
+      fields:
+        id:
+          pointer: /id
+        title:
+          pointer: /title
+    examples:
+      - request:
+          collection_id: col-1
+        response:
+          status: 200
+          body:
+            items:
+              - id: doc-1
+                title: First document
+        expect:
+          id: doc-1
+          title: First document
