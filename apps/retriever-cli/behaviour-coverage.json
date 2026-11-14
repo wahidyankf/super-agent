@@ -3,10 +3,10 @@
   "description": "Scenario counts of the behaviour specs, by feature file and by test level. A Scenario Outline counts once here; the test runner runs each of its Examples rows as its own scenario. A scenario that carries more than one level tag counts at each of those levels. Counts come from the feature files; test results are not recorded here.",
   "specs": "specs/behaviours",
   "totals": {
-    "scenarios": 264,
-    "unit": 264,
-    "integration": 264,
-    "e2e": 264
+    "scenarios": 333,
+    "unit": 333,
+    "integration": 333,
+    "e2e": 333
   },
   "features": [
     {
@@ -53,17 +53,17 @@
     },
     {
       "path": "specs/behaviours/jira/jira-operations.feature",
-      "scenarios": 22,
-      "unit": 22,
-      "integration": 22,
-      "e2e": 22
+      "scenarios": 46,
+      "unit": 46,
+      "integration": 46,
+      "e2e": 46
     },
     {
       "path": "specs/behaviours/kiwi/kiwi-operations.feature",
-      "scenarios": 17,
-      "unit": 17,
-      "integration": 17,
-      "e2e": 17
+      "scenarios": 25,
+      "unit": 25,
+      "integration": 25,
+      "e2e": 25
     },
     {
       "path": "specs/behaviours/mcp/mcp-server.feature",
@@ -81,10 +81,10 @@
     },
     {
       "path": "specs/behaviours/outline/outline-reads.feature",
-      "scenarios": 16,
-      "unit": 16,
-      "integration": 16,
-      "e2e": 16
+      "scenarios": 53,
+      "unit": 53,
+      "integration": 53,
+      "e2e": 53
     },
     {
       "path": "specs/behaviours/outline/outline-redaction.feature",

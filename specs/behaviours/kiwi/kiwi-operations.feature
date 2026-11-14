@@ -169,3 +169,71 @@ Feature: Kiwi test management operations
     Then the exit status is 0
     And every request to the stub Kiwi server used the HTTP method "POST"
     And every request to the stub Kiwi server used the path "/json-rpc/"
+
+  @integration @e2e @unit
+  Scenario: The product list in JSON mode reports a count of the products
+    When I run "retriever --output json kiwi products list"
+    Then the exit status is 0
+    And the JSON field "count" of the standard output is 1
+
+  @integration @e2e @unit
+  Scenario: The product tree prints each test plan with its test cases nested under it
+    When I run "retriever kiwi products tree product-3"
+    Then the exit status is 0
+    And the standard output contains "Synthetic plan"
+    And the standard output contains "Synthetic case"
+
+  @integration @e2e @unit
+  Scenario: The product tree in JSON mode is a schemaVersion 1 document with a count
+    When I run "retriever --output json kiwi products tree product-3"
+    Then the exit status is 0
+    And the standard output is a JSON document with schemaVersion 1
+    And the JSON field "count" of the standard output is 2
+
+  @integration @e2e @unit
+  Scenario: The product tree of an unknown product stops before any plan is read
+    When I run "retriever --output json kiwi products tree product-999"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.kiwi.collection_not_found" and retryable false
+
+  @integration @e2e @unit
+  Scenario: The product tree refuses an invalid product ID before any request
+    When I run "retriever --output json kiwi products tree bad/id"
+    Then the exit status is 2
+    And the standard output is empty
+    And the stub Kiwi server received no requests
+
+  @integration @e2e @unit
+  Scenario: A Kiwi document read of an unknown test plan is a not-found failure
+    When I run "retriever --output json kiwi documents get plan-999"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.kiwi.document_not_found" and retryable false
+
+  @integration @e2e @unit
+  Scenario: A Kiwi document ID that is neither a plan nor a case is refused before any request
+    When I run "retriever --output json kiwi documents get product-3"
+    Then the exit status is 2
+    And the standard output is empty
+    And the stub Kiwi server received no requests
+
+  @integration @e2e @unit
+  Scenario: A case title and text that Kiwi escaped once are rendered as escaped Markdown once, never twice
+    Given the stub Kiwi server holds this dataset:
+      """
+      {
+        "Products":   [{"ID": 3, "Name": "Synthetic product"}],
+        "Plans":      [{"ID": 12, "Name": "Synthetic plan", "Product": 3, "Parent": 0, "Text": "Plan text"}],
+        "Cases":      [{"ID": 40, "Summary": "Tom &amp; Jerry", "Text": "Case &lt;b&gt; text", "Plans": [12], "Sortkey": 10, "Status": 1, "Priority": 1, "Category": 1}],
+        "Categories": [{"ID": 1, "Name": "Functional", "Product": 3}],
+        "Priorities": [{"ID": 1, "Value": "High"}],
+        "Statuses":   [{"ID": 1, "Name": "PROPOSED"}]
+      }
+      """
+    When I run "retriever kiwi documents get case-40"
+    Then the exit status is 0
+    And the standard output contains "# Tom &amp; Jerry"
+    And the standard output contains "Case &lt;b&gt; text"
+    And the standard output does not contain "&amp;amp;"
+    And the standard output does not contain "<b>"
