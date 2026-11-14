@@ -61,7 +61,7 @@ File names omit the `.feature` suffix. The number in brackets is the Butler scen
 | kiwi-jsonrpc-errors (10)                      | kiwi-operations: JSON-RPC error         | Partly   |
 | kiwi-secret-never-printed (9)                 | credentials: Kiwi key                   | Covered  |
 | kiwi-transport-safety (13)                    | kiwi-operations, https-and-limits       | Partly   |
-| kiwi-writes (17)                              | kiwi-operations: create, update         | Partly   |
+| kiwi-writes (17)                              | kiwi-operations: create, update         | Deferred |
 | lang-source-naming-validate (4)               | not in retriever                        | Out      |
 | mcp-access-ceiling (7)                        | removed by design, no ceiling           | Out      |
 | mcp-destructive-tools (8)                     | mcp-server: destructive hints           | Partly   |
@@ -73,11 +73,11 @@ File names omit the `.feature` suffix. The number in brackets is the Butler scen
 | outline-access-requests-writes (10)           | no scenario; tools ship                 | Gap      |
 | outline-admin-reads (4)                       | no scenario; tools ship                 | Gap      |
 | outline-attachments-destructive (6)           | no scenario; tools ship                 | Gap      |
-| outline-auth-whoami (5)                       | outline-reads: account read             | Partly   |
+| outline-auth-whoami (5)                       | outline-reads: account read             | Covered  |
 | outline-authentication-providers-admin (10)   | no scenario; tools ship                 | Gap      |
 | outline-collections-access (3)                | no scenario; tools ship                 | Gap      |
 | outline-collections-destructive (6)           | no scenario; tools ship                 | Gap      |
-| outline-collections-list (6)                  | outline-reads: collection list          | Partly   |
+| outline-collections-list (6)                  | outline-reads: collection list          | Covered  |
 | outline-collections-read (11)                 | outline-reads: collection list          | Partly   |
 | outline-collections-writes (14)               | outline-writes: documents only          | Gap      |
 | outline-comments-destructive (6)              | no scenario; tools ship                 | Gap      |
@@ -112,7 +112,7 @@ File names omit the `.feature` suffix. The number in brackets is the Butler scen
 | outline-rate-limit (11)                       | https-and-limits: Retry-After           | Partly   |
 | outline-remaining-reads (2)                   | no scenario; tools ship                 | Gap      |
 | outline-revisions-destructive (4)             | no scenario; tools ship                 | Gap      |
-| outline-revisions-read (4)                    | no scenario; tools ship                 | Gap      |
+| outline-revisions-read (4)                    | outline-reads: revision list            | Partly   |
 | outline-revisions-writes (10)                 | no scenario; tools ship                 | Gap      |
 | outline-searches-writes (11)                  | no scenario; tools ship                 | Gap      |
 | outline-secret-never-printed (9)              | outline-redaction, credentials          | Partly   |
@@ -168,11 +168,17 @@ assert the retriever behaviour, so the Butler text is not ported as written.
   a listing of subcommands but does not require one, so a Butler scenario that requires the list on standard output is
   out.
 - **GraphQL mutation**: the served API has no write operation, so a Butler scenario that calls an export mutation is out.
+- **Escaped Markdown** (`kiwi-documents-read`, `jira-adf-rendering`): Kiwi and Jira text is escaped Markdown.
+  A Kiwi title that Kiwi escapes once shows its `&` as `&amp;` in the Markdown output, so the Butler plain-text form is
+  not ported as written. The scenario asserts the single escape, not a second one.
+- **Kiwi write guards** (`kiwi-writes`): the dry-run rows and the access-ceiling row are out, under removed guards.
 
 ## Deferred
 
 - **Vault write confinement** (`vault-write-confinement`): the vault source kind is planned for v0.2.0 or a later
   release. It is not a v0.1.0 gap.
+- **Kiwi writes** (`kiwi-writes`, the write rows that are not dry runs or access ceilings): adoption does not use Kiwi
+  writes, so they are not ported in this series. Each one is a follow-up for a later release.
 
 ## Follow-up
 
@@ -194,3 +200,14 @@ scenario.
 Batches B2 (root CLI and catalog rules), B3 (GraphQL hardening), and B11 (export) add scenarios in this change. The
 retriever specs grow from 220 to 264 scenario headings. The Partly and Gap rows keep their status, because each one still
 has open headings.
+
+Batches B7 (Outline reads and output formats), B8 (other Outline reads), B9 (Jira reads), and B10 (Kiwi reads) add 69
+scenario headings in this change, and the retriever specs grow from 264 to 333. The change counts about 70 of the 165
+read headings in these batches as asserted now, by hand and by title, after checking each scenario's assertions. The
+Kiwi write headings (17) are deferred. The Butler headings that remain open in these batches stay in their Partly or Gap
+rows. Each remaining read closes in its own change, with its scenario written first.
+
+Open defect, not fixed in this change: `outline collections info` and `outline collections documents` accept a value
+that is not a UUID and send it to the wiki. Butler refused it before any request. The fix changes the kind of the two
+operation rows and the plain-test fixtures that use non-UUID collection IDs in several packages, so it is a separate
+change, with its refusal scenario written first.
