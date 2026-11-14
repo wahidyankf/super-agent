@@ -73,9 +73,12 @@ Each parameter has `name`, `type`, `in` (`path`, `query`, or `body`), and `requi
 
 Each name is unique within its operation. An `Enum` or `EnumList` parameter lists its `values`.
 
-`resolve` turns a name into an ID. It names a read operation of the same spec and one of its response fields. The spec
-module checks those names. The engine, when it exists, must find exactly one match at run time. It replaces the Kiwi
-name lookups.
+`resolve` turns a name into an ID before a write. It names a read operation of the same spec and one of its response
+fields. The spec module checks those names. The engine, in `libs/retriever-engine`, runs the read once, with the name
+under the parameter of the field's own name when the read declares one. It matches the entries whose field equals the
+name exactly, and it sends the write only when exactly one entry matches. Its `id` field is the ID. The read must be an
+unpaged list. A name that matches zero or two entries fails with `retriever.<kind>.unresolved_name`. This replaces the
+Kiwi name lookups.
 
 ## Headers
 
@@ -116,5 +119,6 @@ A refused spec carries the stable code `retriever.connector.spec_invalid`. The c
 app does not map it to an exit status yet, so no command reports it. The draft's other connector reasons,
 `spec_pin_mismatch`, `network_refused`, `plugin_pin_mismatch`, and `plugin_protocol`, belong to later changes, and this
 module does not define them. Runtime failures use `retriever.<kind>.<reason>` with the reasons of the
-[error codes](./retriever-cli-json-schemas.md#error-codes). Exit statuses follow the
+[error codes](./retriever-cli-json-schemas.md#error-codes). A write whose outcome is unknown uses
+`write_outcome_unknown`, which exits 2 and is never retried. Exit statuses follow the
 [exit-code contract](./retriever-cli-exit-codes.md).
