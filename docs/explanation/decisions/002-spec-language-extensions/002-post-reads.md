@@ -6,13 +6,13 @@ tags:
   - explanation
   - security
   - decision
-  - planned
+  - built
 ---
 
 # E1: POST reads
 
-This page belongs to [ADR 002](../002-spec-language-extensions.md). It decides threat S11 again. Everything here is
-planned.
+This page belongs to [ADR 002](../002-spec-language-extensions.md). It decides threat S11 again. Pull request 7 builds
+it. The as-built rules are on [connector spec fields](../../../reference/connector-spec-fields.md#post-reads).
 
 ## What it adds
 
@@ -39,8 +39,8 @@ All five conditions hold, or the spec is refused with `retriever.connector.spec_
 2. The body is a JSON object whose values are constants or whole `{{name}}` slots of declared body parameters.
 3. The engine sets the content type to `application/json`. A spec may not set `Content-Type`.
 4. The operation has no `resolve`. It claims no side effect, because the spec has no field for one.
-5. The rendered body is at most 64 KiB and nests at most 8 levels. These limits are proposed, and a spec may only lower
-   them.
+5. The rendered body is at most 64 KiB and nests at most 8 levels. As built, these limits are fixed, and no spec field
+   changes them. The proposal that a spec may lower them is not built. The owner decides whether it is wanted.
 
 ## Re-deciding S11
 

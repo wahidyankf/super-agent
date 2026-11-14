@@ -42,6 +42,23 @@ The package layout and the tests are in [engine/README.md](../../libs/retriever-
 5. The reply maps to the declared fields. A reply that reads as a success but holds no mappable field is an unknown
    outcome.
 
+## POST reads
+
+A read with `read_over_post: true` runs the read steps above, and its request is a `POST` with the rendered body. The
+engine sends the body as JSON, with `Content-Type: application/json`. It checks the rendered body after the slots are
+filled, so a list that a slot fills counts toward the limits:
+
+- at most 64 KiB, and
+- at most 8 levels of nesting, with the top-level object as level 1.
+
+A body over either limit fails with `body_limit` before any request leaves. The spec module and the engine both check
+the access matrix when the model is built, so a POST read that breaks the rules is refused before any request.
+
+The MCP tool of a POST read reports hints by its source. A POST read of a spec that every source of its kind pins with
+`spec_sha256` reports the hints of a read. Any other POST read reports the hints of a write: it is not read-only, it is
+not destructive, and it is not idempotent. A kind with no source counts as unpinned. The command line and the routing do
+not change: the engine serves a POST read as a read.
+
 ## The unknown outcome
 
 A write whose request may have left has an unknown outcome. It returns `write_outcome_unknown` with exit status 2, and it
@@ -90,7 +107,7 @@ The reasons are `timed_out`, `redirected`, `reply_too_large`, `unexpected_respon
 `upstream_failure`, `unreachable`, `document_conflict`, `unresolved_name`, `operation_unavailable`,
 `unsupported_operation`, `wrong_operation_class`, `wrong_source_kind`, `invalid_endpoint`, `invalid_id`,
 `invalid_limit`, `invalid_offset`, `invalid_number`, `invalid_text`, `invalid_name`, `missing_argument`,
-`unknown_argument`, and `write_outcome_unknown`. Any other error is `failed`. The spec commands of the `retriever` command return them, and each one keeps its code on every surface.
+`unknown_argument`, `body_limit`, and `write_outcome_unknown`. Any other error is `failed`. The spec commands of the `retriever` command return them, and each one keeps its code on every surface.
 
 `write_outcome_unknown` is the code of `domain.ErrWriteOutcomeUnknown`. It is the same code that the Go connectors give,
 so a caller sees one code on every surface. The CLI reads the same sentinel, and it exits 2 for it.
