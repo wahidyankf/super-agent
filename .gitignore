@@ -42,6 +42,7 @@ connectors/
 !examples/**/sources.yml
 !examples/**/connectors/
 !apps/retriever-cli/examples/connectors/
+!specs/behaviours/connectors/
 
 # Logs
 *.log
