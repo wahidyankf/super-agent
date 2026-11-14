@@ -101,9 +101,14 @@ jobs:
         include:
           # Ubuntu runs the full set. macOS runs the targets whose behaviour depends on the platform: signals, exit
           # statuses, the user configuration directory, atomic renames, file modes, symbolic links, and port binding.
+          # Each row's tier follows its work. Ubuntu runs a whole project's suite, which is heavy work. macOS runs a
+          # subset of one project's tests, which is standard work, and a macos-15 runner (3 CPUs, about 7 GiB) has less
+          # than the heavy tier's minimum reservation of 4 CPUs and 8192 MiB.
           - os: ubuntu-24.04
+            tier: heavy
             targets: "lint typecheck test:unit test:integration test:e2e test:conformance bdd:check deps:audit"
           - os: macos-15
+            tier: standard
             targets: "test:unit test:e2e test:conformance"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -136,16 +141,18 @@ jobs:
           fi
           echo "Go toolchain ${installed} matches go.mod"
 
+      # One HIPPO run admits the whole row, so its targets do not queue for capacity between themselves. A run
+      # admitted between two targets can be deferred after the first one has loaded the host.
       - name: Run the Go targets through Nx
         shell: bash
         env:
           TARGETS: ${{ matrix.targets }}
+          TIER: ${{ matrix.tier }}
         run: |
           set -euo pipefail
-          for target in $TARGETS; do
-            ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- \
-              npx nx run "retriever-cli:${target}"
-          done
+          read -r -a targets <<< "$TARGETS"
+          ./hippo run --class ephemeral --resource-tier "$TIER" --disk-path . -- \
+            bash -c "for target in \"\$@\"; do npx nx run \"retriever-cli:\${target}\" || exit \$?; done" bash "${targets[@]}"
 
   cross-compile:
     name: Cross-compile check

@@ -54,7 +54,7 @@ Run each target from the repository root with `npx nx run retriever-cli:<target>
   runs it. CI never runs it, and nothing is published by it.
 
 The [test gates](../../docs/reference/retriever-cli-test-gates.md) page describes what each target runs, the coverage
-gate rules, the binding rules, and the platforms each target runs on in CI.
+gate rules, the binding rules, and the platforms and HIPPO resource tiers that each target runs under in CI.
 
 The `.golangci.yml` file is present, but no target runs `golangci-lint`, because it is not a tool directive in `go.mod`.
 The CI cross-compile check builds four platforms and publishes nothing.
