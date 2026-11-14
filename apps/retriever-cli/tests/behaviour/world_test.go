@@ -59,6 +59,9 @@ type world struct {
 	stdoutClosed bool
 	// kept holds the standard error of an earlier command, by the name a step gave it, for a later identical-text check.
 	kept map[string]string
+	// clock is the fake clock of the in-process levels. The gateways and the stubs of those levels read it, so the spacing
+	// and the waits a scenario checks are exact and take no real time. The end-to-end level does not use it.
+	clock *fakeClock
 }
 
 // newWorld returns the state of one scenario at the given level, kept by the given backend.
@@ -71,6 +74,7 @@ func newWorld(lvl level, outer *testing.T, be backend) *world {
 		inputs:      map[string]bool{},
 		envFileVars: map[string]string{},
 		stubs:       stubSet{seamed: map[string]bool{}},
+		clock:       newFakeClock(),
 	}
 }
 
