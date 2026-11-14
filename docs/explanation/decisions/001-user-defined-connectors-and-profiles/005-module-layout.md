@@ -77,3 +77,10 @@ Each arrow points from the importer to the module it imports. The app also names
 ## Third-party packages
 
 The spec module owns the YAML and JSON Schema libraries. No other module imports them.
+
+## As built
+
+The loopback stub for spec kinds does not live in the testkit. The testkit may import only the contract, and the stub
+needs the engine's replay stub and the spec module. So the stub lives in `apps/retriever-cli/tests/specstub`, under the
+`integration` tag. Only the composition-root tests in `cmd/retriever` and the integration-tagged part of the behaviour
+suite import it. The testkit has no spec stub.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -17,23 +18,53 @@ import (
 // command path, its flags and positional argument, its help, and the shape of its output. attachOperations adds a
 // command for every row, and runRead runs any of them the same way. A command here parses nothing by hand.
 
-// commandTree returns the full retriever command tree: the base table, with the generated commands of each kind's group and
-// the tree alias of the outline group.
+// commandTree returns the command tree of the built-in kinds: the base table, with the generated commands of each kind's
+// group and the tree alias of the outline group.
 func commandTree() *command {
+	return commandTreeWith(operations.BuiltinCatalog(), nil)
+}
+
+// commandTreeWith returns the command tree of the built-in kinds and of the spec kinds of the run. cat is the operation
+// catalog of the run, which knows the kind of every row, and specRows holds the CLI rows of the spec kinds. Each spec kind
+// gets a group of its own, named by the kind.
+func commandTreeWith(cat operations.Catalog, specRows []operations.Row) *command {
 	tree := baseCommandTree()
 	outline := tree.child("outline")
-	attachOperations(outline, domain.KindOutline)
+	attachOperations(outline, domain.KindOutline, operations.RowsOf(domain.KindOutline))
 	outline.children = append(outline.children, treeAlias())
-	attachOperations(tree.child("kiwi"), domain.KindKiwi)
-	attachOperations(tree.child("jira"), domain.KindJira)
+	attachOperations(tree.child("kiwi"), domain.KindKiwi, operations.RowsOf(domain.KindKiwi))
+	attachOperations(tree.child("jira"), domain.KindJira, operations.RowsOf(domain.KindJira))
+	attachSpecKinds(tree, cat, specRows)
 	return tree
+}
+
+// attachSpecKinds adds one group for each spec kind that has a CLI row, in the order the rows name them. A row whose kind
+// the catalog does not know is left out.
+func attachSpecKinds(tree *command, cat operations.Catalog, specRows []operations.Row) {
+	var kinds []domain.SourceKind
+	for _, row := range specRows {
+		if kind, ok := cat.KindOf(row); ok && !slices.Contains(kinds, kind) {
+			kinds = append(kinds, kind)
+		}
+	}
+	for _, kind := range kinds {
+		var rows []operations.Row
+		for _, row := range specRows {
+			if k, ok := cat.KindOf(row); ok && k == kind {
+				rows = append(rows, row)
+			}
+		}
+		group := &command{name: kind.String(), summary: kind.Display() + " commands"}
+		attachOperations(group, kind, rows)
+		tree.children = append(tree.children, group)
+	}
 }
 
 // treeAlias is "outline tree", the name a collection's document tree had before the catalog. It runs the
 // collections.documents row, so its answer and its errors are the same.
 func treeAlias() *command {
 	row, _ := operations.Lookup(domain.OpCollectionsDocuments)
-	return &command{name: "tree", summary: "show the document tree of one Outline collection", leaf: readLeaf(row, "outline tree")}
+	return &command{name: "tree", summary: "show the document tree of one Outline collection", leaf: readLeaf(domain.KindOutline, row, "outline tree")}
 }
 
 // legacyRunnableGroup is the one group that is also a command: "outline collections" runs its list row, as it did before
@@ -42,9 +73,9 @@ const legacyRunnableGroup = "collections"
 
 // attachOperations adds one command for every catalog row of the kind under its group, the command whose first word is the
 // kind's name. A path word that no row has yet is a group, so "outline documents" and "kiwi test-cases" appear with their
-// subcommands. The rows of one kind never join another kind's group.
-func attachOperations(group *command, kind domain.SourceKind) {
-	for _, row := range operations.RowsOf(kind) {
+// subcommands. The rows of one kind never join another kind's group. rows are the CLI rows of the kind, in order.
+func attachOperations(group *command, kind domain.SourceKind, rows []operations.Row) {
+	for _, row := range rows {
 		words := row.Path()[1:]
 		node := group
 		for i, word := range words {
@@ -55,11 +86,11 @@ func attachOperations(group *command, kind domain.SourceKind) {
 			}
 			if i == len(words)-1 {
 				next.summary = row.Summary
-				next.leaf = readLeaf(row, row.CLI)
+				next.leaf = readLeaf(kind, row, row.CLI)
 				if word == "list" && node.name == legacyRunnableGroup {
 					// "outline collections" is the command of today, and it runs the list. No other group is runnable, so "outline documents" stays a group.
 					node.summary = row.Summary
-					node.leaf = readLeaf(row, strings.TrimSuffix(row.CLI, " list"))
+					node.leaf = readLeaf(kind, row, strings.TrimSuffix(row.CLI, " list"))
 				}
 			}
 			node = next
@@ -70,8 +101,7 @@ func attachOperations(group *command, kind domain.SourceKind) {
 // readLeaf returns the leaf that runs one catalog row. The usage line names path, which is the row's own path except for
 // an alias such as "outline tree". A row of a non-read effect is a write: its leaf names its source as required, and
 // runs through the write use case.
-func readLeaf(row operations.Row, path string) *leaf {
-	kind, _ := row.Kind()
+func readLeaf(kind domain.SourceKind, row operations.Row, path string) *leaf {
 	positional := row.Positional()
 	var names, required []string
 	var flags []flag
@@ -97,10 +127,10 @@ func readLeaf(row operations.Row, path string) *leaf {
 		usage.WriteString(" [" + f.name + " " + f.meta + "]")
 	}
 	source := sourceFlagFor(kind)
-	run := func(inv *invocation) error { return runRead(inv, row) }
+	run := func(inv *invocation) error { return runRead(inv, row, kind) }
 	if row.Effect != domain.EffectRead {
 		source = writeSourceFlag
-		run = func(inv *invocation) error { return runWrite(inv, row) }
+		run = func(inv *invocation) error { return runWrite(inv, row, kind) }
 	}
 	flags = append(flags, source)
 	usage.WriteString(" [--source <id>]")
@@ -174,9 +204,8 @@ func rawArgs(inv *invocation, row operations.Row) map[string]any {
 
 // runRead runs one catalog row against the selected source and prints its Record in the requested format. A search
 // that matches nothing exits 1, after it has printed the empty result (CLI contract 001).
-func runRead(inv *invocation, row operations.Row) error {
+func runRead(inv *invocation, row operations.Row, kind domain.SourceKind) error {
 	rt := inv.rt
-	kind, _ := row.Kind()
 	service, err := rt.outlineWiring()
 	if err != nil {
 		return withKind(kind, err)

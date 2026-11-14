@@ -38,7 +38,8 @@ The top level has two keys, and no other key is allowed:
 
 - `id`: required. A lowercase slug of letters, digits, and single hyphens, starting with a letter. It is unique in the
   catalog.
-- `kind`: required. It is `outline`, `kiwi`, or `jira`. Any other kind is refused.
+- `kind`: required. It is `outline`, `kiwi`, or `jira`, or the kind that a loaded connector spec declares. Any other kind
+  is refused, and so is a kind that no loaded spec declares.
 - `tags`: optional. A list of lowercase slugs, at most 16 distinct tags. Tags label a source. They never change what the
   source allows.
 - `endpoint`: required. It is `https://` followed by a host name only: no path, no port, and no user information. A
@@ -47,6 +48,9 @@ The top level has two keys, and no other key is allowed:
   `^[A-Z][A-Z0-9_]*_API_(KEY|TOKEN)$`, and it is at most 64 characters.
 - `identity_env`: required for Jira only. It is the name of the variable that holds the account e-mail address. It must
   match `^[A-Z][A-Z0-9_]*_EMAIL$`, and it is 7 to 64 characters.
+- `spec_sha256`: optional, and allowed only on a source whose kind a loaded spec declares. It is the SHA-256 of the spec
+  file's bytes, as 64 lower-case hex characters. A mismatch fails the run with `retriever.connector.spec_pin_mismatch`,
+  and no request goes out.
 
 Each rule states a requirement, and no error message repeats a value. For example, a bad endpoint reports that it must
 be an `https` host name, and it does not print the endpoint.

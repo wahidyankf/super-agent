@@ -186,6 +186,8 @@
     "retriever-testkit",
     "retriever-connector-outline",
     "retriever-connector-kiwi",
-    "retriever-connector-jira"
+    "retriever-connector-jira",
+    "retriever-spec",
+    "retriever-engine"
   ]
 }

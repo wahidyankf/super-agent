@@ -58,7 +58,7 @@ func writableOutline(t *testing.T, gw *fakeGateway) sources.Service {
 // rowForTool returns the catalog row whose MCP tool has the given name.
 func rowForTool(t *testing.T, name string) operations.Row {
 	t.Helper()
-	for _, row := range operationTools() {
+	for _, row := range operationTools(sources.Service{}) {
 		if row.Tool == name {
 			return row
 		}

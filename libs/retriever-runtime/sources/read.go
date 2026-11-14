@@ -12,7 +12,7 @@ import (
 // validated; the source is selected by the default rule for the kind; and the reader is called last. A refused or
 // invalid call makes no request to the wiki.
 func Read(ctx context.Context, svc Service, op domain.OperationID, source *string, raw map[string]any) (domain.Record, error) {
-	row, kind, err := rowOf(op)
+	row, kind, err := rowOf(svc, op)
 	if err != nil {
 		return domain.Record{}, err
 	}

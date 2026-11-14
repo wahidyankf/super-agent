@@ -193,10 +193,10 @@ func TestReadTakesTheKindOfTheRow(t *testing.T) {
 // TestRowOfRefusesAnUnknownOperation checks the guard that every use case runs first: an operation the catalog does not
 // hold is ErrUnsupportedOperation, and a known operation is returned with its kind.
 func TestRowOfRefusesAnUnknownOperation(t *testing.T) {
-	if _, _, err := rowOf(domain.OperationID("nope.nope")); !errors.Is(err, domain.ErrUnsupportedOperation) {
+	if _, _, err := rowOf(Service{}, domain.OperationID("nope.nope")); !errors.Is(err, domain.ErrUnsupportedOperation) {
 		t.Fatalf("rowOf(unknown) error = %v, want ErrUnsupportedOperation", err)
 	}
-	row, kind, err := rowOf(domain.OpKiwiPlansAddCase)
+	row, kind, err := rowOf(Service{}, domain.OpKiwiPlansAddCase)
 	if err != nil || kind != domain.KindKiwi || row.ID != domain.OpKiwiPlansAddCase {
 		t.Fatalf("rowOf(kiwi.plans.add-case) = %v, %v, %v", row.ID, kind, err)
 	}

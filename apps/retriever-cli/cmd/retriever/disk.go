@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -22,6 +23,11 @@ func openEnvFile(path string) (*envfile.Credentials, error) {
 // openCatalog returns the loader of the sources catalog at path, over the real files, for the kinds the root registered.
 func openCatalog(path string, kinds domain.KindSet) (*catalog.Loader, error) {
 	return catalog.NewWithFiles(path, catalog.Files{FS: os.DirFS(filepath.Dir(path)), SameFile: os.SameFile}, kinds)
+}
+
+// openConnectorsFolder returns the connectors folder at dir as a file system. Nothing is read until the folder is listed.
+func openConnectorsFolder(dir string) fs.FS {
+	return os.DirFS(dir)
 }
 
 // exportFolder returns the export sink over the real folder dir, with the calls of package os.

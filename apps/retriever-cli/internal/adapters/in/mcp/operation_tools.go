@@ -31,10 +31,11 @@ const sourceSchemaText = "the source ID; may be omitted when exactly one outline
 // sourceWriteText describes the source input of every generated write tool, which must name its source.
 const sourceWriteText = "the source ID; required, a change names its source"
 
-// operationTools returns the MCP tools of the catalog, one per row that names a tool, in catalog order.
-func operationTools() []operations.Row {
+// operationTools returns the MCP tools of the service's operation catalog, one per row that names a tool, in catalog order.
+// The built-in rows and the rows of every loaded spec are in that catalog.
+func operationTools(svc sources.Service) []operations.Row {
 	var out []operations.Row
-	for _, row := range operations.Rows() {
+	for _, row := range svc.OperationCatalog().Rows() {
 		if row.Tool != "" {
 			out = append(out, row)
 		}
@@ -178,7 +179,7 @@ func (s resourceSet) offers(resource string) bool {
 func registerOperations(server *sdk.Server, svc sources.Service, log *slog.Logger, offers resourceSet) []string {
 	c := caller{svc: svc, log: log}
 	var names []string
-	for _, row := range operationTools() {
+	for _, row := range operationTools(svc) {
 		if !offers.offers(row.Resource()) {
 			continue
 		}

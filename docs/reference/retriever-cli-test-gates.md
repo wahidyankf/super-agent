@@ -187,6 +187,23 @@ Integration and end-to-end tests stay outside the figure for both.
 - `behaviour-coverage.json` must match the feature files. It records, for each feature, the scenario count and the count
   of `@unit`, `@integration`, and `@e2e` tags, with the totals. A difference fails the check.
 
+### Connector spec scenarios
+
+`specs/behaviours/connectors/spec-connectors.feature` covers the connectors folder, the CLI and MCP switches, the catalog
+pin, the start-up refusals, and the Markdown converter that the engine refuses. Each scenario runs at the unit level and
+the integration level. Most also run at the end-to-end level. The one exemption is the first scenario, a spec command
+that prints its mapped document, which needs a source that answers over HTTPS:
+
+```gherkin
+# Exemption(e2e): the built binary cannot trust the loopback stub; alternative-proof: the integration binding.
+@e2e-exempt
+```
+
+The unit level answers from the replay stubs in memory. The integration level answers from the loopback stub. The
+end-to-end level runs the built binary and cannot count requests to a source, so its check for "no request" holds when
+the error names no network failure. A developer detail is a plain test, not a scenario. Examples are the folder
+listing in `libs/retriever-runtime/specfolder` and the composition-root wiring in `cmd/retriever`.
+
 ## CI runs
 
 The Go job runs when an affected Nx project carries the `lang:go` tag. Each row selects its projects from the Nx project

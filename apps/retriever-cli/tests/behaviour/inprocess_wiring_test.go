@@ -3,6 +3,7 @@ package behaviour
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,6 +13,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 	mcpadapter "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/mcp"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/connectorspec"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
@@ -20,6 +22,8 @@ import (
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/registry"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/specfolder"
+	"github.com/wahidyankf/super-agent/libs/retriever-spec"
 )
 
 // The in-process levels mirror the composition root in cmd/retriever (main.go and wiring.go). The root is in package
@@ -100,9 +104,44 @@ func checkSeams(seams seamSet) error {
 	return nil
 }
 
+// harnessFolderError is the failure of a connectors folder that the run cannot use. It mirrors the composition root's
+// error: the same stable code, and a text that names no path.
+type harnessFolderError struct {
+	rule string
+}
+
+// Error returns the fixed text of the failure.
+func (e harnessFolderError) Error() string { return "the connectors folder " + e.rule }
+
+// ErrorCode returns the code that the composition root gives a folder the run cannot use.
+func (harnessFolderError) ErrorCode() string { return "retriever.connector.folder_unavailable" }
+
+// loadConnectors reads and validates the spec files of the connectors folder dir, and returns the set the run registers. It
+// mirrors loadConnectors in the composition root: an empty dir loads nothing, a missing default folder loads nothing, and a
+// folder that the flag named must exist and be readable.
+func (w *world) loadConnectors(dir string, named bool) (connectorspec.Set, error) {
+	if dir == "" {
+		return connectorspec.Load(nil)
+	}
+	files, err := specfolder.Read(w.be.connectorsFolder(dir), spec.MaxBytes)
+	var file specfolder.FileError
+	switch {
+	case errors.Is(err, specfolder.ErrNoFolder) && !named:
+		return connectorspec.Load(nil)
+	case errors.Is(err, specfolder.ErrNoFolder):
+		return connectorspec.Set{}, harnessFolderError{rule: "does not exist"}
+	case errors.As(err, &file):
+		return connectorspec.Set{}, &connectorspec.Error{File: file.Name, Rule: file.Rule}
+	case err != nil:
+		return connectorspec.Set{}, harnessFolderError{rule: "cannot be read"}
+	}
+	return connectorspec.Load(files)
+}
+
 // wireSources loads the catalog, builds the gateway registry, and returns the source service, as wireSources does in
-// the composition root. A catalog error is returned, so only the source commands report it.
-func (w *world) wireSources(paths configpaths.Paths, seams seamSet) (sources.Service, error) {
+// the composition root. The spec sources of the set are built from its one engine builder each. A catalog error is
+// returned, so only the source commands report it.
+func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connectorspec.Set) (sources.Service, error) {
 	if err := checkSeams(seams); err != nil {
 		return sources.Service{}, err
 	}
@@ -110,11 +149,19 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet) (sources.Ser
 	if err != nil {
 		return sources.Service{}, err
 	}
-	cat, err := w.be.loadCatalog(paths.Catalog, w.kinds)
+	rt, err := w.specRuntimeFor(set)
 	if err != nil {
 		return sources.Service{}, err
 	}
-	resolver := registry.New(map[domain.SourceKind]registry.Builder{
+	kinds := w.kinds
+	if len(set.Specs) > 0 {
+		kinds = set.Kinds
+	}
+	cat, err := w.be.loadCatalog(paths.Catalog, kinds, set.Digests)
+	if err != nil {
+		return sources.Service{}, err
+	}
+	builders := map[domain.SourceKind]registry.Builder{
 		domain.KindOutline: func(src domain.Source) (ports.SourceGateway, error) {
 			return wireOutline(src, creds, seams[domain.KindOutline], w.clock)
 		},
@@ -124,8 +171,12 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet) (sources.Ser
 		domain.KindJira: func(src domain.Source) (ports.SourceGateway, error) {
 			return wireJira(src, creds, seams[domain.KindJira], w.clock)
 		},
-	})
-	return sources.Service{Catalog: cat, Gateways: resolver}, nil
+	}
+	for _, s := range set.Specs {
+		builders[s.Kind] = w.specBuilder(rt, s.Model, creds)
+	}
+	ops := set.Operations
+	return sources.Service{Catalog: cat, Gateways: registry.New(builders), Operations: &ops}, nil
 }
 
 // wireOutline returns the gateway of one Outline source. The seam, when it is on, replaces only the connection base.
@@ -182,16 +233,24 @@ func wireJira(src domain.Source, secrets jira.Secrets, seam seamConfig, clk *fak
 // error of the CLI.
 func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) error {
 	paths, err := configpaths.Resolve(configpaths.Inputs{
-		CatalogFlag: g.Catalog,
-		EnvFileFlag: g.EnvFile,
-		Getenv:      w.getenv,
-		Getwd:       w.getwd,
-		Exists:      w.be.regularFile,
+		CatalogFlag:    g.Catalog,
+		EnvFileFlag:    g.EnvFile,
+		ConnectorsFlag: g.ConnectorsDir,
+		Getenv:         w.getenv,
+		Getwd:          w.getwd,
+		Exists:         w.be.regularFile,
 	})
 	if err != nil {
 		return err
 	}
-	svc, err := w.wireSources(paths, seams)
+	set, err := w.loadConnectors(paths.Connectors, g.ConnectorsDir != "")
+	if err != nil {
+		return err
+	}
+	// The spec commands are registered before the wiring, as the composition root registers them, so a refused catalog
+	// still reports its failure through the command that names the spec kind.
+	deps.Specs = cli.Specs{Catalog: set.Operations, Rows: set.CLIRows}
+	svc, err := w.wireSources(paths, seams, set)
 	if err != nil {
 		return err
 	}

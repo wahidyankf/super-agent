@@ -52,6 +52,22 @@ Only the working directory is checked for rule 3. Parent folders are never searc
 above the working directory is not found. The rule is the same from any folder, and a file found by walking up the tree
 could belong to another project.
 
+## Connector specs
+
+A connector spec is a YAML file that declares one source kind. The tool reads the spec files of one folder at start-up.
+That folder is the one that `--connectors-dir <path>` names, or else the default `retriever/connectors` folder of the user
+configuration folder. A spec file ends in `.yml` or `.yaml`, is at most 256 KiB, and is a regular file.
+
+- **A missing default folder** is not an error. The run loads no spec.
+- **A missing or unreadable `--connectors-dir`** fails with exit status `2` and the code
+  `retriever.connector.folder_unavailable`. The message names no path.
+- **A refused spec** fails every sources command with exit status `2` and the code `retriever.connector.spec_invalid`. The
+  message names the file and the field.
+- **A catalog pin** of `spec_sha256` must match the bytes of the spec file, or the run fails with exit status `2` and the
+  code `retriever.connector.spec_pin_mismatch`.
+
+The [how-to](../how-to/add-a-spec-connector.md) shows the steps.
+
 ## Missing files
 
 - **A missing catalog** fails every source command with exit status `2`. The message is

@@ -7,6 +7,7 @@ connector contract. A feature never describes an internal function.
 
 - [cli/](cli/README.md): the command-line contract that every command follows.
 - [catalog/](catalog/README.md): the sources catalog, how a command finds it, and how a bad catalog is refused.
+- [connectors/](connectors/README.md): connector spec files, the commands and tools they add, and how a bad spec is refused.
 - [credentials/](credentials/README.md): where each key comes from, and where it may be sent.
 - [transport/](transport/README.md): HTTPS, redirects, timeouts, retries, and reply limits for every source kind.
 - [outline/](outline/README.md): Outline reads, writes, critical actions, and reply redaction.

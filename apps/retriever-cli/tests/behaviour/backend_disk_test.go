@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -171,13 +172,16 @@ func (d *diskBackend) credentials(name string, _ func(string) string) (*envfile.
 }
 
 // loadCatalog reads the catalog from the real disk, as the composition root does.
-func (d *diskBackend) loadCatalog(name string, kinds domain.KindSet) (domain.Catalog, error) {
+func (d *diskBackend) loadCatalog(name string, kinds domain.KindSet, digests map[string]string) (domain.Catalog, error) {
 	loader, err := catalog.NewWithFiles(name, catalog.Files{FS: os.DirFS(filepath.Dir(name)), SameFile: os.SameFile}, kinds)
 	if err != nil {
 		return domain.Catalog{}, err
 	}
-	return loader.Load()
+	return loader.WithSpecDigests(digests).Load()
 }
+
+// connectorsFolder returns the connector spec folder on the real disk, as the composition root opens it.
+func (d *diskBackend) connectorsFolder(dir string) fs.FS { return os.DirFS(dir) }
 
 // sink returns the Markdown sink that writes into dir on the real disk, as the composition root builds it.
 func (d *diskBackend) sink(dir string) ports.ExportSink {

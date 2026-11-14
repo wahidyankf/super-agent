@@ -43,8 +43,8 @@ an affected project.
 Each module names its sibling modules in its `go.mod`, at `v0.4.0`. Each requirement has a `replace` directive to the
 sibling's folder, so a build in this repository uses the working tree.
 
-- `apps/retriever-cli` requires the six libraries that it builds on. Its Nx `implicitDependencies` lists the same six.
-  No command loads a spec yet, so the app does not require `libs/retriever-spec`.
+- `apps/retriever-cli` requires the libraries that it builds on, including `libs/retriever-spec` and
+  `libs/retriever-engine`, which load and run connector specs. Its Nx `implicitDependencies` lists the same libraries.
 - `libs/retriever-contract` requires no sibling.
 - `libs/retriever-spec` requires `retriever-contract` alone.
 - `libs/retriever-engine` requires `retriever-contract` and `retriever-spec`.

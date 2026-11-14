@@ -15,7 +15,7 @@ import (
 // invalid call makes no request to the wiki. A reply of the wrong shape after the writer was called returns
 // ErrWriteOutcomeUnknown.
 func Write(ctx context.Context, svc Service, op domain.OperationID, source *string, raw map[string]any) (domain.Record, error) {
-	row, kind, err := rowOf(op)
+	row, kind, err := rowOf(svc, op)
 	if err != nil {
 		return domain.Record{}, err
 	}

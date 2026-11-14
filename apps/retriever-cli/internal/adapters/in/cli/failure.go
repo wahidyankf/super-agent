@@ -23,6 +23,12 @@ func (e setupError) Error() string { return e.err.Error() }
 
 func (e setupError) Unwrap() error { return e.err }
 
+// codedError is an error that names its own stable code, such as retriever.connector.spec_invalid. The CLI prints that
+// code in place of the area's generic one.
+type codedError interface {
+	ErrorCode() string
+}
+
 // usageError is a mistake in the command line that the CLI found itself, such as a --port value out of range. Its text is
 // written by the CLI and names only the flag and the value the user typed, so publicMessage shows it as it is.
 type usageError struct {
@@ -180,8 +186,13 @@ var errorReasons = []struct {
 
 // errorCode returns the code of a failed command: retriever.<area>.<reason>. The area is the source kind of a kind-named
 // error, and otherwise the area of the command. A code names the failure, never a value. The generic
-// code is used only for an error that no entry names.
+// code is used only for an error that no entry names. An error that carries its own stable code, such as a refused connector
+// spec, keeps that code in every command that reports it.
 func errorCode(err error, area string) string {
+	var coded codedError
+	if errors.As(err, &coded) {
+		return coded.ErrorCode()
+	}
 	prefix := "retriever." + areaFor(err, area) + "."
 	var usage usageError
 	if errors.As(err, &usage) {
