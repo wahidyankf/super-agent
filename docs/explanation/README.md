@@ -19,6 +19,8 @@ repository.
   project is not.
 - [The sourcing layer](./sourcing-layer.md) explains why the `retriever` command-line tool reads sources through one
   catalog and fixed machine contracts.
+- [Who guards what](./who-guards-what.md) explains which checks retriever makes itself and which the API token of a
+  source makes.
 - [Stability and versioning](./stability-and-versioning.md) explains what alpha means and how releases and breaking
   changes work.
 - [Public data policy](./public-data-policy.md) explains why the repository is public and which kinds of data never

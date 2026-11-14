@@ -15,7 +15,7 @@ depends on an adapter.
 
 | Layer       | Holds                                                                      | May import       |
 | ----------- | -------------------------------------------------------------------------- | ---------------- |
-| Core        | Value types, rules, and decisions, including the access check              | Standard library |
+| Core        | Value types, rules, and decisions, including each kind's identity rules    | Standard library |
 | Application | Use cases that combine the core with ports                                 | Core             |
 | Ports       | Interfaces the core needs from outside, such as a source reader or a clock | Core             |
 | Adapters    | Effects: the command line, HTTP, files, and each source kind               | Core and ports   |
@@ -25,7 +25,7 @@ depends on an adapter.
 
 - A core function receives everything it needs as parameters. It never reads the clock, the environment, or the network.
 - An adapter converts external data into core types at its edge. Infrastructure error types stop at the adapter.
-- The access check sits in the core, so every adapter inherits the same access ceiling.
+- The source-kind rules sit in the core, so every adapter applies the same rules.
 - A port is named for what the core needs, not for the technology behind it.
 - Each adapter has integration tests. Each decision has unit tests.
 

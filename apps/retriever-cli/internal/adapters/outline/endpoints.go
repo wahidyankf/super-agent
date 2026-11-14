@@ -74,7 +74,7 @@ type endpoint struct {
 }
 
 // endpoints maps each catalog operation the reader serves to its endpoint. The method allowlist is built from this
-// table, and a method whose operation the source's access level does not allow never reaches the network.
+// table, so only a method named here ever reaches the network.
 var endpoints = map[domain.OperationID]endpoint{
 	domain.OpCollectionsList: {
 		method:  methodCollectionsList,

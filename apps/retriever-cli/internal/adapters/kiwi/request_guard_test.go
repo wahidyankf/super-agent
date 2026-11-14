@@ -8,9 +8,9 @@ import (
 )
 
 // TestEveryRequestPassesTheArgumentGuardAndEveryMethodIsExercised drives every request path of the adapter through one
-// gateway with write access. Each recorded request must pass the argument guard, and all ten allowed methods must be used.
+// gateway. Each recorded request must pass the argument guard, and all ten allowed methods must be used.
 func TestEveryRequestPassesTheArgumentGuardAndEveryMethodIsExercised(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	ctx := context.Background()
 
 	if _, err := r.gw.ListCollections(ctx); err != nil {
@@ -69,7 +69,7 @@ func TestEveryRequestPassesTheArgumentGuardAndEveryMethodIsExercised(t *testing.
 		if r.stub.Calls(m) == 0 {
 			t.Fatalf("method %s was never exercised", m)
 		}
-		if !permittedMethod(m, domain.AccessWrite) {
+		if !allowedMethods[m] {
 			t.Fatalf("method %s is not in the allowlist", m)
 		}
 	}

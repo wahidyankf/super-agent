@@ -89,7 +89,7 @@ func stageCIDs() []domain.OperationID {
 	return ids
 }
 
-func TestStageCRowsHaveTheInventoryCliToolEffectAndAdminAccess(t *testing.T) {
+func TestStageCRowsHaveTheInventoryCliToolAndEffect(t *testing.T) {
 	for _, want := range stageCRows {
 		row, ok := Lookup(want.op)
 		if !ok {
@@ -103,9 +103,6 @@ func TestStageCRowsHaveTheInventoryCliToolEffectAndAdminAccess(t *testing.T) {
 		}
 		if row.Effect != want.effect {
 			t.Errorf("%s: effect %s, want %s", want.op, row.Effect, want.effect)
-		}
-		if row.Access != domain.AccessAdmin {
-			t.Errorf("%s: access %s, want admin", want.op, row.Access)
 		}
 		if len(row.Fields) == 0 {
 			t.Errorf("%s: no result fields", want.op)

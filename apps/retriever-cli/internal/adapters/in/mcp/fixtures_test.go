@@ -126,7 +126,7 @@ func (r fakeResolver) Writer(domain.Source) (ports.SourceWriter, error) {
 }
 
 // mustSource builds a source from valid literals, failing the test on a bad literal.
-func mustSource(t *testing.T, id, access string, tags ...string) domain.Source {
+func mustSource(t *testing.T, id string, tags ...string) domain.Source {
 	t.Helper()
 	sid, err := domain.NewSourceID(id)
 	if err != nil {
@@ -140,10 +140,6 @@ func mustSource(t *testing.T, id, access string, tags ...string) domain.Source {
 	if err != nil {
 		t.Fatal(err)
 	}
-	acc, err := domain.NewAccess(access)
-	if err != nil {
-		t.Fatal(err)
-	}
 	endpoint, err := domain.NewEndpoint("https://docs.example.test")
 	if err != nil {
 		t.Fatal(err)
@@ -152,7 +148,7 @@ func mustSource(t *testing.T, id, access string, tags ...string) domain.Source {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return domain.NewSource(sid, kind, set, acc, endpoint, credential)
+	return domain.NewSource(sid, kind, set, endpoint, credential)
 }
 
 // serviceWith returns a service whose catalog holds the given sources and whose gateways all answer from gw.
@@ -168,14 +164,5 @@ func serviceWith(t *testing.T, gw ports.SourceGateway, list ...domain.Source) so
 // emptyService returns a service with one read source and an empty gateway.
 func emptyService(t *testing.T) sources.Service {
 	t.Helper()
-	return serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "read"))
-}
-
-// Admin returns the gateway as a SourceAdmin when it is one, the same way Writer does.
-func (r fakeResolver) Admin(domain.Source) (ports.SourceAdmin, error) {
-	admin, ok := r.gw.(ports.SourceAdmin)
-	if !ok {
-		return nil, domain.ErrUnsupportedSource
-	}
-	return admin, nil
+	return serviceWith(t, &fakeGateway{}, mustSource(t, "outline"))
 }

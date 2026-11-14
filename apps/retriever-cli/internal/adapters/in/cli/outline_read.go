@@ -69,7 +69,7 @@ func attachOperations(group *command, kind domain.SourceKind) {
 
 // readLeaf returns the leaf that runs one catalog row. The usage line names path, which is the row's own path except for
 // an alias such as "outline tree". A row of a non-read effect is a write: its leaf names its source as required, and
-// runs through the write use case, or the admin use case for an admin row.
+// runs through the write use case.
 func readLeaf(row operations.Row, path string) *leaf {
 	kind, _ := row.Kind()
 	positional := row.Positional()
@@ -101,10 +101,6 @@ func readLeaf(row operations.Row, path string) *leaf {
 	if row.Effect != domain.EffectRead {
 		source = writeSourceFlag
 		run = func(inv *invocation) error { return runWrite(inv, row) }
-	}
-	if row.Effect != domain.EffectRead && row.Access == domain.AccessAdmin {
-		// An admin command runs through the admin use case.
-		run = func(inv *invocation) error { return runAdmin(inv, row) }
 	}
 	flags = append(flags, source)
 	usage.WriteString(" [--source <id>]")

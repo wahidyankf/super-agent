@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/outlinestub"
 )
 
@@ -54,18 +53,17 @@ func (w *wireRecorder) recorded() []wireCall {
 // recordingGateway builds the gateway over a recording transport and an in-process stub.
 func recordingGateway(t *testing.T) (*Gateway, *wireRecorder) {
 	t.Helper()
-	return recordingGatewayAt(t, domain.AccessRead)
+	return recordingGatewayAt(t)
 }
 
-// recordingGatewayAt is recordingGateway for a source at the given access level. The admin-level reads need an admin
-// source, so their request reaches the wire; a read source refuses them before the network.
-func recordingGatewayAt(t *testing.T, access domain.Access) (*Gateway, *wireRecorder) {
+// recordingGatewayAt is recordingGateway for a source. Every request of the source reaches the wire.
+func recordingGatewayAt(t *testing.T) (*Gateway, *wireRecorder) {
 	t.Helper()
 	clock := newFakeClock()
 	stub := outlinestub.New(outlinestub.WithClock(clock.Now))
 	rec := &wireRecorder{next: stub.RoundTripper()}
 	client := &http.Client{Transport: rec}
-	gw, err := NewWithBase(testSourceAt(t, testHost, access), testBase, client, &staticCreds{},
+	gw, err := NewWithBase(testSourceAt(t, testHost), testBase, client, &staticCreds{},
 		WithMinDelay(0), WithClock(clock.Now), WithSleep(clock.Sleep))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
@@ -240,11 +238,7 @@ var requestCases = []requestCase{
 func TestEveryReadSendsItsExactRequest(t *testing.T) {
 	for _, tc := range requestCases {
 		t.Run(tc.name, func(t *testing.T) {
-			access := domain.AccessRead
-			if row, ok := operations.Lookup(tc.op); ok {
-				access = row.Access
-			}
-			gw, rec := recordingGatewayAt(t, access)
+			gw, rec := recordingGatewayAt(t)
 			_, _ = gw.Read(context.Background(), tc.op, domain.NewArgs(tc.args))
 			calls := rec.recorded()
 			if len(calls) != 1 {

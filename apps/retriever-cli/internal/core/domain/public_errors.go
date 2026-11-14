@@ -36,7 +36,6 @@ func PublicErrors() []error {
 		ErrInvalidOutputFormat,
 		ErrOperationUnavailable,
 		ErrUnsupportedOperation,
-		ErrAccessLevelTooLow,
 		ErrBadRequest,
 		ErrInvalidID,
 		ErrInvalidUUID,
@@ -64,6 +63,5 @@ func PublicErrors() []error {
 		ErrDocumentConflict,
 		ErrInvalidReason,
 		ErrInvalidEmail,
-		ErrAccessAboveKindCeiling,
 	}
 }

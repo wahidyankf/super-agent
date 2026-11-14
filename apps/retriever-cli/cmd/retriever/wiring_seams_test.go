@@ -26,10 +26,6 @@ func seamSourceOf(t *testing.T, kind, endpoint, credential string) domain.Source
 	if err != nil {
 		t.Fatalf("NewTagSet: %v", err)
 	}
-	access, err := domain.NewAccess("read")
-	if err != nil {
-		t.Fatalf("NewAccess: %v", err)
-	}
 	ep, err := domain.NewEndpoint(endpoint)
 	if err != nil {
 		t.Fatalf("NewEndpoint: %v", err)
@@ -38,7 +34,7 @@ func seamSourceOf(t *testing.T, kind, endpoint, credential string) domain.Source
 	if err != nil {
 		t.Fatalf("NewCredentialRef: %v", err)
 	}
-	return domain.NewSource(id, k, tags, access, ep, cred)
+	return domain.NewSource(id, k, tags, ep, cred)
 }
 
 // seamCredentialsOf returns credentials over an absolute env file path. The path is never read, because the builders do not

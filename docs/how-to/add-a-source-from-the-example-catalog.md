@@ -67,12 +67,12 @@ With the unchanged example catalog, the output is:
 
 ```text
 3 sources
-  example-jira     jira     read  tickets
-  example-kiwi     kiwi     read  tests
-  example-outline  outline  read  docs,wiki
+  example-jira     jira     tickets
+  example-kiwi     kiwi     tests
+  example-outline  outline  docs,wiki
 ```
 
-The list shows each source's kind, its access level, and its tags. It never shows the endpoint or the key name.
+The list shows each source's kind and its tags. It never shows the endpoint or the key name.
 
 ## 5. Read a document
 
@@ -110,8 +110,8 @@ failures that a first run usually meets:
 - `EXAMPLE_OUTLINE_API_KEY is not set` means the key is in neither the environment nor the env file. Set it as in
   step 3.
 - An error code that ends in `ambiguous_source` means that more than one source of the kind exists. Add `--source <id>`.
-- An error code that ends in `access_level_too_low` means the source's `access` is below what the command needs. Use a
-  read command, or raise `access` only if the service grants that level.
+- An error code that ends in `source_required` means a change does not name its source. Add `--source <id>`. A change
+  runs as the command names it, so check the token of the source before you run it.
 
 With `-o json`, read `error.code` from the failure body. The exit codes are listed in
 [the exit codes](../reference/retriever-cli-exit-codes.md).

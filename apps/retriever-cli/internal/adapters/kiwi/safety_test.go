@@ -24,7 +24,7 @@ func addCaseArgs() domain.Args {
 // TestEveryRequestIsAPostToTheEndpointWithTheBearerKey checks the transport rules on the wire: one POST path, the endpoint
 // host, and a right Bearer key on each request.
 func TestEveryRequestIsAPostToTheEndpointWithTheBearerKey(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	if _, err := r.gw.ListCollections(context.Background()); err != nil {
 		t.Fatalf("ListCollections: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestEveryRequestIsAPostToTheEndpointWithTheBearerKey(t *testing.T) {
 
 // TestRedirectIsNotFollowed checks that a 3xx reply is read as a refusal, and that the client makes one request only.
 func TestRedirectIsNotFollowed(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	r.stub.SetFault(kiwistub.Fault{Redirect: true})
 	_, err := r.gw.ListCollections(context.Background())
 	if !errors.Is(err, domain.ErrRedirected) {
@@ -56,7 +56,7 @@ func TestRedirectIsNotFollowed(t *testing.T) {
 
 // TestBaseMustBeHTTPSAndHaveNoUserInformation checks the base checks of NewWithBase.
 func TestBaseMustBeHTTPSAndHaveNoUserInformation(t *testing.T) {
-	src := testSourceAt(t, domain.AccessRead)
+	src := testSourceAt(t)
 	if _, err := NewWithBase(src, "http://127.0.0.1:9", &http.Client{}, &staticCreds{}); !errors.Is(err, domain.ErrHTTPSRequired) {
 		t.Fatalf("plain HTTP base = %v, want ErrHTTPSRequired", err)
 	}
@@ -67,7 +67,7 @@ func TestBaseMustBeHTTPSAndHaveNoUserInformation(t *testing.T) {
 
 // TestTransportHasNoProxyAndTheEndpointTLSName checks the production transport: no proxy, and the TLS name of the endpoint.
 func TestTransportHasNoProxyAndTheEndpointTLSName(t *testing.T) {
-	gw := New(testSourceAt(t, domain.AccessRead), &staticCreds{})
+	gw := New(testSourceAt(t), &staticCreds{})
 	tr, ok := gw.client.Transport.(*http.Transport)
 	if !ok {
 		t.Fatalf("transport is %T, want *http.Transport", gw.client.Transport)
@@ -100,7 +100,7 @@ func TestNewWithBaseClearsTheCallersProxyAndJarOnACopy(t *testing.T) {
 	callerTransport := &http.Transport{Proxy: http.ProxyURL(proxyURL)}
 	caller := &http.Client{Transport: callerTransport, Jar: jar}
 
-	gw, err := NewWithBase(testSourceAt(t, domain.AccessRead), testBase, caller, &staticCreds{})
+	gw, err := NewWithBase(testSourceAt(t), testBase, caller, &staticCreds{})
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestACookieIsNeverSentBack(t *testing.T) {
 	stub := kiwistub.New(sentinelKey, kiwistub.WithDataset(sampleDataset()))
 	echo := &cookieEcho{inner: stub.RoundTripper()}
 	caller := &http.Client{Transport: echo, Jar: jar}
-	gw, err := NewWithBase(testSourceAt(t, domain.AccessRead), testBase, caller, &staticCreds{}, WithMinDelay(0))
+	gw, err := NewWithBase(testSourceAt(t), testBase, caller, &staticCreds{}, WithMinDelay(0))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
@@ -161,7 +161,7 @@ func TestACookieIsNeverSentBack(t *testing.T) {
 
 // TestTimeoutIsATimedOutReadAndAnUnknownWrite checks the timeout: a read times out, and a write has an unknown outcome.
 func TestTimeoutIsATimedOutReadAndAnUnknownWrite(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite, WithTimeout(20*time.Millisecond))
+	r := newRig(t, sampleDataset(), WithTimeout(20*time.Millisecond))
 	r.stub.SetFault(kiwistub.Fault{Never: true})
 	if _, err := r.gw.ListCollections(context.Background()); !errors.Is(err, domain.ErrTimedOut) {
 		t.Fatalf("read timeout = %v, want ErrTimedOut", err)
@@ -176,7 +176,7 @@ func TestTimeoutIsATimedOutReadAndAnUnknownWrite(t *testing.T) {
 
 // TestOversizeReplyIsRefusedForARead checks that a reply over the 10 MiB cap is refused as too large.
 func TestOversizeReplyIsRefusedForARead(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	r.stub.SetFault(kiwistub.Fault{Oversize: true})
 	if _, err := r.gw.ListCollections(context.Background()); !errors.Is(err, domain.ErrReplyTooLarge) {
 		t.Fatalf("oversize read = %v, want ErrReplyTooLarge", err)
@@ -185,7 +185,7 @@ func TestOversizeReplyIsRefusedForARead(t *testing.T) {
 
 // TestOversizeReplyIsUnknownForAWrite checks that an oversize reply to a write is an unknown outcome, and is not retried.
 func TestOversizeReplyIsUnknownForAWrite(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	r.stub.SetFault(kiwistub.Fault{Oversize: true})
 	if _, err := r.gw.Write(context.Background(), domain.OpKiwiPlansAddCase, addCaseArgs()); !errors.Is(err, domain.ErrWriteOutcomeUnknown) {
 		t.Fatalf("oversize write = %v, want ErrWriteOutcomeUnknown", err)
@@ -197,7 +197,7 @@ func TestOversizeReplyIsUnknownForAWrite(t *testing.T) {
 
 // TestPacingWaitsOneDelayBetweenRequests checks the 100 ms rule on a fake clock: the second request waits the full delay.
 func TestPacingWaitsOneDelayBetweenRequests(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead, WithMinDelay(100*time.Millisecond))
+	r := newRig(t, sampleDataset(), WithMinDelay(100*time.Millisecond))
 	if _, err := r.gw.ListCollections(context.Background()); err != nil {
 		t.Fatalf("first call: %v", err)
 	}
@@ -211,7 +211,7 @@ func TestPacingWaitsOneDelayBetweenRequests(t *testing.T) {
 
 // TestOneRequestIsInFlightAtATime checks that concurrent calls go out one at a time.
 func TestOneRequestIsInFlightAtATime(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	var wg sync.WaitGroup
 	for i := 0; i < 4; i++ {
 		wg.Add(1)
@@ -228,7 +228,7 @@ func TestOneRequestIsInFlightAtATime(t *testing.T) {
 
 // TestRateLimitIsRetriedAfterTheWait checks a 429 with a short Retry-After: the request is sent again after the wait.
 func TestRateLimitIsRetriedAfterTheWait(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	r.stub.SetFaultFirst(kiwistub.Fault{Status: http.StatusTooManyRequests, RetryAfter: "1"})
 	if _, err := r.gw.ListCollections(context.Background()); err != nil {
 		t.Fatalf("ListCollections after one 429: %v", err)
@@ -243,7 +243,7 @@ func TestRateLimitIsRetriedAfterTheWait(t *testing.T) {
 
 // TestRateLimitGivesUpAfterThreeRetries checks the retry cap: one request and three retries, then ErrSourceRateLimited.
 func TestRateLimitGivesUpAfterThreeRetries(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	r.stub.SetFault(kiwistub.Fault{Status: http.StatusTooManyRequests, RetryAfter: "1"})
 	if _, err := r.gw.ListCollections(context.Background()); !errors.Is(err, domain.ErrSourceRateLimited) {
 		t.Fatalf("error = %v, want ErrSourceRateLimited", err)
@@ -255,7 +255,7 @@ func TestRateLimitGivesUpAfterThreeRetries(t *testing.T) {
 
 // TestRetryAfterOverSixtySecondsIsNotWaited checks that a long wait is refused without a retry.
 func TestRetryAfterOverSixtySecondsIsNotWaited(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	r.stub.SetFault(kiwistub.Fault{Status: http.StatusTooManyRequests, RetryAfter: "61"})
 	if _, err := r.gw.ListCollections(context.Background()); !errors.Is(err, domain.ErrRetryAfterTooLong) {
 		t.Fatalf("error = %v, want ErrRetryAfterTooLong", err)
@@ -267,7 +267,7 @@ func TestRetryAfterOverSixtySecondsIsNotWaited(t *testing.T) {
 
 // TestAWriteIsRetriedOnlyForA429 checks that a write is retried for a 429 and for nothing else.
 func TestAWriteIsRetriedOnlyForA429(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	r.stub.SetFaultFirst(kiwistub.Fault{Status: http.StatusTooManyRequests, RetryAfter: "1"})
 	if _, err := r.gw.Write(context.Background(), domain.OpKiwiPlansAddCase, addCaseArgs()); err != nil {
 		t.Fatalf("write after one 429: %v", err)
@@ -304,7 +304,7 @@ func TestStatusFaultsMapToTheirSentinels(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			r := newRig(t, sampleDataset(), domain.AccessRead)
+			r := newRig(t, sampleDataset())
 			r.stub.SetFault(tc.fault)
 			_, err := r.gw.ListCollections(context.Background())
 			if !errors.Is(err, tc.want) {
@@ -320,7 +320,7 @@ func TestMissingKeyIsNamedBeforeAnyRequest(t *testing.T) {
 	stub := kiwistub.New(sentinelKey, kiwistub.WithDataset(sampleDataset()))
 	client := &http.Client{Transport: stub.RoundTripper()}
 	var creds ports.Credentials = missingCreds{}
-	gw, err := NewWithBase(testSourceAt(t, domain.AccessRead), testBase, client, creds, WithMinDelay(0), WithSleep(noSleep))
+	gw, err := NewWithBase(testSourceAt(t), testBase, client, creds, WithMinDelay(0), WithSleep(noSleep))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
@@ -334,22 +334,22 @@ func TestMissingKeyIsNamedBeforeAnyRequest(t *testing.T) {
 	}
 }
 
-// TestAReadSourceNeverSendsAWrite checks the adapter's own access check: a write method on a read source never reaches
-// the network.
-func TestAReadSourceNeverSendsAWrite(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
-	_, err := r.gw.Write(context.Background(), domain.OpKiwiPlansAddCase, addCaseArgs())
+// TestAMethodOutsideTheAllowlistNeverReachesTheNetwork checks the closed method table: a method that is not on the
+// allowlist is refused before any request is sent.
+func TestAMethodOutsideTheAllowlistNeverReachesTheNetwork(t *testing.T) {
+	r := newRig(t, sampleDataset())
+	_, err := r.gw.call(context.Background(), "TestCase.remove", nil)
 	if !errors.Is(err, errMethodNotAllowed) {
-		t.Fatalf("write on a read source = %v, want errMethodNotAllowed", err)
+		t.Fatalf("call outside the allowlist = %v, want errMethodNotAllowed", err)
 	}
-	if r.stub.Calls("TestPlan.add_case") != 0 {
-		t.Fatalf("a write reached the network from a read source")
+	if len(r.stub.Requests()) != 0 {
+		t.Fatalf("a request reached the network for a method outside the allowlist")
 	}
 }
 
 // TestEveryFailureNamesKiwi checks that the boundary wraps each failure in the Kiwi kind.
 func TestEveryFailureNamesKiwi(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	r.stub.SetFault(kiwistub.Fault{Status: http.StatusUnauthorized})
 	_, err := r.gw.ListCollections(context.Background())
 	var kindErr domain.KindError

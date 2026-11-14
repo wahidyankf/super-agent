@@ -46,7 +46,7 @@ func sourceWithKey(t *testing.T, id, host, key string) domain.Source {
 	if err != nil {
 		t.Fatalf("NewTagSet: %v", err)
 	}
-	return domain.NewSource(sid, domain.KindOutline, tags, domain.AccessRead, endpoint, ref)
+	return domain.NewSource(sid, domain.KindOutline, tags, endpoint, ref)
 }
 
 // TestTwoSourcesEachStubSeesOnlyItsOwnKey serves two outline sources with two credential names from two stubs. Each

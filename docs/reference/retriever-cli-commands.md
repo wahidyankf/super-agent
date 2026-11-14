@@ -54,12 +54,11 @@ retriever --version
 For the full list of `outline` groups and their subcommands, run `retriever outline --help` and then
 `retriever outline <group> --help`. The list is generated from the operation catalog, so this page does not copy it.
 
-## Access levels
+## Changes and API tokens
 
-Each source in the catalog has an access level: `read`, `write`, or `admin`. A command needs one level, and it refuses a
-source whose level is lower. For example, a command that creates an Outline document needs `write`. A source declared
-with `access: read` refuses it. The `sources list` command shows the level of each source. A Jira source can never be
-above `read`, and the served GraphQL API caps every source to `read`.
+A command that changes a source runs the change that it names. `retriever` does not check an access level, and it asks
+for no confirmation flag first. The API token of each source decides what that source allows, so give each token only
+the rights that you want the tool to use. [Who guards what](../explanation/who-guards-what.md) explains the split.
 
 ## Source selection
 
@@ -152,12 +151,13 @@ same statuses as `mcp`. It exits `0` when its server ends without a signal.
 ### mcp
 
 ```text
-retriever mcp [--max-access read|write|admin] [--tools <resource,...>]
+retriever mcp [--tools <resource,...>]
 ```
 
-Runs one Model Context Protocol session over standard input and standard output. `--max-access` sets the highest level
-the tools may offer, and it defaults to `read`. `--tools` keeps the tools of the named resources, such as `documents` or
-`comments`. The `list_sources` tool is always offered. Standard output carries only the protocol. Each tool call writes
+Runs one Model Context Protocol session over standard input and standard output. The session offers every tool of the
+catalog, each with its read-only and destructive hints. `--tools` keeps the tools of the named resources, such as
+`documents` or `comments`. The `list_sources` tool is always offered. The `--max-access` flag was removed, and passing
+it exits `2`. Standard output carries only the protocol. Each tool call writes
 one log line to standard error. The session ends when the client closes its input (exit `0`), on `SIGINT` (exit `130`),
 or on `SIGTERM` (exit `143`).
 

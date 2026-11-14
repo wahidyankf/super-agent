@@ -80,7 +80,7 @@ func adminRecorder(t *testing.T) (*Gateway, *wireRecorder, *outlinestub.Stub) {
 	stub := outlinestub.New(outlinestub.WithClock(clock.Now))
 	rec := &wireRecorder{next: stub.RoundTripper()}
 	client := &http.Client{Transport: rec}
-	gw, err := NewWithBase(testSourceAt(t, testHost, domain.AccessAdmin), testBase, client, &staticCreds{},
+	gw, err := NewWithBase(testSourceAt(t, testHost), testBase, client, &staticCreds{},
 		WithMinDelay(0), WithClock(clock.Now), WithSleep(clock.Sleep))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
@@ -98,29 +98,13 @@ func bodyOf(t *testing.T, text string) any {
 	return v
 }
 
-// TestSliceC3EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest checks layer 3 for each row of the slice: a
-// source below admin never sends the change or the pre-read.
-func TestSliceC3EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest(t *testing.T) {
-	for _, tc := range requestCasesC3 {
-		t.Run(tc.name, func(t *testing.T) {
-			gw, rec := recordingGatewayAt(t, domain.AccessWrite)
-			if _, err := gw.Administer(context.Background(), tc.op, domain.NewArgs(tc.args)); err == nil {
-				t.Fatal("an admin call on a write source succeeded")
-			}
-			if n := len(rec.recorded()); n != 0 {
-				t.Fatalf("requests = %d, want 0", n)
-			}
-		})
-	}
-}
-
 // TestSliceC3StartGroupSyncRefusesAReplyWithoutItsRedirect checks that a sync start whose reply names no redirect address is
 // an unexpected reply, so the call never reports a start it cannot see.
 func TestSliceC3StartGroupSyncRefusesAReplyWithoutItsRedirect(t *testing.T) {
 	for _, reply := range []string{`{"data":{}}`, `{"data":{"url":""}}`, `{"success":true}`} {
 		r := adminRig(t)
 		r.stub.SetReply(adminEndpoints[domain.OpAuthenticationProvidersStartGroupSync].method, http.StatusOK, reply)
-		_, err := r.gw.Administer(context.Background(), domain.OpAuthenticationProvidersStartGroupSync,
+		_, err := r.gw.Write(context.Background(), domain.OpAuthenticationProvidersStartGroupSync,
 			domain.NewArgs(map[string]any{"authenticationProviderId": uuidOther}))
 		if err == nil {
 			t.Fatalf("a sync start with %s was accepted", reply)
@@ -147,7 +131,7 @@ func TestSliceC3AckWithoutSuccessIsAnOutcomeUnknown(t *testing.T) {
 		r := adminRig(t)
 		method := adminEndpoints[tc.op].method
 		r.stub.SetReply(method, http.StatusOK, tc.reply)
-		_, err := r.gw.Administer(context.Background(), tc.op, domain.NewArgs(adminArgsFor(tc.op)))
+		_, err := r.gw.Write(context.Background(), tc.op, domain.NewArgs(adminArgsFor(tc.op)))
 		if !errors.Is(err, domain.ErrWriteOutcomeUnknown) {
 			t.Fatalf("%s with %s: error = %v, want ErrWriteOutcomeUnknown", tc.op, tc.reply, err)
 		}
@@ -162,7 +146,7 @@ func TestSliceC3AckWithoutSuccessIsAnOutcomeUnknown(t *testing.T) {
 func TestSliceC3IntegrationsUpdateSendsNothingWhenTheReadFails(t *testing.T) {
 	gw, rec, stub := adminRecorder(t)
 	stub.SetReply(endpoints[domain.OpIntegrationsGet].method, http.StatusNotFound, `{"ok":false,"status":404,"error":"not_found"}`)
-	_, err := gw.Administer(context.Background(), domain.OpIntegrationsUpdate, domain.NewArgs(map[string]any{
+	_, err := gw.Write(context.Background(), domain.OpIntegrationsUpdate, domain.NewArgs(map[string]any{
 		"integrationId": uuidOther, "url": "https://new.example.test/x",
 	}))
 	if err == nil {

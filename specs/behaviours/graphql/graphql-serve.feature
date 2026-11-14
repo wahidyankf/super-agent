@@ -1,16 +1,16 @@
 # The GraphQL server started by `retriever serve`. It listens on the loopback address only, answers read queries about
-# the configured sources, caps every source to read access, and refuses every write. The unit and integration levels run
+# the configured sources, and refuses every write. The unit and integration levels run
 # the server in process; the end-to-end level runs the built binary.
 Feature: GraphQL read server
   As a dashboard or a script that reads the sources through one local API
   I want a read-only GraphQL endpoint on the loopback address
-  So that other tools can read source content without holding any key or write access
+  So that other tools can read source content without holding any key
 
   Background:
     Given the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
     And the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     And the stub Outline server holds these collections:
       | id | name      |
       | 1c1c1c1c-0000-4000-8000-000000000001 | Synthetic |
@@ -37,13 +37,13 @@ Feature: GraphQL read server
     And the GraphQL response does not contain "EXAMPLE_OUTLINE_API_KEY"
 
   @unit @integration @e2e
-  Scenario: The served API caps every source to read access
+  Scenario: The served API lists each source by its id
     When retriever serve receives this GraphQL request:
       """
-      query { sources { id access } }
+      query { sources { id } }
       """
     Then the HTTP status is 200
-    And the GraphQL response field "data.sources.0.access" is "read"
+    And the GraphQL response field "data.sources.0.id" is "example-outline"
 
   @unit @integration @e2e
   Scenario: The collections query lists the collections of the default wiki source

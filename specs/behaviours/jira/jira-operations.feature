@@ -7,8 +7,8 @@ Feature: Jira reads
 
   Background:
     Given the sources catalog holds these sources:
-      | id           | kind | access | tags    | endpoint                  | credential_env         | identity_env       |
-      | example-jira | jira | read   | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
+      | id           | kind | tags    | endpoint                  | credential_env         | identity_env       |
+      | example-jira | jira | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
     And the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
     And the stub Jira server holds this configuration:

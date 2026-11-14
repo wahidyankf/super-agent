@@ -23,7 +23,6 @@ var kiwiRows = []Row{
 		Summary:     "list the products of a Kiwi TCMS source, which Retriever shows as collections",
 		Description: "Lists the products of one Kiwi TCMS source. Pass source when more than one kiwi source exists.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Fields:      []string{"id", "name"},
 		ListKey:     "products",
@@ -36,7 +35,6 @@ var kiwiRows = []Row{
 		Summary:     "show the test plans and test cases of one Kiwi product as a flat tree",
 		Description: "Lists the test plans and the test cases of one product as a flat tree. Each node names its parent and its depth; a plan with no parent is a root.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "collectionId", Kind: KindCollectionID, Required: true, Help: "the product ID, such as product-3, from kiwi products list"},
@@ -53,7 +51,6 @@ var kiwiRows = []Row{
 		Summary:     "print the Markdown of one Kiwi test plan or test case",
 		Description: "Returns the Markdown of one test plan (plan-<n>) or one test case (case-<n>) with its title and URL.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the plan ID, such as plan-12, or the case ID, such as case-40"},
@@ -67,7 +64,6 @@ var kiwiRows = []Row{
 		Summary:     "create one Kiwi test case, given the names of its category, priority, and status",
 		Description: "Creates one test case in a product. The category and the priority are names that Retriever resolves to IDs; a name that matches no entry, or more than one, is refused before the change. This command changes data in Kiwi.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "summary", Kind: KindName, Required: true, Help: "the summary of the case, 1 to 255 characters"},
@@ -85,7 +81,6 @@ var kiwiRows = []Row{
 		Summary:     "change the summary, text, status, or priority of one Kiwi test case",
 		Description: "Changes the named fields of one test case. At least one of summary, text, status, or priority is required. The category is not changed. This command changes data in Kiwi.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the case ID, such as case-40"},
@@ -103,7 +98,6 @@ var kiwiRows = []Row{
 		Summary:     "add one Kiwi test case to one test plan",
 		Description: "Adds a test case to a test plan. The plan ID is plan-<n> and the case ID is case-<n>. This command changes data in Kiwi.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "planId", Kind: KindDocumentID, Required: true, Help: "the test plan ID, such as plan-12"},

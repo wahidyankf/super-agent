@@ -22,7 +22,6 @@ var jiraRows = []Row{
 		Summary:     "show the Jira account that the source's credentials sign in as",
 		Description: "Shows the display name, the account type, and the active flag of the Jira account that answers. It does not show the e-mail address or the account ID. Use it to check the credentials.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Fields:      []string{"displayName", "accountType", "active"},
 	},
@@ -32,7 +31,6 @@ var jiraRows = []Row{
 		Summary:     "list one page of the Jira projects of a Jira source, which Retriever shows as collections",
 		Description: "Lists one page of the projects of one Jira source. Pass query to filter them by name. Pass source when more than one jira source exists.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "query", Kind: KindQuery, Help: "a text to match against the project names, 1 to 1000 characters"},
@@ -50,7 +48,6 @@ var jiraRows = []Row{
 		Summary:     "search the Jira issues that match a JQL query, one page of at most 100 issues",
 		Description: "Runs one search with the JQL text, which Retriever sends as data and never changes. The reply holds at most the number of issues asked for. When more issues match, truncated is true; narrow the JQL or raise the limit.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "jql", Kind: KindQuery, Required: true, Help: "the JQL query, such as project = EXAMPLE AND status = \"In Progress\""},
@@ -68,7 +65,6 @@ var jiraRows = []Row{
 		Summary:     "print the Markdown of one Jira issue",
 		Description: "Returns the Markdown of one issue, with its title and URL. The key is an upper-case issue key, such as EXAMPLE-12. Comments are not included; use jira comments list.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "issueKey", Kind: KindIssueKey, Required: true, Help: "the issue key, such as EXAMPLE-12"},
@@ -82,7 +78,6 @@ var jiraRows = []Row{
 		Summary:     "list one page of the comments of one Jira issue, as Markdown",
 		Description: "Lists one page of the comments of one issue, in the order Jira returns them (oldest first). One request is made.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "issueKey", Kind: KindIssueKey, Required: true, Help: "the issue key, such as EXAMPLE-12"},

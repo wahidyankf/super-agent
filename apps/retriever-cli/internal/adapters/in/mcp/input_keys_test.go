@@ -34,7 +34,7 @@ func TestAnUndeclaredInputNameIsRefusedBeforeAnyCall(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			gw := &fakeGateway{}
-			svc := serviceWith(t, gw, mustSource(t, "outline", "write")).Capped(domain.AccessWrite)
+			svc := serviceWith(t, gw, mustSource(t, "outline"))
 			var logs bytes.Buffer
 			cs := connect(t, svc, &logs)
 			text, isErr := call(t, cs, tc.tool, tc.args)

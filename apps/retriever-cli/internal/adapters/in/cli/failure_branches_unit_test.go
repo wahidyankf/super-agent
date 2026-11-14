@@ -40,12 +40,6 @@ func TestTypedFailuresKeepTheirTextAndTheirCode(t *testing.T) {
 			text: "more than one outline source exists (a, b); pass --source <id>",
 			code: "retriever.outline.ambiguous_source",
 		},
-		{
-			name: "access level",
-			err:  domain.AccessLevelError{Source: "example", Have: domain.AccessRead, Need: domain.AccessWrite},
-			text: domain.AccessLevelError{Source: "example", Have: domain.AccessRead, Need: domain.AccessWrite}.Error(),
-			code: "retriever.outline.access_level_too_low",
-		},
 	}
 	for _, c := range cases {
 		if got := publicMessage(c.err); got != c.text {

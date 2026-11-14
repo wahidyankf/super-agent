@@ -34,10 +34,6 @@ const (
 	endpointNotFoundMessage = "Endpoint not found"
 )
 
-// errMethodNotAllowed reports a method outside the allowlist. Callers never see it,
-// because the adapter's own methods pass only allowed names.
-var errMethodNotAllowed = errors.New("outline method is not allowed")
-
 // errInvalidBaseURL reports a base URL that does not parse, has no host, or holds user information.
 var errInvalidBaseURL = errors.New("invalid Outline base URL")
 
@@ -48,7 +44,6 @@ var errInvalidBaseURL = errors.New("invalid Outline base URL")
 type Gateway struct {
 	base       string
 	host       string
-	access     domain.Access
 	client     *http.Client
 	creds      ports.Credentials
 	credential domain.CredentialRef
@@ -159,7 +154,6 @@ func build(src domain.Source, base string, httpClient *http.Client, creds ports.
 	g := &Gateway{
 		base:       strings.TrimRight(base, "/"),
 		host:       host,
-		access:     src.Access(),
 		client:     client,
 		creds:      creds,
 		credential: src.Credential(),

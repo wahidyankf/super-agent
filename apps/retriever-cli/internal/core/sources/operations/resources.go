@@ -19,8 +19,7 @@ func (r Row) Resource() string {
 }
 
 // Resources returns the distinct resource words of the Outline rows, sorted. Each word is read from a row, never written by
-// hand, so a new group of Outline rows adds its word here. A resource with no tool at a given access ceiling is still
-// listed. The Kiwi rows are left out, so a Kiwi word never joins the --tools flag of retriever mcp.
+// hand, so a new group of Outline rows adds its word here. A resource with no tool is still listed. The Kiwi rows are left out, so a Kiwi word never joins the --tools flag of retriever mcp.
 func Resources() []string {
 	seen := map[string]bool{}
 	var out []string

@@ -15,11 +15,11 @@ direction is out of scope for the current release line. Items marked **planned**
 
 ## The idea
 
-super-agent gives you and your agents one catalog of sources and one access model. The later step is to orchestrate
+super-agent gives you and your agents one catalog of sources and one credential model. The later step is to orchestrate
 the agents themselves: to coordinate many agents, so that one agent's output can feed another agent's work. The
 project calls that direction a software factory.
 
-Connectors are the data layer under it. Orchestration builds on the same connectors and access rules that the
+Connectors are the data layer under it. Orchestration builds on the same connectors and credentials that the
 harnesses already use, so it does not need a second set of credentials.
 
 ## Status
@@ -34,8 +34,8 @@ Each item below is planned. None is built.
 1. **User-defined connectors (planned).** A user describes a connector in a declarative spec. One engine runs every
    spec, and a conformance suite checks each one. A stdio plugin is an opt-in escape hatch for what a spec cannot
    express.
-2. **Work and personal profiles (planned).** Each profile has its own catalog, its own credentials, and its own
-   access ceiling. One profile is active per run. Tags are labels only, and a tag never switches a profile.
+2. **Work and personal profiles (planned).** Each profile has its own catalog and its own credentials, so its own API
+   tokens. One profile is active per run. Tags are labels only, and a tag never switches a profile.
 3. **A `vault` kind (planned).** A built-in kind for a local Markdown or Obsidian vault. It uses a root path instead
    of an endpoint and needs no credential. It can list, search, and read notes, resolve wiki links and backlinks,
    and create or update notes inside allowed paths. The vault path lives in the user's catalog, outside the

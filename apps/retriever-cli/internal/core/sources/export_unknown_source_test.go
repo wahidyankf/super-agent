@@ -10,7 +10,7 @@ import (
 // TestExportDocumentRefusesAnUnknownSourceBeforeAnyFetch checks that a source ID the catalog does not hold stops the
 // export before the gateway is called and before the sink is used.
 func TestExportDocumentRefusesAnUnknownSourceBeforeAnyFetch(t *testing.T) {
-	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline})
 	gw := &fakeGateway{doc: domain.SourceDocument{ID: "doc-1", Title: "Doc", Markdown: "Body.\n"}}
 	svc, _ := kindedService(t, cat, gw, nil, nil)
 	sink := newFakeSink()

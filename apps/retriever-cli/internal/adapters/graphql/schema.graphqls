@@ -4,8 +4,6 @@ One configured source. The endpoint and the credential name are not exposed.
 type Source {
   id: ID!
   kind: String!
-  "read, write, or admin: the most Retriever may do with this source. The served API caps it to read."
-  access: String!
   tags: [String!]!
 }
 

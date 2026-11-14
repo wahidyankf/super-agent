@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/kiwistub"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/sourcecontract"
@@ -119,7 +118,7 @@ func kiwiContractGateway(t *testing.T, w sourcecontract.Wiring) ports.SourceGate
 		creds = missingCreds{}
 	}
 	client := &http.Client{Transport: stub.RoundTripper()}
-	gw, err := NewWithBase(testSourceAt(t, domain.AccessRead), testBase, client, creds, WithMinDelay(0), WithSleep(noSleep))
+	gw, err := NewWithBase(testSourceAt(t), testBase, client, creds, WithMinDelay(0), WithSleep(noSleep))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}

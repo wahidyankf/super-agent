@@ -6,7 +6,7 @@ import (
 )
 
 // TestNewCatalogRejectsAZeroValueFieldWithItsPosition checks that a source built as a zero value in any of its
-// five required fields is refused with a SourceFault that names the position and the field. A zero Source can be
+// four required fields is refused with a SourceFault that names the position and the field. A zero Source can be
 // written from outside the package, so NewCatalog must check it.
 func TestNewCatalogRejectsAZeroValueFieldWithItsPosition(t *testing.T) {
 	good := testSource(t, "outline", "outline", "docs.example.com", "GOOD_API_KEY")
@@ -20,27 +20,22 @@ func TestNewCatalogRejectsAZeroValueFieldWithItsPosition(t *testing.T) {
 	}{
 		{
 			name:  "a zero ID",
-			src:   Source{kind: other.kind, access: other.access, endpoint: other.endpoint, credential: other.credential},
+			src:   Source{kind: other.kind, endpoint: other.endpoint, credential: other.credential},
 			field: "id", want: ErrInvalidSourceID,
 		},
 		{
 			name:  "a zero kind",
-			src:   Source{id: other.id, access: other.access, endpoint: other.endpoint, credential: other.credential},
+			src:   Source{id: other.id, endpoint: other.endpoint, credential: other.credential},
 			field: "kind", want: ErrUnknownSourceKind,
 		},
 		{
-			name:  "a zero access",
-			src:   Source{id: other.id, kind: other.kind, endpoint: other.endpoint, credential: other.credential},
-			field: "access", want: ErrInvalidAccess,
-		},
-		{
 			name:  "a zero endpoint",
-			src:   Source{id: other.id, kind: other.kind, access: other.access, credential: other.credential},
+			src:   Source{id: other.id, kind: other.kind, credential: other.credential},
 			field: "endpoint", want: ErrInvalidEndpoint,
 		},
 		{
 			name:  "a zero credential",
-			src:   Source{id: other.id, kind: other.kind, access: other.access, endpoint: other.endpoint},
+			src:   Source{id: other.id, kind: other.kind, endpoint: other.endpoint},
 			field: "credential_env", want: ErrInvalidCredentialRef,
 		},
 	}
@@ -63,7 +58,7 @@ func TestNewCatalogRejectsAZeroValueFieldWithItsPosition(t *testing.T) {
 func TestNewCatalogZeroFaultTextNamesNoValue(t *testing.T) {
 	good := testSource(t, "outline", "outline", "docs.example.com", "GOOD_API_KEY")
 	other := testSource(t, "outline-other", "outline", "wiki.example.com", "OTHER_API_KEY")
-	_, err := NewCatalog([]Source{good, {id: other.id, kind: other.kind, access: other.access, endpoint: other.endpoint}})
+	_, err := NewCatalog([]Source{good, {id: other.id, kind: other.kind, endpoint: other.endpoint}})
 	if err == nil || err.Error() != "source 2 credential_env: invalid credential name" {
 		t.Fatalf("error = %v, want the position, field, and rule only", err)
 	}

@@ -87,15 +87,3 @@ func TestValidateIDListCapsTheCountAndEachID(t *testing.T) {
 		t.Fatalf("two valid IDs error = %v, want nil", err)
 	}
 }
-
-func TestAccessLevelErrorNamesTheSourceAndTheTwoLevels(t *testing.T) {
-	src := testSource(t, "outline", "outline", "docs.example.com", "OUTLINE_API_KEY")
-	err := AccessLevelError{Source: src.ID().String(), Have: AccessRead, Need: AccessWrite}
-	want := `source "outline" allows read only; this operation needs write`
-	if err.Error() != want {
-		t.Fatalf("Error = %q, want %q", err.Error(), want)
-	}
-	if !errors.Is(err, ErrAccessLevelTooLow) {
-		t.Fatal("the error does not match ErrAccessLevelTooLow")
-	}
-}

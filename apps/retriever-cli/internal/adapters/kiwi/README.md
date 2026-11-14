@@ -1,7 +1,7 @@
 # internal/adapters/kiwi
 
 The Kiwi TCMS source, a test-management server. It speaks JSON-RPC 2.0 over HTTPS. It reads products, documents, test
-cases, and plans, and it writes only at the access level that the catalog allows.
+cases, and plans, and it writes only through the three methods on its closed write list.
 
 Source files:
 

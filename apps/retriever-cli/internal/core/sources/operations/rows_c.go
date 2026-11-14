@@ -5,8 +5,7 @@ import (
 )
 
 // adminRows are the destructive and admin operations of stage c that this slice builds: the document and collection
-// members, archives, and deletions. Each one changes the wiki with access admin, so a source below
-// admin refuses it. Each runs through the admin use case and has one endpoint entry in the Outline
+// members, archives, and deletions. Each one changes the wiki and runs through the write use case, with one endpoint entry in the Outline
 // adapter (endpoints_c.go).
 var adminRows = []Row{
 	{
@@ -16,7 +15,6 @@ var adminRows = []Row{
 		Summary:     "give one group access to one Outline document, at a permission",
 		Description: "Gives one group access to one document at the permission given, read_write by default. It changes the document's sharing. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			documentIDParam("the document ID, from list_documents"),
@@ -35,7 +33,6 @@ var adminRows = []Row{
 		Summary:     "give one user access to one Outline document, at a permission",
 		Description: "Gives one user access to one document at the permission given, read_write by default. It changes the document's sharing. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			documentIDParam("the document ID, from list_documents"),
@@ -54,7 +51,6 @@ var adminRows = []Row{
 		Summary:     "archive one Outline document",
 		Description: "Archives one document, which moves it out of the live list. The reason is optional and at most 2000 characters. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			documentIDParam("the document ID, from list_documents"),
@@ -69,7 +65,6 @@ var adminRows = []Row{
 		Summary:     "move one Outline document to the trash; --permanent deletes it for good",
 		Description: "Moves one document to the trash, from which it can be restored. The permanent deletion is not offered here. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			documentIDParam("the document ID, from list_documents"),
@@ -85,7 +80,6 @@ var adminRows = []Row{
 		Summary:     "delete every document in the trash of the source for good",
 		Description: "Deletes every document in the trash of the source for good.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Fields:      ackFields,
 	},
@@ -96,7 +90,6 @@ var adminRows = []Row{
 		Summary:     "remove one group's access to one Outline document",
 		Description: "Removes one group's access to one document. The group keeps its other access. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			documentIDParam("the document ID, from list_documents"),
@@ -111,7 +104,6 @@ var adminRows = []Row{
 		Summary:     "remove one user's access to one Outline document",
 		Description: "Removes one user's access to one document. The user keeps the access that the collection gives. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			documentIDParam("the document ID, from list_documents"),
@@ -126,7 +118,6 @@ var adminRows = []Row{
 		Summary:     "give one group access to one Outline collection, at a permission",
 		Description: "Gives one group access to one collection at the permission given, read_write by default. It changes the collection's sharing. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			collectionIDParam(),
@@ -145,7 +136,6 @@ var adminRows = []Row{
 		Summary:     "give one user access to one Outline collection, at a permission",
 		Description: "Gives one user access to one collection at the permission given, read_write by default. It changes the collection's sharing. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			collectionIDParam(),
@@ -164,7 +154,6 @@ var adminRows = []Row{
 		Summary:     "archive one Outline collection",
 		Description: "Archives one collection, which moves it out of the live list. The reason is optional and at most 2000 characters. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			collectionIDParam(),
@@ -179,7 +168,6 @@ var adminRows = []Row{
 		Summary:     "delete one Outline collection and its documents",
 		Description: "Deletes one collection and the documents in it. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			collectionIDParam(),
@@ -194,7 +182,6 @@ var adminRows = []Row{
 		Summary:     "start an export of every collection of the wiki, as a file operation",
 		Description: "Starts one export of every collection in the wiki and answers the file operation it created, with no download link. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "format", Kind: KindEnum, Values: exportFormats, Help: "the export format; outline-markdown when omitted"},
@@ -210,7 +197,6 @@ var adminRows = []Row{
 		Summary:     "remove one group's access to one Outline collection",
 		Description: "Removes one group's access to one collection. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			collectionIDParam(),
@@ -225,7 +211,6 @@ var adminRows = []Row{
 		Summary:     "remove one user's access to one Outline collection",
 		Description: "Removes one user's access to one collection. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			collectionIDParam(),

@@ -51,8 +51,8 @@ func TestServedSchemaHasNoMutation(t *testing.T) {
 	}
 }
 
-// TestSourceTypeExposesOnlyIDKindAccessAndTags checks that the Source type has no endpoint and no credential name.
-func TestSourceTypeExposesOnlyIDKindAccessAndTags(t *testing.T) {
+// TestSourceTypeExposesOnlyIDKindAndTags checks that the Source type has no endpoint and no credential name.
+func TestSourceTypeExposesOnlyIDKindAndTags(t *testing.T) {
 	_, sch := schemaSource(t)
 	def := sch.Types["Source"]
 	if def == nil {
@@ -62,7 +62,7 @@ func TestSourceTypeExposesOnlyIDKindAccessAndTags(t *testing.T) {
 	for _, field := range def.Fields {
 		got = append(got, field.Name)
 	}
-	if want := []string{"id", "kind", "access", "tags"}; !slices.Equal(got, want) {
+	if want := []string{"id", "kind", "tags"}; !slices.Equal(got, want) {
 		t.Fatalf("Source fields = %v, want %v", got, want)
 	}
 }

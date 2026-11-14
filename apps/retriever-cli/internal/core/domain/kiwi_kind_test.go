@@ -21,7 +21,7 @@ func oneSourceCatalog(t *testing.T, kind SourceKind, id string) Catalog {
 	if err != nil {
 		t.Fatalf("NewCredentialRef: %v", err)
 	}
-	cat, err := NewCatalog([]Source{NewSource(sid, kind, mustTagSet(t), AccessRead, ep, ref)})
+	cat, err := NewCatalog([]Source{NewSource(sid, kind, mustTagSet(t), ep, ref)})
 	if err != nil {
 		t.Fatalf("NewCatalog: %v", err)
 	}

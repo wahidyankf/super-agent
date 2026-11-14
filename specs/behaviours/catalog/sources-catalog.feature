@@ -2,15 +2,15 @@
 # Synthetic hosts only (docs.example.test, kiwi.example.test, jira.example.test); keys are never in the catalog.
 Feature: Sources catalog
   As a person who connects retriever to my tools
-  I want one reviewed catalog that lists every source, its access level, and its tags
+  I want one reviewed catalog that lists every source, its kind, and its tags
   So that every command reaches only the sources I approved
 
   Background:
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags           | endpoint                    | credential_env           | identity_env        |
-      | example-outline | outline | read   | wiki,docs      | https://docs.example.test   | EXAMPLE_OUTLINE_API_KEY  |                     |
-      | example-kiwi    | kiwi    | read   | tests          | https://kiwi.example.test   | EXAMPLE_KIWI_API_KEY     |                     |
-      | example-jira    | jira    | read   | tickets        | https://jira.example.test   | EXAMPLE_JIRA_API_TOKEN   | EXAMPLE_JIRA_EMAIL  |
+      | id              | kind    | tags           | endpoint                    | credential_env           | identity_env        |
+      | example-outline | outline | wiki,docs      | https://docs.example.test   | EXAMPLE_OUTLINE_API_KEY  |                     |
+      | example-kiwi    | kiwi    | tests          | https://kiwi.example.test   | EXAMPLE_KIWI_API_KEY     |                     |
+      | example-jira    | jira    | tickets        | https://jira.example.test   | EXAMPLE_JIRA_API_TOKEN   | EXAMPLE_JIRA_EMAIL  |
 
   @integration @e2e @unit
   Scenario: The sources list names every configured source and exits 0
@@ -19,12 +19,6 @@ Feature: Sources catalog
     And the standard output contains "example-outline"
     And the standard output contains "example-kiwi"
     And the standard output contains "example-jira"
-
-  @integration @e2e @unit
-  Scenario: The sources list shows the access level of each source
-    When I run "retriever sources list"
-    Then the exit status is 0
-    And the standard output contains "read"
 
   @integration @e2e @unit
   Scenario: A kind filter lists only the sources of that kind
@@ -65,8 +59,8 @@ Feature: Sources catalog
   @integration @e2e @unit
   Scenario: The catalog flag names the catalog file to read
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id          | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | only-kiwi   | kiwi    | read   | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY    |              |
+      | id          | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | only-kiwi   | kiwi    | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY    |              |
     When I run "retriever --catalog reviewed.yml sources list"
     Then the exit status is 0
     And the standard output contains "only-kiwi"
@@ -76,8 +70,8 @@ Feature: Sources catalog
   Scenario: The catalog flag wins over the catalog environment variable
     Given the environment variable "RETRIEVER_CATALOG" is set to "missing.yml"
     And the sources catalog file "reviewed.yml" holds these sources:
-      | id        | kind | access | tags | endpoint                  | credential_env       | identity_env |
-      | only-kiwi | kiwi | read   | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id        | kind | tags | endpoint                  | credential_env       | identity_env |
+      | only-kiwi | kiwi | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     When I run "retriever --catalog reviewed.yml sources list"
     Then the exit status is 0
     And the standard output contains "only-kiwi"
@@ -86,8 +80,8 @@ Feature: Sources catalog
   Scenario: The catalog environment variable names the catalog when no flag is given
     Given the environment variable "RETRIEVER_CATALOG" is set to "reviewed.yml"
     And the sources catalog file "reviewed.yml" holds these sources:
-      | id        | kind | access | tags | endpoint                  | credential_env       | identity_env |
-      | only-kiwi | kiwi | read   | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id        | kind | tags | endpoint                  | credential_env       | identity_env |
+      | only-kiwi | kiwi | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     When I run "retriever sources list"
     Then the exit status is 0
     And the standard output contains "only-kiwi"
@@ -108,22 +102,22 @@ Feature: Sources catalog
   @integration @e2e @unit
   Scenario: Two sources with the same ID are refused when the catalog loads
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id        | kind | access | tags | endpoint                  | credential_env       | identity_env |
-      | twin      | kiwi | read   | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
-      | twin      | kiwi | read   | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id        | kind | tags | endpoint                  | credential_env       | identity_env |
+      | twin      | kiwi | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | twin      | kiwi | tests| https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     When I run "retriever --catalog reviewed.yml sources list"
     Then the exit status is 2
     And the standard output is empty
 
   @integration @e2e @unit
-  Scenario: A Jira source above its kind ceiling is refused when the catalog loads
+  Scenario: A catalog that still holds an access key is refused when the catalog loads
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id        | kind | access | tags    | endpoint                  | credential_env         | identity_env       |
-      | ticket    | jira | write  | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
+      | id     | kind    | access | tags    | endpoint                  | credential_env          |
+      | ticket | outline | read   | tickets | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |
     When I run "retriever --output json --catalog reviewed.yml sources list"
     Then the exit status is 2
     And the standard output is empty
-    And the standard error is a JSON error with the code "retriever.jira.access_above_kind_ceiling" and retryable false
+    And the standard error is a JSON error with the code "retriever.sources.catalog_invalid" and retryable false
 
   @integration @e2e @unit
   Scenario: A command that names an unknown source ID is refused and reaches no source

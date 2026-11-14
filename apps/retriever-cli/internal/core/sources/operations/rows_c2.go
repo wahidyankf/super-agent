@@ -8,8 +8,7 @@ import (
 // sharing and sign-in settings, and its URL. The preferences, the avatar, the plan, and the default collection are dropped.
 var teamFields = []string{"id", "name", "description", "sharing", "documentEmbeds", "memberCollectionCreate", "memberTeamCreate", "defaultUserRole", "inviteRequired", "guestSignin", "passkeysEnabled", "subdomain", "domain", "url"}
 
-// The rows of stage c, slice c2: the users, groups, and teams changes. Each changes the wiki with access
-// admin, so a source below admin refuses it.
+// The rows of stage c, slice c2: the users, groups, and teams changes. Each changes the wiki.
 var adminRowsC2 = []Row{
 	{
 		ID:          domain.OpUsersActivate,
@@ -18,7 +17,6 @@ var adminRowsC2 = []Row{
 		Summary:     "reactivate one suspended Outline user",
 		Description: "Reactivates one suspended user of the wiki, so the user can sign in again. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("userId", "the user ID, from list_users")},
 		Fields:      userFields,
@@ -30,7 +28,6 @@ var adminRowsC2 = []Row{
 		Summary:     "delete one Outline user for good",
 		Description: "Deletes one user of the wiki. Deleting the last admin of the wiki leaves no one who can change its settings; check the admins with list_users first.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("userId", "the user ID, from list_users")},
 		Fields:      ackFields,
@@ -42,7 +39,6 @@ var adminRowsC2 = []Row{
 		Summary:     "invite one person to the wiki by e-mail, with a role",
 		Description: "Invites one person to the wiki, with the name and the role given, by the e-mail address given. The address is sent to the wiki and is never shown back. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "email", Kind: KindEmail, Required: true, Help: "the e-mail address of the person; it is never shown back"},
@@ -62,7 +58,6 @@ var adminRowsC2 = []Row{
 		Summary:     "request the e-mail code that deletes the user of the API key",
 		Description: "Sends an e-mail with a delete code to the user of the API key, when the wiki has e-mail on. The call deletes no user. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Fields:      ackFields,
 	},
@@ -73,7 +68,6 @@ var adminRowsC2 = []Row{
 		Summary:     "send the invitation e-mail to one invited user again",
 		Description: "Sends the invitation e-mail again to one user who has not yet signed in. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("userId", "the invited user's ID, from list_users")},
 		Fields:      ackFields,
@@ -85,7 +79,6 @@ var adminRowsC2 = []Row{
 		Summary:     "suspend one Outline user, so the user cannot sign in",
 		Description: "Suspends one user of the wiki, so the user cannot sign in until an admin activates the user again. Suspending the last admin of the wiki leaves no one who can change its settings; check the admins with list_users first. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("userId", "the user ID, from list_users")},
 		Fields:      userFields,
@@ -97,7 +90,6 @@ var adminRowsC2 = []Row{
 		Summary:     "change the name, language, or time zone of one Outline user",
 		Description: "Changes the name, the language, or the time zone of one user. Without a user ID it changes the user of the API key. The avatar and the preferences are never changed here. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParam("userId", "the user ID; the user of the API key when omitted"),
@@ -114,7 +106,6 @@ var adminRowsC2 = []Row{
 		Summary:     "change the role of one Outline user",
 		Description: "Changes the role of one user to admin, member, viewer, or guest. Demoting the last admin of the wiki leaves no admin who can change it back; check the admins with list_users first. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("userId", "the user ID, from list_users"),
@@ -129,7 +120,6 @@ var adminRowsC2 = []Row{
 		Summary:     "add one user to one Outline group, as a member or an admin",
 		Description: "Adds one user to one group, at the permission given, member when omitted. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("groupId", "the group ID, from list_groups"),
@@ -148,7 +138,6 @@ var adminRowsC2 = []Row{
 		Summary:     "create one Outline group",
 		Description: "Creates one group in the wiki, with an optional description, colour, icon, and mention setting. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "name", Kind: KindName, Required: true, Help: "the name of the group, 1 to 255 characters"},
@@ -166,7 +155,6 @@ var adminRowsC2 = []Row{
 		Summary:     "delete one Outline group",
 		Description: "Deletes one group of the wiki. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("groupId", "the group ID, from list_groups")},
 		Fields:      ackFields,
@@ -178,7 +166,6 @@ var adminRowsC2 = []Row{
 		Summary:     "delete every group synced from one sign-in provider",
 		Description: "Deletes every group that the wiki synced from one sign-in provider.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("authenticationProviderId", "the sign-in provider UUID, from list_authentication_providers")},
 		Fields:      ackFields,
@@ -190,7 +177,6 @@ var adminRowsC2 = []Row{
 		Summary:     "remove one user from one Outline group",
 		Description: "Removes one user from one group. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("groupId", "the group ID, from list_groups"),
@@ -208,7 +194,6 @@ var adminRowsC2 = []Row{
 		Summary:     "change the name, description, colour, icon, or mention setting of one Outline group",
 		Description: "Changes the name, the description, the colour, the icon, or the mention setting of one group. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("groupId", "the group ID, from list_groups"),
@@ -227,7 +212,6 @@ var adminRowsC2 = []Row{
 		Summary:     "change the permission of one user in one Outline group",
 		Description: "Changes the permission of one user in one group, to member or admin. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("groupId", "the group ID, from list_groups"),
@@ -246,7 +230,6 @@ var adminRowsC2 = []Row{
 		Summary:     "delete the whole Outline team of the API key",
 		Description: "Deletes the whole team of the user of the API key. The code is the one that teams request-delete sends by e-mail, or any text when the wiki sends no e-mail.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{{Name: "code", Kind: KindText, Required: true, Help: "the delete code of teams request-delete; never shown"}},
 		Fields:      ackFields,
@@ -258,7 +241,6 @@ var adminRowsC2 = []Row{
 		Summary:     "request the e-mail code that deletes the team of the API key",
 		Description: "Sends an e-mail with a delete code for the team of the user of the API key, when the wiki has e-mail on. The call deletes no team. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Fields:      ackFields,
 	},
@@ -269,7 +251,6 @@ var adminRowsC2 = []Row{
 		Summary:     "change the settings of the Outline team of the API key",
 		Description: "Changes the name, the description, the sharing, the embeds, the collection creation, or the default role of the team of the API key. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "name", Kind: KindName, Help: "the new name of the team, 1 to 255 characters"},

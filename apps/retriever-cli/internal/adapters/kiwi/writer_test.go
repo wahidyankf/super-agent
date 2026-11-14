@@ -47,7 +47,7 @@ func lastParams(t *testing.T, r rig, method string) map[string]any {
 
 // TestCreateCaseResolvesItsNamesAndSendsOneWrite checks create: the names become IDs, and one TestCase.create is sent.
 func TestCreateCaseResolvesItsNamesAndSendsOneWrite(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	rec, err := r.gw.Write(context.Background(), domain.OpKiwiTestCasesCreate, domain.NewArgs(map[string]any{
 		"summary": "New case", "product": "product-1", "category": "Functional", "priority": "P1",
 	}))
@@ -71,7 +71,7 @@ func TestCreateCaseResolvesItsNamesAndSendsOneWrite(t *testing.T) {
 
 // TestCreateCaseSendsTheOptionalStatusAndText checks that a named status resolves to its ID, and the text is sent.
 func TestCreateCaseSendsTheOptionalStatusAndText(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	_, err := r.gw.Write(context.Background(), domain.OpKiwiTestCasesCreate, domain.NewArgs(map[string]any{
 		"summary": "New case", "product": "product-1", "category": "Functional", "priority": "P1",
 		"status": "CONFIRMED", "text": "Body",
@@ -96,7 +96,7 @@ func TestCreateCaseWithAmbiguousOrUnknownNamesSendsNoWrite(t *testing.T) {
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := newRig(t, sampleDataset(), domain.AccessWrite)
+			r := newRig(t, sampleDataset())
 			_, err := r.gw.Write(context.Background(), domain.OpKiwiTestCasesCreate, domain.NewArgs(args))
 			if !errors.Is(err, domain.ErrUnresolvedName) {
 				t.Fatalf("error = %v, want ErrUnresolvedName", err)
@@ -110,7 +110,7 @@ func TestCreateCaseWithAmbiguousOrUnknownNamesSendsNoWrite(t *testing.T) {
 
 // TestUpdateCaseChangesOnlyTheNamedFields checks update: the case is checked, and only the named field is sent.
 func TestUpdateCaseChangesOnlyTheNamedFields(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	rec, err := r.gw.Write(context.Background(), domain.OpKiwiTestCasesUpdate, domain.NewArgs(map[string]any{
 		"documentId": "case-12", "summary": "Renamed",
 	}))
@@ -134,7 +134,7 @@ func TestUpdateCaseChangesOnlyTheNamedFields(t *testing.T) {
 
 // TestUpdateCaseWithStatusAndPriorityResolvesBoth checks that the status and the priority resolve to IDs.
 func TestUpdateCaseWithStatusAndPriorityResolvesBoth(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	_, err := r.gw.Write(context.Background(), domain.OpKiwiTestCasesUpdate, domain.NewArgs(map[string]any{
 		"documentId": "case-13", "status": "CONFIRMED", "priority": "P1",
 	}))
@@ -149,7 +149,7 @@ func TestUpdateCaseWithStatusAndPriorityResolvesBoth(t *testing.T) {
 
 // TestUpdateOfAMissingCaseSendsNoUpdate checks that a case that does not exist is refused before the update.
 func TestUpdateOfAMissingCaseSendsNoUpdate(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	_, err := r.gw.Write(context.Background(), domain.OpKiwiTestCasesUpdate, domain.NewArgs(map[string]any{
 		"documentId": "case-999", "summary": "Renamed",
 	}))
@@ -163,7 +163,7 @@ func TestUpdateOfAMissingCaseSendsNoUpdate(t *testing.T) {
 
 // TestAddCaseLinksThePlanAndTheCase checks add-case: one TestPlan.add_case with the plan and the case IDs.
 func TestAddCaseLinksThePlanAndTheCase(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	rec, err := r.gw.Write(context.Background(), domain.OpKiwiPlansAddCase, domain.NewArgs(map[string]any{
 		"planId": "plan-1", "caseId": "case-13",
 	}))
@@ -184,7 +184,7 @@ func TestAddCaseLinksThePlanAndTheCase(t *testing.T) {
 
 // TestAddCaseToAMissingPlanIsNotFound checks that a plan that does not exist is named as not found.
 func TestAddCaseToAMissingPlanIsNotFound(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	_, err := r.gw.Write(context.Background(), domain.OpKiwiPlansAddCase, domain.NewArgs(map[string]any{
 		"planId": "plan-999", "caseId": "case-13",
 	}))
@@ -195,7 +195,7 @@ func TestAddCaseToAMissingPlanIsNotFound(t *testing.T) {
 
 // TestWriteRefusesAReadOperation checks that the write path refuses a read operation before any request.
 func TestWriteRefusesAReadOperation(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	_, err := r.gw.Write(context.Background(), domain.OpKiwiProductsList, domain.NewArgs(map[string]any{}))
 	if !errors.Is(err, domain.ErrWrongOperationClass) {
 		t.Fatalf("error = %v, want ErrWrongOperationClass", err)
@@ -207,7 +207,7 @@ func TestWriteRefusesAReadOperation(t *testing.T) {
 
 // TestWriteRefusesAnUnknownOperation checks that an operation outside the catalog is unsupported.
 func TestWriteRefusesAnUnknownOperation(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	_, err := r.gw.Write(context.Background(), domain.OperationID("kiwi.nope"), domain.NewArgs(map[string]any{}))
 	if !errors.Is(err, domain.ErrUnsupportedOperation) {
 		t.Fatalf("error = %v, want ErrUnsupportedOperation", err)
@@ -216,7 +216,7 @@ func TestWriteRefusesAnUnknownOperation(t *testing.T) {
 
 // TestCreateRejectsAProductInTheWrongShape checks that a bad product ID is refused before any lookup is sent.
 func TestCreateRejectsAProductInTheWrongShape(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	_, err := r.gw.Write(context.Background(), domain.OpKiwiTestCasesCreate, domain.NewArgs(map[string]any{
 		"summary": "New", "product": "plan-1", "category": "Functional", "priority": "P1",
 	}))

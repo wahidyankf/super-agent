@@ -54,7 +54,7 @@ func (g *Gateway) Document(ctx context.Context, id domain.DocumentID) (domain.So
 }
 
 // Read runs one of the three Kiwi read operations and returns its Record. The use case has checked
-// the access level already.
+// the source already.
 func (g *Gateway) Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
 	rec, err := g.read(ctx, op, args)
 	if err != nil {

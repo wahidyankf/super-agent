@@ -123,8 +123,8 @@
       }
     },
     {
-      "id": "json-invalid-enum-body",
-      "argv": ["--output", "json", "mcp", "--max-access", "nope"],
+      "id": "json-removed-flag-body",
+      "argv": ["--output", "json", "mcp", "--max-access", "read"],
       "exitStatus": 2,
       "stdout": { "empty": true },
       "stderr": {
@@ -132,7 +132,7 @@
           "schemaVersion": 1,
           "command": "retriever mcp",
           "exitCode": 2,
-          "code": "retriever.mcp.usage_invalid_argument",
+          "code": "retriever.mcp.usage_unrecognized_argument",
           "retryable": false
         }
       }

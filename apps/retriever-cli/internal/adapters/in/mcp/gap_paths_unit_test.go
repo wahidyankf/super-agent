@@ -34,8 +34,8 @@ type adminFake struct {
 	admins     []domain.OperationID
 }
 
-// Administer records the call and answers with the configured reply or error.
-func (g *adminFake) Administer(_ context.Context, op domain.OperationID, _ domain.Args) (domain.Record, error) {
+// Write records the call and answers with the configured reply or error.
+func (g *adminFake) Write(_ context.Context, op domain.OperationID, _ domain.Args) (domain.Record, error) {
 	g.admins = append(g.admins, op)
 	return g.adminReply, g.adminErr
 }
@@ -49,10 +49,10 @@ func (panicGateway) Read(context.Context, domain.OperationID, domain.Args) (doma
 	panic("internal detail")
 }
 
-// writableOutline returns a service with one outline source at write access, served by gw.
+// writableOutline returns a service with one outline source, served by gw.
 func writableOutline(t *testing.T, gw *fakeGateway) sources.Service {
 	t.Helper()
-	return serviceWith(t, gw, mustSource(t, "outline", "write"))
+	return serviceWith(t, gw, mustSource(t, "outline"))
 }
 
 // rowForTool returns the catalog row whose MCP tool has the given name.
@@ -75,7 +75,7 @@ func requestOf(raw string) *sdk.CallToolRequest {
 // TestAPanicInACatalogCallAnswersTheFixedText checks that a panic in a catalog read reaches the model as the unexpected
 // error only, and that the panic value never does.
 func TestAPanicInACatalogCallAnswersTheFixedText(t *testing.T) {
-	svc := serviceWith(t, panicGateway{&fakeGateway{}}, mustSource(t, "outline", "read"))
+	svc := serviceWith(t, panicGateway{&fakeGateway{}}, mustSource(t, "outline"))
 	var logs bytes.Buffer
 	cs := connect(t, svc, &logs)
 	text, isErr := call(t, cs, "list_collections", nil)
@@ -87,7 +87,7 @@ func TestAPanicInACatalogCallAnswersTheFixedText(t *testing.T) {
 // TestAnAmbiguousSourceNamesTheChoice checks that two outline sources with no source argument are refused, and that the
 // refusal names the way out.
 func TestAnAmbiguousSourceNamesTheChoice(t *testing.T) {
-	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline-a", "read"), mustSource(t, "outline-b", "read"))
+	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline-a"), mustSource(t, "outline-b"))
 	var logs bytes.Buffer
 	text, isErr := call(t, connect(t, svc, &logs), "list_collections", nil)
 	if !isErr || !strings.Contains(text, "more than one outline source exists") || !strings.Contains(text, "pass the source argument") {
@@ -99,18 +99,16 @@ func TestAnAmbiguousSourceNamesTheChoice(t *testing.T) {
 // own public text.
 func TestTheTypedGatewayErrorsKeepTheirPublicText(t *testing.T) {
 	unavailable := domain.OperationUnavailableError{Method: "collections.list"}
-	denied := domain.AccessLevelError{Source: "outline", Have: domain.AccessRead, Need: domain.AccessWrite}
 	cases := []struct {
 		name string
 		err  error
 		want string
 	}{
 		{"operation unavailable", unavailable, unavailable.Error()},
-		{"access level too low", denied, denied.Error()},
 		{"no source of the kind", domain.ErrNoSourceOfKind, "no outline source is configured"},
 	}
 	for _, c := range cases {
-		svc := serviceWith(t, &fakeGateway{err: c.err}, mustSource(t, "outline", "read"))
+		svc := serviceWith(t, &fakeGateway{err: c.err}, mustSource(t, "outline"))
 		var logs bytes.Buffer
 		text, isErr := call(t, connect(t, svc, &logs), "list_collections", nil)
 		if !isErr || text != c.want {
@@ -194,16 +192,16 @@ func TestAnAppendNeedsNoRevision(t *testing.T) {
 	}
 }
 
-// adminFakeService returns a service with one outline source at admin access, served by gw.
+// adminFakeService returns a service with one outline source, served by gw.
 func adminFakeService(t *testing.T, gw *adminFake) sources.Service {
 	t.Helper()
 	gw.fakeGateway.doc = domain.SourceDocument{ID: gapDocumentID, Title: "Synthetic", URL: "https://docs.example.test/doc", CollectionID: gapCollectionID}
-	return serviceWith(t, gw, mustSource(t, "outline", "admin"))
+	return serviceWith(t, gw, mustSource(t, "outline"))
 }
 
-// TestAnAdminCallAnswersWithItsReply checks that an admin call answers with the record the wiki returned, and makes one
+// TestADestructiveCallAnswersWithItsReply checks that an admin call answers with the record the wiki returned, and makes one
 // call.
-func TestAnAdminCallAnswersWithItsReply(t *testing.T) {
+func TestADestructiveCallAnswersWithItsReply(t *testing.T) {
 	gw := &adminFake{fakeGateway: &fakeGateway{}, adminReply: domain.NewRecord(domain.Field{Name: "ok", Value: true})}
 	var logs bytes.Buffer
 	text, isErr := call(t, connect(t, adminFakeService(t, gw), &logs), "delete_document", map[string]any{"document_id": gapDocumentID, "source": "outline"})
@@ -212,8 +210,8 @@ func TestAnAdminCallAnswersWithItsReply(t *testing.T) {
 	}
 }
 
-// TestAnAdminCallWhoseWikiFailsIsAFailure checks that an admin call the wiki refuses reaches the model as the fixed text.
-func TestAnAdminCallWhoseWikiFailsIsAFailure(t *testing.T) {
+// TestADestructiveCallWhoseWikiFailsIsAFailure checks that an admin call the wiki refuses reaches the model as the fixed text.
+func TestADestructiveCallWhoseWikiFailsIsAFailure(t *testing.T) {
 	gw := &adminFake{fakeGateway: &fakeGateway{}, adminErr: errors.New("upstream detail")}
 	var logs bytes.Buffer
 	text, isErr := call(t, connect(t, adminFakeService(t, gw), &logs), "delete_document", map[string]any{"document_id": gapDocumentID, "source": "outline"})
@@ -226,7 +224,7 @@ func TestAnAdminCallWhoseWikiFailsIsAFailure(t *testing.T) {
 func TestAGetDocumentPastTheEndIsRefused(t *testing.T) {
 	gw := &fakeGateway{doc: domain.SourceDocument{ID: gapDocumentID, Title: "Synthetic", Markdown: "Synthetic body"}}
 	var logs bytes.Buffer
-	text, isErr := call(t, connect(t, serviceWith(t, gw, mustSource(t, "outline", "read")), &logs), "get_document",
+	text, isErr := call(t, connect(t, serviceWith(t, gw, mustSource(t, "outline")), &logs), "get_document",
 		map[string]any{"document_id": gapDocumentID, "source": "outline", "offset": 9999})
 	if !isErr || text != errOffsetPastEnd.Error() {
 		t.Fatalf("an offset past the end must be refused, got %q (error %v)", text, isErr)
@@ -237,7 +235,7 @@ func TestAGetDocumentPastTheEndIsRefused(t *testing.T) {
 func TestALongBodyIsPagedWithANextOffset(t *testing.T) {
 	gw := &fakeGateway{doc: domain.SourceDocument{ID: gapDocumentID, Title: "Synthetic", Markdown: strings.Repeat("x", 40000)}}
 	var logs bytes.Buffer
-	text, isErr := call(t, connect(t, serviceWith(t, gw, mustSource(t, "outline", "read")), &logs), "get_document",
+	text, isErr := call(t, connect(t, serviceWith(t, gw, mustSource(t, "outline")), &logs), "get_document",
 		map[string]any{"document_id": gapDocumentID, "source": "outline"})
 	if isErr || !strings.Contains(text, `"truncated":true`) || !strings.Contains(text, `"next_offset"`) {
 		t.Fatalf("a long body must be cut with a next offset, got error %v, text prefix %.80q", isErr, text)
@@ -321,7 +319,7 @@ func TestAListThatCannotBeEncodedIsAnError(t *testing.T) {
 // TestListSourcesRefusesAnUnknownKindAndShowsAnUntaggedSource checks the two branches of the catalog tool: a kind that
 // does not exist is refused, and a source with no tags is listed with an empty tag list.
 func TestListSourcesRefusesAnUnknownKindAndShowsAnUntaggedSource(t *testing.T) {
-	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "read"))
+	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline"))
 	var logs bytes.Buffer
 	cs := connect(t, svc, &logs)
 	if _, isErr := call(t, cs, "list_sources", map[string]any{"kind": "nope"}); !isErr {
@@ -336,9 +334,9 @@ func TestListSourcesRefusesAnUnknownKindAndShowsAnUntaggedSource(t *testing.T) {
 // TestAServerWithADuplicateToolIsNotBuilt checks that a table naming one tool twice stops the server, both when it is
 // built and when a session is served, and that the tool listing refuses it too.
 func TestAServerWithADuplicateToolIsNotBuilt(t *testing.T) {
-	row := tool{name: "list_sources", needs: domain.AccessRead, effect: domain.EffectRead, bind: bind(listSources)}
+	row := tool{name: "list_sources", effect: domain.EffectRead, bind: bind(listSources)}
 	dup := []tool{row, row}
-	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "read"))
+	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline"))
 	if _, err := newServer(svc, Options{Logger: slog.New(slog.DiscardHandler)}, dup); err == nil {
 		t.Error("a server over a duplicated table must not be built")
 	}

@@ -1,6 +1,6 @@
 ---
 title: What super-agent is
-description: The human plus their harnesses is the super agent, served by one catalog and one access model.
+description: The human plus their harnesses is the super agent, served by one catalog and one credential model.
 category: explanation
 tags:
   - explanation
@@ -26,8 +26,8 @@ you already use. Each agent keeps its own job. super-agent supplies two shared t
 
 - **One catalog of sources.** Every agent finds the same connectors, so no agent keeps its own copy of a credential
   or a connection.
-- **One access model.** Every agent meets the same access limits. Each connector checks access before it reads or
-  writes data.
+- **One credential model.** Every agent reaches a source with the same key handling and the same connection checks. The
+  source's API token decides what a change may do. [Who guards what](./who-guards-what.md) explains the split.
 
 ## How the pieces fit
 
@@ -39,10 +39,10 @@ you already use. Each agent keeps its own job. super-agent supplies two shared t
 - **The harness side** is the command-line tool, `retriever`, and its Model Context Protocol (MCP) server, started with
   `retriever mcp`. Many agents use the same connectors through either one.
 - **The data side** is the connectors. The tool has three, for Outline wikis, Kiwi test management, and Jira Cloud. A
-  connector reads one kind of source, and it writes only where the source's access level allows it. Connectors for
-  other kinds of channel are planned.
+  connector reads one kind of source, and it changes a source only when the source's API token allows the change.
+  Connectors for other kinds of channel are planned.
 
-Work and personal contexts stay separate in the design. Each has its own catalog and access ceiling. The
+Work and personal contexts stay separate in the design. Each has its own catalog and its own API tokens. The
 [software-factory note](./software-factory-note.md) lists this and the other planned items.
 
 ## What exists today

@@ -36,25 +36,6 @@ func runWrite(inv *invocation, row operations.Row) error {
 	return nil
 }
 
-// runAdmin runs one destructive or admin row against the named source. It prints the reply the same way runWrite does.
-func runAdmin(inv *invocation, row operations.Row) error {
-	rt := inv.rt
-	kind, _ := row.Kind()
-	service, err := rt.outlineWiring()
-	if err != nil {
-		return withKind(kind, err)
-	}
-	rec, err := sources.Administer(context.Background(), service, row.ID, sourceArg(inv), rawArgs(inv, row))
-	if err != nil {
-		return withKind(kind, err)
-	}
-	if rt.format == domain.FormatJSON {
-		return writeJSON(rt.stdout, jsonDocument(row, rec))
-	}
-	writeChanged(rt.stdout, row, rec)
-	return nil
-}
-
 // writeChanged prints the record the wiki answered for a write, after one line that names the change.
 func writeChanged(w io.Writer, row operations.Row, rec domain.Record) {
 	fmt.Fprintf(w, "changed: %s\n", row.CLI)

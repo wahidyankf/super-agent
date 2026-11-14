@@ -29,7 +29,7 @@ components. The model says what exists now.
 - **Context.** super-agent, its users (people and harnesses), and the sources it reaches.
 - **Containers.** The command-line tool, the protocol server when it exists, the connector engine, and the configuration
   files.
-- **Components.** The parts inside one container, such as the command adapter, the access checker, and each connector
+- **Components.** The parts inside one container, such as the command adapter, the source service, and each connector
   kind.
 
 ## Review

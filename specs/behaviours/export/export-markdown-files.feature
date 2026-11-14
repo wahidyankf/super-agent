@@ -8,8 +8,8 @@ Feature: Export to Markdown files
   Background:
     Given the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
     And the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | read   | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     And the stub Outline server holds these collections:
       | id | name      |
       | 1c1c1c1c-0000-4000-8000-000000000001 | Synthetic |
@@ -70,8 +70,8 @@ Feature: Export to Markdown files
   @integration @e2e @unit
   Scenario: A test case exported from Kiwi is written as one Markdown file
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
-      | example-kiwi | kiwi | read   | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
+      | example-kiwi | kiwi | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     And the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server holds this dataset:
       """
@@ -92,8 +92,8 @@ Feature: Export to Markdown files
   @integration @e2e @unit
   Scenario: An issue exported from Jira is written as one Markdown file that holds its description
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags    | endpoint                  | credential_env         | identity_env       |
-      | example-jira | jira | read   | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
+      | id           | kind | tags    | endpoint                  | credential_env         | identity_env       |
+      | example-jira | jira | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
     And the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
     And the stub Jira server holds this configuration:

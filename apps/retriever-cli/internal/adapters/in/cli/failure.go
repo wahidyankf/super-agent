@@ -86,10 +86,6 @@ func publicMessage(err error) string {
 	if errors.As(err, &unavailable) {
 		return unavailable.Error()
 	}
-	var denied domain.AccessLevelError
-	if errors.As(err, &denied) {
-		return denied.Error()
-	}
 	var noSource domain.NoSourceOfKindError
 	if errors.As(err, &noSource) {
 		return noSource.Error()
@@ -152,7 +148,6 @@ var errorReasons = []struct {
 	{domain.ErrInvalidOffset, "invalid_offset"},
 	{domain.ErrInvalidQuery, "invalid_query"},
 	{domain.ErrInvalidOutputFormat, "invalid_output_format"},
-	{domain.ErrAccessLevelTooLow, "access_level_too_low"},
 	{domain.ErrOperationUnavailable, "operation_unavailable"},
 	{domain.ErrUnsupportedOperation, "unsupported_operation"},
 	{domain.ErrBadRequest, "bad_request"},
@@ -177,7 +172,6 @@ var errorReasons = []struct {
 	{domain.ErrWrongOperationClass, "wrong_operation_class"},
 	{domain.ErrWriteOutcomeUnknown, "write_outcome_unknown"},
 	{domain.ErrInvalidEmail, "invalid_email"},
-	{domain.ErrAccessAboveKindCeiling, "access_above_kind_ceiling"},
 	{domain.ErrInvalidReason, "invalid_reason"},
 	{domain.ErrDocumentConflict, "document_conflict"},
 	{errNotConfigured, "not_configured"},
@@ -212,10 +206,6 @@ func errorCode(err error, area string) string {
 	var ambiguous domain.AmbiguousSourceError
 	if errors.As(err, &ambiguous) {
 		return prefix + "ambiguous_source"
-	}
-	var denied domain.AccessLevelError
-	if errors.As(err, &denied) {
-		return prefix + "access_level_too_low"
 	}
 	var unavailable domain.OperationUnavailableError
 	if errors.As(err, &unavailable) {

@@ -17,13 +17,12 @@ import (
 // binder adds one hand-written tool to a server. It is built from a use case by bind.
 type binder func(server *sdk.Server, meta *sdk.Tool, c caller)
 
-// tool is one hand-written row: its name, the lowest access level that may use it, what it does, whether it calls a
+// tool is one hand-written row: its name, what it does, whether it calls a
 // wiki, and how it is bound to its use case. Only a tool that is not an operation of the catalog is written here; every
 // operation of the catalog becomes a tool in operation_tools.go.
 type tool struct {
 	name        string
 	description string
-	needs       domain.Access
 	effect      domain.Effect
 	opensWorld  bool
 	bind        binder
@@ -34,8 +33,7 @@ type tool struct {
 var handWrittenTools = []tool{
 	{
 		name:        "list_sources",
-		description: "Lists the configured wiki sources with their kind, access level, and tags. Filter by kind and by tags; a source must have every tag given. The endpoint and the credential name are never shown.",
-		needs:       domain.AccessRead,
+		description: "Lists the configured wiki sources with their kind and tags. Filter by kind and by tags; a source must have every tag given. The endpoint and the credential name are never shown.",
 		effect:      domain.EffectRead,
 		opensWorld:  false,
 		bind:        bind(listSources),
@@ -48,12 +46,9 @@ type caller struct {
 	log *slog.Logger
 }
 
-// register adds every hand-written tool whose access need the catalog's highest access level allows. A tool that needs
-// more is not offered. A table that names one tool twice is an error. It returns the names it added.
+// register adds every hand-written tool of the table. A table that names one tool twice is an error. It returns the names
+// it added.
 func register(server *sdk.Server, svc sources.Service, log *slog.Logger, table []tool) ([]string, error) {
-	// The hand-written tools read the catalog itself, so their ceiling is the highest level of any kind (list_sources
-	// lists a Kiwi source too). The generated tools use the kinds that have tools instead (toolKinds).
-	ceiling := svc.Catalog.MaxAccess()
 	c := caller{svc: svc, log: log}
 	seen := map[string]bool{}
 	var names []string
@@ -62,9 +57,6 @@ func register(server *sdk.Server, svc sources.Service, log *slog.Logger, table [
 			return nil, fmt.Errorf("tool %s is listed twice", t.name)
 		}
 		seen[t.name] = true
-		if !ceiling.Allows(t.needs) {
-			continue
-		}
 		meta := &sdk.Tool{
 			Name:        t.name,
 			Description: describe(t.description),
@@ -202,10 +194,9 @@ type listSourcesOut struct {
 }
 
 type sourceOut struct {
-	ID     string   `json:"id"`
-	Kind   string   `json:"kind"`
-	Access string   `json:"access"`
-	Tags   []string `json:"tags"`
+	ID   string   `json:"id"`
+	Kind string   `json:"kind"`
+	Tags []string `json:"tags"`
 }
 
 // tagsOrEmpty returns the tags of a source, or an empty list when it has none, so the answer shows [] and never null.
@@ -225,7 +216,7 @@ func listSources(_ context.Context, svc sources.Service, in listSourcesIn) (list
 	summaries := sources.ListSources(svc.Catalog, filter)
 	rows := make([]sourceOut, 0, len(summaries))
 	for _, r := range summaries {
-		rows = append(rows, sourceOut{ID: r.ID, Kind: r.Kind, Access: r.Access, Tags: tagsOrEmpty(r.Tags)})
+		rows = append(rows, sourceOut{ID: r.ID, Kind: r.Kind, Tags: tagsOrEmpty(r.Tags)})
 	}
 	kept, truncated := fitPlainRows(rows, func(kept []sourceOut, tr bool) any {
 		return listSourcesOut{Sources: kept, Count: len(kept), Truncated: tr}
@@ -274,10 +265,6 @@ func publicError(err error) (error, string) {
 	var unavailable domain.OperationUnavailableError
 	if errors.As(err, &unavailable) {
 		return errors.New(unavailable.Error()), "operation unavailable"
-	}
-	var denied domain.AccessLevelError
-	if errors.As(err, &denied) {
-		return errors.New(denied.Error()), "access level too low"
 	}
 	var noSource domain.NoSourceOfKindError
 	if errors.As(err, &noSource) {

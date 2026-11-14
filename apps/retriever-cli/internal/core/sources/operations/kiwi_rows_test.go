@@ -40,18 +40,17 @@ type kiwiWant struct {
 	id     domain.OperationID
 	cli    string
 	effect domain.Effect
-	access domain.Access
 	fields []string
 }
 
 // kiwiWants are the six Kiwi rows, in the order of the spec table.
 var kiwiWants = []kiwiWant{
-	{domain.OpKiwiProductsList, "kiwi products list", domain.EffectRead, domain.AccessRead, []string{"id", "name"}},
-	{domain.OpKiwiProductsTree, "kiwi products tree", domain.EffectRead, domain.AccessRead, []string{"id", "title", "url", "parentId", "depth"}},
-	{domain.OpKiwiDocumentsGet, "kiwi documents get", domain.EffectRead, domain.AccessRead, []string{"id", "title", "url", "markdown", "collectionId"}},
-	{domain.OpKiwiTestCasesCreate, "kiwi test-cases create", domain.EffectAdditive, domain.AccessWrite, []string{"id", "title", "url"}},
-	{domain.OpKiwiTestCasesUpdate, "kiwi test-cases update", domain.EffectUpdate, domain.AccessWrite, []string{"id", "title", "url"}},
-	{domain.OpKiwiPlansAddCase, "kiwi plans add-case", domain.EffectAdditive, domain.AccessWrite, []string{"planId", "caseId"}},
+	{domain.OpKiwiProductsList, "kiwi products list", domain.EffectRead, []string{"id", "name"}},
+	{domain.OpKiwiProductsTree, "kiwi products tree", domain.EffectRead, []string{"id", "title", "url", "parentId", "depth"}},
+	{domain.OpKiwiDocumentsGet, "kiwi documents get", domain.EffectRead, []string{"id", "title", "url", "markdown", "collectionId"}},
+	{domain.OpKiwiTestCasesCreate, "kiwi test-cases create", domain.EffectAdditive, []string{"id", "title", "url"}},
+	{domain.OpKiwiTestCasesUpdate, "kiwi test-cases update", domain.EffectUpdate, []string{"id", "title", "url"}},
+	{domain.OpKiwiPlansAddCase, "kiwi plans add-case", domain.EffectAdditive, []string{"planId", "caseId"}},
 }
 
 // TestKiwiRowParameters checks the positional parameter and the required fields of the Kiwi rows.

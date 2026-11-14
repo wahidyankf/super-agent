@@ -199,37 +199,6 @@ func TestTheEndpointTableHoldsExactlyTheStageAReads(t *testing.T) {
 	}
 }
 
-// TestTheCallRefusesEveryOperationOutsideTheTable checks that a method the table does not name, or an empty name,
-// never reaches the network.
-func TestTheCallRefusesEveryOperationOutsideTheTable(t *testing.T) {
-	r := newRig(t, sampleOptions())
-	for _, op := range []domain.OperationID{"documents.delete", "collections.delete", "documents.update", "", "../collections.list"} {
-		t.Run(fmt.Sprintf("operation %q", op), func(t *testing.T) {
-			var out any
-			err := r.gw.call(context.Background(), op, string(op), struct{}{}, &out)
-			if !errors.Is(err, errMethodNotAllowed) {
-				t.Fatalf("call error = %v, want errMethodNotAllowed", err)
-			}
-		})
-	}
-	if n := len(r.stub.Requests()); n != 0 {
-		t.Fatalf("requests = %d, want 0 for refused methods", n)
-	}
-}
-
-// TestTheReadSourceMayMakeOnlyReadCalls checks the level rule of the adapter itself: an operation the source does not
-// reach is refused before the request, and the export call is a read.
-func TestTheReadSourceMayMakeOnlyReadCalls(t *testing.T) {
-	r := newRig(t, sampleOptions())
-	if !r.gw.permits(domain.OpDocumentsGet) || !r.gw.permits(opExport) {
-		t.Fatal("a read source is refused a read call")
-	}
-	r.gw.access = domain.Access{}
-	if r.gw.permits(domain.OpDocumentsGet) {
-		t.Fatal("a source with no access level is permitted a read")
-	}
-}
-
 func TestTheKeyIsReadPerRequestAndSentAsBearerToTheLogicalHost(t *testing.T) {
 	r := newRig(t, sampleOptions())
 	ctx := context.Background()

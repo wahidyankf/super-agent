@@ -14,10 +14,10 @@ type stubGateway struct{ ports.SourceGateway }
 
 func source(t *testing.T, id, host, cred string) domain.Source {
 	t.Helper()
-	return sourceAt(t, id, host, cred, domain.AccessRead)
+	return sourceAt(t, id, host, cred)
 }
 
-func sourceAt(t *testing.T, id, host, cred string, access domain.Access) domain.Source {
+func sourceAt(t *testing.T, id, host, cred string) domain.Source {
 	t.Helper()
 	sid, err := domain.NewSourceID(id)
 	if err != nil {
@@ -32,32 +32,7 @@ func sourceAt(t *testing.T, id, host, cred string, access domain.Access) domain.
 		t.Fatalf("NewCredentialRef: %v", err)
 	}
 	tags, _ := domain.NewTagSet()
-	return domain.NewSource(sid, domain.KindOutline, tags, access, ep, ref)
-}
-
-// TestACappedSourceGetsItsOwnGatewayAtTheCappedLevel checks the cache key: one source ID at two access levels gets two
-// gateways, and each is built from the source it was asked for, so a capped run never reuses an admin gateway.
-func TestACappedSourceGetsItsOwnGatewayAtTheCappedLevel(t *testing.T) {
-	var levels []domain.Access
-	r := New(map[domain.SourceKind]Builder{
-		domain.KindOutline: func(src domain.Source) (ports.SourceGateway, error) {
-			levels = append(levels, src.Access())
-			return &stubGateway{}, nil
-		},
-	})
-	admin := sourceAt(t, "outline", "docs.example.com", "A_API_KEY", domain.AccessAdmin)
-	read := sourceAt(t, "outline", "docs.example.com", "A_API_KEY", domain.AccessRead)
-	full, _ := r.For(admin)
-	capped, _ := r.For(read)
-	if full == capped {
-		t.Fatalf("a capped source reused the admin gateway")
-	}
-	if again, _ := r.For(read); again != capped {
-		t.Fatalf("the capped source did not keep its gateway")
-	}
-	if len(levels) != 2 || levels[0] != domain.AccessAdmin || levels[1] != domain.AccessRead {
-		t.Fatalf("builds at levels %v, want admin then read", levels)
-	}
+	return domain.NewSource(sid, domain.KindOutline, tags, ep, ref)
 }
 
 func TestTheSameSourceGetsTheSameGateway(t *testing.T) {

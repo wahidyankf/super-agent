@@ -1,8 +1,8 @@
 # internal/adapters/in/mcp
 
 The Model Context Protocol server. It exposes the source use cases as tools. Standard output carries only the protocol,
-and each tool call writes one log line to standard error. The tools are limited by `--max-access` and `--tools`, and
-the `list_sources` tool is always offered.
+and each tool call writes one log line to standard error. The tools are limited by `--tools`, and the `list_sources`
+tool is always offered.
 
 Source files:
 
@@ -14,7 +14,7 @@ Source files:
 
 Test files:
 
-- `tools_test.go` and `profile_test.go` test the tool set and the access profile.
+- `tools_test.go` and `profile_test.go` test the tool set and the tool profile.
 - `input_keys_test.go` and `input_names_test.go` test the input keys and names.
 - `source_arg_test.go` tests the source argument.
 - `kind_sources_test.go` and `kind_error_test.go` test the source kinds and their errors.

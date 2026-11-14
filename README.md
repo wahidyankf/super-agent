@@ -5,7 +5,8 @@
 
 super-agent connects coding harnesses and people to data sources and channels. It is a set of source connectors for
 catalogs, document systems, and messaging, exposed through a command-line tool (`retriever-cli`) and a Model Context
-Protocol (MCP) server. Every connector checks access before it reads or writes data.
+Protocol (MCP) server. Every connector keeps keys and connections safe, and each source's API token decides what a
+change may do.
 
 The apps share one theme: the human summons one creature per app, and the retriever (`retriever-cli`) fetches data from
 sources and brings it back.
@@ -17,7 +18,7 @@ agents to help. super-agent amplifies that person and their harnesses: it is an 
 information from many data sources.
 
 super-agent is not a single catch-all agent. It does not decide for you and it does not replace your agents. It gives
-every harness and every person one catalog of sources and one access model, so the same connectors serve many agents.
+every harness and every person one catalog of sources and one credential model, so the same connectors serve many agents.
 Orchestrating the agents themselves is a later direction, described in the
 [software-factory note](./docs/explanation/software-factory-note.md), and it is out of scope now.
 

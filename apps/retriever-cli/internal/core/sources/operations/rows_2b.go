@@ -2,8 +2,8 @@ package operations
 
 import "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 
-// part2bRows are the rest of the stage a reads: the eighteen reads of access read, then the ten
-// admin-level reads of access admin. They are kept in their own file so the part 1 and part 2a table stays as it was.
+// part2bRows are the rest of the stage a reads: the eighteen reads, then the ten
+// further reads. They are kept in their own file so the part 1 and part 2a table stays as it was.
 // The init below appends them to the catalog, and the order is the catalog order.
 var part2bRows = []Row{
 	{
@@ -13,7 +13,6 @@ var part2bRows = []Row{
 		Summary:     "show one Outline access request to a document",
 		Description: "Returns one request of a user to read a document, with its status and its responder. The user's details are not returned.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("accessRequestId", "the access request UUID"),
@@ -27,7 +26,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of Outline attachments",
 		Description: "Lists one page of the attachments, optionally of one document or one user. The attachment's storage address is never returned. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: withPage(
 			uuidParam("documentId", "only attachments of this document, by its UUID"),
@@ -45,7 +43,6 @@ var part2bRows = []Row{
 		Summary:     "show one Outline custom emoji",
 		Description: "Returns one custom emoji of the wiki: its name, its creator, and its dates. The storage address of the image is never returned.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("emojiId", "the emoji UUID, from list_emojis"),
@@ -59,7 +56,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of Outline custom emojis",
 		Description: "Lists one page of the custom emojis, optionally matching a name query. The storage address of each image is never returned. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params:      withPage(queryParam("the emoji name to search for")),
 		Fields:      emojiFields,
@@ -74,7 +70,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of Outline activity or audit events",
 		Description: "Lists one page of the events, optionally of one actor, document, or collection. Without a document or a collection the server needs an admin user. The actor's IP address and the change data are never returned.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: withPage(
 			uuidParam("actorId", "only events of this actor, by the actor's UUID"),
@@ -96,7 +91,6 @@ var part2bRows = []Row{
 		Summary:     "show one Outline import or export file operation",
 		Description: "Returns the state of one file operation of an import or an export. It carries no download link.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("fileOperationId", "the file operation UUID, from list_file_operations"),
@@ -110,7 +104,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of Outline file operations of one type",
 		Description: "Lists one page of the import or export file operations. The type is required. The server needs an admin user for this list, and a key of a member gets a 403 error. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: withPage(
 			Param{Name: "type", Kind: KindEnum, Required: true, Values: []string{"import", "export"}, Help: "import or export"},
@@ -129,7 +122,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of the group memberships of the wiki",
 		Description: "Lists one page of the group memberships, optionally of one group. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: withPage(
 			uuidParam("groupId", "only the memberships of this group, by the group's UUID"),
@@ -146,7 +138,6 @@ var part2bRows = []Row{
 		Summary:     "show the version of the Outline server",
 		Description: "Returns the version of the self-hosted Outline server, the latest version, and how many versions it is behind.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Fields:      installationFields,
 	},
@@ -157,7 +148,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of the Outline notifications of the API key's user",
 		Description: "Lists one page of the notifications of the user of the API key, optionally by event type or archive state. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: withPage(
 			Param{Name: "eventType", Kind: KindEnum, Values: notificationEventTypes, Help: "only notifications of this event type"},
@@ -175,7 +165,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of the OAuth sign-ins of the API key's user",
 		Description: "Lists one page of the OAuth applications that the user of the API key has authorized. The client secret is never returned. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params:      withPage(),
 		Fields:      oauthAuthenticationFields,
@@ -190,7 +179,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of the emoji reactions of one Outline comment",
 		Description: "Lists one page of the reactions to one comment. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: withPage(
 			uuidParamRequired("commentId", "the comment UUID, from list_comments"),
@@ -207,7 +195,6 @@ var part2bRows = []Row{
 		Summary:     "show one Outline relationship between two documents",
 		Description: "Returns one relationship between documents: a backlink or a similar document. The documents it names are not returned again.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("relationshipId", "the relationship UUID, from list_relationships"),
@@ -221,7 +208,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of the Outline relationships of one document",
 		Description: "Lists one page of the backlinks or similar documents of one document. Exactly one of documentId and reverseDocumentId is required. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: withPage(
 			Param{Name: "type", Kind: KindEnum, Values: []string{"backlink", "similar"}, Help: "backlink or similar"},
@@ -241,7 +227,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of the Outline searches of the API key's user",
 		Description: "Lists one page of the searches that the user of the API key has made, with their query and score. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: withPage(
 			Param{Name: "searchSource", Kind: KindName, Help: "only searches of this source, as the server names it"},
@@ -258,7 +243,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of the documents, users, and groups to mention",
 		Description: "Lists one page of the suggestions for a mention: documents, users, and groups that match the query, each with its kind. The e-mail addresses are never returned.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: withPage(
 			queryParam("the text to find the mention suggestions for"),
@@ -275,7 +259,6 @@ var part2bRows = []Row{
 		Summary:     "list one page of the Outline memberships of the API key's user",
 		Description: "Lists one page of the direct memberships of the user of the API key, to documents and collections. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params:      withPage(),
 		Fields:      membershipFields,
@@ -290,7 +273,6 @@ var part2bRows = []Row{
 		Summary:     "list the Outline views of one document",
 		Description: "Lists the users who viewed one document, with their view counts and first and last views. Suspended users are left out unless includeSuspended is true. The list is not paged.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessRead,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("documentId", "the document UUID, from list_documents"),
@@ -306,9 +288,8 @@ var part2bRows = []Row{
 		CLI:         "outline api-keys list",
 		Tool:        "list_api_keys",
 		Summary:     "list one page of Outline API keys (admin source only)",
-		Description: "Lists one page of the API keys of the wiki, with their names, scopes, and dates. Needs a source with admin access. The key value and the secret are never returned. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
+		Description: "Lists one page of the API keys of the wiki, with their names, scopes, and dates. The key value and the secret are never returned. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: withPage(
 			uuidParam("userId", "only keys of this user, by the user's UUID"),
@@ -326,9 +307,8 @@ var part2bRows = []Row{
 		CLI:         "outline authentication-providers get",
 		Tool:        "get_authentication_provider",
 		Summary:     "show one Outline sign-in provider (admin source only)",
-		Description: "Returns one sign-in provider of the wiki, with its settings for group sync. Needs a source with admin access.",
+		Description: "Returns one sign-in provider of the wiki, with its settings for group sync.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("authenticationProviderId", "the sign-in provider UUID, from list_authentication_providers"),
@@ -340,9 +320,8 @@ var part2bRows = []Row{
 		CLI:         "outline authentication-providers list",
 		Tool:        "list_authentication_providers",
 		Summary:     "list the Outline sign-in providers (admin source only)",
-		Description: "Lists the sign-in providers of the wiki with their settings for group sync. Needs a source with admin access. The list is not paged.",
+		Description: "Lists the sign-in providers of the wiki with their settings for group sync. The list is not paged.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Fields:      authProviderFields,
 		ListKey:     "authenticationProviders",
@@ -354,9 +333,8 @@ var part2bRows = []Row{
 		CLI:         "outline imports get",
 		Tool:        "get_import",
 		Summary:     "show one Outline import (admin source only)",
-		Description: "Returns the state of one import of documents into the wiki. Needs a source with admin access.",
+		Description: "Returns the state of one import of documents into the wiki.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("importId", "the import UUID, from list_imports"),
@@ -368,9 +346,8 @@ var part2bRows = []Row{
 		CLI:         "outline imports list",
 		Tool:        "list_imports",
 		Summary:     "list one page of Outline imports (admin source only)",
-		Description: "Lists one page of the imports of documents into the wiki, optionally of one service. Needs a source with admin access. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
+		Description: "Lists one page of the imports of documents into the wiki, optionally of one service. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: withPage(
 			Param{Name: "service", Kind: KindEnum, Values: []string{"notion", "markdown", "slab", "okf", "json"}, Help: "only imports from this service"},
@@ -387,9 +364,8 @@ var part2bRows = []Row{
 		CLI:         "outline integrations get",
 		Tool:        "get_integration",
 		Summary:     "show one Outline integration (admin source only)",
-		Description: "Returns one integration of the wiki. Only the host of its URL is returned, never the full address. Needs a source with admin access.",
+		Description: "Returns one integration of the wiki. Only the host of its URL is returned, never the full address.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("integrationId", "the integration UUID, from list_integrations"),
@@ -401,9 +377,8 @@ var part2bRows = []Row{
 		CLI:         "outline integrations list",
 		Tool:        "list_integrations",
 		Summary:     "list one page of Outline integrations (admin source only)",
-		Description: "Lists one page of the integrations of the wiki, optionally of one type or service. Only the host of each URL is returned. Needs a source with admin access. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
+		Description: "Lists one page of the integrations of the wiki, optionally of one type or service. Only the host of each URL is returned. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: withPage(
 			Param{Name: "type", Kind: KindEnum, Values: integrationTypes, Help: "only integrations of this type"},
@@ -421,9 +396,8 @@ var part2bRows = []Row{
 		CLI:         "outline oauth-clients get",
 		Tool:        "get_oauth_client",
 		Summary:     "show one Outline OAuth client (admin source only)",
-		Description: "Returns one OAuth client of the wiki. Its client secret is never returned. Needs a source with admin access.",
+		Description: "Returns one OAuth client of the wiki. Its client secret is never returned.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("oauthClientId", "the OAuth client UUID, from list_oauth_clients"),
@@ -435,9 +409,8 @@ var part2bRows = []Row{
 		CLI:         "outline oauth-clients list",
 		Tool:        "list_oauth_clients",
 		Summary:     "list one page of Outline OAuth clients (admin source only)",
-		Description: "Lists one page of the OAuth clients of the wiki. The client secrets are never returned. Needs a source with admin access. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
+		Description: "Lists one page of the OAuth clients of the wiki. The client secrets are never returned. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      withPage(),
 		Fields:      oauthClientFields,
@@ -450,9 +423,8 @@ var part2bRows = []Row{
 		CLI:         "outline webhook-subscriptions list",
 		Tool:        "list_webhook_subscriptions",
 		Summary:     "list one page of Outline webhook subscriptions (admin source only)",
-		Description: "Lists one page of the webhook subscriptions of the wiki. Only the host of each URL is returned; the signing secret is never returned. Needs a source with admin access. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
+		Description: "Lists one page of the webhook subscriptions of the wiki. Only the host of each URL is returned; the signing secret is never returned. The page holds offset and limit; the limit is from 1 to 100 and defaults to 25.",
 		Effect:      domain.EffectRead,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: withPage(
 			queryParam("the webhook name to search for"),

@@ -25,7 +25,6 @@ sources:
   - id: example-outline
     kind: outline
     tags: [wiki, docs]
-    access: read
     endpoint: https://outline.example.test
     credential_env: EXAMPLE_OUTLINE_API_KEY
 ```
@@ -40,8 +39,8 @@ The top level has two keys, and no other key is allowed:
 - `id`: required. A lowercase slug of letters, digits, and single hyphens, starting with a letter. It is unique in the
   catalog.
 - `kind`: required. It is `outline`, `kiwi`, or `jira`. Any other kind is refused.
-- `tags`: optional. A list of lowercase slugs, at most 16 distinct tags. Tags label a source. They never grant access.
-- `access`: optional. It is `read`, `write`, or `admin`, and it defaults to `read`.
+- `tags`: optional. A list of lowercase slugs, at most 16 distinct tags. Tags label a source. They never change what the
+  source allows.
 - `endpoint`: required. It is `https://` followed by a host name only: no path, no port, and no user information. A
   trailing slash is allowed.
 - `credential_env`: required. It is the name of the variable that holds the key. It must match
@@ -57,18 +56,18 @@ be an `https` host name, and it does not print the endpoint.
 - **Unique IDs.** Two sources cannot share an `id`.
 - **One credential, one host.** A credential variable serves one endpoint host only. Two sources may not name the same
   variable for different hosts.
-- **Kind ceilings.** `outline` and `kiwi` may hold any access level. `jira` may hold `read` only, so a Jira source with
-  `write` or `admin` is refused.
+- **No access key.** The `access` key was removed. A catalog that still holds it is refused when it loads, and the error
+  names the key. Limit what a source may do with its API token instead.
 - **Identity by kind.** `jira` requires `identity_env`. `outline` and `kiwi` refuse it.
 - **One document.** The file must hold exactly one YAML document. It is at most 64 KiB.
 - **No unknown fields.** A misspelled key is an error, so a typo cannot silently drop a source setting.
 
 Any violation stops the load, and the CLI reports the source number and the field, such as
-`sources catalog: source 2 access: ...`. The text never includes the file path.
+`sources catalog: source 2 endpoint: ...`. The text never includes the file path.
 
 ## Example
 
-The example catalog in the repository has three sources, one for each kind. Each one reads with `access: read`:
+The example catalog in the repository has three sources, one for each kind:
 
 - `example-outline`: kind `outline`, endpoint `https://outline.example.test`, key variable `EXAMPLE_OUTLINE_API_KEY`,
   and no identity variable.

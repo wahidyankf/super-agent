@@ -16,8 +16,6 @@ var (
 	ErrInvalidSourceID = errors.New("invalid source ID")
 	// ErrInvalidTag reports a tag outside the lowercase slug grammar.
 	ErrInvalidTag = errors.New("invalid tag")
-	// ErrInvalidAccess reports an access level other than read, write, or admin.
-	ErrInvalidAccess = errors.New("must be read, write or admin")
 	// ErrTooManyTags reports more than 16 distinct tags in one set.
 	ErrTooManyTags = errors.New("invalid tag")
 	// ErrUnknownSourceKind reports a kind name the code does not know.
@@ -45,9 +43,6 @@ var (
 	// ErrIdentityNotUsed reports a source of a kind that does not use an identity name but has one. IdentityNotUsedError
 	// matches it and names the kind.
 	ErrIdentityNotUsed = errors.New("the kind does not use an identity_env name")
-	// ErrAccessAboveKindCeiling reports an access level above the highest level its kind accepts. KindCeilingError matches
-	// it and names the kind and the level.
-	ErrAccessAboveKindCeiling = errors.New("the access level is above the most the kind allows")
 	// ErrUnknownSource reports a source ID that the catalog does not hold. UnknownSourceError matches it.
 	ErrUnknownSource = errors.New("unknown source")
 	// ErrNoSourceOfKind reports that no source of the requested kind is configured. NoSourceOfKindError matches it and
@@ -123,9 +118,6 @@ var (
 	// ErrUnsupportedOperation reports an operation that the catalog does not hold, or that the source kind does not
 	// support.
 	ErrUnsupportedOperation = errors.New("unsupported operation")
-	// ErrAccessLevelTooLow reports that the source's access level is below the level the operation needs.
-	// AccessLevelError names the source and the two levels.
-	ErrAccessLevelTooLow = errors.New("the source's access level is too low for this operation")
 	// ErrOperationUnavailable reports that the server does not offer the endpoint. OperationUnavailableError names it.
 	ErrOperationUnavailable = errors.New("this Outline server does not offer the endpoint")
 	// ErrSourceRequired refuses a write that names no source. A change always names where it goes.

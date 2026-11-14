@@ -39,7 +39,7 @@ func (r fixedResolver) Writer(domain.Source) (ports.SourceWriter, error) {
 
 // mustSource builds one outline source of the test catalogs. The constant inputs are valid, so a constructor
 // failure is a programming error and panics.
-func mustSource(id, host, credential string, tags []string, access domain.Access) domain.Source {
+func mustSource(id, host, credential string, tags []string) domain.Source {
 	sid, err := domain.NewSourceID(id)
 	if err != nil {
 		panic(err)
@@ -56,7 +56,7 @@ func mustSource(id, host, credential string, tags []string, access domain.Access
 	if err != nil {
 		panic(err)
 	}
-	return domain.NewSource(sid, domain.KindOutline, set, access, ep, ref)
+	return domain.NewSource(sid, domain.KindOutline, set, ep, ref)
 }
 
 // catalogServices returns the source service of a catalog with the given sources, served by gw.
@@ -71,7 +71,7 @@ func catalogServices(gw ports.SourceGateway, sources ...domain.Source) usecases.
 // oneOutlineSources returns the source service of a catalog with the single outline source, served by gw.
 func oneOutlineSources(gw ports.SourceGateway) usecases.Service {
 	return catalogServices(gw, mustSource("outline", "docs.example.test", "EXAMPLE_OUTLINE_API_KEY",
-		nil, domain.AccessRead))
+		nil))
 }
 
 // twoOutlineSources returns the source service of the sources feature: a read source with tags company and wiki, and
@@ -79,17 +79,8 @@ func oneOutlineSources(gw ports.SourceGateway) usecases.Service {
 func twoOutlineSources(gw ports.SourceGateway) usecases.Service {
 	return catalogServices(gw,
 		mustSource("outline", "docs.example.test", "EXAMPLE_OUTLINE_API_KEY",
-			[]string{"company", "wiki"}, domain.AccessRead),
+			[]string{"company", "wiki"}),
 		mustSource("outline-engineering", "wiki.engineering.example.com", "ENGINEERING_OUTLINE_API_KEY",
-			[]string{"engineering", "wiki"}, domain.AccessWrite),
+			[]string{"engineering", "wiki"}),
 	)
-}
-
-// Admin returns the gateway as a SourceAdmin when it is one, the same way Writer does.
-func (r fixedResolver) Admin(domain.Source) (ports.SourceAdmin, error) {
-	admin, ok := r.gw.(ports.SourceAdmin)
-	if !ok {
-		return nil, domain.ErrUnsupportedSource
-	}
-	return admin, nil
 }

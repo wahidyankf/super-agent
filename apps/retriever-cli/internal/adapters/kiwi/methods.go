@@ -22,24 +22,26 @@ const (
 	methodTestPlanAddCase      = "TestPlan.add_case"
 )
 
-// methodAccess is the access level each allowed method needs. Reads need a source at read; writes need a source at write.
-var methodAccess = map[string]domain.Access{
-	methodProductFilter:        domain.AccessRead,
-	methodTestPlanFilter:       domain.AccessRead,
-	methodTestCaseFilter:       domain.AccessRead,
-	methodTestCaseSortkeys:     domain.AccessRead,
-	methodCategoryFilter:       domain.AccessRead,
-	methodPriorityFilter:       domain.AccessRead,
-	methodTestCaseStatusFilter: domain.AccessRead,
-	methodTestCaseCreate:       domain.AccessWrite,
-	methodTestCaseUpdate:       domain.AccessWrite,
-	methodTestPlanAddCase:      domain.AccessWrite,
+// allowedMethods is the closed list of the methods the adapter may call. A method outside it never reaches the network.
+var allowedMethods = map[string]bool{
+	methodProductFilter:        true,
+	methodTestPlanFilter:       true,
+	methodTestCaseFilter:       true,
+	methodTestCaseSortkeys:     true,
+	methodCategoryFilter:       true,
+	methodPriorityFilter:       true,
+	methodTestCaseStatusFilter: true,
+	methodTestCaseCreate:       true,
+	methodTestCaseUpdate:       true,
+	methodTestPlanAddCase:      true,
 }
 
-// permittedMethod reports whether a source at level may call method. A method outside the table is never permitted.
-func permittedMethod(method string, level domain.Access) bool {
-	need, ok := methodAccess[method]
-	return ok && level.Allows(need)
+// writeMethods are the allowed methods that change the wiki. A failed exchange with one of them has an unknown outcome,
+// so it is never retried.
+var writeMethods = map[string]bool{
+	methodTestCaseCreate:  true,
+	methodTestCaseUpdate:  true,
+	methodTestPlanAddCase: true,
 }
 
 // forbiddenKeys are argument names that Kiwi refuses. The adapter builds every key from fixed names in the code, and this

@@ -104,7 +104,7 @@ func TestGraphQLServeStartsOnLoopbackAndStopsWhenCancelled(t *testing.T) {
 func TestMCPServeWritesNothingToStandardOutputWithoutARequest(t *testing.T) {
 	var out bytes.Buffer
 	serve := mcpServe(sources.Service{}, &bytes.Buffer{})
-	_ = serve(t.Context(), domain.AccessRead, nil, strings.NewReader(""), &out)
+	_ = serve(t.Context(), nil, strings.NewReader(""), &out)
 	if out.Len() != 0 {
 		t.Fatalf("the MCP session wrote %q without a request", out.String())
 	}

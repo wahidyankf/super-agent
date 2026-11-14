@@ -20,7 +20,7 @@ func TestASourceOfAWrongTypeIsRefusedBeforeAnyRequest(t *testing.T) {
 	}
 	for _, raw := range []string{`{"source":5}`, `{"source":true}`, `{"source":["outline"]}`, `{"source":null}`} {
 		gw := &fakeGateway{}
-		svc := serviceWith(t, gw, mustSource(t, "outline", "read"))
+		svc := serviceWith(t, gw, mustSource(t, "outline"))
 		req := &sdk.CallToolRequest{Params: &sdk.CallToolParamsRaw{Arguments: json.RawMessage(raw)}}
 		_, _, _, public := runOperation(context.Background(), svc, row, req)
 		if public == nil {

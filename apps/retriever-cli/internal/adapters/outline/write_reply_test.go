@@ -108,7 +108,7 @@ func TestATLSHandshakeFailureOnAWriteIsUnreachable(t *testing.T) {
 	defer server.Close()
 	// The client uses the system roots, which do not hold the stub certificate, so the handshake fails.
 	client := &http.Client{}
-	gw, err := NewWithBase(testSourceAt(t, testHost, domain.AccessWrite), server.URL, client, &staticCreds{}, WithMinDelay(0))
+	gw, err := NewWithBase(testSourceAt(t, testHost), server.URL, client, &staticCreds{}, WithMinDelay(0))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}

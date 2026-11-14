@@ -15,7 +15,7 @@ func TestCatalogErrorExposesItsCauseToErrorsIs(t *testing.T) {
 		want  bool
 	}{
 		{name: "a catalog error with a cause matches that cause", err: CatalogError{Message: "source 1 kind: unknown", Cause: ErrUnknownSourceKind}, cause: ErrUnknownSourceKind, want: true},
-		{name: "a catalog error matches a cause it does not hold", err: CatalogError{Message: "sources: invalid", Cause: ErrUnknownSourceKind}, cause: ErrInvalidAccess, want: false},
+		{name: "a catalog error matches a cause it does not hold", err: CatalogError{Message: "sources: invalid", Cause: ErrUnknownSourceKind}, cause: ErrInvalidSourceID, want: false},
 		{name: "a catalog error with no cause matches nothing", err: CatalogError{Message: "sources: invalid"}, cause: ErrUnknownSourceKind, want: false},
 	}
 	for _, tt := range tests {

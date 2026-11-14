@@ -56,19 +56,10 @@ func oneOutlineService(gw ports.SourceGateway) sources.Service {
 		panic(err)
 	}
 	cat, err := domain.NewCatalog([]domain.Source{
-		domain.NewSource(id, domain.KindOutline, tags, domain.AccessRead, ep, ref),
+		domain.NewSource(id, domain.KindOutline, tags, ep, ref),
 	})
 	if err != nil {
 		panic(err)
 	}
 	return sources.Service{Catalog: cat, Gateways: fixedResolver{gw: gw}}
-}
-
-// Admin returns the gateway as a SourceAdmin when it is one, the same way Writer does.
-func (r fixedResolver) Admin(domain.Source) (ports.SourceAdmin, error) {
-	admin, ok := r.gw.(ports.SourceAdmin)
-	if !ok {
-		return nil, domain.ErrUnsupportedSource
-	}
-	return admin, nil
 }

@@ -16,7 +16,7 @@ func TestEveryPublicErrorReachesTheModelAsItsFixedText(t *testing.T) {
 		t.Run(sentinel.Error(), func(t *testing.T) {
 			wrapped := fmt.Errorf("%s: %w", sentinelKey, sentinel)
 			var logs bytes.Buffer
-			cs := connect(t, serviceWith(t, &fakeGateway{err: wrapped}, mustSource(t, "outline", "read")), &logs)
+			cs := connect(t, serviceWith(t, &fakeGateway{err: wrapped}, mustSource(t, "outline")), &logs)
 			text, isErr := call(t, cs, "list_collections", nil)
 			if !isErr || text != sentinel.Error() {
 				t.Fatalf("answer is (%v, %q), want the fixed text %q", isErr, text, sentinel.Error())

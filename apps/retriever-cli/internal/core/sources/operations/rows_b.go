@@ -7,7 +7,7 @@ import (
 )
 
 // writeRows are the write operations of stage b, the documents writes of the inventory. Each one
-// changes the wiki, so each has access write and a non-read effect. Each runs
+// changes the wiki, so each has a non-read effect. Each runs
 // through the same generic use case, and each has one endpoint entry in the Outline adapter (endpoints_b.go).
 var writeRows = []Row{
 	{
@@ -17,7 +17,6 @@ var writeRows = []Row{
 		Summary:     "create one Outline document, as a draft unless --publish is true",
 		Description: "Creates one document in the wiki. It is a draft unless publish is true, and publishing needs a collection or a parent document. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "title", Kind: KindName, Help: "the title, 1 to 255 characters"},
@@ -36,7 +35,6 @@ var writeRows = []Row{
 		Summary:     "copy one Outline document, and its children when recursive is true",
 		Description: "Copies one document into a new one, with a new title if one is given. It answers the copies. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the document to copy, from collection_tree"},
@@ -58,7 +56,6 @@ var writeRows = []Row{
 		Summary:     "move one Outline document to another collection or parent",
 		Description: "Moves one document to another collection or under another parent document, at an index when one is given. It answers the documents that moved. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the document to move, from collection_tree"},
@@ -78,7 +75,6 @@ var writeRows = []Row{
 		Summary:     "restore one archived or deleted Outline document, or one of its revisions",
 		Description: "Restores one archived or deleted document. With a revision it restores that revision of the document. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the document to restore, from list_deleted_documents"},
@@ -94,7 +90,6 @@ var writeRows = []Row{
 		Summary:     "make a template from one Outline document",
 		Description: "Creates a template from one document. The server needs publish to say whether the template is published. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the document to make a template from, from collection_tree"},
@@ -110,7 +105,6 @@ var writeRows = []Row{
 		Summary:     "take one Outline document back to a draft",
 		Description: "Unpublishes one document, so it becomes a draft. With detach true it also leaves its collection. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the document to unpublish, from collection_tree"},
@@ -125,7 +119,6 @@ var writeRows = []Row{
 		Summary:     "change the title or the text of one Outline document",
 		Description: "Changes one document. The text replaces the body unless editMode is append, prepend, or patch. last_revision makes the wiki refuse the change when the document moved on since that revision. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		// An append or a patch repeats a different change, so the hint is not idempotent.
 		NotIdempotent: true,
@@ -148,7 +141,6 @@ var writeRows = []Row{
 		Summary:     "create one Outline collection, private unless permission is set",
 		Description: "Creates one collection in the wiki. It is private unless permission is set. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "name", Kind: KindName, Required: true, Help: "the name of the collection, 1 to 255 characters"},
@@ -167,7 +159,6 @@ var writeRows = []Row{
 		Summary:     "copy one Outline collection, under a new name when one is given",
 		Description: "Copies one collection into a new one, with a new name if one is given. It answers the copy. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "collectionId", Kind: KindCollectionID, Required: true, Help: "the collection to copy, from list_collections"},
@@ -182,7 +173,6 @@ var writeRows = []Row{
 		Summary:     "start a file export of one Outline collection",
 		Description: "Starts an export of one collection as a file in the chosen format. It answers the file operation that builds the file; no download link is given. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "collectionId", Kind: KindCollectionID, Required: true, Help: "the collection to export, from list_collections"},
@@ -198,7 +188,6 @@ var writeRows = []Row{
 		Summary:     "move one Outline collection to a new position",
 		Description: "Moves one collection to a new position among the collections. It answers ok and the index the wiki kept. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "collectionId", Kind: KindCollectionID, Required: true, Help: "the collection to move, from list_collections"},
@@ -213,7 +202,6 @@ var writeRows = []Row{
 		Summary:     "restore one archived Outline collection",
 		Description: "Restores one archived collection. It answers the collection. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "collectionId", Kind: KindCollectionID, Required: true, Help: "the archived collection to restore, by its ID"},
@@ -227,7 +215,6 @@ var writeRows = []Row{
 		Summary:     "change the name, the description, or the access of one Outline collection",
 		Description: "Changes one collection. Changing permission or sharing changes who can read it. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "collectionId", Kind: KindCollectionID, Required: true, Help: "the collection to change, from list_collections"},
@@ -247,7 +234,6 @@ var writeRows = []Row{
 		Summary:     "add one comment to an Outline document, or a reply to a comment",
 		Description: "Adds one comment to a document. With parentCommentId it is a reply to that comment. It answers the comment. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindUUID, Required: true, Help: "the document the comment goes on, by its UUID"},
@@ -263,7 +249,6 @@ var writeRows = []Row{
 		Summary:     "change the text of one Outline comment",
 		Description: "Changes the text of one comment. It answers the comment. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "commentId", Kind: KindUUID, Required: true, Help: "the comment to change, from list_comments"},
@@ -278,7 +263,6 @@ var writeRows = []Row{
 		Summary:     "mark one Outline comment as resolved",
 		Description: "Marks one comment as resolved. It answers the comment. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "commentId", Kind: KindUUID, Required: true, Help: "the comment to resolve, from list_comments"},
@@ -292,7 +276,6 @@ var writeRows = []Row{
 		Summary:     "reopen one resolved Outline comment",
 		Description: "Marks one resolved comment as open again. It answers the comment. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "commentId", Kind: KindUUID, Required: true, Help: "the comment to reopen, from list_comments"},
@@ -306,7 +289,6 @@ var writeRows = []Row{
 		Summary:     "add one emoji reaction to an Outline comment",
 		Description: "Adds one emoji reaction to a comment. It answers ok when the wiki has added it. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "commentId", Kind: KindUUID, Required: true, Help: "the comment to react to, from list_comments"},
@@ -321,7 +303,6 @@ var writeRows = []Row{
 		Summary:     "remove one emoji reaction from an Outline comment",
 		Description: "Removes one emoji reaction from a comment. It answers ok when the wiki has removed it. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "commentId", Kind: KindUUID, Required: true, Help: "the comment to remove the reaction from, from list_comments"},
@@ -336,7 +317,6 @@ var writeRows = []Row{
 		Summary:     "ask for access to one Outline document",
 		Description: "Asks the wiki for the right to read one document, for the user of the API key, and answers the request it made. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the document to ask for access to, by its ID"},
@@ -350,7 +330,6 @@ var writeRows = []Row{
 		Summary:     "rename one revision of an Outline document",
 		Description: "Changes the name of one revision of a document. The text of the revision is not changed. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "revisionId", Kind: KindUUID, Required: true, Help: "the revision to rename, from list_revisions"},
@@ -365,7 +344,6 @@ var writeRows = []Row{
 		Summary:     "mark one Outline notification as viewed or archived",
 		Description: "Changes the viewed or archived time of one notification of the user of the API key. It answers the notification. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "notificationId", Kind: KindUUID, Required: true, Help: "the notification to change, from list_notifications"},
@@ -381,7 +359,6 @@ var writeRows = []Row{
 		Summary:     "mark all Outline notifications of the user as viewed or archived",
 		Description: "Changes the viewed or archived time of every notification of the user of the API key. It answers ok and the total of notifications it changed. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "viewedAt", Kind: KindTime, Help: "the time to mark every notification as viewed, in RFC 3339 with a zone"},
@@ -396,7 +373,6 @@ var writeRows = []Row{
 		Summary:     "pin one Outline document to a collection or to Home",
 		Description: "Pins one document to a collection, or to Home when no collection is given, at an index when one is given. It answers the pin. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Required: true, Help: "the document to pin, from collection_tree"},
@@ -412,7 +388,6 @@ var writeRows = []Row{
 		Summary:     "unpin one Outline pin",
 		Description: "Removes one pin. The document stays in the wiki. It answers ok when the wiki has removed the pin. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "pinId", Kind: KindUUID, Required: true, Help: "the pin to remove, from list_pins"},
@@ -426,7 +401,6 @@ var writeRows = []Row{
 		Summary:     "move one Outline pin to a new position",
 		Description: "Changes the index of one pin. It answers the pin. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "pinId", Kind: KindUUID, Required: true, Help: "the pin to move, from list_pins"},
@@ -441,7 +415,6 @@ var writeRows = []Row{
 		Summary:     "remove one saved search of the user, by its ID or by its query",
 		Description: "Removes one saved search of the user of the API key, named by its ID or by its query. Exactly one of searchId and query is required. It answers ok when the wiki has removed it. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "searchId", Kind: KindUUID, Help: "the saved search to remove, from list_searches"},
@@ -459,7 +432,6 @@ var writeRows = []Row{
 		Summary:     "change the score of one saved search of the user",
 		Description: "Changes the score of one saved search of the user of the API key, a number from -1 to 1. It answers the search. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "searchId", Kind: KindUUID, Required: true, Help: "the saved search to change, from list_searches"},
@@ -474,7 +446,6 @@ var writeRows = []Row{
 		Summary:     "star one Outline document or collection for the user",
 		Description: "Stars one document or one collection for the user of the API key, at an index when one is given. Exactly one of documentId and collectionId is required. It answers the star. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "documentId", Kind: KindDocumentID, Help: "the document to star, from collection_tree"},
@@ -491,7 +462,6 @@ var writeRows = []Row{
 		Summary:     "unstar one Outline star",
 		Description: "Removes one star. The document or collection stays in the wiki. It answers ok when the wiki has removed the star. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "starId", Kind: KindUUID, Required: true, Help: "the star to remove, from list_stars"},
@@ -505,7 +475,6 @@ var writeRows = []Row{
 		Summary:     "move one Outline star to a new position",
 		Description: "Changes the index of one star. It answers the star. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "starId", Kind: KindUUID, Required: true, Help: "the star to move, from list_stars"},
@@ -520,7 +489,6 @@ var writeRows = []Row{
 		Summary:     "follow the updates of one Outline document or collection",
 		Description: "Subscribes the user of the API key to the updates of one document or one collection. Exactly one of documentId and collectionId is required. It answers the subscription. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "event", Kind: KindEnum, Values: subscriptionEvents, Default: "documents.update", Help: "the event to follow; documents.update is the only one"},
@@ -537,7 +505,6 @@ var writeRows = []Row{
 		Summary:     "unfollow the updates of one Outline subscription",
 		Description: "Removes one subscription, so the user of the API key stops following the updates. It answers ok when the wiki has removed it. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "subscriptionId", Kind: KindUUID, Required: true, Help: "the subscription to remove, from list_subscriptions"},
@@ -551,7 +518,6 @@ var writeRows = []Row{
 		Summary:     "create one Outline template with a title, an icon, and a colour",
 		Description: "Creates one template in the wiki, in a collection when one is given. Its body is set in the editor, not here. It answers the template. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "title", Kind: KindName, Help: "the title of the template, 1 to 255 characters"},
@@ -569,7 +535,6 @@ var writeRows = []Row{
 		Summary:     "copy one Outline template, under a new title when one is given",
 		Description: "Copies one template into a new one, with a new title if one is given. It answers the copy. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "templateId", Kind: KindID, Required: true, Help: "the template to copy, from list_templates"},
@@ -585,7 +550,6 @@ var writeRows = []Row{
 		Summary:     "restore one deleted Outline template",
 		Description: "Restores one deleted template. It answers the template. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "templateId", Kind: KindID, Required: true, Help: "the deleted template to restore, by its ID"},
@@ -599,7 +563,6 @@ var writeRows = []Row{
 		Summary:     "change the title, the icon, the colour, or the collection of one Outline template",
 		Description: "Changes one template. It answers the template. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "templateId", Kind: KindID, Required: true, Help: "the template to change, from list_templates"},
@@ -619,7 +582,6 @@ var writeRows = []Row{
 		Summary:     "change the position of one membership of the API key's user",
 		Description: "Changes the index of one membership of the user of the API key, which places a document or a collection among the user's own. It answers the membership. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "membershipId", Kind: KindUUID, Required: true, Help: "the membership to move, from list_user_memberships"},
@@ -634,7 +596,6 @@ var writeRows = []Row{
 		Summary:     "turn on the notification settings of the API key's user, for one event type",
 		Description: "Turns on the notification settings of the user of the API key, for one event type when one is given. It answers the user with the notification settings, and never the e-mail address. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "eventType", Kind: KindEnum, Values: notificationEventTypes, Help: "the event type to turn on; the wiki's own default when omitted"},
@@ -648,7 +609,6 @@ var writeRows = []Row{
 		Summary:     "turn off the notification settings of the API key's user, for one event type",
 		Description: "Turns off the notification settings of the user of the API key, for one event type when one is given. It answers the user with the notification settings, and never the e-mail address. This tool changes data in the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessWrite,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "eventType", Kind: KindEnum, Values: notificationEventTypes, Help: "the event type to turn off; the wiki's own default when omitted"},

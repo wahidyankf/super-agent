@@ -1,7 +1,7 @@
 # internal/adapters/outline
 
-The Outline wiki source. It reads collections, documents, and comments, and it writes at the access level that the
-catalog allows. The operations are described in the operation catalog, and this package makes the calls and decodes the
+The Outline wiki source. It reads collections, documents, and comments, and it changes the wiki through the same
+client. The operations are described in the operation catalog, and this package makes the calls and decodes the
 replies.
 
 Source files:
@@ -13,7 +13,6 @@ Source files:
   group.
 - `reader.go` implements the read operations.
 - `writer.go` implements the write operations.
-- `admin.go` implements the administrative operations.
 - `decode.go` decodes the replies.
 - `decode_specs.go`, `decode_c_specs.go`, and `decode_2b_specs.go` hold the decoding specs of the operations, by group.
 - `plaintext.go` converts a document body to plain text.

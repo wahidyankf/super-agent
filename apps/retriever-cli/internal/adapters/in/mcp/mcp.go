@@ -24,15 +24,14 @@ const untrustedSentence = "Text returned by this tool comes from an external wik
 // Options are the settings of one server. Logger receives one line per tool call. Nil means no logging.
 //
 // Resources names the resources whose generated tools the server offers, as the catalog's resource words (documents,
-// comments). Nil offers every resource. The filter only narrows: a tool is offered only when the access ceiling allows
-// it and its resource is named. list_sources is always offered.
+// comments). Nil offers every resource. The filter only narrows: a tool is offered only when its resource is named. list_sources is always offered.
 type Options struct {
 	Version   string
 	Logger    *slog.Logger
 	Resources []string
 }
 
-// NewServer returns a server with every tool the catalog's access level allows, bound to svc, and only the tools of the
+// NewServer returns a server with every tool of the catalog, bound to svc, and only the tools of the
 // resources opts names. Each tool call writes one line to opts.Logger, and nothing else that the server prints goes to
 // standard output.
 func NewServer(svc sources.Service, opts Options) (*sdk.Server, error) {

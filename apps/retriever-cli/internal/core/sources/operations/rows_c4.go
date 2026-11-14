@@ -8,7 +8,7 @@ import (
 var oauthClientTypes = []string{"confidential", "public"}
 
 // The rows of stage c, slice c4: the OAuth authorizations and clients, revisions, shares, templates, and webhook
-// subscriptions. Each changes the wiki with admin access, so a source below admin refuses it. An OAuth
+// subscriptions. Each changes the wiki. An OAuth
 // client's reply carries the client secret, and a webhook's reply carries the signing secret: neither
 // is projected, so neither reaches a caller (the field references, oauthClient and webhook). A share's
 // link is never a field of its reply.
@@ -20,7 +20,6 @@ var adminRowsC4 = []Row{
 		Summary:     "revoke the authorization of one OAuth client for the Outline user of the key",
 		Description: "Revokes the authorization that the user of the API key gave to one OAuth client, so the client can no longer act for the user. The client itself is kept. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("oauthClientId", "the OAuth client UUID, from list_oauth_clients")},
 		Fields:      ackFields,
@@ -32,7 +31,6 @@ var adminRowsC4 = []Row{
 		Summary:     "create one OAuth client of the Outline wiki",
 		Description: "Creates one OAuth client of the wiki, with the redirect addresses given. The client secret is shown neither on standard output nor anywhere else; it is only kept by the wiki.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "name", Kind: KindName, Required: true, Help: "the name of the new client"},
@@ -50,7 +48,6 @@ var adminRowsC4 = []Row{
 		Summary:     "delete one OAuth client of the Outline wiki",
 		Description: "Deletes one OAuth client of the wiki. Every user who authorized the client loses that access, so the apps of those users stop working. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("oauthClientId", "the OAuth client UUID, from list_oauth_clients")},
 		Fields:      ackFields,
@@ -62,7 +59,6 @@ var adminRowsC4 = []Row{
 		Summary:     "replace the client secret of one OAuth client of the Outline wiki",
 		Description: "Replaces the client secret of one OAuth client, so the app that uses the old secret stops working until it gets the new one. The new secret is shown neither on standard output nor anywhere else.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("oauthClientId", "the OAuth client UUID, from list_oauth_clients")},
 		Fields:      oauthClientFields,
@@ -74,7 +70,6 @@ var adminRowsC4 = []Row{
 		Summary:     "change the name, the description, the listing, or the client type of one OAuth client",
 		Description: "Changes the name, the description, whether the client is listed to other users, or its client type. The redirect addresses and the developer details are kept as they are. The client secret is never returned. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("oauthClientId", "the OAuth client UUID, from list_oauth_clients"),
@@ -92,7 +87,6 @@ var adminRowsC4 = []Row{
 		Summary:     "delete one revision of an Outline document",
 		Description: "Deletes one stored revision of a document, so it no longer appears in its history. The document itself and its other revisions are kept. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("revisionId", "the revision UUID, from list_revisions")},
 		Fields:      ackFields,
@@ -104,7 +98,6 @@ var adminRowsC4 = []Row{
 		Summary:      "share one Outline document or collection, by a public link",
 		Description:  "Shares one document or one collection, given by its ID, and returns the settings of the share. A share can expose the content to people outside the workspace. The public link is never returned. This tool changes data in the wiki.",
 		Effect:       domain.EffectAdditive,
-		Access:       domain.AccessAdmin,
 		OpensWorld:   true,
 		SameOnRepeat: true,
 		Params: []Param{
@@ -127,7 +120,6 @@ var adminRowsC4 = []Row{
 		Summary:     "revoke one Outline share, so its public link stops working",
 		Description: "Revokes one share of a document or a collection, so its public link stops working. The document or collection itself is kept. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("shareId", "the share UUID, from list_shares")},
 		Fields:      ackFields,
@@ -139,7 +131,6 @@ var adminRowsC4 = []Row{
 		Summary:     "change the settings of one Outline share, without its link",
 		Description: "Changes the settings of one share: whether it is published, its title, and what its readers may see or do. The public link is kept as it is, and it is never returned. A share can expose the content to people outside the workspace. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("shareId", "the share UUID, from list_shares"),
@@ -160,7 +151,6 @@ var adminRowsC4 = []Row{
 		Summary:     "delete one Outline template",
 		Description: "Deletes one template of the wiki, so it no longer appears in the list of templates. Documents made from it are kept. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{{Name: "templateId", Kind: KindID, Required: true, Help: "the template ID, from list_templates"}},
 		Fields:      ackFields,
@@ -172,7 +162,6 @@ var adminRowsC4 = []Row{
 		Summary:     "create one Outline webhook subscription that sends events to an address",
 		Description: "Creates one webhook subscription of the wiki that sends the events named to the HTTPS address given, which opens an outbound channel. Only the host of the address is shown, and the signing secret is never shown.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "url", Kind: KindURL, Required: true, Help: "the HTTPS address the events are sent to; only its host is shown"},
@@ -188,7 +177,6 @@ var adminRowsC4 = []Row{
 		Summary:     "delete one Outline webhook subscription",
 		Description: "Deletes one webhook subscription of the wiki, so it no longer sends events to its address. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("webhookSubscriptionId", "the webhook subscription UUID, from list_webhook_subscriptions")},
 		Fields:      ackFields,
@@ -200,7 +188,6 @@ var adminRowsC4 = []Row{
 		Summary:     "change the address, the name, or the events of one Outline webhook subscription",
 		Description: "Replaces the name, the address, and the events of one webhook subscription, and enables it again. The events go to the new address, which opens its outbound channel. Only the host of the address is shown, and the signing secret is never shown.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("webhookSubscriptionId", "the webhook subscription UUID, from list_webhook_subscriptions"),

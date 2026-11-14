@@ -12,8 +12,8 @@ tags:
 # The sourcing layer
 
 `retriever` is the part of super-agent that reads content from other services. It reads Outline wikis, Kiwi test
-management, and Jira Cloud. It can also write to a source when that source's access level allows it. This page explains
-the design. The exact contracts are in the reference pages.
+management, and Jira Cloud. It can also change a source, and the source's API token decides whether the source
+accepts the change. This page explains the design. The exact contracts are in the reference pages.
 
 ## The problem it solves
 
@@ -24,15 +24,16 @@ one copy of that knowledge.
 
 ## One catalog, one key file
 
-The sources catalog names each source, its kind, its access ceiling, and the variable that holds its key. It never holds
+The sources catalog names each source, its kind, its tags, and the variable that holds its key. It never holds
 a key. The key stays in the process environment or in a local env file that Git ignores. A caller asks for a source by
 its ID, and it never sees the key. The `sources list` output prints neither the endpoint nor the key's name.
 A missing-key error names the variable, but it never prints a value. See
 [configuration](../reference/retriever-cli-configuration.md) and
 [the catalog format](../reference/retriever-cli-catalog-format.md).
 
-Access is a ceiling set by the catalog, and tags only label a source. A tag never grants access. A Jira source may hold
-`read` at most, so a catalog that gives Jira a higher level is refused when it loads.
+The catalog holds no access level. Tags only label a source, and a catalog that still has an `access` key is refused
+when it loads. What a source accepts is decided by its API token. [Who guards what](who-guards-what.md) explains the
+split.
 
 ## Three machine contracts
 
@@ -42,7 +43,7 @@ The same operations reach a caller through three interfaces. Each one is a contr
   prints one JSON body on standard error. Each exit status has a fixed meaning, and the set of statuses is closed. See
   [exit codes](../reference/retriever-cli-exit-codes.md) and [JSON schemas](../reference/retriever-cli-json-schemas.md).
 - **The MCP server**, started with `retriever mcp`, offers the sources as tools to a Model Context Protocol client. Its
-  tools are limited by `--max-access` and `--tools`, and it defaults to read.
+  tools are the tools of the catalog, and `--tools` limits them to the named resources.
 - **The GraphQL service**, started with `retriever serve`, answers read queries on the loopback address only. It has no
   mutation, introspection is off, and a query that is too deep or too large is refused before any source is called.
 

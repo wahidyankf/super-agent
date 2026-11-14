@@ -1,5 +1,4 @@
-// Package registry implements ports.GatewayResolver. It builds one gateway per source ID and access level, on first use,
-// and keeps it.
+// Package registry implements ports.GatewayResolver. It builds one gateway per source ID, on first use, and keeps it.
 // The cache is required: each gateway holds the lock and the delay that give "one request at a time", so a new
 // gateway per call would lose that rule.
 package registry
@@ -14,26 +13,18 @@ import (
 // Builder makes the gateway for one source. The composition root supplies one per kind.
 type Builder func(source domain.Source) (ports.SourceGateway, error)
 
-// cacheKey names one gateway: the source and the access level it was built at. A source capped to a lower ceiling
-// is a different source value, so it gets its own gateway, whose method allowlist is the capped
-// level. The two never share a gateway.
-type cacheKey struct {
-	id     domain.SourceID
-	access domain.Access
-}
-
 // Resolver implements ports.GatewayResolver. Build it with New.
 type Resolver struct {
 	mu       sync.Mutex
 	builders map[domain.SourceKind]Builder
-	cache    map[cacheKey]ports.SourceGateway
+	cache    map[domain.SourceID]ports.SourceGateway
 }
 
 var _ ports.GatewayResolver = (*Resolver)(nil)
 
 // New returns a resolver that uses builders, one per kind. A kind without a builder is unsupported.
 func New(builders map[domain.SourceKind]Builder) *Resolver {
-	return &Resolver{builders: builders, cache: map[cacheKey]ports.SourceGateway{}}
+	return &Resolver{builders: builders, cache: map[domain.SourceID]ports.SourceGateway{}}
 }
 
 // For returns the cached gateway of the source, and builds it on the first call. A failed build is not cached, so
@@ -41,8 +32,7 @@ func New(builders map[domain.SourceKind]Builder) *Resolver {
 func (r *Resolver) For(source domain.Source) (ports.SourceGateway, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	key := cacheKey{id: source.ID(), access: source.Access()}
-	if gw, ok := r.cache[key]; ok {
+	if gw, ok := r.cache[source.ID()]; ok {
 		return gw, nil
 	}
 	build, ok := r.builders[source.Kind()]
@@ -53,7 +43,7 @@ func (r *Resolver) For(source domain.Source) (ports.SourceGateway, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.cache[key] = gw
+	r.cache[source.ID()] = gw
 	return gw, nil
 }
 
@@ -69,20 +59,6 @@ func (r *Resolver) Reader(source domain.Source) (ports.SourceReader, error) {
 		return nil, domain.ErrUnsupportedSource
 	}
 	return reader, nil
-}
-
-// Admin returns the gateway of the source as a SourceAdmin, and ErrUnsupportedSource when it has no admin port. As with
-// Reader, it is the gateway For returns, so the request lock and the pacing rule apply to every admin call too.
-func (r *Resolver) Admin(source domain.Source) (ports.SourceAdmin, error) {
-	gw, err := r.For(source)
-	if err != nil {
-		return nil, err
-	}
-	admin, ok := gw.(ports.SourceAdmin)
-	if !ok {
-		return nil, domain.ErrUnsupportedSource
-	}
-	return admin, nil
 }
 
 // Writer returns the source's gateway as a SourceWriter. A gateway that cannot write operations is unsupported. As with

@@ -187,63 +187,6 @@ func TestNewCredentialRefRejectsOtherNames(t *testing.T) {
 	}
 }
 
-func TestNewAccessAcceptsExactlyThreeWords(t *testing.T) {
-	for raw, want := range map[string]Access{"read": AccessRead, "write": AccessWrite, "admin": AccessAdmin} {
-		got, err := NewAccess(raw)
-		if err != nil || got != want || got.String() != raw {
-			t.Fatalf("NewAccess(%q) = %v, %v", raw, got, err)
-		}
-	}
-	for _, raw := range []string{"", "Read", "READ", " read", "rw", "none", "owner"} {
-		if _, err := NewAccess(raw); !errors.Is(err, ErrInvalidAccess) {
-			t.Fatalf("NewAccess(%q) error = %v, want ErrInvalidAccess", raw, err)
-		}
-	}
-}
-
-func TestAccessAllowsIsOrdered(t *testing.T) {
-	cases := []struct {
-		have, need Access
-		want       bool
-	}{
-		{AccessRead, AccessRead, true}, {AccessWrite, AccessWrite, true}, {AccessAdmin, AccessAdmin, true},
-		{AccessWrite, AccessRead, true}, {AccessAdmin, AccessRead, true}, {AccessAdmin, AccessWrite, true},
-		{AccessRead, AccessWrite, false}, {AccessRead, AccessAdmin, false}, {AccessWrite, AccessAdmin, false},
-	}
-	for _, tc := range cases {
-		if got := tc.have.Allows(tc.need); got != tc.want {
-			t.Fatalf("%v.Allows(%v) = %v, want %v", tc.have, tc.need, got, tc.want)
-		}
-	}
-	var zero Access
-	if zero.Allows(AccessRead) || AccessAdmin.Allows(zero) || zero.String() != "" {
-		t.Fatalf("the zero Access must allow nothing and must not be allowed")
-	}
-}
-
-func TestSourceSummaryCarriesAccessButNoEndpointOrCredential(t *testing.T) {
-	ep, _ := NewEndpoint("https://wiki.engineering.example.com")
-	ref, _ := NewCredentialRef("ENGINEERING_OUTLINE_API_KEY")
-	id, _ := NewSourceID("outline-engineering")
-	tags := mustTagSet(t, "wiki", "engineering")
-	src := NewSource(id, KindOutline, tags, AccessWrite, ep, ref)
-
-	sum := src.Summary()
-	if sum.ID != "outline-engineering" || sum.Kind != "outline" || sum.Access != "write" {
-		t.Fatalf("Summary() = %+v", sum)
-	}
-	if strings.Join(sum.Tags, ",") != "engineering,wiki" {
-		t.Fatalf("Summary().Tags = %v", sum.Tags)
-	}
-	if src.ID() != id || src.Kind() != KindOutline || src.Access() != AccessWrite ||
-		src.Endpoint() != ep || src.Credential() != ref {
-		t.Fatalf("accessors do not return the constructor values")
-	}
-	if !src.Tags().ContainsAll(tags) {
-		t.Fatalf("Tags() does not hold the constructor tags")
-	}
-}
-
 func mustTagSet(t *testing.T, tags ...string) TagSet {
 	t.Helper()
 	set, err := NewTagSet(tags...)

@@ -7,9 +7,9 @@ show on screen.
 
 - [outline-reads.feature](outline-reads.feature): document, collection, search, and account reads, paging, and the
   `--source` choice when two Outline sources exist.
-- [outline-writes.feature](outline-writes.feature): creating and changing documents, comments, and pins, which need write
-  access on the source.
+- [outline-writes.feature](outline-writes.feature): creating and changing documents, comments, and pins. Each one sends
+  one request.
 - [outline-critical-actions.feature](outline-critical-actions.feature): deleting, emptying the trash, removing users,
-  and creating integrations. These need admin access and no confirmation flag.
+  and creating integrations. Each one runs as its command names it, with no confirmation flag.
 - [outline-redaction.feature](outline-redaction.feature): terminal controls, webhook secrets, and keys that a hostile or
   failing reply might echo.

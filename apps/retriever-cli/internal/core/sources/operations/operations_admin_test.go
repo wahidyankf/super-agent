@@ -1,67 +1,12 @@
 package operations
 
 import (
-	"errors"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
-
-// TestAdminReadsAreExactlyTheTenAdminRows checks that the rows of access admin are the ten admin-level reads, and that
-// every other row needs read access. An admin read is a read in effect, so its effect stays read.
-func TestAdminReadsAreExactlyTheTenAdminRows(t *testing.T) {
-	var admin []domain.OperationID
-	for _, r := range Rows() {
-		// The stage c rows are admin too, and they are not reads; their own test checks them.
-		if r.Access == domain.AccessAdmin && r.Effect == domain.EffectRead {
-			admin = append(admin, r.ID)
-		}
-	}
-	if !slices.Equal(admin, stageAAdminReads) {
-		t.Fatalf("admin rows = %v, want %v", admin, stageAAdminReads)
-	}
-}
-
-// TestAdminRowsNameTheAdminLevelInTheirText checks that the summary of an admin read says it needs an admin source, so a
-// person or a model reads the level from the catalog text.
-func TestAdminRowsNameTheAdminLevelInTheirText(t *testing.T) {
-	for _, id := range stageAAdminReads {
-		row := rowOf(t, id)
-		if !strings.Contains(row.Description, "admin") {
-			t.Errorf("%s: the description must say that it needs an admin source, got %q", id, row.Description)
-		}
-	}
-}
-
-// TestRefuseAdminReadOnAReadSourceNamesBothLevels checks the safe text of the admin refusal: the
-// source ID and the two levels, and the sentinel ErrAccessLevelTooLow.
-func TestRefuseAdminReadOnAReadSourceNamesBothLevels(t *testing.T) {
-	src := sourceAt(t, domain.AccessRead)
-	row := rowOf(t, domain.OpAPIKeysList)
-	err := Refuse(row, src)
-	if err == nil {
-		t.Fatal("a read source must not run an admin read")
-	}
-	const want = `source "outline" allows read only; this operation needs admin`
-	if err.Error() != want {
-		t.Fatalf("Refuse text = %q, want %q", err.Error(), want)
-	}
-	if !errors.Is(err, domain.ErrAccessLevelTooLow) {
-		t.Fatalf("Refuse error does not match ErrAccessLevelTooLow: %v", err)
-	}
-}
-
-// TestRefuseAdminReadAllowsAnAdminSource checks that an admin source may run an admin read.
-func TestRefuseAdminReadAllowsAnAdminSource(t *testing.T) {
-	src := sourceAt(t, domain.AccessAdmin)
-	for _, id := range stageAAdminReads {
-		if err := Refuse(rowOf(t, id), src); err != nil {
-			t.Fatalf("%s on an admin source = %v, want nil", id, err)
-		}
-	}
-}
 
 // TestEveryNewReadHasItsFixedToolName pins the MCP names of the eighteen part 2b reads and the ten admin reads, so a
 // rename is a visible change.
@@ -129,8 +74,8 @@ func TestRelationshipsListNeedsExactlyOneDocument(t *testing.T) {
 // read, and the row says the server needs an admin user.
 func TestFileOperationsListIsReadButNeedsTheAdminRole(t *testing.T) {
 	row := rowOf(t, domain.OpFileOperationsList)
-	if row.Access != domain.AccessRead {
-		t.Fatalf("file-operations.list access = %v, want read", row.Access)
+	if row.Effect != domain.EffectRead {
+		t.Fatalf("file-operations.list effect = %v, want read", row.Effect)
 	}
 	if !strings.Contains(row.Description, "admin") {
 		t.Fatalf("file-operations.list must say that the server needs an admin user, got %q", row.Description)

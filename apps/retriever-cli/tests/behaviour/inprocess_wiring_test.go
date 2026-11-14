@@ -201,19 +201,19 @@ func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) erro
 	return nil
 }
 
-// serveFunc is the server of the serve command, as the composition root wires it: the GraphQL API over the sources,
-// capped to read access. Both levels run graphql.Run, the same body the root runs.
+// serveFunc is the server of the serve command, as the composition root wires it: the GraphQL API over the sources.
+// Both levels run graphql.Run, the same body the root runs.
 func serveFunc(svc sources.Service) cli.ServeFunc {
 	return func(ctx context.Context, port int, ready func(addr string)) error {
-		return graphql.Run(ctx, svc.Capped(domain.AccessRead), port, slog.New(slog.DiscardHandler), ready)
+		return graphql.Run(ctx, svc, port, slog.New(slog.DiscardHandler), ready)
 	}
 }
 
-// mcpFunc is the server of the mcp command, as the composition root wires it: the sources capped to the ceiling the
-// command names, offering the resources it names.
+// mcpFunc is the server of the mcp command, as the composition root wires it: the sources, offering the resources the
+// command names.
 func mcpFunc(svc sources.Service) cli.MCPFunc {
-	return func(ctx context.Context, ceiling domain.Access, resources []string, in io.Reader, out io.Writer) error {
-		return mcpadapter.Runner(svc.Capped(ceiling), cli.Version, io.Discard, resources)(ctx, in, out)
+	return func(ctx context.Context, resources []string, in io.Reader, out io.Writer) error {
+		return mcpadapter.Runner(svc, cli.Version, io.Discard, resources)(ctx, in, out)
 	}
 }
 

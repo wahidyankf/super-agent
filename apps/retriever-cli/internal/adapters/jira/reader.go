@@ -12,8 +12,7 @@ import (
 
 // Read runs one catalog operation of the Jira source and returns its Record. It binds the arguments with
 // the catalog's rules before any request, so a value that reaches a request has passed them. Only the five read operations
-// of the Jira kind are served; any other returns domain.ErrUnsupportedOperation. The use case has already checked the access
-// level. Every error it returns is named for Jira.
+// of the Jira kind are served; any other returns domain.ErrUnsupportedOperation. The use case has already checked the source. Every error it returns is named for Jira.
 func (g *Gateway) Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
 	row, ok := operations.Lookup(op)
 	if !ok || !operations.Supports(domain.KindJira, row) || row.Effect != domain.EffectRead {

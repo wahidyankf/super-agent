@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
 )
 
@@ -20,13 +19,11 @@ type fakeMCP struct {
 	read      string
 	calls     int
 	err       error
-	ceiling   domain.Access
 	resources []string
 }
 
-func (f *fakeMCP) serve(_ context.Context, ceiling domain.Access, resources []string, in io.Reader, out io.Writer) error {
+func (f *fakeMCP) serve(_ context.Context, resources []string, in io.Reader, out io.Writer) error {
 	f.calls++
-	f.ceiling = ceiling
 	f.resources = resources
 	data, err := io.ReadAll(in)
 	if err != nil {
@@ -72,43 +69,23 @@ func TestMCPWritesOnlyTheServerToStandardOutput(t *testing.T) {
 	}
 }
 
-// TestMCPCeilingDefaultsToRead checks that a session with no --max-access flag runs at the read ceiling, and that each named level is passed to the server as it is named.
-func TestMCPCeilingDefaultsToRead(t *testing.T) {
-	cases := []struct {
-		name string
-		argv []string
-		want domain.Access
-	}{
-		{name: "no flag", argv: []string{"mcp"}, want: domain.AccessRead},
-		{name: "read", argv: []string{"mcp", "--max-access", "read"}, want: domain.AccessRead},
-		{name: "write", argv: []string{"mcp", "--max-access", "write"}, want: domain.AccessWrite},
-		{name: "admin", argv: []string{"mcp", "--max-access", "admin"}, want: domain.AccessAdmin},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			fake := &fakeMCP{}
-			code, _, errOut := runMCPCLI(t, tc.argv, "", nil, fake.serve)
-			if code != 0 {
-				t.Fatalf("exit %d, stderr %q", code, errOut)
-			}
-			if fake.ceiling != tc.want {
-				t.Fatalf("ceiling = %v, want %v", fake.ceiling, tc.want)
-			}
-		})
-	}
-}
-
-// TestMCPInvalidMaxAccessExitsTwoBeforeAnyOutput checks that a --max-access value other than read, write, or admin is a
-// usage error with status 2: the server never starts and standard output stays empty.
-func TestMCPInvalidMaxAccessExitsTwoBeforeAnyOutput(t *testing.T) {
-	for _, raw := range []string{"root", "Read", ""} {
+// TestMCPRefusesTheRemovedMaxAccessFlag checks that --max-access, removed with the access levels, is an unrecognized
+// argument: a usage error with status 2, empty standard output, and no server started. Every value is refused the same
+// way, so a client that still passes the flag fails loudly instead of running with a level it did not get.
+func TestMCPRefusesTheRemovedMaxAccessFlag(t *testing.T) {
+	for _, argv := range [][]string{
+		{"mcp", "--max-access", "read"},
+		{"mcp", "--max-access", "write"},
+		{"mcp", "--max-access", "admin"},
+		{"mcp", "--max-access", "root"},
+	} {
 		fake := &fakeMCP{}
-		code, out, errOut := runMCPCLI(t, []string{"mcp", "--max-access", raw}, "", nil, fake.serve)
-		if code != 2 || out != "" || !strings.Contains(errOut, "invalid value for --max-access") {
-			t.Fatalf("--max-access %q: exit %d, stdout %q, stderr %q", raw, code, out, errOut)
+		code, out, errOut := runMCPCLI(t, argv, "", nil, fake.serve)
+		if code != 2 || out != "" || !strings.Contains(errOut, "unrecognized argument: --max-access") {
+			t.Fatalf("%v: exit %d, stdout %q, stderr %q", argv, code, out, errOut)
 		}
 		if fake.calls != 0 {
-			t.Fatalf("--max-access %q: the server started", raw)
+			t.Fatalf("%v: the server started", argv)
 		}
 	}
 }
@@ -127,7 +104,7 @@ func TestMCPSetupErrorExitsTwoBeforeTheServerStarts(t *testing.T) {
 }
 
 // TestMCPToolsDefaultsToEveryResource checks that a session with no --tools flag passes no resource list, so the server
-// offers every tool the ceiling allows", tool count and context cost).
+// offers every tool.
 func TestMCPToolsDefaultsToEveryResource(t *testing.T) {
 	fake := &fakeMCP{}
 	code, _, errOut := runMCPCLI(t, []string{"mcp"}, "", nil, fake.serve)
@@ -149,7 +126,7 @@ func TestMCPToolsPassesTheNamedResources(t *testing.T) {
 	}{
 		{name: "one resource", argv: []string{"mcp", "--tools", "documents"}, want: []string{"documents"}},
 		{name: "two resources, one repeated", argv: []string{"mcp", "--tools=comments,documents,comments"}, want: []string{"comments", "documents"}},
-		{name: "a resource with no tool at read", argv: []string{"mcp", "--tools", "api-keys"}, want: []string{"api-keys"}},
+		{name: "a resource of admin tools", argv: []string{"mcp", "--tools", "api-keys"}, want: []string{"api-keys"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

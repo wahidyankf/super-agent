@@ -16,7 +16,7 @@ func TestAllowlistHoldsExactlyTheTenMethods(t *testing.T) {
 		"TestCase.sortkeys", "TestCase.update", "TestCaseStatus.filter", "TestPlan.add_case", "TestPlan.filter",
 	}
 	var got []string
-	for name := range methodAccess {
+	for name := range allowedMethods {
 		got = append(got, name)
 	}
 	sort.Strings(got)
@@ -30,22 +30,20 @@ func TestAllowlistHoldsExactlyTheTenMethods(t *testing.T) {
 	}
 }
 
-// TestPermittedMethodFollowsTheAccessLevel checks that a read source sends reads only, and a write source sends both.
-func TestPermittedMethodFollowsTheAccessLevel(t *testing.T) {
-	if !permittedMethod(methodProductFilter, domain.AccessRead) {
-		t.Errorf("a read source refused Product.filter")
+// TestOnlyThreeAllowedMethodsChangeKiwi checks that the failure rule for writes covers exactly the three methods that
+// change Kiwi, and that each of them is on the allowlist.
+func TestOnlyThreeAllowedMethodsChangeKiwi(t *testing.T) {
+	want := []string{methodTestCaseCreate, methodTestCaseUpdate, methodTestPlanAddCase}
+	if len(writeMethods) != len(want) {
+		t.Fatalf("write methods = %v, want %v", writeMethods, want)
 	}
-	if permittedMethod(methodTestCaseCreate, domain.AccessRead) {
-		t.Errorf("a read source permitted TestCase.create")
+	for _, name := range want {
+		if !writeMethods[name] || !allowedMethods[name] {
+			t.Errorf("%s must be an allowed write method", name)
+		}
 	}
-	if !permittedMethod(methodTestCaseCreate, domain.AccessWrite) {
-		t.Errorf("a write source refused TestCase.create")
-	}
-	if !permittedMethod(methodProductFilter, domain.AccessWrite) {
-		t.Errorf("a write source refused a read method")
-	}
-	if permittedMethod("TestCase.remove", domain.AccessAdmin) || permittedMethod("Auth.login", domain.AccessAdmin) {
-		t.Errorf("a method outside the allowlist was permitted")
+	if allowedMethods["TestCase.remove"] || allowedMethods["Auth.login"] {
+		t.Errorf("a method outside the allowlist is allowed")
 	}
 }
 

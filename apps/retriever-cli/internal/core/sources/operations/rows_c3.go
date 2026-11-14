@@ -15,8 +15,7 @@ var startGroupSyncFields = []string{"started"}
 var integrationCreateServices = []string{"matomo", "umami"}
 
 // The rows of stage c, slice c3: the access requests, attachments, sign-in providers, comments, emojis, file operations,
-// imports, and integrations changes. Each changes the wiki with access admin, so a source below admin
-// refuses it.
+// imports, and integrations changes. Each changes the wiki.
 var adminRowsC3 = []Row{
 	{
 		ID:          domain.OpAccessRequestsApprove,
@@ -25,7 +24,6 @@ var adminRowsC3 = []Row{
 		Summary:     "approve one access request to an Outline document",
 		Description: "Approves one request for access to a document, and gives the requester the permission given, read when omitted. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("accessRequestId", "the access request UUID, from get_access_request"),
@@ -40,7 +38,6 @@ var adminRowsC3 = []Row{
 		Summary:     "dismiss one access request to an Outline document",
 		Description: "Dismisses one request for access to a document, so the requester gets no access from it. The access the requester already has is kept. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("accessRequestId", "the access request UUID, from get_access_request")},
 		Fields:      accessRequestFields,
@@ -52,7 +49,6 @@ var adminRowsC3 = []Row{
 		Summary:     "delete one attachment of the Outline wiki",
 		Description: "Deletes one attachment of the wiki, by its UUID. A link to the attachment in a document stops working. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("attachmentId", "the attachment UUID, from list_attachments")},
 		Fields:      ackFields,
@@ -64,7 +60,6 @@ var adminRowsC3 = []Row{
 		Summary:     "delete one sign-in provider of the Outline wiki",
 		Description: "Deletes one sign-in provider of the wiki, so people who signed in only with it are locked out. Check the providers with list_authentication_providers first.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("authenticationProviderId", "the sign-in provider UUID, from list_authentication_providers")},
 		Fields:      ackFields,
@@ -76,7 +71,6 @@ var adminRowsC3 = []Row{
 		Summary:     "start a group sync with one sign-in provider of the Outline wiki",
 		Description: "Starts a group sync between one sign-in provider and the wiki, so the groups of the identity provider are read again. The redirect address of the provider is never shown. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("authenticationProviderId", "the sign-in provider UUID, from list_authentication_providers")},
 		Fields:      startGroupSyncFields,
@@ -88,7 +82,6 @@ var adminRowsC3 = []Row{
 		Summary:     "enable or disable one sign-in provider, or change its group sync settings",
 		Description: "Enables or disables one sign-in provider, and changes its group sync setting or group claim. Disabling the only provider locks people out of the wiki, so check the providers with list_authentication_providers first. The group sync scopes are kept as they are. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("authenticationProviderId", "the sign-in provider UUID, from list_authentication_providers"),
@@ -105,7 +98,6 @@ var adminRowsC3 = []Row{
 		Summary:     "delete one comment on an Outline document",
 		Description: "Deletes one comment on a document, and its replies with it. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("commentId", "the comment UUID, from list_comments")},
 		Fields:      ackFields,
@@ -117,7 +109,6 @@ var adminRowsC3 = []Row{
 		Summary:     "delete one custom emoji of the Outline wiki",
 		Description: "Deletes one custom emoji of the wiki, by its UUID. Reactions that use it stop showing it. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("emojiId", "the emoji UUID, from list_emojis")},
 		Fields:      ackFields,
@@ -129,7 +120,6 @@ var adminRowsC3 = []Row{
 		Summary:     "delete one import or export file operation of the Outline wiki",
 		Description: "Deletes one import or export file operation of the wiki, so it no longer appears in its list. It needs the admin role on the server. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("fileOperationId", "the file operation UUID, from list_file_operations")},
 		Fields:      ackFields,
@@ -141,7 +131,6 @@ var adminRowsC3 = []Row{
 		Summary:     "cancel one Outline import that has not finished",
 		Description: "Cancels one import of documents into the wiki. Documents that the import already created stay in the wiki. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("importId", "the import UUID, from list_imports")},
 		Fields:      importFields,
@@ -153,7 +142,6 @@ var adminRowsC3 = []Row{
 		Summary:     "delete one Outline import record",
 		Description: "Deletes one record of an import of documents. The documents the import created stay in the wiki. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("importId", "the import UUID, from list_imports")},
 		Fields:      ackFields,
@@ -165,7 +153,6 @@ var adminRowsC3 = []Row{
 		Summary:     "create one Outline integration that sends data to an address",
 		Description: "Creates one integration of the wiki that sends data to the address given, which opens an outbound channel. Only the host of the address is shown.",
 		Effect:      domain.EffectAdditive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			{Name: "url", Kind: KindURL, Required: true, Help: "the HTTPS address the integration sends to; only its host is shown"},
@@ -183,7 +170,6 @@ var adminRowsC3 = []Row{
 		Summary:     "delete one Outline integration",
 		Description: "Deletes one integration of the wiki, so it no longer sends data to its address. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("integrationId", "the integration UUID, from list_integrations")},
 		Fields:      ackFields,
@@ -195,7 +181,6 @@ var adminRowsC3 = []Row{
 		Summary:     "change the address or the channel of one Outline integration",
 		Description: "Changes the address and the channel of one integration, which opens its outbound channel to the new address. The events of the integration are kept as they are. Only the host of the address is shown.",
 		Effect:      domain.EffectUpdate,
-		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			uuidParamRequired("integrationId", "the integration UUID, from list_integrations"),

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
@@ -17,20 +16,6 @@ const (
 	mcpExitInterrupt = 130
 	mcpExitTerm      = 143
 )
-
-// mcpCeiling returns the access ceiling of the session: the --max-access value, or read when the flag is absent. A value
-// other than read, write, or admin is a usage error, so the session never starts with a level it did not name.
-func mcpCeiling(inv *invocation) (domain.Access, error) {
-	raw, ok := inv.values["--max-access"]
-	if !ok {
-		return domain.AccessRead, nil
-	}
-	ceiling, err := domain.NewAccess(raw)
-	if err != nil {
-		return domain.Access{}, usageError{msg: fmt.Sprintf("invalid value for --max-access: %s (want read, write, or admin)", raw)}
-	}
-	return ceiling, nil
-}
 
 // mcpResources returns the resources that the --tools flag names, or nil when the flag is absent, so the server offers
 // every resource. A value that names no resource, an empty value, an empty entry, and an unknown word are usage errors,
@@ -52,10 +37,6 @@ func mcpResources(inv *invocation) ([]string, error) {
 // statuses.
 func runMCP(inv *invocation) error {
 	rt := inv.rt
-	ceiling, err := mcpCeiling(inv)
-	if err != nil {
-		return exitStatus{code: mcpExitNotDone, err: err}
-	}
 	resources, err := mcpResources(inv)
 	if err != nil {
 		return exitStatus{code: mcpExitNotDone, err: err}
@@ -71,7 +52,7 @@ func runMCP(inv *invocation) error {
 	defer stop()
 
 	done := make(chan error, 1)
-	go func() { done <- rt.mcp(ctx, ceiling, resources, rt.stdin, rt.stdout) }()
+	go func() { done <- rt.mcp(ctx, resources, rt.stdin, rt.stdout) }()
 
 	// A signal wins over the session's own end: the session may end as a result of the same cancellation, and the status
 	// must still name the signal. The session is not waited for, because a blocked read on standard input cannot hold it.
