@@ -15,3 +15,12 @@ The fixture covers these cases:
 
 The tests that need the collection tree and the document read add their own operations to this fixture, in the test
 files, and the fixture itself keeps only the operations above.
+
+[writes.yml](./writes.yml) is the second fixture, for the write tests. It describes the same example wiki, and it holds:
+
+- `example-wiki.categories.filter`: a list by name, which a lookup reads, with an optional folder query value.
+- `example-wiki.docs.file`: a write whose `category` name resolves to an ID through the lookup, and whose folder value
+  is a query value.
+- `example-wiki.docs.note`: a write with a path slot and a header slot that carries a text.
+- `example-wiki.docs.remove`: an admin delete with a spec error map for 404 and 409.
+- `example-wiki.docs.revise`: a write whose reply needs a Markdown converter, which the engine refuses.

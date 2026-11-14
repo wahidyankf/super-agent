@@ -51,6 +51,7 @@ var reasons = []struct {
 	{domain.ErrUnreachable, "unreachable"},
 	{domain.ErrDocumentConflict, "document_conflict"},
 	{domain.ErrUnresolvedName, "unresolved_name"},
+	{domain.ErrWriteOutcomeUnknown, "write_outcome_unknown"},
 	{domain.ErrOperationUnavailable, "operation_unavailable"},
 	{domain.ErrUnsupportedOperation, "unsupported_operation"},
 	{domain.ErrWrongOperationClass, "wrong_operation_class"},

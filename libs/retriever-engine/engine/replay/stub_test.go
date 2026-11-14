@@ -181,7 +181,7 @@ func TestStubDrainsARequestBody(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req, err := http.NewRequest(http.MethodPost, "https://docs.example.test/v1/docs", strings.NewReader(`{"title":"x"}`))
+	req, err := http.NewRequest(http.MethodPost, "https://docs.example.test/v1/folders", strings.NewReader(`{"title":"x"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,14 +197,32 @@ func TestStubDrainsARequestBody(t *testing.T) {
 	}
 }
 
-// TestStubServesNoWriteExample checks that a write example is not replayed, because PR 3 has no writes.
-func TestStubServesNoWriteExample(t *testing.T) {
+// TestStubServesAWriteExample checks that a write example answers its request, and that the stub records the body that the
+// write sent.
+func TestStubServesAWriteExample(t *testing.T) {
 	stub, err := replay.New(fixture(t))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := get(t, stub, "/v1/docs"); !errors.Is(err, replay.ErrNoExchange) {
-		t.Fatalf("err = %v, want ErrNoExchange for a write example", err)
+	req, err := http.NewRequest(http.MethodPost, "https://docs.example.test/v1/docs", strings.NewReader(`{"title":"First document"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := stub.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("a write example err = %v, want a reply", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("status = %d, want 201", resp.StatusCode)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != `{"id":"doc-2"}` {
+		t.Fatalf("body = %s, want the canned reply", body)
+	}
+	reqs := stub.Requests()
+	if got := string(reqs[len(reqs)-1].Body); got != `{"title":"First document"}` {
+		t.Fatalf("the recorded body = %s, want the body the write sent", got)
 	}
 }
 

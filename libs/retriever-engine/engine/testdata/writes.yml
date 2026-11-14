@@ -1,0 +1,174 @@
+version: 1
+kind: example-wiki
+summary: Writes, a name lookup, and error replies of an example wiki.
+endpoint:
+  base_path: /v1
+  host_suffix:
+    - .example.test
+auth:
+  type: bearer
+  credential_env: EXAMPLE_WIKI_API_KEY
+limits:
+  timeout_seconds: 20
+operations:
+  - id: example-wiki.categories.filter
+    summary: Find the categories that have a name.
+    access: read
+    method: GET
+    path: /categories
+    params:
+      - name: name
+        type: Name
+        in: query
+        required: false
+      - name: folder
+        type: Name
+        in: query
+        required: false
+    response:
+      items: /items
+      fields:
+        id:
+          pointer: /id
+        name:
+          pointer: /name
+    examples:
+      - request:
+          name: Handbook
+        response:
+          status: 200
+          body:
+            items:
+              - id: 7
+                name: Handbook
+        expect:
+          id: 7
+          name: Handbook
+  - id: example-wiki.docs.file
+    summary: File a document under the category that its name gives.
+    access: write
+    method: POST
+    path: /docs
+    params:
+      - name: title
+        type: Name
+        in: body
+        required: true
+      - name: category
+        type: Name
+        in: body
+        required: true
+        resolve:
+          operation: example-wiki.categories.filter
+          field: name
+      - name: folder
+        type: Name
+        in: query
+        required: false
+    body:
+      title: "{{title}}"
+      category: "{{category}}"
+    response:
+      fields:
+        id:
+          pointer: /id
+    examples:
+      - request:
+          title: First document
+          category: Handbook
+        response:
+          status: 201
+          body:
+            id: doc-2
+        expect:
+          id: doc-2
+  - id: example-wiki.docs.note
+    summary: Set the note of a document, which is also sent in a header.
+    access: write
+    method: PATCH
+    path: /docs/{id}
+    params:
+      - name: id
+        type: ID
+        in: path
+        required: true
+      - name: note
+        type: Text
+        in: body
+        required: true
+    headers:
+      X-Example-Note: "{note}"
+    body:
+      note: "{{note}}"
+    response:
+      fields:
+        id:
+          pointer: /id
+    examples:
+      - request:
+          id: doc-1
+          note: first
+        response:
+          status: 200
+          body:
+            id: doc-1
+        expect:
+          id: doc-1
+  - id: example-wiki.docs.remove
+    summary: Delete a document.
+    access: admin
+    method: DELETE
+    path: /docs/{id}
+    params:
+      - name: id
+        type: ID
+        in: path
+        required: true
+    response:
+      fields:
+        id:
+          pointer: /id
+      errors:
+        "404": not_found
+        "409": document_conflict
+    examples:
+      - request:
+          id: doc-1
+        response:
+          status: 200
+          body:
+            id: doc-1
+        expect:
+          id: doc-1
+  - id: example-wiki.docs.revise
+    summary: Replace the body of a document, and read the reply as Markdown.
+    access: write
+    method: PUT
+    path: /docs/{id}/body
+    params:
+      - name: id
+        type: ID
+        in: path
+        required: true
+      - name: body
+        type: Text
+        in: body
+        required: true
+    body:
+      body: "{{body}}"
+    response:
+      fields:
+        body:
+          pointer: /body
+          convert: markdown-from-html
+      markdown: body
+    examples:
+      - request:
+          id: doc-1
+          body: "<p>Hello</p>"
+        response:
+          status: 200
+          body:
+            body: "<p>Hello</p>"
+        expect:
+          body: Hello

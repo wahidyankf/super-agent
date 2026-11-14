@@ -145,6 +145,10 @@ Reasons that the CLI can emit:
 - `invalid_*`: a typed value failed its rule, such as `invalid_uuid`, `invalid_url`, or `invalid_enum`.
 - `source_required`: a change does not name its source with `--source`.
 - `document_conflict`: a write was refused because the document changed since it was read.
+- `unresolved_name`: a name that a write takes matches no entry, or more than one, in the source. The write sends
+  nothing.
+- `write_outcome_unknown`: a write's request may have reached the source, but its reply is missing or unusable. The
+  change may or may not have happened, so the write is never retried. The command exits 2.
 - `panic`: an internal failure. See [exit codes](./retriever-cli-exit-codes.md#panics).
 
 The list is a summary. The `invalid_*`, `*_required`, and `*_mismatch` entries stand for groups of reasons, and the

@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptrace"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
@@ -25,10 +27,13 @@ type reply struct {
 }
 
 // send runs one request of an operation until it gets a reply it can use. A rate limit is retried after its wait, at
-// most maxRetries times. Every other failure stops at once, so a request is sent once unless it was rate limited.
+// most maxRetries times, for a read and for a write alike, because a 429 reply says the source refused the request before
+// it acted. Every other failure stops at once. For a write, a failure after the request left is an unknown outcome, and
+// the write is not sent again.
 func (e *Engine) send(ctx context.Context, o spec.Operation, r request) (any, error) {
+	write := o.Access != "read"
 	for attempt := 0; ; attempt++ {
-		rep, err := e.exchange(ctx, r)
+		rep, err := e.exchange(ctx, r, write)
 		if err != nil {
 			return nil, err
 		}
@@ -43,15 +48,24 @@ func (e *Engine) send(ctx context.Context, o spec.Operation, r request) (any, er
 			continue
 		}
 		if err != nil {
+			if write && unusableWriteReply(rep.status) {
+				return nil, domain.ErrWriteOutcomeUnknown
+			}
 			return nil, err
 		}
-		return decodeReply(rep.body)
+		root, err := decodeReply(rep.body)
+		if err != nil && write {
+			return nil, domain.ErrWriteOutcomeUnknown
+		}
+		return root, err
 	}
 }
 
 // exchange sends one request once. It reads the key for this request, sets the authorization header, and runs the
-// request under the time limit. The body of a successful reply is read up to the reply cap, and a longer one fails.
-func (e *Engine) exchange(ctx context.Context, r request) (reply, error) {
+// request under the time limit. The body of a successful reply is read up to the reply cap, and a longer one fails. For a
+// write, the reply is read whole, up to the cap, whatever its status, and a failure after the request left is an unknown
+// outcome. A connection that never opened means the request did not leave, so that failure is known.
+func (e *Engine) exchange(ctx context.Context, r request, write bool) (reply, error) {
 	key, err := e.ports.Credentials.APIKey(e.src.Credential())
 	if err != nil {
 		return reply{}, err
@@ -59,11 +73,15 @@ func (e *Engine) exchange(ctx context.Context, r request) (reply, error) {
 	secret := key.Reveal()
 	tctx, cancel := e.ports.Clock.WithTimeout(ctx, e.timeout)
 	defer cancel()
+	var connected atomic.Bool
+	trace := &httptrace.ClientTrace{
+		GotConn: func(httptrace.GotConnInfo) { connected.Store(true) },
+	}
 	var body io.Reader
 	if r.body != nil {
 		body = bytes.NewReader(r.body)
 	}
-	req, err := http.NewRequestWithContext(tctx, r.method, e.base+r.target, body)
+	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(tctx, trace), r.method, e.base+r.target, body)
 	if err != nil {
 		return reply{}, fmt.Errorf("the request could not be built: %w", err)
 	}
@@ -80,10 +98,23 @@ func (e *Engine) exchange(ctx context.Context, r request) (reply, error) {
 	}
 	resp, err := e.client.Do(req)
 	if err != nil {
+		// An injected transport stands for the network, so its failure follows the request. The guarded transport
+		// has made a connection only once the trace reports one.
+		if write && (connected.Load() || e.ports.Transport != nil) {
+			return reply{}, domain.ErrWriteOutcomeUnknown
+		}
 		return reply{}, transportError(ctx, err, secret)
 	}
 	defer resp.Body.Close()
 	rep := reply{status: resp.StatusCode, retryAfter: resp.Header.Get("Retry-After")}
+	if write {
+		raw, err := readCapped(resp.Body, e.maxReply)
+		if err != nil {
+			return reply{}, domain.ErrWriteOutcomeUnknown
+		}
+		rep.body = raw
+		return rep, nil
+	}
 	if rep.status < 200 || rep.status >= 300 {
 		return rep, nil
 	}
