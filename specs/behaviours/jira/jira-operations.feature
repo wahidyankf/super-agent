@@ -204,3 +204,265 @@ Feature: Jira reads
     Then the exit status is 2
     And the standard output is empty
     And the standard error is not empty
+
+  @integration @e2e @unit
+  Scenario: An issue read prints the summary as its title and the metadata beside it
+    When I run "retriever jira issues get EXAMPLE-1"
+    Then the exit status is 0
+    And the standard output contains "Synthetic issue"
+    And the standard output contains "To Do"
+    And the standard output contains "Synthetic Person"
+
+  @integration @e2e @unit
+  Scenario: An issue read in JSON mode holds its title and its URL built from the catalog endpoint
+    When I run "retriever --output json jira issues get EXAMPLE-1"
+    Then the exit status is 0
+    And the standard output is a JSON document with schemaVersion 1
+    And the JSON field "title" of the standard output is "Synthetic issue"
+    And the JSON field "url" of the standard output is "https://jira.example.test/browse/EXAMPLE-1"
+
+  @integration @e2e @unit
+  Scenario: An issue read writes its created and updated times in UTC
+    When I run "retriever jira issues get EXAMPLE-1"
+    Then the exit status is 0
+    And the standard output contains "2026-01-01"
+    And the standard output contains "2026-01-02"
+
+  @integration @e2e @unit
+  Scenario: An issue key in lower case is refused before any request
+    When I run "retriever --output json jira issues get example-1"
+    Then the exit status is 2
+    And the standard output is empty
+    And the stub Jira server received no requests
+
+  @integration @e2e @unit
+  Scenario: An issue with no description reads without a null value in its text
+    Given the stub Jira server holds this configuration:
+      """
+      {
+        "Email": "synthetic-user@example.test",
+        "Token": "synthetic-jira-token",
+        "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
+        "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
+        "Issues": [{"ID": "10030", "Key": "EXAMPLE-3", "Summary": "Empty issue", "Type": "Task", "Status": "To Do"}],
+        "Comments": {}
+      }
+      """
+    When I run "retriever jira issues get EXAMPLE-3"
+    Then the exit status is 0
+    And the standard output contains "Empty issue"
+    And the standard output does not contain "null"
+
+  @integration @e2e @unit
+  Scenario: An ADF description with a heading and a bullet list renders as Markdown
+    Given the stub Jira server holds this configuration:
+      """
+      {
+        "Email": "synthetic-user@example.test",
+        "Token": "synthetic-jira-token",
+        "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
+        "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
+        "Issues": [{"ID": "10040", "Key": "EXAMPLE-4", "Summary": "Structured issue", "Type": "Task", "Status": "To Do", "Description": {"type": "doc", "version": 1, "content": [{"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Synthetic heading"}]}, {"type": "bulletList", "content": [{"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Synthetic item"}]}]}]}]}}],
+        "Comments": {}
+      }
+      """
+    When I run "retriever jira issues get EXAMPLE-4"
+    Then the exit status is 0
+    And the standard output contains "## Synthetic heading"
+    And the standard output contains "- Synthetic item"
+
+  @integration @e2e @unit
+  Scenario: An ADF mention shows its name and never the account ID behind it
+    Given the stub Jira server holds this configuration:
+      """
+      {
+        "Email": "synthetic-user@example.test",
+        "Token": "synthetic-jira-token",
+        "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
+        "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
+        "Issues": [{"ID": "10050", "Key": "EXAMPLE-5", "Summary": "Mention issue", "Type": "Task", "Status": "To Do", "Description": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "mention", "attrs": {"id": "acc-mention-secret", "text": "@Synthetic Person"}}]}]}}],
+        "Comments": {}
+      }
+      """
+    When I run "retriever jira issues get EXAMPLE-5"
+    Then the exit status is 0
+    And the standard output contains "Synthetic Person"
+    And the standard output does not contain "acc-mention-secret"
+
+  @integration @e2e @unit
+  Scenario: An issue search sends the JQL as one JSON field and no page token
+    When I run "retriever --output json jira issues search project=EXAMPLE"
+    Then the exit status is 0
+    And the stub Jira server's last request to "/rest/api/3/search/jql" body has the field "jql" equal to project=EXAMPLE
+    And the stub Jira server's last request to "/rest/api/3/search/jql" body has the field "nextPageToken" equal to absent
+
+  @integration @e2e @unit
+  Scenario: An issue search with --limit asks Jira for at most that many issues
+    When I run "retriever --output json jira issues search project=EXAMPLE --limit 5"
+    Then the exit status is 0
+    And the stub Jira server's last request to "/rest/api/3/search/jql" body has the field "maxResults" equal to 5
+
+  @integration @e2e @unit
+  Scenario: An issue search says so when more issues match than its page holds
+    Given the stub Jira server holds this configuration:
+      """
+      {
+        "Email": "synthetic-user@example.test",
+        "Token": "synthetic-jira-token",
+        "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
+        "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
+        "Issues": [{"ID": "10010", "Key": "EXAMPLE-1", "Summary": "First issue", "Type": "Task", "Status": "To Do"}, {"ID": "10011", "Key": "EXAMPLE-2", "Summary": "Second issue", "Type": "Task", "Status": "To Do"}],
+        "Comments": {}
+      }
+      """
+    When I run "retriever --output json jira issues search project=EXAMPLE --limit 1"
+    Then the exit status is 0
+    And the JSON field "count" of the standard output is 1
+    And the JSON field "truncated" of the standard output is true
+
+  @integration @e2e @unit
+  Scenario: An issue search with no match exits 0 and reports a count of zero
+    When I run "retriever --output json jira issues search project=NOMATCH"
+    Then the exit status is 0
+    And the JSON field "count" of the standard output is 0
+
+  @integration @e2e @unit
+  Scenario: An issue search with no JQL is a usage error and sends no request
+    When I run "retriever jira issues search"
+    Then the exit status is 2
+    And the standard output is empty
+    And the stub Jira server received no requests
+
+  @integration @e2e @unit
+  Scenario: A comment list prints each comment with its author and its text
+    Given the stub Jira server holds this configuration:
+      """
+      {
+        "Email": "synthetic-user@example.test",
+        "Token": "synthetic-jira-token",
+        "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
+        "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
+        "Issues": [{"ID": "10010", "Key": "EXAMPLE-1", "Summary": "Synthetic issue", "Type": "Task", "Status": "To Do"}],
+        "Comments": {"EXAMPLE-1": [{"ID": "20001", "Author": "Synthetic Author", "Created": "2026-01-03T00:00:00.000+0000", "Body": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Synthetic comment"}]}]}}]}
+      }
+      """
+    When I run "retriever jira comments list EXAMPLE-1"
+    Then the exit status is 0
+    And the standard output contains "Synthetic Author"
+    And the standard output contains "Synthetic comment"
+    And the standard output does not contain "acc-20001"
+
+  @integration @e2e @unit
+  Scenario: A comment list in JSON mode lists the comments of the issue with their count
+    Given the stub Jira server holds this configuration:
+      """
+      {
+        "Email": "synthetic-user@example.test",
+        "Token": "synthetic-jira-token",
+        "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
+        "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
+        "Issues": [{"ID": "10010", "Key": "EXAMPLE-1", "Summary": "Synthetic issue", "Type": "Task", "Status": "To Do"}],
+        "Comments": {"EXAMPLE-1": [{"ID": "20001", "Author": "Synthetic Author", "Created": "2026-01-03T00:00:00.000+0000", "Body": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "First comment"}]}]}}, {"ID": "20002", "Author": "Synthetic Author", "Created": "2026-01-04T00:00:00.000+0000", "Body": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Second comment"}]}]}}]}
+      }
+      """
+    When I run "retriever --output json jira comments list EXAMPLE-1"
+    Then the exit status is 0
+    And the standard output is a JSON document with schemaVersion 1
+    And the JSON field "count" of the standard output is 2
+    And the JSON field "comments.0.id" of the standard output is "20001"
+    And the JSON field "comments.1.id" of the standard output is "20002"
+
+  @integration @e2e @unit
+  Scenario: A comment list of an issue with no comments prints nothing and exits 0
+    Given the stub Jira server holds this configuration:
+      """
+      {
+        "Email": "synthetic-user@example.test",
+        "Token": "synthetic-jira-token",
+        "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
+        "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}],
+        "Issues": [{"ID": "10010", "Key": "EXAMPLE-1", "Summary": "Synthetic issue", "Type": "Task", "Status": "To Do"}],
+        "Comments": {}
+      }
+      """
+    When I run "retriever jira comments list EXAMPLE-1"
+    Then the exit status is 0
+    And the standard output is empty
+
+  @integration @e2e @unit
+  Scenario: A comment list of an issue that Jira does not hold is a not-found failure
+    When I run "retriever --output json jira comments list EXAMPLE-999"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.jira.document_not_found" and retryable false
+
+  @integration @e2e @unit
+  Scenario: A comment list sends the page size and the offset in one request
+    When I run "retriever --output json jira comments list EXAMPLE-1 --limit 1 --offset 0"
+    Then the exit status is 0
+    And the stub Jira server's last request to "/rest/api/3/issue/EXAMPLE-1/comment" query contains maxResults=1
+
+  @integration @e2e @unit
+  Scenario Outline: A comment list with a page size above 100 or a malformed issue key is refused before any request
+    When I run "retriever --output json jira comments list <arguments>"
+    Then the exit status is 2
+    And the standard output is empty
+    And the stub Jira server received no requests
+
+    Examples:
+      | arguments             |
+      | EXAMPLE-1 --limit 101 |
+      | not-a-key             |
+
+  @integration @e2e @unit
+  Scenario: A project list prints each project with its key and its name
+    When I run "retriever jira projects list"
+    Then the exit status is 0
+    And the standard output contains "EXAMPLE"
+    And the standard output contains "Synthetic project"
+
+  @integration @e2e @unit
+  Scenario: A project list filtered by query text lists only the matching projects
+    Given the stub Jira server holds this configuration:
+      """
+      {
+        "Email": "synthetic-user@example.test",
+        "Token": "synthetic-jira-token",
+        "Account": {"AccountID": "synthetic-account-id", "DisplayName": "Synthetic Person"},
+        "Projects": [{"ID": "10001", "Key": "EXAMPLE", "Name": "Synthetic project"}, {"ID": "10002", "Key": "OTHER", "Name": "Second project"}],
+        "Issues": [],
+        "Comments": {}
+      }
+      """
+    When I run "retriever --output json jira projects list --query Second"
+    Then the exit status is 0
+    And the JSON field "count" of the standard output is 1
+    And the JSON field "projects.0.key" of the standard output is "OTHER"
+
+  @integration @e2e @unit
+  Scenario: A project list with no match exits 0 and reports a count of zero
+    When I run "retriever --output json jira projects list --query nothing-matches-this"
+    Then the exit status is 0
+    And the JSON field "count" of the standard output is 0
+
+  @integration @e2e @unit
+  Scenario: A project list sends the page size and the offset in one request
+    When I run "retriever --output json jira projects list --limit 1 --offset 0"
+    Then the exit status is 0
+    And the stub Jira server's last request to "/rest/api/3/project/search" query contains maxResults=1
+
+  @integration @e2e @unit
+  Scenario: A project list with a page size above 50 is refused before any request
+    When I run "retriever --output json jira projects list --limit 51"
+    Then the exit status is 2
+    And the standard output is empty
+    And the stub Jira server received no requests
+
+  @integration @e2e @unit
+  Scenario: The account read in JSON mode holds only the display name, the account type, and the active flag
+    When I run "retriever --output json jira whoami"
+    Then the exit status is 0
+    And the standard output is a JSON document with schemaVersion 1
+    And the JSON field "displayName" of the standard output is "Synthetic Person"
+    And the JSON field "accountId" of the standard output is absent
+    And the JSON field "emailAddress" of the standard output is absent
