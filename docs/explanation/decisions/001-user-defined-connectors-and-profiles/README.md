@@ -26,3 +26,5 @@ These pages hold the detail of [ADR 001](../001-user-defined-connectors-and-prof
 - [Pull requests: the engine and the first port](./006-pull-requests-engine.md) gives pull requests 1 to 6.
 - [Pull requests: ports, conformance, plugin, and profiles](./007-pull-requests-ports-and-profiles.md) gives pull
   requests 7 to 12.
+
+[ADR 002](../002-spec-language-extensions.md) replaces pull requests 6 to 9, and renumbers 10 to 12 as 21 to 23.

@@ -15,31 +15,19 @@ Each port runs the existing scenarios unchanged, so the behaviour specs prove th
 
 ## 7. Port Outline writes and admin, and retire the Go module
 
-The bundled spec gains the write, destructive, and admin operations. The composite builder and the
-`retriever-connector-outline` module leave the graph. Docs: modules, tags, and layering pages. Extra gate: the
-architecture test shows no import of the retired module.
-
-- Given the unchanged Outline write and destructive scenarios, when they run against the engine, then every one passes.
-- Given a write whose outcome is unknown, when it runs through the engine, then it reports the same error code as the
-  old module and never retries.
+Superseded by [ADR 002](../002-spec-language-extensions.md). It is now pull request 17, with its scenarios unchanged.
 
 ## 8. Port Kiwi
 
-The bundled `kiwi.yml` uses declared lookups for categories, priorities, and statuses. The Kiwi module retires.
-
-- Given the unchanged Kiwi read and write scenarios, when they run against the engine, then every one passes.
-- Given a category name that matches no entry, when a test case is created, then the engine reports the unresolved-name
-  error and sends no write.
-- Stop rule: if lookups cannot express a Kiwi scenario, a new ADR records why, and Kiwi stays Go code.
+Superseded by [ADR 002](../002-spec-language-extensions.md). It is now pull request 19, a decision gate, because a
+probe met the stop rule.
 
 ## 9. Port Jira
 
-A closed converter, `markdown-from-adf`, joins the engine as a pure function moved from the Jira module. The bundled
-`jira.yml` uses it. The Jira module retires.
+Superseded by [ADR 002](../002-spec-language-extensions.md). The converter is now pull request 18, and the Jira port is
+pull request 20, after a new ADR.
 
-- Given the unchanged Jira scenarios, when they run against the engine, then every one passes.
-- Given a document tree nested past the depth cap, when the converter runs, then the output ends with the truncation
-  marker and no panic occurs.
+Pull requests 10 to 12 below keep their scope and become 21 to 23 in ADR 002.
 
 ## 10. Conformance suite and the connector commands
 

@@ -140,3 +140,10 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 [error codes](./retriever-cli-json-schemas.md#error-codes). A write whose outcome is unknown uses
 `write_outcome_unknown`, which exits 2 and is never retried. Exit statuses follow the
 [exit-code contract](./retriever-cli-exit-codes.md).
+
+## Planned extensions
+
+[ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
+that the Outline, Kiwi, and Jira connectors can run as specs. None of them is built. The list of limits for the Outline
+reads, where the main branch has it, describes the language before ADR 002. This page documents only what the module
+accepts today, and each extension moves here when its pull request lands.
