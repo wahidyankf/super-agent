@@ -18,6 +18,9 @@ func TestImportRulesByKind(t *testing.T) {
 		kitPkg    = workspacePrefix + "libs/retriever-testkit/outlinestub"
 		appPkg    = workspacePrefix + "apps/retriever-cli/internal/adapters/in/cli"
 		specPk    = workspacePrefix + "libs/retriever-spec"
+		engine    = "libs/retriever-engine"
+		enginePk  = workspacePrefix + "libs/retriever-engine/engine"
+		replayPk  = workspacePrefix + "libs/retriever-engine/engine/replay"
 	)
 	cases := []struct {
 		name   string
@@ -56,6 +59,20 @@ func TestImportRulesByKind(t *testing.T) {
 		{"a runtime imports the spec", runtime, false, specPk, true},
 		{"the contract imports the spec", contract, false, specPk, true},
 		{"the app imports the spec", app, false, specPk, false},
+		{"an engine imports the contract", engine, false, domainPkg, false},
+		{"an engine imports the spec module", engine, false, specPk, false},
+		{"an engine imports its replay stub", engine, false, replayPk, false},
+		{"an engine imports a connector", engine, false, outlinePk, true},
+		{"an engine imports a runtime", engine, false, runtimePk, true},
+		{"an engine imports the test kit in production code", engine, false, kitPkg, true},
+		{"an engine test imports the test kit", engine, true, kitPkg, false},
+		{"an engine test imports the spec module", engine, true, specPk, false},
+		{"an engine imports the app", engine, false, appPkg, true},
+		{"a spec imports the engine", spec, false, enginePk, true},
+		{"the contract imports the engine", contract, false, enginePk, true},
+		{"a connector imports the engine", outline, false, enginePk, true},
+		{"a runtime imports the engine", runtime, false, enginePk, true},
+		{"the app imports the engine", app, false, enginePk, false},
 		{"a module imports itself", outline, false, outlinePk, false},
 		{"an external module is never a workspace edge", contract, false, "example.test/other/pkg", false},
 		{"a standard package is never a workspace edge", contract, false, "fmt", false},
@@ -99,6 +116,21 @@ func TestSpecModuleIsPure(t *testing.T) {
 		}
 	}
 	t.Fatal("libs/retriever-spec must be listed in pureDirs: the spec module is pure")
+}
+
+// TestEngineForbidsLocalEffects checks the engine rule of the module layout: the engine imports net/http and the TLS
+// packages, but no package that reads or writes a local file, a folder, the working directory, or a process.
+func TestEngineForbidsLocalEffects(t *testing.T) {
+	for _, p := range []string{"os", "os/exec", "path/filepath", "io/fs", "syscall"} {
+		if !engineEffectViolation(p) {
+			t.Fatalf("%s must be an engine effect violation", p)
+		}
+	}
+	for _, p := range []string{"net", "net/http", "crypto/tls", "crypto/x509", "io", "time", "encoding/json", "net/netip"} {
+		if engineEffectViolation(p) {
+			t.Fatalf("%s must be allowed in the engine", p)
+		}
+	}
 }
 
 // TestEffectfulStandardPackagesAreNamed checks the pure rule: the network, the disk, and processes are effects, and the

@@ -990,3 +990,7 @@ extensions:
         path: libs/retriever-spec
         kind: spec
         stacks: [golang]
+      retriever-engine:
+        path: libs/retriever-engine
+        kind: engine
+        stacks: [golang]

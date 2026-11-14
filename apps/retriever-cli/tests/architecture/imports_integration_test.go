@@ -241,6 +241,27 @@ func TestImportsFollowTheLayering(t *testing.T) {
 	}
 }
 
+// TestEngineProductionImportsNoLocalEffects checks that the production code of the engine imports no package that reads
+// or writes a local file, reads the working directory, or runs a process. The engine reaches the network only.
+func TestEngineProductionImportsNoLocalEffects(t *testing.T) {
+	for _, dir := range engineDirs {
+		for _, f := range walkGoFiles(t, dir) {
+			if f.test {
+				continue
+			}
+			for _, imp := range f.imports {
+				if engineEffectViolation(imp) {
+					rel, err := filepath.Rel(repoRoot, f.path)
+					if err != nil {
+						t.Fatalf("relative path of %s: %v", f.path, err)
+					}
+					t.Errorf("%s imports %s, which reads a local file or runs a process; the engine takes it through a port", filepath.ToSlash(rel), imp)
+				}
+			}
+		}
+	}
+}
+
 // TestNxImplicitDependenciesNameEveryImportedModule checks that each module's Nx project lists, in implicitDependencies,
 // every other module its Go files import. Nx cannot read Go imports, so this list is what orders the affected builds.
 func TestNxImplicitDependenciesNameEveryImportedModule(t *testing.T) {

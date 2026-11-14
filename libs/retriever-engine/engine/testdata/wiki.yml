@@ -1,0 +1,207 @@
+version: 1
+kind: example-wiki
+summary: Reads and writes documents of an example wiki.
+endpoint:
+  base_path: /v1
+  host_suffix:
+    - .example.test
+auth:
+  type: bearer
+  credential_env: EXAMPLE_WIKI_API_KEY
+limits:
+  timeout_seconds: 20
+  max_pages: 5
+operations:
+  - id: example-wiki.docs.list
+    summary: List documents.
+    access: read
+    method: GET
+    path: /docs
+    params:
+      - name: cursor
+        type: ID
+        in: query
+        required: false
+        help: The cursor of the next page.
+      - name: limit
+        type: Limit
+        in: query
+        required: false
+        default: 20
+    headers:
+      X-Example-Client: retriever
+    pagination:
+      style: cursor
+      max_pages: 5
+      cursor_param: cursor
+      next_pointer: /next_cursor
+    response:
+      items: /items
+      fields:
+        id:
+          pointer: /id
+        title:
+          pointer: /title
+    examples:
+      - request:
+          limit: 20
+        response:
+          status: 200
+          body:
+            items:
+              - id: doc-1
+                title: First document
+            next_cursor: null
+        expect:
+          id: doc-1
+          title: First document
+  - id: example-wiki.docs.page
+    summary: List one page of documents by offset.
+    access: read
+    method: GET
+    path: /docs/page
+    params:
+      - name: limit
+        type: Limit
+        in: query
+        required: false
+        default: 2
+      - name: offset
+        type: Offset
+        in: query
+        required: false
+        default: 0
+    pagination:
+      style: offset
+      max_pages: 5
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /items
+      fields:
+        id:
+          pointer: /id
+    examples:
+      - request:
+          limit: 2
+          offset: 0
+        response:
+          status: 200
+          body:
+            items:
+              - id: doc-1
+              - id: doc-2
+        expect:
+          id: doc-1
+  - id: example-wiki.docs.search
+    summary: Search documents, with a note sent in a header.
+    access: read
+    method: GET
+    path: /docs/search
+    params:
+      - name: note
+        type: Text
+        in: query
+        required: false
+        help: A note that is also sent in a header.
+    headers:
+      X-Example-Note: "{note}"
+    response:
+      fields:
+        id:
+          pointer: /id
+    examples:
+      - request:
+          note: first
+        response:
+          status: 200
+          body:
+            id: doc-1
+        expect:
+          id: doc-1
+  - id: example-wiki.docs.get
+    summary: Read one document.
+    access: read
+    method: GET
+    path: /docs/{id}
+    params:
+      - name: id
+        type: ID
+        in: path
+        required: true
+    response:
+      fields:
+        title:
+          pointer: /title
+        body:
+          pointer: /body
+          convert: markdown-from-html
+      markdown: body
+      errors:
+        "404": not_found
+    examples:
+      - request:
+          id: doc-1
+        response:
+          status: 200
+          body:
+            title: First document
+            body: <p>Hello</p>
+        expect:
+          title: First document
+          body: <p>Hello</p>
+  - id: example-wiki.docs.create
+    summary: Create a document.
+    access: write
+    method: POST
+    path: /docs
+    params:
+      - name: title
+        type: Name
+        in: body
+        required: true
+      - name: text
+        type: Text
+        in: body
+        required: false
+    body:
+      title: "{{title}}"
+      text: "{{text}}"
+    response:
+      fields:
+        id:
+          pointer: /id
+    examples:
+      - request:
+          title: First document
+          text: Hello
+        response:
+          status: 201
+          body:
+            id: doc-2
+        expect:
+          id: doc-2
+  - id: example-wiki.collections.list
+    summary: List the collections of the wiki.
+    access: read
+    method: GET
+    path: /collections
+    role: list-collections
+    response:
+      items: /items
+      fields:
+        id:
+          pointer: /id
+        name:
+          pointer: /name
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            items:
+              - id: col-1
+                name: Handbook
+        expect:
+          id: col-1
+          name: Handbook
