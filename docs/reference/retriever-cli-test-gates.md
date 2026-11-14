@@ -76,7 +76,7 @@ system, the real environment, or a real child process carries the `integration` 
 `*_integration_test.go`, or the `integration || e2e` tag for a shared file. Those tests run in `test:integration` and
 `test:conformance`.
 
-The behaviour harness follows the same rule. Its unit level, `TestUnitBehaviours`, runs the 156 `@unit` scenarios in
+The behaviour harness follows the same rule. Its unit level, `TestUnitBehaviours`, runs the 194 `@unit` scenarios in
 memory. Each scenario keeps its files in an in-memory tree (`tests/support/memfs`), reads the working directory and the
 environment from the scenario, writes exports to an in-memory sink, and serves the stub certificates from memory. The
 synthetic Outline replies are embedded from `tests/support/synthetic`. The integration level, `TestIntegrationBehaviours`,
