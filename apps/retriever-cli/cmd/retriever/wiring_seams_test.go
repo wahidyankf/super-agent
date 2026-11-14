@@ -137,13 +137,13 @@ func TestSeamBuildersRefuseAPlainHTTPBase(t *testing.T) {
 // invalid or when a configuration path is not absolute.
 func TestWireSourcesRefusesAnInvalidSeamAndARelativePath(t *testing.T) {
 	bad := seamSet{domain.KindJira: seamConfig{on: true, base: "http://127.0.0.1:1"}}
-	if _, err := wireSources(configpaths.Paths{Catalog: "/work/sources.yml", EnvFile: "/work/.env.local"}, bad, testHost()); err == nil {
+	if _, err := wireSources(configpaths.Paths{Catalog: "/work/sources.yml", EnvFile: "/work/.env.local"}, bad, testHost(), registeredKinds()); err == nil {
 		t.Fatal("wireSources accepted an invalid seam")
 	}
-	if _, err := wireSources(configpaths.Paths{Catalog: "sources.yml", EnvFile: "relative.env"}, seamSet{}, testHost()); err == nil {
+	if _, err := wireSources(configpaths.Paths{Catalog: "sources.yml", EnvFile: "relative.env"}, seamSet{}, testHost(), registeredKinds()); err == nil {
 		t.Fatal("wireSources accepted a relative env file path")
 	}
-	if _, err := wireSources(configpaths.Paths{Catalog: "sources.yml", EnvFile: "/work/.env.local"}, seamSet{}, testHost()); err == nil {
+	if _, err := wireSources(configpaths.Paths{Catalog: "sources.yml", EnvFile: "/work/.env.local"}, seamSet{}, testHost(), registeredKinds()); err == nil {
 		t.Fatal("wireSources accepted a relative catalog path")
 	}
 }

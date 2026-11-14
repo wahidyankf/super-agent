@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
@@ -21,7 +22,7 @@ type host struct {
 	now         func() time.Time
 	exists      func(path string) bool
 	openEnvFile func(path string) (*envfile.Credentials, error)
-	openCatalog func(path string) (*catalog.Loader, error)
+	openCatalog func(path string, kinds domain.KindSet) (*catalog.Loader, error)
 	exportSink  func(dir string) ports.ExportSink
 }
 

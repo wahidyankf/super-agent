@@ -6,7 +6,7 @@ It imports the contract only.
 
 - Module path: `github.com/wahidyankf/super-agent/libs/retriever-runtime`.
 - Nx project `retriever-runtime`, with the tags `type:runtime`, `lang:go`, and `domain:retriever`.
-- `go.mod` requires the contract at `v0.3.0`, and `go.yaml.in/yaml/v3`, which the catalog loader parses with.
+- `go.mod` requires the contract at `v0.4.0`, and `go.yaml.in/yaml/v3`, which the catalog loader parses with.
 
 ## Packages
 

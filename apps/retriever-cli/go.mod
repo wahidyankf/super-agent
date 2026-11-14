@@ -9,12 +9,12 @@ require (
 	github.com/cucumber/godog v0.16.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/vektah/gqlparser/v2 v2.5.64
-	github.com/wahidyankf/super-agent/libs/retriever-connector-jira v0.3.0
-	github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi v0.3.0
-	github.com/wahidyankf/super-agent/libs/retriever-connector-outline v0.3.0
-	github.com/wahidyankf/super-agent/libs/retriever-contract v0.3.0
-	github.com/wahidyankf/super-agent/libs/retriever-runtime v0.3.0
-	github.com/wahidyankf/super-agent/libs/retriever-testkit v0.3.0
+	github.com/wahidyankf/super-agent/libs/retriever-connector-jira v0.4.0
+	github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi v0.4.0
+	github.com/wahidyankf/super-agent/libs/retriever-connector-outline v0.4.0
+	github.com/wahidyankf/super-agent/libs/retriever-contract v0.4.0
+	github.com/wahidyankf/super-agent/libs/retriever-runtime v0.4.0
+	github.com/wahidyankf/super-agent/libs/retriever-testkit v0.4.0
 )
 
 require (

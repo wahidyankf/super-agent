@@ -6,7 +6,7 @@ operations come from the operation catalog in the contract. This module makes th
 - Module path: `github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi`.
 - Nx project `retriever-connector-kiwi`, with the tags `type:connector`, `lang:go`, `domain:retriever`, and
   `source:kiwi`.
-- `go.mod` requires the contract and the testkit at `v0.3.0`. The testkit serves the tests only. The production code
+- `go.mod` requires the contract and the testkit at `v0.4.0`. The testkit serves the tests only. The production code
   imports the contract alone.
 
 ## Folders

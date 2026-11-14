@@ -5,7 +5,6 @@
 package operations
 
 import (
-	"slices"
 	"strings"
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
@@ -107,33 +106,20 @@ type Row struct {
 	SameOnRepeat bool
 }
 
-// Rows returns a copy of the catalog, in catalog order.
+// Rows returns a copy of the built-in catalog, in catalog order. A registered catalog reads its rows through Catalog.Rows.
 func Rows() []Row {
-	out := make([]Row, len(rows))
-	copy(out, rows)
-	return out
+	return BuiltinCatalog().Rows()
 }
 
-// RowsOf returns a copy of the catalog rows of one source kind, in catalog order. The Outline adapter, the Outline command
-// tree, and the Outline tests use it, so a Kiwi row never joins the Outline surface.
+// RowsOf returns a copy of the built-in catalog rows of one source kind, in catalog order. The Outline adapter, the
+// Outline command tree, and the Outline tests use it, so a Kiwi row never joins the Outline surface.
 func RowsOf(kind domain.SourceKind) []Row {
-	var out []Row
-	for _, row := range rows {
-		if k, ok := row.Kind(); ok && k == kind {
-			out = append(out, row)
-		}
-	}
-	return out
+	return BuiltinCatalog().RowsOf(kind)
 }
 
-// Lookup returns the row of id, and false when the catalog holds no such operation.
+// Lookup returns the row of id in the built-in catalog, and false when the catalog holds no such operation.
 func Lookup(id domain.OperationID) (Row, bool) {
-	for _, r := range rows {
-		if r.ID == id {
-			return r, true
-		}
-	}
-	return Row{}, false
+	return BuiltinCatalog().Lookup(id)
 }
 
 // Path returns the words of the CLI command path, such as ["outline", "documents", "get"].
@@ -178,17 +164,9 @@ func (r Row) Kind() (domain.SourceKind, bool) {
 	return kind, err == nil
 }
 
-// Supports reports whether a source kind runs the row. The Outline kind runs every Outline row, and the Kiwi kind runs
-// the closed list of its six rows, and the Jira kind the closed list of its five read rows. A kind that is not listed runs none.
+// Supports reports whether a source kind runs the row, under the rules of the built-in catalog. The Outline kind runs every
+// Outline row, and the Kiwi kind runs the closed list of its six rows, and the Jira kind the closed list of its five read
+// rows. A kind that is not listed runs none.
 func Supports(kind domain.SourceKind, row Row) bool {
-	switch kind {
-	case domain.KindOutline:
-		k, ok := row.Kind()
-		return ok && k == kind
-	case domain.KindKiwi:
-		return slices.Contains(kiwiOperations, row.ID)
-	case domain.KindJira:
-		return slices.Contains(jiraOperations, row.ID)
-	}
-	return false
+	return BuiltinCatalog().Supports(kind, row)
 }

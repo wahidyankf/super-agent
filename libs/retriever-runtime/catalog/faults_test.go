@@ -104,12 +104,19 @@ func TestALoadFaultIsReportedAsACatalogErrorNamingItsStep(t *testing.T) {
 			},
 			want: "could not read the file",
 		},
+		{
+			name: "a path that names a folder is refused before any file opens",
+			files: Files{
+				FS: fakeFS{info: fakeStatInfo{mode: fs.ModeDir | 0o755}},
+			},
+			want: "must be a regular file, not a symlink or a folder",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			files := tt.files
 			files.SameFile = sameFake
-			loader := &Loader{path: "/work/project/sources.yml", files: files}
+			loader := &Loader{path: "/work/project/sources.yml", files: files, kinds: domain.BuiltinKinds()}
 			_, err := loader.Load()
 			var catalogErr domain.CatalogError
 			if !errors.As(err, &catalogErr) || catalogErr.Message != "sources catalog: "+tt.want {

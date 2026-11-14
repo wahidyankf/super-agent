@@ -5,7 +5,7 @@ ports that the core depends on, and the operation catalog. It imports no other l
 production code imports none of the packages that reach outside the process, such as `os` and `net/http`.
 
 - Module path: `github.com/wahidyankf/super-agent/libs/retriever-contract`.
-- Version: the `ContractVersion` constant in [contract.go](./contract.go), which is `0.3.0`.
+- Version: the `ContractVersion` constant in [contract.go](./contract.go), which is `0.4.0`.
 - Nx project `retriever-contract`, with the tags `type:contract`, `lang:go`, and `domain:retriever`.
 
 ## Folders
@@ -19,7 +19,7 @@ production code imports none of the packages that reach outside the process, suc
 ## Files
 
 - [contract.go](./contract.go) holds the package doc and `ContractVersion`. The libraries release in lockstep, so the
-  value matches their tags, `libs/<name>/v0.3.0`.
+  value matches their tags, `libs/<name>/v0.4.0`.
 - `go.mod` names the module. It requires no other module of this repository.
 - `project.json` declares the Nx project and its targets.
 

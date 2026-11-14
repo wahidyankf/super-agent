@@ -171,8 +171,8 @@ func (d *diskBackend) credentials(name string, _ func(string) string) (*envfile.
 }
 
 // loadCatalog reads the catalog from the real disk, as the composition root does.
-func (d *diskBackend) loadCatalog(name string) (domain.Catalog, error) {
-	loader, err := catalog.NewWithFiles(name, catalog.Files{FS: os.DirFS(filepath.Dir(name)), SameFile: os.SameFile})
+func (d *diskBackend) loadCatalog(name string, kinds domain.KindSet) (domain.Catalog, error) {
+	loader, err := catalog.NewWithFiles(name, catalog.Files{FS: os.DirFS(filepath.Dir(name)), SameFile: os.SameFile}, kinds)
 	if err != nil {
 		return domain.Catalog{}, err
 	}

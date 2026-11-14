@@ -16,6 +16,8 @@ process.
 - `identity.go` defines `Identity`, the account e-mail type. Like `ApiKey`, it never prints its value.
 - `identityref.go` defines `IdentityRef`, the name of the variable that holds an account e-mail.
 - `kinderror.go` defines the error that tells a kind which operation failed.
+- `kindset_test.go` tests the kind set: registration, the slug grammar, the alphabetical listing, and the unknown-kind
+  error.
 - `kindrules.go` defines the rules that a kind imposes: identity required or not used.
 - `operation.go` defines the operation ID, its effect, and the error for an operation the server does not offer.
 - `params.go` validates the ID, UUID, name, e-mail, text, time, index, colour, and icon parameters.
@@ -23,7 +25,9 @@ process.
 - `reason.go` validates an error reason.
 - `source.go` defines `Source` and its summary.
 - `sourceid.go` defines `SourceID`.
-- `sourcekind.go` defines `SourceKind`, with its display name. The set of kinds is closed in code.
+- `sourcekind.go` defines `SourceKind`, `KindDefinition`, and `KindSet`. A composition root registers its kinds at
+  start-up with `NewKindSet`, and `BuiltinKinds` holds the three built-in kinds. `UnknownKindError` lists the registered
+  kinds.
 - `tag.go` defines a tag and a set of tags.
 - `urls.go` validates a list of URLs.
 - `*_test.go` files hold the unit tests of the types above. `accessors_test.go` covers the accessor methods.

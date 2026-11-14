@@ -263,7 +263,3 @@ var adminRowsC2 = []Row{
 		Fields: teamFields,
 	},
 }
-
-func init() {
-	rows = append(rows, adminRowsC2...)
-}

@@ -477,9 +477,3 @@ var (
 		"notion", "markdown", "slab", "okf", "json",
 	}
 )
-
-// init appends the part 2b rows to the catalog. Package variables are initialized before init runs, so rows already
-// holds the part 1 and part 2a rows.
-func init() {
-	rows = append(rows, part2bRows...)
-}

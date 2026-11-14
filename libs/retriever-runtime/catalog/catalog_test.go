@@ -36,7 +36,7 @@ func contentFiles(content string) Files {
 // loadFrom loads the catalog that content describes, through fake file calls.
 func loadFrom(t *testing.T, content string) (domain.Catalog, error) {
 	t.Helper()
-	l := &Loader{path: "/work/project/sources.yml", files: contentFiles(content)}
+	l := &Loader{path: "/work/project/sources.yml", files: contentFiles(content), kinds: domain.BuiltinKinds()}
 	return l.Load()
 }
 
@@ -134,7 +134,7 @@ func TestEveryFieldRuleNamesTheSourceFieldAndRule(t *testing.T) {
 		name, content, want string
 	}{
 		{name: "bad id", content: withField("id", "Outline"), want: "source 1 id: must be a lowercase slug"},
-		{name: "unknown kind", content: withField("kind", "notion"), want: "source 1 kind: unknown kind (known: outline, kiwi, jira)"},
+		{name: "unknown kind", content: withField("kind", "notion"), want: "source 1 kind: unknown kind (known: jira, kiwi, outline)"},
 		{name: "bad tag", content: strings.Replace(oneSource, "    endpoint:", "    tags: [Wiki]\n    endpoint:", 1), want: "source 1 tags: must be lowercase slugs"},
 		{name: "too many tags", content: strings.Replace(oneSource, "    endpoint:", "    tags: [a1,a2,a3,a4,a5,a6,a7,a8,a9,b1,b2,b3,b4,b5,b6,b7,b8]\n    endpoint:", 1), want: "source 1 tags: at most 16 distinct tags"},
 		{name: "bad endpoint", content: withField("endpoint", "http://docs.example.test"), want: "source 1 endpoint: must be an https host name"},
@@ -212,7 +212,7 @@ func TestFileAtExactlyTheLimitIsAccepted(t *testing.T) {
 }
 
 func TestNewRequiresAnAbsolutePath(t *testing.T) {
-	if _, err := NewWithFiles("relative/sources.yml", Files{FS: fakeFS{}, SameFile: sameFake}); err == nil {
+	if _, err := NewWithFiles("relative/sources.yml", Files{FS: fakeFS{}, SameFile: sameFake}, domain.BuiltinKinds()); err == nil {
 		t.Fatalf("NewWithFiles accepted a relative path")
 	}
 }

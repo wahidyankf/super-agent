@@ -40,21 +40,22 @@ type Files struct {
 	SameFile func(a, b fs.FileInfo) bool
 }
 
-// Loader implements ports.CatalogLoader over one catalog file.
+// Loader implements ports.CatalogLoader over one catalog file. It accepts the kinds of its kind set and no other.
 type Loader struct {
 	path  string
 	files Files
+	kinds domain.KindSet
 }
 
 var _ ports.CatalogLoader = (*Loader)(nil)
 
 // NewWithFiles returns a loader for the catalog file at path that makes its file calls through files. path must be
-// absolute.
-func NewWithFiles(path string, files Files) (*Loader, error) {
+// absolute. A source names a kind of kinds, the set the composition root registered, and no other kind loads.
+func NewWithFiles(path string, files Files, kinds domain.KindSet) (*Loader, error) {
 	if !filepath.IsAbs(path) {
 		return nil, errors.New("the catalog path must be absolute")
 	}
-	return &Loader{path: path, files: files}, nil
+	return &Loader{path: path, files: files, kinds: kinds}, nil
 }
 
 // Load reads the catalog file once. A missing file, a file that is not a regular file, a file that is too large, and a
@@ -67,7 +68,7 @@ func (l *Loader) Load() (domain.Catalog, error) {
 	if !found {
 		return domain.Catalog{}, catalogCause("not found: set --catalog or RETRIEVER_CATALOG, or create ./sources.yml", domain.ErrCatalogMissing)
 	}
-	return parse(data)
+	return parse(data, l.kinds)
 }
 
 // read returns the file bytes. found is false when no file exists at the path, with no error.
@@ -125,8 +126,8 @@ type sourceEntry struct {
 	IdentityEnv *string `yaml:"identity_env"`
 }
 
-// parse decodes data strictly and maps it onto a domain.Catalog.
-func parse(data []byte) (domain.Catalog, error) {
+// parse decodes data strictly and maps it onto a domain.Catalog. Each source kind is resolved through kinds.
+func parse(data []byte, kinds domain.KindSet) (domain.Catalog, error) {
 	dec := yaml.NewDecoder(bytes.NewReader(data))
 	dec.KnownFields(true)
 	var doc fileDoc
@@ -145,7 +146,7 @@ func parse(data []byte) (domain.Catalog, error) {
 	}
 	list := make([]domain.Source, 0, len(doc.Sources))
 	for i, entry := range doc.Sources {
-		src, err := toSource(i+1, entry)
+		src, err := toSource(i+1, entry, kinds)
 		if err != nil {
 			return domain.Catalog{}, err
 		}
@@ -158,13 +159,14 @@ func parse(data []byte) (domain.Catalog, error) {
 	return cat, nil
 }
 
-// toSource maps one entry onto the value objects. position is the 1-based source number used in the error text.
-func toSource(position int, e sourceEntry) (domain.Source, error) {
+// toSource maps one entry onto the value objects. position is the 1-based source number used in the error text, and kind
+// is resolved through kinds.
+func toSource(position int, e sourceEntry, kinds domain.KindSet) (domain.Source, error) {
 	id, err := domain.NewSourceID(e.ID)
 	if err != nil {
 		return domain.Source{}, fieldErr(position, "id", err)
 	}
-	kind, err := domain.NewSourceKind(e.Kind)
+	kind, err := kinds.Kind(e.Kind)
 	if err != nil {
 		return domain.Source{}, fieldErr(position, "kind", err)
 	}
@@ -229,17 +231,19 @@ func catalogFault(err error) error {
 }
 
 // fieldRule returns the rule text for a field that broke its own grammar. Each rule states the requirement and
-// never a value, so the text is the same for every value a field could hold.
+// never a value, so the text is the same for every value a field could hold. An unknown kind lists the registered
+// kinds, in the alphabetical order the set keeps.
 func fieldRule(err error) string {
+	var unknown domain.UnknownKindError
 	switch {
+	case errors.As(err, &unknown):
+		return "unknown kind (known: " + strings.Join(unknown.Known, ", ") + ")"
 	case errors.Is(err, domain.ErrInvalidSourceID):
 		return "must be a lowercase slug"
 	case errors.Is(err, domain.ErrInvalidTag):
 		return "must be lowercase slugs"
 	case errors.Is(err, domain.ErrTooManyTags):
 		return "at most 16 distinct tags"
-	case errors.Is(err, domain.ErrUnknownSourceKind):
-		return "unknown kind (known: outline, kiwi, jira)"
 	case errors.Is(err, domain.ErrInvalidEndpoint), errors.Is(err, domain.ErrHTTPSRequired):
 		return "must be an https host name"
 	case errors.Is(err, domain.ErrInvalidCredentialRef):

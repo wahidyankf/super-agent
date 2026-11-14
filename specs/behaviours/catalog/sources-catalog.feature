@@ -57,6 +57,29 @@ Feature: Sources catalog
     And the standard output is empty
 
   @integration @e2e @unit
+  Scenario: A catalog that names an unregistered kind lists the registered kinds in alphabetical order
+    Given the sources catalog file "reviewed.yml" holds these sources:
+      | id     | kind   | tags | endpoint                  | credential_env         | identity_env |
+      | notion | notion | docs | https://wiki.example.test | EXAMPLE_NOTION_API_KEY |              |
+    When I run "retriever --output json --catalog reviewed.yml sources list"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.sources.unknown_source_kind" and retryable false
+    And the standard error contains "unknown kind (known: jira, kiwi, outline)"
+
+  # Exemption(e2e): the built binary registers only the built-in kinds, so a registered kind exists only in the in-process wiring; alternative-proof: the registered-kind tests of the catalog loader and of the composition root.
+  @unit @integration @e2e-exempt
+  Scenario: A catalog that names a registered kind loads
+    Given the registered kinds are the built-in kinds and "example-wiki"
+    And the sources catalog file "reviewed.yml" holds these sources:
+      | id   | kind         | tags | endpoint                  | credential_env       | identity_env |
+      | wiki | example-wiki | docs | https://wiki.example.test | EXAMPLE_WIKI_API_KEY |              |
+    When I run "retriever --catalog reviewed.yml sources list"
+    Then the exit status is 0
+    And the standard output contains "wiki"
+    And the standard output contains "example-wiki"
+
+  @integration @e2e @unit
   Scenario: The catalog flag names the catalog file to read
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id          | kind    | tags | endpoint                  | credential_env          | identity_env |

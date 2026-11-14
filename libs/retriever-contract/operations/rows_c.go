@@ -219,7 +219,3 @@ var adminRows = []Row{
 		Fields: ackFields,
 	},
 }
-
-func init() {
-	rows = append(rows, adminRows...)
-}

@@ -129,10 +129,17 @@ func checkSeams(seams seamSet) error {
 	return nil
 }
 
+// registeredKinds returns the kinds this composition root registers, which a catalog may name. The root registers the
+// three built-in kinds and no other. A kind that another build registers is passed to wireSources the same way, as a
+// value, so no package holds a registry.
+func registeredKinds() domain.KindSet {
+	return domain.BuiltinKinds()
+}
+
 // wireSources loads the sources catalog, builds the gateway registry, and returns the source service and the serve and
 // MCP functions for the configuration paths the caller resolved. The catalog is read once here. A catalog error stops the
 // sources commands, and the process still starts for every other command.
-func wireSources(paths configpaths.Paths, seams seamSet, h host) (sourceWiring, error) {
+func wireSources(paths configpaths.Paths, seams seamSet, h host, kinds domain.KindSet) (sourceWiring, error) {
 	if err := checkSeams(seams); err != nil {
 		return sourceWiring{}, err
 	}
@@ -140,7 +147,7 @@ func wireSources(paths configpaths.Paths, seams seamSet, h host) (sourceWiring, 
 	if err != nil {
 		return sourceWiring{}, err
 	}
-	loader, err := h.openCatalog(paths.Catalog)
+	loader, err := h.openCatalog(paths.Catalog, kinds)
 	if err != nil {
 		return sourceWiring{}, err
 	}

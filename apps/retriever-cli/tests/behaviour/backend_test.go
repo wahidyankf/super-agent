@@ -48,8 +48,8 @@ type backend interface {
 	dirFiles(path string) (map[string]string, error)
 	// credentials returns the env-file reader of the file at path, which reads the environment through getenv.
 	credentials(path string, getenv func(string) string) (*envfile.Credentials, error)
-	// loadCatalog reads the sources catalog at path.
-	loadCatalog(path string) (domain.Catalog, error)
+	// loadCatalog reads the sources catalog at path, and accepts the kinds of the set given.
+	loadCatalog(path string, kinds domain.KindSet) (domain.Catalog, error)
 	// sink returns the export sink that writes into dir.
 	sink(dir string) ports.ExportSink
 	// spawnServe starts retriever serve as the built binary. Only the end-to-end level has a binary.
@@ -158,11 +158,11 @@ func (m *memoryBackend) credentials(name string, getenv func(string) string) (*e
 }
 
 // loadCatalog reads the catalog from the in-memory tree, as catalog.NewWithFiles does, through the folder of the file.
-func (m *memoryBackend) loadCatalog(name string) (domain.Catalog, error) {
+func (m *memoryBackend) loadCatalog(name string, kinds domain.KindSet) (domain.Catalog, error) {
 	loader, err := catalog.NewWithFiles(name, catalog.Files{
 		FS:       m.files.Folder(path.Dir(name)),
 		SameFile: m.files.SameFile,
-	})
+	}, kinds)
 	if err != nil {
 		return domain.Catalog{}, err
 	}
