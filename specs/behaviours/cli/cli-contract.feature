@@ -100,6 +100,19 @@ Feature: Command-line contract of retriever
     And the standard error is a JSON error with the code "retriever.usage.usage_unrecognized_argument" and retryable false
 
   @unit @integration @e2e
+  Scenario Outline: A confirmation or preview flag that no command takes is an unrecognized argument
+    When I run "<command>"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.outline.usage_unrecognized_argument" and retryable false
+
+    Examples:
+      | command                                                                                                    |
+      | retriever --output json outline documents empty-trash --yes                                                |
+      | retriever --output json outline documents empty-trash --confirm example-outline                            |
+      | retriever --output json outline documents update d0c1d0c1-0000-4000-8000-000000000001 --title Renamed --dry-run |
+
+  @unit @integration @e2e
   Scenario: The version flag ignores the output option and still prints plain text
     When I run "retriever --output json --version"
     Then the exit status is 0

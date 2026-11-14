@@ -13,8 +13,8 @@ var kiwiOperations = []domain.OperationID{
 	domain.OpKiwiPlansAddCase,
 }
 
-// kiwiRows are the six operations of the Kiwi TCMS source: three reads and three writes. Kiwi has no admin, destructive, or
-// critical operation, and no MCP tool, so Tool and Critical stay empty. Retriever maps the provider's words to the domain's:
+// kiwiRows are the six operations of the Kiwi TCMS source: three reads and three writes. Kiwi has no admin or destructive operation, and no MCP tool, so Tool stays
+// empty. Retriever maps the provider's words to the domain's:
 // a product is a collection, a test plan is a tree node, and a test case is a document.
 var kiwiRows = []Row{
 	{

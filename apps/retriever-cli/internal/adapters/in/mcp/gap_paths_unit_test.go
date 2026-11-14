@@ -145,18 +145,6 @@ func TestAWriteToAnUnknownSourceIsRefusedBeforeAnyRequest(t *testing.T) {
 	}
 }
 
-// TestADryRunOfAWriteReturnsThePlanWithoutARequest checks that a dry run answers with the plan and sends nothing.
-func TestADryRunOfAWriteReturnsThePlanWithoutARequest(t *testing.T) {
-	gw := &fakeGateway{}
-	var logs bytes.Buffer
-	text, isErr := call(t, connect(t, writableOutline(t, gw), &logs), "create_document", map[string]any{
-		"source": "outline", "title": "Synthetic", "text": "Synthetic body", "collection_id": gapCollectionID, "dry_run": true,
-	})
-	if isErr || !strings.Contains(text, `"source":"outline"`) || gw.calls != 0 {
-		t.Fatalf("a dry run must answer the plan with no request, got %q (error %v, calls %d)", text, isErr, gw.calls)
-	}
-}
-
 // TestAWriteAnswersWithTheRecordItWrote checks that a write answers with the record the wiki returned.
 func TestAWriteAnswersWithTheRecordItWrote(t *testing.T) {
 	gw := &fakeGateway{writeReply: docReply()}
@@ -166,17 +154,6 @@ func TestAWriteAnswersWithTheRecordItWrote(t *testing.T) {
 	})
 	if isErr || !strings.Contains(text, `"title":"Synthetic"`) || len(gw.writes) != 1 {
 		t.Fatalf("a write must answer with its record and make one request, got %q (error %v, writes %d)", text, isErr, len(gw.writes))
-	}
-}
-
-// TestANonBooleanDryRunOfAWriteIsRefused checks that a dry_run that is not a boolean is refused before any request.
-func TestANonBooleanDryRunOfAWriteIsRefused(t *testing.T) {
-	gw := &fakeGateway{}
-	row := rowForTool(t, "create_document")
-	req := requestOf(`{"source":"outline","title":"Synthetic","collection_id":"` + gapCollectionID + `","dry_run":"yes"}`)
-	_, _, class, public := runOperation(context.Background(), writableOutline(t, gw), row, req)
-	if class != "bad arguments" || public == nil || gw.calls != 0 {
-		t.Fatalf("a non-boolean dry_run must be refused, got class %q (public %v, calls %d)", class, public, gw.calls)
 	}
 }
 
@@ -190,19 +167,6 @@ func TestAWriteWithAnInvalidIdentifierIsRefused(t *testing.T) {
 	})
 	if !isErr || text == "" || gw.calls != 0 {
 		t.Fatalf("a malformed identifier must be refused with no request, got %q (error %v, calls %d)", text, isErr, gw.calls)
-	}
-}
-
-// TestAReplacedTextNeedsTheRevisionTheModelRead checks that an update that replaces the text without last_revision is
-// refused before any request.
-func TestAReplacedTextNeedsTheRevisionTheModelRead(t *testing.T) {
-	gw := &fakeGateway{writeReply: docReply()}
-	var logs bytes.Buffer
-	_, isErr := call(t, connect(t, writableOutline(t, gw), &logs), "update_document", map[string]any{
-		"document_id": gapDocumentID, "source": "outline", "text": "Synthetic replacement",
-	})
-	if !isErr || gw.calls != 0 {
-		t.Fatalf("a replace without last_revision must be refused with no request, got error %v, calls %d", isErr, gw.calls)
 	}
 }
 
@@ -237,19 +201,6 @@ func adminFakeService(t *testing.T, gw *adminFake) sources.Service {
 	return serviceWith(t, gw, mustSource(t, "outline", "admin"))
 }
 
-// TestAnAdminDryRunReturnsThePlanWithoutAChange checks that a dry run of an admin tool answers with the plan and changes
-// nothing.
-func TestAnAdminDryRunReturnsThePlanWithoutAChange(t *testing.T) {
-	gw := &adminFake{fakeGateway: &fakeGateway{}}
-	var logs bytes.Buffer
-	text, isErr := call(t, connect(t, adminFakeService(t, gw), &logs), "delete_document", map[string]any{
-		"document_id": gapDocumentID, "source": "outline", "dry_run": true,
-	})
-	if isErr || !strings.Contains(text, `"source":"outline"`) || len(gw.admins) != 0 {
-		t.Fatalf("an admin dry run must answer the plan with no change, got %q (error %v, admin calls %d)", text, isErr, len(gw.admins))
-	}
-}
-
 // TestAnAdminCallAnswersWithItsReply checks that an admin call answers with the record the wiki returned, and makes one
 // call.
 func TestAnAdminCallAnswersWithItsReply(t *testing.T) {
@@ -268,17 +219,6 @@ func TestAnAdminCallWhoseWikiFailsIsAFailure(t *testing.T) {
 	text, isErr := call(t, connect(t, adminFakeService(t, gw), &logs), "delete_document", map[string]any{"document_id": gapDocumentID, "source": "outline"})
 	if !isErr || text != "unexpected error" || strings.Contains(text, "upstream detail") {
 		t.Fatalf("a failed admin call must answer the fixed text, got %q (error %v)", text, isErr)
-	}
-}
-
-// TestANonBooleanDryRunOfAnAdminCallIsRefused checks the same refusal for an admin tool.
-func TestANonBooleanDryRunOfAnAdminCallIsRefused(t *testing.T) {
-	gw := &adminFake{fakeGateway: &fakeGateway{}}
-	row := rowForTool(t, "delete_document")
-	req := requestOf(`{"source":"outline","document_id":"` + gapDocumentID + `","dry_run":"yes"}`)
-	_, _, class, public := runOperation(context.Background(), adminFakeService(t, gw), row, req)
-	if class != "bad arguments" || public == nil || len(gw.admins) != 0 {
-		t.Fatalf("a non-boolean dry_run of an admin call must be refused, got class %q (public %v)", class, public)
 	}
 }
 
@@ -342,18 +282,6 @@ func TestBrokenArgumentsAreAUsageFailure(t *testing.T) {
 	_, _, class, public := runOperation(context.Background(), writableOutline(t, gw), rowForTool(t, "create_document"), requestOf("{"))
 	if class != "bad arguments" || public == nil || gw.calls != 0 {
 		t.Fatalf("broken arguments must be refused, got class %q (public %v)", class, public)
-	}
-}
-
-// TestAnInputThatIsCLIOnlyIsNotAnInput checks that an input the MCP tool does not list is refused even when the catalog
-// names it, and that a listed input is accepted.
-func TestAnInputThatIsCLIOnlyIsNotAnInput(t *testing.T) {
-	row := operations.Row{Params: []operations.Param{{Name: "permanent", CLIOnly: true}, {Name: "title"}}}
-	if err := refuseUndeclared(row, map[string]any{"permanent": true}); !errors.Is(err, errUnknownInput) {
-		t.Errorf("a CLI-only input = %v, want it refused", err)
-	}
-	if err := refuseUndeclared(row, map[string]any{"title": "Synthetic"}); err != nil {
-		t.Errorf("a listed input = %v, want it accepted", err)
 	}
 }
 

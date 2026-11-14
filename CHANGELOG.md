@@ -14,18 +14,26 @@ upgrade.
 - **Breaking**: a `retriever` read on Outline, Kiwi, or Jira that a rate limit stops now exits `124`, not `2`. Exit
   `124` means a bounded wait ended in a retryable failure, the same status a timeout uses, and the JSON error still
   says `retryable: true`. A `Retry-After` longer than 60 seconds still exits `2`, because that failure is not
-  retryable. Scripts that test for `2` after a rate limit must test for `124`.
+  retryable. $1- **Breaking**: `retriever` no longer gates the changes it runs against a source. The confirmation and preview gates are
+  removed. `--yes`, `--confirm`, and `--dry-run` are unrecognized arguments now, and each exits `2` with
+  `retriever.<area>.usage_unrecognized_argument`. A destructive or admin command runs the change it names, so a script
+  that passed `--yes` must drop it. The error codes `yes_required`, `confirm_required`, `confirm_mismatch`,
+  `self_target`, and `last_revision_required` are gone. A document update no longer needs `last_revision`.
+- **Breaking**: the MCP server gains eleven write and admin tools that had no tool before: `empty_trash`, `delete_user`,
+  `delete_all_groups`, `delete_team`, `delete_authentication_provider`, `create_integration`, `update_integration`,
+  `create_oauth_client`, `rotate_oauth_client_secret`, `create_webhook_subscription`, and
+  `update_webhook_subscription`. The MCP write and admin tools no longer take a `dry_run` input.
 
 ### Changed
 
-- The behaviour specs add 41 scenarios, from 194 to 235, for the transport limits (HTTPS, redirects, timeouts,
+- The behaviour specs add 33 scenarios, from 194 to 227, for the transport limits (HTTPS, redirects, timeouts,
   rate-limit waits and spacing, and reply size), the Kiwi and Jira error codes, the Jira search and projects reads, and
   the redaction of MCP replies. The behaviour harness now drives the in-process Outline, Kiwi, and Jira stubs with a
   fake clock, so the waits are checked without real sleeping at the unit and integration levels.
 - `retriever` unit tests no longer read or write real files, read or change the process environment, change the working
   directory, or start child processes. The tests that need those move to files with the `integration` build tag. The
   unit tests reach the file system and the environment through fakes at the seams of the catalog, the credentials, the
-  Markdown sink, the source seams, and the composition root. The behaviour harness runs its 235 `@unit` scenarios in
+  Markdown sink, the source seams, and the composition root. The behaviour harness runs its 227 `@unit` scenarios in
   memory, through an in-memory file tree and an in-memory export sink. The integration and end-to-end levels keep the
   real disk, the real environment at the integration level, and the built binary at the end-to-end level. The synthetic
   Outline replies move to `tests/support/synthetic`.
@@ -34,7 +42,7 @@ upgrade.
   when the call sits in a helper. Its negative tests run in `test:unit`.
 - The unit coverage floor stays at 99 percent, and no exclusion is added. The real-disk wrappers of the catalog, the
   credentials, the Markdown sink, and the composition root now run only at the integration and end-to-end levels, so the
-  unit figure moves to 99.03 percent.
+  unit figure moves to 99.01 percent.
 
 ### Fixed
 

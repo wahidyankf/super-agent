@@ -7,7 +7,7 @@ import (
 )
 
 // writeRows are the write operations of stage b, the documents writes of the inventory. Each one
-// changes the wiki, so each has access write and a non-read effect. None is destructive, so none needs --yes. Each runs
+// changes the wiki, so each has access write and a non-read effect. Each runs
 // through the same generic use case, and each has one endpoint entry in the Outline adapter (endpoints_b.go).
 var writeRows = []Row{
 	{

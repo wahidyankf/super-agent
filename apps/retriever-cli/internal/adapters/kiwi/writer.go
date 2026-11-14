@@ -8,7 +8,7 @@ import (
 )
 
 // Write runs one of the three Kiwi write operations and returns the Record of its reply. The use case
-// has checked the source, its access level, and the dry run before it calls a writer, so a dry run never reaches here.
+// has checked the source and its access level before it calls a writer.
 // The client checks the level again, and a read source never sends a write.
 func (g *Gateway) Write(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
 	rec, err := g.write(ctx, op, args)

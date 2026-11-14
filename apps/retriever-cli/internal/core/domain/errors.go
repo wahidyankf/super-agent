@@ -136,9 +136,6 @@ var (
 	// dropped connection, a 5xx reply, a 2xx reply that is not a readable success, or a body over the cap. The change may
 	// or may not have happened, so the write is never retried by Retriever.
 	ErrWriteOutcomeUnknown = errors.New("the change may or may not have happened; check before you retry")
-	// ErrLastRevisionRequired refuses an MCP document update that replaces the text without the revision it read
-	//.
-	ErrLastRevisionRequired = errors.New("last_revision is required when text replaces the document; read the revision with get_document first")
 )
 
 // Upstream errors. A source gateway returns these, and the CLI and GraphQL layers map them.

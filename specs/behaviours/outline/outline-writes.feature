@@ -43,15 +43,6 @@ Feature: Outline writes
     And the stub Outline server's last request to "documents.create" body contains "Synthetic-note"
 
   @integration @e2e @unit
-  Scenario: A dry run of a document update prints the change and sends no request
-    Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | write  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
-    When I run "retriever outline documents update d0c1d0c1-0000-4000-8000-000000000001 --title Renamed --dry-run --source example-outline"
-    Then the exit status is 0
-    And the stub Outline server received no requests
-
-  @integration @e2e @unit
   Scenario: A comment on a write-access source sends one request that carries its text
     Given the sources catalog holds these sources:
       | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |

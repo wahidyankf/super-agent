@@ -135,8 +135,8 @@ const (
 	OpUsersNotificationsUnsubscribe OperationID = "users.notifications-unsubscribe"
 )
 
-// The destructive and admin operations of stage c. Each one changes the wiki with access admin; a
-// destructive one removes content, and a critical call needs --confirm as well.
+// The destructive and admin operations of stage c. Each one changes the wiki with access admin;
+// a destructive one removes content.
 const (
 	OpDocumentsAddGroup    OperationID = "documents.add-group"
 	OpDocumentsAddUser     OperationID = "documents.add-user"
@@ -155,8 +155,7 @@ const (
 	OpCollectionsRemoveUser  OperationID = "collections.remove-user"
 )
 
-// The destructive and admin operations of stage c, slice c2: users, groups, and teams. The critical ones
-// are users.delete, groups.delete-all, and teams.delete (section 3.5), and they have no MCP tool.
+// The destructive and admin operations of stage c, slice c2: users, groups, and teams.
 const (
 	OpUsersActivate      OperationID = "users.activate"
 	OpUsersDelete        OperationID = "users.delete"
@@ -181,8 +180,7 @@ const (
 )
 
 // The destructive and admin operations of stage c, slice c3: access requests, attachments, sign-in providers, comments,
-// emojis, file operations, imports, and integrations. The critical ones are
-// authentication-providers.delete, integrations.create, and integrations.update (section 3.5), and they have no MCP tool.
+// emojis, file operations, imports, and integrations.
 const (
 	OpAccessRequestsApprove                 OperationID = "access-requests.approve"
 	OpAccessRequestsDismiss                 OperationID = "access-requests.dismiss"
@@ -211,7 +209,7 @@ const (
 	OpKiwiPlansAddCase    OperationID = "kiwi.plans.add-case"
 )
 
-// The Jira Cloud operations: five reads, and no write, admin, critical, or MCP operation. Each names one
+// The Jira Cloud operations: five reads, and no write, admin, destructive, or MCP operation. Each names one
 // row of rows_jira.go.
 const (
 	OpJiraWhoami       OperationID = "jira.whoami"
@@ -222,9 +220,7 @@ const (
 )
 
 // The destructive and admin operations of stage c, slice c4: OAuth authorizations, OAuth clients, revisions, shares,
-// templates, and webhook subscriptions. The critical ones are oauth-clients.create,
-// oauth-clients.rotate-secret, webhook-subscriptions.create, and webhook-subscriptions.update (section 3.5), and they have no
-// MCP tool.
+// templates, and webhook subscriptions.
 const (
 	OpOAuthAuthenticationsDelete OperationID = "oauth-authentications.delete"
 	OpOAuthClientsCreate         OperationID = "oauth-clients.create"

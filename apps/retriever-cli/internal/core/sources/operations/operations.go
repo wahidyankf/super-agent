@@ -5,7 +5,6 @@
 package operations
 
 import (
-	"net/url"
 	"slices"
 	"strings"
 
@@ -42,7 +41,7 @@ const (
 	KindIcon           Kind = "Icon"           // an icon: one emoji, a named icon, or an attachment UUID; a non-blank text
 	KindScore          Kind = "Score"          // a number from -1 to 1, as a JSON number or its text
 	KindReason         Kind = "Reason"         // at most 2000 characters, no control character; may be empty
-	KindEmail          Kind = "Email"          // one e-mail address; a dry run never shows it
+	KindEmail          Kind = "Email"          // one e-mail address; the reply never shows it
 	KindEventList      Kind = "EventList"      // at most 50 event names, each `*` or a dotted name such as documents.create
 	KindURLList        Kind = "URLList"        // 1 to 10 HTTPS addresses, each at most 1024 characters (the redirect addresses)
 	KindIssueKey       Kind = "IssueKey"       // a Jira issue key, such as EXAMPLE-12; refused as an invalid document ID
@@ -63,9 +62,6 @@ type Param struct {
 	Values []string
 	// Help is the one line the CLI shows for the flag and the MCP input describes.
 	Help string
-	// CLIOnly keeps the parameter off the MCP tool: the tool neither lists it nor accepts it. It is
-	// set on the permanent deletion of documents.delete, which only the CLI may request.
-	CLIOnly bool
 }
 
 // Row is one operation of the catalog. It is the single source for every adapter:
@@ -103,82 +99,13 @@ type Row struct {
 	// subscription.
 	OneOf []string
 	// AnyOf names parameters of which at least one must be set, such as the fields a Kiwi test case update changes. The
-	// binder refuses a call with none of them with ErrMissingArgument, so a dry run of an empty update fails too.
+	// binder refuses a call with none of them with ErrMissingArgument, so an empty update fails too.
 	AnyOf []string
 	// NotIdempotent marks an update whose repeat is not the same change, such as an append. Its tool says so in its hints
 	//. A create is never idempotent, and it needs no flag.
 	NotIdempotent bool
 	// SameOnRepeat marks a create whose repeat answers the same object, so its tool announces idempotent. It is set on shares.create, which returns the share of a document that is already shared.
 	SameOnRepeat bool
-	// Critical marks an operation, or one call of it, that needs the strictest confirmation. A
-	// critical operation has no MCP tool at any ceiling, so its Tool is empty.
-	Critical *Critical
-	// Target says how a dry run and a critical call name the target of the change. Nil means the
-	// operation has no target to read.
-	Target *Target
-	// RefuseSelf marks a change to one user, named by the userId parameter, which the use case refuses when that user is the
-	// user of the API key. Retriever reads the key's user with auth.whoami first.
-	RefuseSelf bool
-}
-
-// Critical describes the confirmation of a critical call. When names a Bool parameter: the call is critical only when
-// that parameter is true. An empty When makes every call critical. Kind is the kind of value --confirm must equal, such
-// as "the document ID"; the target's canonical value is the one that the dry run prints.
-type Critical struct {
-	When string
-	Kind string
-	// Host names a URL parameter whose host is the canonical value of the call, such as the host of settings.url for an
-	// integration. The value is then the host of that argument, lower-cased, and the target read, when
-	// the row has one, only confirms that the object exists. It is set on integrations.create and integrations.update.
-	Host string
-	// Text names a text parameter whose exact value is the canonical value of the call, such as the name of a new OAuth
-	// client, which no read returns before the create. The comparison is exact, without a change of
-	// case. It is set on oauth-clients.create, and it has no target read.
-	Text string
-}
-
-// HostOf returns the lower-cased host name of an address, without its path, query, or user name, and "" when the address
-// does not parse. A dry run and a critical call show only this host of a URL, because a chat or webhook address can carry a
-// secret in its path (the field reference, integration).
-func HostOf(raw string) string {
-	u, err := url.Parse(raw)
-	if err != nil || u.Host == "" {
-		return ""
-	}
-	return strings.ToLower(u.Hostname())
-}
-
-// Target names the read that resolves the target of a change. Read is the read operation, which receives the row's
-// positional argument when it declares a parameter of that name. Field is the reply field that holds the canonical
-// value, such as the document's id, and an empty Field means the target is the source itself. A Field may name a field
-// of a nested object with dots, such as team.name. Name is an optional reply field that the dry run shows beside the
-// target, such as the title. When Read answers a list, the dry run shows the number of items it holds, or "at least N" when
-// its page of N is full (the list is read with the largest page).
-type Target struct {
-	Read  domain.OperationID
-	Field string
-	Name  string
-}
-
-// NeedsYes reports whether a call of the row needs --yes: a destructive or an admin change. A
-// dry run never needs it.
-func (r Row) NeedsYes() bool {
-	if r.Effect == domain.EffectRead {
-		return false
-	}
-	return r.Effect == domain.EffectDestructive || r.Access == domain.AccessAdmin
-}
-
-// IsCritical reports whether one call of the row, with the given bound or raw values, is critical.
-func (r Row) IsCritical(values map[string]any) bool {
-	if r.Critical == nil {
-		return false
-	}
-	if r.Critical.When == "" {
-		return true
-	}
-	on, _ := values[r.Critical.When].(bool)
-	return on
 }
 
 // Rows returns a copy of the catalog, in catalog order.

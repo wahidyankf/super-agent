@@ -8,11 +8,8 @@ import (
 // sharing and sign-in settings, and its URL. The preferences, the avatar, the plan, and the default collection are dropped.
 var teamFields = []string{"id", "name", "description", "sharing", "documentEmbeds", "memberCollectionCreate", "memberTeamCreate", "defaultUserRole", "inviteRequired", "guestSignin", "passkeysEnabled", "subdomain", "domain", "url"}
 
-// The rows of stage c, slice c2: the users, groups, and teams changes. Each
-// changes the wiki with access admin, so a source below admin refuses it, and each needs --yes on the CLI. The three
-// critical rows, users.delete, groups.delete-all, and teams.delete, have no MCP tool at any ceiling. A change to the user of
-// the API key is refused by the use case (RefuseSelf, ErrSelfTarget). Every row that names one object reads it first
-// (Target), so a dry run names it and a critical call compares its value.
+// The rows of stage c, slice c2: the users, groups, and teams changes. Each changes the wiki with access
+// admin, so a source below admin refuses it.
 var adminRowsC2 = []Row{
 	{
 		ID:          domain.OpUsersActivate,
@@ -24,21 +21,18 @@ var adminRowsC2 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("userId", "the user ID, from list_users")},
-		Target:      &Target{Read: domain.OpUsersGet, Field: "id", Name: "name"},
 		Fields:      userFields,
 	},
 	{
 		ID:          domain.OpUsersDelete,
 		CLI:         "outline users delete",
-		Summary:     "delete one Outline user for good (critical, CLI only)",
-		Description: "Deletes one user of the wiki. The user of the API key is refused. Deleting the last admin of the wiki leaves no one who can change its settings; check the admins with list_users first. It has no MCP tool, because it is critical.",
+		Tool:        "delete_user",
+		Summary:     "delete one Outline user for good",
+		Description: "Deletes one user of the wiki. Deleting the last admin of the wiki leaves no one who can change its settings; check the admins with list_users first.",
 		Effect:      domain.EffectDestructive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("userId", "the user ID, from list_users")},
-		RefuseSelf:  true,
-		Critical:    &Critical{Kind: "the user ID"},
-		Target:      &Target{Read: domain.OpUsersGet, Field: "id", Name: "name"},
 		Fields:      ackFields,
 	},
 	{
@@ -82,7 +76,6 @@ var adminRowsC2 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("userId", "the invited user's ID, from list_users")},
-		Target:      &Target{Read: domain.OpUsersGet, Field: "id", Name: "name"},
 		Fields:      ackFields,
 	},
 	{
@@ -90,13 +83,11 @@ var adminRowsC2 = []Row{
 		CLI:         "outline users suspend",
 		Tool:        "suspend_user",
 		Summary:     "suspend one Outline user, so the user cannot sign in",
-		Description: "Suspends one user of the wiki, so the user cannot sign in until an admin activates the user again. The user of the API key is refused. Suspending the last admin of the wiki leaves no one who can change its settings; check the admins with list_users first. This tool changes data in the wiki.",
+		Description: "Suspends one user of the wiki, so the user cannot sign in until an admin activates the user again. Suspending the last admin of the wiki leaves no one who can change its settings; check the admins with list_users first. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("userId", "the user ID, from list_users")},
-		RefuseSelf:  true,
-		Target:      &Target{Read: domain.OpUsersGet, Field: "id", Name: "name"},
 		Fields:      userFields,
 	},
 	{
@@ -121,7 +112,7 @@ var adminRowsC2 = []Row{
 		CLI:         "outline users update-role",
 		Tool:        "update_user_role",
 		Summary:     "change the role of one Outline user",
-		Description: "Changes the role of one user to admin, member, viewer, or guest. The user of the API key is refused. Demoting the last admin of the wiki leaves no admin who can change it back; check the admins with list_users first. This tool changes data in the wiki.",
+		Description: "Changes the role of one user to admin, member, viewer, or guest. Demoting the last admin of the wiki leaves no admin who can change it back; check the admins with list_users first. This tool changes data in the wiki.",
 		Effect:      domain.EffectUpdate,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
@@ -129,9 +120,7 @@ var adminRowsC2 = []Row{
 			uuidParamRequired("userId", "the user ID, from list_users"),
 			{Name: "role", Kind: KindEnum, Required: true, Values: userRoles, Help: "the new role: admin, member, viewer, or guest"},
 		},
-		RefuseSelf: true,
-		Target:     &Target{Read: domain.OpUsersGet, Field: "id", Name: "name"},
-		Fields:     userFields,
+		Fields: userFields,
 	},
 	{
 		ID:          domain.OpGroupsAddUser,
@@ -147,7 +136,6 @@ var adminRowsC2 = []Row{
 			uuidParamRequired("userId", "the user ID, from list_users"),
 			{Name: "permission", Kind: KindEnum, Values: groupPermissions, Help: "member or admin of the group; member when omitted"},
 		},
-		Target:  &Target{Read: domain.OpGroupsGet, Field: "id", Name: "name"},
 		Fields:  groupUserFields,
 		ListKey: "groupMemberships",
 		Noun:    "group members",
@@ -181,20 +169,18 @@ var adminRowsC2 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("groupId", "the group ID, from list_groups")},
-		Target:      &Target{Read: domain.OpGroupsGet, Field: "id", Name: "name"},
 		Fields:      ackFields,
 	},
 	{
 		ID:          domain.OpGroupsDeleteAll,
 		CLI:         "outline groups delete-all",
-		Summary:     "delete every group synced from one sign-in provider (critical, CLI only)",
-		Description: "Deletes every group that the wiki synced from one sign-in provider. It has no MCP tool, because it is critical.",
+		Tool:        "delete_all_groups",
+		Summary:     "delete every group synced from one sign-in provider",
+		Description: "Deletes every group that the wiki synced from one sign-in provider.",
 		Effect:      domain.EffectDestructive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("authenticationProviderId", "the sign-in provider UUID, from list_authentication_providers")},
-		Critical:    &Critical{Kind: "the authentication provider ID"},
-		Target:      &Target{Read: domain.OpAuthenticationProvidersGet, Field: "id", Name: "name"},
 		Fields:      ackFields,
 	},
 	{
@@ -210,7 +196,6 @@ var adminRowsC2 = []Row{
 			uuidParamRequired("groupId", "the group ID, from list_groups"),
 			uuidParamRequired("userId", "the user ID, from list_users"),
 		},
-		Target:  &Target{Read: domain.OpGroupsGet, Field: "id", Name: "name"},
 		Fields:  groupFields,
 		ListKey: "groups",
 		Noun:    "groups",
@@ -233,7 +218,6 @@ var adminRowsC2 = []Row{
 			{Name: "icon", Kind: KindIcon, Help: "an emoji, a named icon, or an icon attachment"},
 			{Name: "disableMentions", Kind: KindBool, Help: "true to stop the members being mentioned"},
 		},
-		Target: &Target{Read: domain.OpGroupsGet, Field: "id", Name: "name"},
 		Fields: groupFields,
 	},
 	{
@@ -250,7 +234,6 @@ var adminRowsC2 = []Row{
 			uuidParamRequired("userId", "the user ID, from list_users"),
 			{Name: "permission", Kind: KindEnum, Required: true, Values: groupPermissions, Help: "member or admin of the group"},
 		},
-		Target:  &Target{Read: domain.OpGroupsGet, Field: "id", Name: "name"},
 		Fields:  groupUserFields,
 		ListKey: "groupMemberships",
 		Noun:    "group members",
@@ -259,14 +242,13 @@ var adminRowsC2 = []Row{
 	{
 		ID:          domain.OpTeamsDelete,
 		CLI:         "outline teams delete",
-		Summary:     "delete the whole Outline team of the API key (critical, CLI only)",
-		Description: "Deletes the whole team of the user of the API key. The code is the one that teams request-delete sends by e-mail, or any text when the wiki sends no e-mail. It has no MCP tool, because it is critical.",
+		Tool:        "delete_team",
+		Summary:     "delete the whole Outline team of the API key",
+		Description: "Deletes the whole team of the user of the API key. The code is the one that teams request-delete sends by e-mail, or any text when the wiki sends no e-mail.",
 		Effect:      domain.EffectDestructive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{{Name: "code", Kind: KindText, Required: true, Help: "the delete code of teams request-delete; never shown"}},
-		Critical:    &Critical{Kind: "the team name"},
-		Target:      &Target{Read: domain.OpAuthWhoami, Field: "team.name"},
 		Fields:      ackFields,
 	},
 	{

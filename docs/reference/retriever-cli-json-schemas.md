@@ -142,8 +142,7 @@ Reasons that the CLI can emit:
 - `usage_invalid_color`: `--color` is not `auto`, `always`, or `never`.
 - `usage_no_subcommand`: a group was named with no subcommand.
 - `invalid_*`: a typed value failed its rule, such as `invalid_uuid`, `invalid_url`, or `invalid_enum`.
-- `*_required` and `*_mismatch`: a confirmation or a required input is missing or does not match, such as
-  `confirm_required`.
+- `source_required`: a write or an admin change does not name its source with `--source`.
 - `document_conflict`: a write was refused because the document changed since it was read.
 - `access_above_kind_ceiling`: the access level is above the most the source's kind allows.
 - `panic`: an internal failure. See [exit codes](./retriever-cli-exit-codes.md#panics).

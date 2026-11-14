@@ -84,7 +84,7 @@ File names omit the `.feature` suffix. The number in brackets is the Butler scen
 | outline-comments-read (4)                     | no scenario; tools ship                 | Gap      |
 | outline-comments-writes (12)                  | outline-writes: comment                 | Partly   |
 | outline-credentials (6)                       | credentials: Outline key                | Covered  |
-| outline-critical-tier (49)                    | outline-critical-actions (14)           | Partly   |
+| outline-critical-tier (49)                    | outline-critical-actions (7)            | Partly   |
 | outline-document-export (9)                   | export-markdown-files: Outline          | Partly   |
 | outline-document-tree (6)                     | graphql-serve: flat tree                | Partly   |
 | outline-documents-access (4)                  | no scenario; tools ship                 | Gap      |

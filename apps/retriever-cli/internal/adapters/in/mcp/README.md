@@ -21,7 +21,6 @@ Test files:
 - `identity_error_test.go` and `public_errors_test.go` test the identity errors and the public error texts.
 - `fit_test.go` and `fit_cap_test.go` test the size fitting.
 - `page_test.go` tests the paging.
-- `dry_run_text_test.go` tests the dry-run text.
 - `serve_test.go` tests the server session.
 - `stage_b_test.go` and `stage_c4_test.go` hold the tests of two groups of tools. Their names carry the group label.
 - `fixtures_test.go` holds the fixtures that the tests share.

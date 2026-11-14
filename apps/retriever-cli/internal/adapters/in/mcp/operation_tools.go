@@ -32,20 +32,6 @@ const sourceSchemaText = "the source ID; may be omitted when exactly one outline
 // sourceWriteText describes the source input of every generated write tool, which must name its source.
 const sourceWriteText = "the source ID; required, a change names its source"
 
-// dryRunParam is the MCP-only switch of a write tool. It is not a catalog parameter, so the binder never sees it.
-const dryRunParam = "dry_run"
-
-// dryRunText describes the dry_run input of a write tool. A write's dry run reads nothing and sends nothing.
-const dryRunText = "true to return the change that would be made, with nothing changed; no request is sent"
-
-// dryRunAdminText describes the dry_run input of an admin tool (finding m6). Its dry run sends no change, but it reads the
-// target of the change first, and for a change to a user it reads the key's own user, so it does send requests.
-const dryRunAdminText = "true to return the change that would be made, with nothing changed; it sends no change, but it may " +
-	"read the target of the change and, for a change to a user, the key's own user, first"
-
-// errBadDryRun reports a dry_run value that is not true or false.
-var errBadDryRun = errors.New("dry_run must be true or false")
-
 // operationTools returns the MCP tools of the catalog, one per row that names a tool, in catalog order.
 func operationTools() []operations.Row {
 	var out []operations.Row
@@ -107,15 +93,6 @@ func isWrite(row operations.Row) bool {
 	return row.Effect != domain.EffectRead
 }
 
-// dryRunDescriptionOf returns the text of the dry_run input of a write or admin row. An admin row's dry run may read first,
-// so its text says so; a write row's dry run reads nothing.
-func dryRunDescriptionOf(row operations.Row) string {
-	if row.Access == domain.AccessAdmin {
-		return dryRunAdminText
-	}
-	return dryRunText
-}
-
 // inputSchema returns the JSON schema of the tool input: one property per catalog parameter in snake case, the source,
 // and, for a row with a body, the paging offset. The schema is closed, so a property it does not name is refused.
 func inputSchema(row operations.Row) map[string]any {
@@ -124,16 +101,11 @@ func inputSchema(row operations.Row) map[string]any {
 	}
 	var required []string
 	if isWrite(row) {
-		// A change always names its source, and it takes dry_run, which returns the plan and sends no change.
+		// A change always names its source.
 		props["source"] = map[string]any{"type": "string", "description": sourceWriteText}
-		props[dryRunParam] = map[string]any{"type": "boolean", "description": dryRunDescriptionOf(row)}
 		required = append(required, "source")
 	}
 	for _, p := range row.Params {
-		if p.CLIOnly {
-			// A CLI-only parameter, such as the permanent deletion, is not a property of the tool.
-			continue
-		}
 		props[snakeCase(p.Name)] = propertySchema(p)
 		if p.Required {
 			required = append(required, snakeCase(p.Name))
@@ -272,7 +244,7 @@ func runOperation(ctx context.Context, svc sources.Service, row operations.Row, 
 	if err != nil {
 		return nil, "", "bad arguments", err
 	}
-	if row.NeedsYes() {
+	if row.Effect != domain.EffectRead && row.Access == domain.AccessAdmin {
 		return runAdminOperation(ctx, svc, row, args, sourceArg)
 	}
 	if isWrite(row) {
@@ -302,61 +274,27 @@ func runOperation(ctx context.Context, svc sources.Service, row operations.Row, 
 }
 
 // runWriteOperation runs one write row for one call. The source is required, and the use case refuses a call without
-// one before any request. With dry_run the answer is the plan, and nothing is sent. The MCP tool of update_document also
-// requires last_revision when it replaces the text, which the CLI does not.
+// one before any request.
 func runWriteOperation(ctx context.Context, svc sources.Service, row operations.Row, args map[string]any, sourceArg *string) (
 	out map[string]any, source, class string, public error) {
-	dryRun, err := dryRunOf(args)
-	if err != nil {
-		return nil, "", "bad arguments", err
-	}
 	id := resolvedID(svc, sourceArg)
-	catalog := catalogArgs(row, args)
-	bound, err := operations.Bind(row, catalog)
+	rec, err := sources.Write(ctx, svc, row.ID, sourceArg, catalogArgs(row, args))
 	if err != nil {
 		public, class := publicError(err)
 		return nil, id, class, public
-	}
-	if err := requireRevision(row, bound); err != nil {
-		public, class := publicError(err)
-		return nil, id, class, public
-	}
-	rec, err := sources.Write(ctx, svc, row.ID, sourceArg, catalog, dryRun)
-	if err != nil {
-		public, class := publicError(err)
-		return nil, id, class, public
-	}
-	if dryRun {
-		plan := snakeRecord(rec)
-		plan["source"] = id
-		plan["truncated"] = false
-		return plan, id, outcomeOK, nil
 	}
 	return renderObject(id, rec), id, outcomeOK, nil
 }
 
-// runAdminOperation runs one destructive or admin row for one call. The MCP tool has no --yes
-// and no confirm input: its controls are the ceiling, which registered the tool, the source's access, and dry_run. So the
-// call passes Yes as true, and the use case refuses nothing for want of a confirmation a model could only echo. A critical
-// row has no tool, so no call of it can reach this function.
+// runAdminOperation runs one destructive or admin row for one call. The admin use case is called with the bound
+// arguments, and the call the model makes is the change that runs.
 func runAdminOperation(ctx context.Context, svc sources.Service, row operations.Row, args map[string]any, sourceArg *string) (
 	out map[string]any, source, class string, public error) {
-	dryRun, err := dryRunOf(args)
-	if err != nil {
-		return nil, "", "bad arguments", err
-	}
 	id := resolvedID(svc, sourceArg)
-	catalog := catalogArgs(row, args)
-	rec, err := sources.Administer(ctx, svc, row.ID, sourceArg, catalog, sources.Confirmation{DryRun: dryRun, Yes: true})
+	rec, err := sources.Administer(ctx, svc, row.ID, sourceArg, catalogArgs(row, args))
 	if err != nil {
 		public, class := publicError(err)
 		return nil, id, class, public
-	}
-	if dryRun {
-		plan := snakeRecord(rec)
-		plan["source"] = id
-		plan["truncated"] = false
-		return plan, id, outcomeOK, nil
 	}
 	return renderObject(id, rec), id, outcomeOK, nil
 }
@@ -371,59 +309,19 @@ func resolvedID(svc sources.Service, sourceArg *string) string {
 	return src.ID().String()
 }
 
-// dryRunOf returns the dry_run flag of a write call. An omitted or null flag is false. A value that is not a boolean is
-// refused before any request.
-func dryRunOf(args map[string]any) (bool, error) {
-	v, ok := args[dryRunParam]
-	if !ok || v == nil {
-		return false, nil
-	}
-	flag, ok := v.(bool)
-	if !ok {
-		return false, errBadDryRun
-	}
-	return flag, nil
-}
-
-// requireRevision refuses an update_document call that replaces the text without the last_revision it was read at . Without it, a replace could overwrite a newer text that the model never saw. The decision reads
-// the bound values, so it is the one the binder makes: a call with no text, or with an append, a prepend, or a patch,
-// needs no revision.
-func requireRevision(row operations.Row, bound domain.Args) error {
-	if row.ID != domain.OpDocumentsUpdate {
-		return nil
-	}
-	values := bound.Values()
-	if _, ok := values["text"]; !ok {
-		return nil
-	}
-	if _, ok := values["lastRevision"]; ok {
-		return nil
-	}
-	if mode, _ := values["editMode"].(string); mode != "" && mode != "replace" {
-		return nil
-	}
-	return domain.ErrLastRevisionRequired
-}
-
 // errUnknownInput refuses a call that names an input the tool does not list. The text names no argument, so it is the
 // same for every name the caller tried.
 var errUnknownInput = errors.New("invalid arguments: use the input names the tool lists, in snake_case")
 
 // refuseUndeclared refuses a call that names a key the tool does not list before anything is bound (finding M3). The
-// tool lists its snake_case inputs, the source, the dry_run switch of a write, and the offset of a row with a body. A
+// tool lists its snake_case inputs, the source, and the offset of a row with a body. A
 // camelCase catalog name, or a second spelling of a parameter, is not one of them.
 func refuseUndeclared(row operations.Row, args map[string]any) error {
 	allowed := map[string]bool{"source": true}
-	if isWrite(row) {
-		allowed[dryRunParam] = true
-	}
 	if row.Body != "" {
 		allowed[bodyParam] = true
 	}
 	for _, p := range row.Params {
-		if p.CLIOnly {
-			continue
-		}
 		allowed[snakeCase(p.Name)] = true
 	}
 	for key := range args {

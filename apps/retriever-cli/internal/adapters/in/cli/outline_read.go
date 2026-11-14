@@ -68,8 +68,8 @@ func attachOperations(group *command, kind domain.SourceKind) {
 }
 
 // readLeaf returns the leaf that runs one catalog row. The usage line names path, which is the row's own path except for
-// an alias such as "outline tree". A row of a non-read effect is a write: its leaf names its source as required, takes
-// --dry-run, and runs through the write use case.
+// an alias such as "outline tree". A row of a non-read effect is a write: its leaf names its source as required, and
+// runs through the write use case, or the admin use case for an admin row.
 func readLeaf(row operations.Row, path string) *leaf {
 	kind, _ := row.Kind()
 	positional := row.Positional()
@@ -100,21 +100,11 @@ func readLeaf(row operations.Row, path string) *leaf {
 	run := func(inv *invocation) error { return runRead(inv, row) }
 	if row.Effect != domain.EffectRead {
 		source = writeSourceFlag
-		flags = append(flags, dryRunFlag)
-		usage.WriteString(" [" + dryRunFlag.name + "]")
 		run = func(inv *invocation) error { return runWrite(inv, row) }
 	}
-	if row.NeedsYes() {
-		// A destructive or admin command takes --yes, and runs through the admin use case.
-		flags = append(flags, yesFlag)
-		usage.WriteString(" [" + yesFlag.name + "]")
+	if row.Effect != domain.EffectRead && row.Access == domain.AccessAdmin {
+		// An admin command runs through the admin use case.
 		run = func(inv *invocation) error { return runAdmin(inv, row) }
-	}
-	if row.Critical != nil {
-		// A critical command takes --confirm with the canonical target.
-		confirm := flag{name: confirmFlagName, meta: "<value>", help: "the value the dry run prints for the target: " + row.Critical.Kind}
-		flags = append(flags, confirm)
-		usage.WriteString(" [" + confirm.name + " <value>]")
 	}
 	flags = append(flags, source)
 	usage.WriteString(" [--source <id>]")

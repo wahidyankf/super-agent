@@ -36,9 +36,8 @@ type SourceWriter interface {
 
 // SourceAdmin runs the destructive and admin operations of the catalog against one source. It
 // is the admin port: an operation of another effect class returns domain.ErrWrongOperationClass, and an operation the
-// admin port does not serve returns domain.ErrUnsupportedOperation. The use case checks the access level, the --yes
-// confirmation, the critical tier, and the dry run before it calls an admin port, and it never retries a call after a
-// timeout.
+// admin port does not serve returns domain.ErrUnsupportedOperation. The use case checks the access level before it calls an admin port, and it never retries a
+// call after a timeout.
 type SourceAdmin interface {
 	Administer(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error)
 }
