@@ -13,8 +13,9 @@ tags:
 
 **Status: as built in `libs/retriever-spec`.** The module checks a document against the JSON Schema
 [connector-spec-v1.schema.json](../../libs/retriever-spec/schema/connector-spec-v1.schema.json), then against the rules
-that a schema cannot state. No command loads a spec yet, so the rules here bind the module, not a running engine. The
-reasons are in [ADR 001](../explanation/decisions/001-user-defined-connectors-and-profiles.md).
+that a schema cannot state. The `retriever` command loads each spec of its connectors folder through this module, and the
+[connector engine](./connector-engine.md) runs it. The reasons are in
+[ADR 001](../explanation/decisions/001-user-defined-connectors-and-profiles.md).
 
 A spec is one YAML document of at most 256 KiB. It holds names and rules, never a value. An unknown field is an error.
 The reader refuses an alias, an anchor, a repeated field name, a tag other than the plain forms of text, number,
@@ -99,7 +100,9 @@ alone sets them. The header parameter location of the draft is not in the spec: 
 
 - `items`: a JSON pointer to the list, for a list operation.
 - `fields`: a map from output field to an object with `pointer`, a JSON pointer into the reply, and an optional
-  `convert`. The converter is `plain`, `markdown-from-html`, or `markdown-from-adf`.
+  `convert`. The converter is `plain`, `markdown-from-html`, or `markdown-from-adf`. The engine does not serve the two
+  Markdown converters yet. A spec that names one still loads, and each run of that operation fails with
+  `retriever.<kind>.unsupported_operation` before any request is sent.
 - `markdown`: the output field that holds the Markdown body, for a document read. It must name a field.
 - `errors`: a map from HTTP status, from 100 to 599, to a reason from the closed list in the error section.
 
@@ -115,10 +118,11 @@ none. The bundled fixture uses `example.test` names only.
 
 ## Error reasons
 
-A refused spec carries the stable code `retriever.connector.spec_invalid`. The code is defined in the spec module. The
-app does not map it to an exit status yet, so no command reports it. The draft's other connector reasons,
-`spec_pin_mismatch`, `network_refused`, `plugin_pin_mismatch`, and `plugin_protocol`, belong to later changes, and this
-module does not define them. Runtime failures use `retriever.<kind>.<reason>` with the reasons of the
+A refused spec carries the stable code `retriever.connector.spec_invalid`, which the spec module defines. The app reports it
+with exit status `2`, and the failure names the file and the field path. A catalog `spec_sha256` that does not match the
+file reports `retriever.connector.spec_pin_mismatch`, and a connectors folder that `--connectors-dir` names but cannot use
+reports `retriever.connector.folder_unavailable`. The draft's other connector reasons, `plugin_pin_mismatch` and
+`plugin_protocol`, belong to later changes, and this module does not define them. Runtime failures use `retriever.<kind>.<reason>` with the reasons of the
 [error codes](./retriever-cli-json-schemas.md#error-codes). A write whose outcome is unknown uses
 `write_outcome_unknown`, which exits 2 and is never retried. Exit statuses follow the
 [exit-code contract](./retriever-cli-exit-codes.md).

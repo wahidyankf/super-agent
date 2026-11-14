@@ -33,6 +33,9 @@ retriever --version
   set and empty values leave the output unchanged.
 - `--catalog <path>`: the sources catalog file. See [configuration](./retriever-cli-configuration.md).
 - `--env-file <path>`: the local env file that holds source keys. See [configuration](./retriever-cli-configuration.md).
+- `--connectors-dir <path>`: the folder of connector specs. A loaded spec adds a command group named by its kind, such as
+  `example-wiki docs list`. See [configuration](./retriever-cli-configuration.md) and
+  [add a spec connector](../how-to/add-a-spec-connector.md).
 - `-V, --version`: print `retriever <version>` and the alpha notice, then exit `0`.
 - `-h, --help`: show help for the command it follows. Help wins over other options.
 

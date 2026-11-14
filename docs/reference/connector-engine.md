@@ -90,7 +90,7 @@ The reasons are `timed_out`, `redirected`, `reply_too_large`, `unexpected_respon
 `upstream_failure`, `unreachable`, `document_conflict`, `unresolved_name`, `operation_unavailable`,
 `unsupported_operation`, `wrong_operation_class`, `wrong_source_kind`, `invalid_endpoint`, `invalid_id`,
 `invalid_limit`, `invalid_offset`, `invalid_number`, `invalid_text`, `invalid_name`, `missing_argument`,
-`unknown_argument`, and `write_outcome_unknown`. Any other error is `failed`. No command returns these codes yet.
+`unknown_argument`, and `write_outcome_unknown`. Any other error is `failed`. The spec commands of the `retriever` command return them, and each one keeps its code on every surface.
 
 `write_outcome_unknown` is the code of `domain.ErrWriteOutcomeUnknown`. It is the same code that the Go connectors give,
 so a caller sees one code on every surface. The CLI reads the same sentinel, and it exits 2 for it.

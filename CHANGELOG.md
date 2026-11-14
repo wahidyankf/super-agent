@@ -23,8 +23,8 @@ upgrade.
 
 - `libs/retriever-spec` is a Go library for the declarative connector spec of ADR 001. It reads one YAML document of at
   most 256 KiB, checks it against a JSON Schema, and refuses it with the stable code `retriever.connector.spec_invalid`
-  and the path of each broken field. A valid spec gives a plain-text review of what it can do. No command loads a spec
-  yet.
+  and the path of each broken field. A valid spec gives a plain-text review of what it can do. The `retriever` command
+  loads specs, as the entry below describes.
 - `libs/retriever-engine` is the generic engine of ADR 001, which runs the read and write operations of a validated spec
   against one source. It renders each request from the spec, sends the key only in its auth header, and sends it over
   HTTPS with the safeguards of the ADR: no redirect is followed, a reply is capped at 10 MiB, a request at 30 seconds,
@@ -32,7 +32,20 @@ upgrade.
   JSON is capped. A write is sent once. A write whose outcome is unknown returns `write_outcome_unknown` with exit 2 and
   is never retried. A name that a write declares is resolved by one read, and a name with no single match sends no write
   and returns `unresolved_name`. Markdown converters are not served yet. The replay stub in `engine/replay` answers the
-  read and write examples of a spec, so tests run without a network. No command runs the engine yet.
+  read and write examples of a spec, so tests run without a network. The `retriever` command runs it for each loaded
+  spec, as the entry below describes.
+- `retriever` loads connector specs. A folder of spec files, named by `--connectors-dir` or else the default
+  `retriever/connectors` folder of the user configuration folder, adds each spec's kind to the catalog. Each operation
+  of a spec with `cli` on becomes a command under a group named by the kind, such as `example-wiki docs list`, and each
+  operation with `mcp` on becomes an MCP tool. A catalog source may pin a spec with `spec_sha256`, and a mismatch stops
+  the run before any request goes out. A refused spec or pin exits `2` with `retriever.connector.spec_invalid` or
+  `retriever.connector.spec_pin_mismatch`, and an explicit folder that is missing or unreadable exits `2` with
+  `retriever.connector.folder_unavailable`. The bundled example is `apps/retriever-cli/examples/connectors/example-wiki.yml`,
+  and the [add a spec connector](docs/how-to/add-a-spec-connector.md) guide explains the steps. A spec operation that
+  names a Markdown converter loads, and each run of it fails with `retriever.<kind>.unsupported_operation` before any
+  request. In this release the `--kind` filter of `sources list` and GraphQL accept the built-in kinds only, and a spec
+  kind's sources appear in an unfiltered `sources list`. The `connector validate` and `connector test` commands are not
+  built yet.
 
 ### Changed
 

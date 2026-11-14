@@ -28,6 +28,7 @@ If you are still learning what super-agent is, start with the [explanation pages
   the GitHub pre-release.
 - [Add a connector](./add-a-connector.md) adds a source connector as a library module, wires it into the app, and tests
   it.
+- [Add a spec connector](./add-a-spec-connector.md) adds a source kind with one YAML spec file, without a Go change.
 
 ## Next steps
 
