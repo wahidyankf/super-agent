@@ -57,7 +57,7 @@ Each entry gives the Butler behaviour first, then the retriever behaviour.
 - **Removed commands.** Butler: the job report, PDF, GitHub, and vault commands, which stay in Butler. retriever: not
   present. They stay in the other tool that owns them.
 - **New.** Butler: none. retriever: `document get`, the `help` subcommand, `sources list --output json`, `--version`
-  that prints the name, `0.1.0`, and the alpha notice, and a panic that exits `2` as `retriever.panic` with no stack
+  that prints the name, `0.2.0`, and the alpha notice, and a panic that exits `2` as `retriever.panic` with no stack
   trace.
 
 ## Departures from Butler

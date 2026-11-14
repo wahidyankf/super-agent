@@ -25,7 +25,7 @@ automation yet. If automation is added later, it replaces this guide.
 ## 2. Update the changelog
 
 In [CHANGELOG.md](../../CHANGELOG.md), move the entries under `Unreleased` into a heading for the version, such as
-`## v0.1.0`. Do not add a date to the heading. The GitHub release records the date.
+`## v0.2.0`. Do not add a date to the heading. The GitHub release records the date.
 
 List every breaking change under its release with a **Breaking** label. A reader must be able to see every break
 before they upgrade.
@@ -39,8 +39,8 @@ Tag the merged commit on `main` with an annotated tag, and push the tag. The arc
 so the tag comes first.
 
 ```sh
-git tag -a v0.1.0 -m "v0.1.0" <commit>
-git push origin v0.1.0
+git tag -a v0.2.0 -m "v0.2.0" <commit>
+git push origin v0.2.0
 ```
 
 ## 4. Build the archives
@@ -50,16 +50,16 @@ uses the Go release that `go.mod` names, with `CGO_ENABLED=0` and `-trimpath`. T
 must be outside the repository.
 
 ```sh
-RELEASE_VERSION=v0.1.0 RELEASE_OUT=<empty-directory> ./hippo run --class ephemeral --resource-tier heavy --disk-path . \
+RELEASE_VERSION=v0.2.0 RELEASE_OUT=<empty-directory> ./hippo run --class ephemeral --resource-tier heavy --disk-path . \
   -- npx nx run retriever-cli:build:release
 ```
 
 The step writes one archive for each platform, and `SHA256SUMS`:
 
-- `retriever_v0.1.0_darwin_amd64.tar.gz`
-- `retriever_v0.1.0_darwin_arm64.tar.gz`
-- `retriever_v0.1.0_linux_amd64.tar.gz`
-- `retriever_v0.1.0_linux_arm64.tar.gz`
+- `retriever_v0.2.0_darwin_amd64.tar.gz`
+- `retriever_v0.2.0_darwin_arm64.tar.gz`
+- `retriever_v0.2.0_linux_amd64.tar.gz`
+- `retriever_v0.2.0_linux_arm64.tar.gz`
 
 Each archive holds one file, `retriever`, with mode `0755`, owned by root. The archive carries the tagged commit's time,
 so a second build of the same tag on the same host reproduces the same bytes. The step also runs the binary for the host
@@ -95,7 +95,7 @@ unpacked files. They are data for the scanner:
 UNPACK=$(mktemp -d "${TMPDIR:-/tmp}/retriever-unpacked.XXXXXX")
 for platform in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
   mkdir "$UNPACK/$platform"
-  tar -xzf <build-output>/retriever_v0.1.0_${platform}.tar.gz -C "$UNPACK/$platform" retriever
+  tar -xzf <build-output>/retriever_v0.2.0_${platform}.tar.gz -C "$UNPACK/$platform" retriever
 done
 ```
 
@@ -131,7 +131,7 @@ The notes must contain these things:
 ## 8. Create the pre-release
 
 ```sh
-gh release create v0.1.0 --prerelease --latest=false --verify-tag --title "v0.1.0 (alpha)" \
+gh release create v0.2.0 --prerelease --latest=false --verify-tag --title "v0.2.0 (alpha)" \
   --notes-file <notes-file> <archive> ... SHA256SUMS
 ```
 
@@ -143,7 +143,7 @@ release. The `--verify-tag` flag aborts the release when the tag is not on `orig
 Download the assets into an empty directory, and check them against the published `SHA256SUMS`:
 
 ```sh
-gh release download v0.1.0 --dir <empty-directory>
+gh release download v0.2.0 --dir <empty-directory>
 ```
 
 Run the check from step 5 in that directory. Run `retriever --version` and `retriever --help` for your host platform.

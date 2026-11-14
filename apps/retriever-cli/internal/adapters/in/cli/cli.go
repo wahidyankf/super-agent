@@ -17,7 +17,7 @@ import (
 )
 
 // Version is the retriever release printed by --version.
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 // alphaBanner follows the version on --version. The tool is pre-release, so its interface may still change.
 const alphaBanner = "ALPHA: expect breaking changes"

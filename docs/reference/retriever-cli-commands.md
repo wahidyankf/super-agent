@@ -36,7 +36,7 @@ retriever --version
 - `-V, --version`: print `retriever <version>` and the alpha notice, then exit `0`.
 - `-h, --help`: show help for the command it follows. Help wins over other options.
 
-`--version` prints two lines, for example `retriever 0.1.0` and `ALPHA: expect breaking changes`.
+`--version` prints two lines, for example `retriever 0.2.0` and `ALPHA: expect breaking changes`.
 
 `-v`, `-q`, and `--no-color` do not exist. Passing one is a usage error with exit status `2`.
 
