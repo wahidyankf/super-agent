@@ -384,14 +384,14 @@ Feature: Source credentials
       | retriever --output json kiwi products list |
 
   @integration @e2e @unit
-  Scenario: A dry run of a Kiwi write never prints the key
+  Scenario: A Kiwi write never prints the key
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
       | example-kiwi | kiwi | write  | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     And the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
-    When I run "retriever --catalog reviewed.yml kiwi test-cases create Synthetic-case --product product-3 --category Functional --priority High --dry-run --source example-kiwi"
+    When I run "retriever --catalog reviewed.yml kiwi test-cases create Synthetic-case --product product-3 --category Functional --priority High --source example-kiwi"
     Then the exit status is 0
-    And the stub Kiwi server received no requests
+    And the stub Kiwi server received 1 request to "TestCase.create"
     And the value of "EXAMPLE_KIWI_API_KEY" never appears in the standard output, the standard error, or the output folder
 
   @integration @e2e @unit

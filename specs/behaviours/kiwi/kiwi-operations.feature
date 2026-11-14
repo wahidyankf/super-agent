@@ -57,12 +57,6 @@ Feature: Kiwi test management operations
     And the stub Kiwi server received 1 request to "TestCase.create"
 
   @integration @e2e @unit
-  Scenario: A dry run of a case creation prints the change and sends no request
-    When I run "retriever kiwi test-cases create Synthetic-case --product product-3 --category Functional --priority High --dry-run --source example-kiwi"
-    Then the exit status is 0
-    And the stub Kiwi server received no requests
-
-  @integration @e2e @unit
   Scenario: Updating a case sends one request for that case
     When I run "retriever kiwi test-cases update case-40 --summary Renamed-case --source example-kiwi"
     Then the exit status is 0

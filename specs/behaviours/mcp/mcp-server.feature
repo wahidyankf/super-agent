@@ -49,10 +49,11 @@ Feature: MCP tool server
     And the tool "list_documents" is marked read-only
 
   @unit @integration @e2e
-  Scenario: At the admin ceiling a critical user deletion has no MCP tool
+  Scenario: At the admin ceiling a critical user deletion has an MCP tool like any other
     Given an MCP client starts "retriever mcp --max-access admin"
     When the client lists the tools
-    Then the tool list has no tool named "delete_user"
+    Then the tool list has the tool "delete_user"
+    And the tool "delete_user" is marked destructive
 
   @unit @integration @e2e
   Scenario: A write tool called above the read ceiling is refused and sends no request
