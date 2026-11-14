@@ -185,7 +185,7 @@ func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) erro
 		CatalogFlag: g.Catalog,
 		EnvFileFlag: g.EnvFile,
 		Getenv:      w.getenv,
-		Getwd:       w.be.getwd,
+		Getwd:       w.getwd,
 		Exists:      w.be.regularFile,
 	})
 	if err != nil {

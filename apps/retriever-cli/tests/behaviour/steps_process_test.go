@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"syscall"
@@ -20,6 +21,39 @@ func registerProcessSteps(ctx *godog.ScenarioContext, cur func() *world) {
 	})
 	ctx.Step(`^retriever serve receives this GraphQL request:$`, func(doc *godog.DocString) error {
 		return cur().postGraphQL(doc.Content)
+	})
+	ctx.Step(`^retriever serve receives this GraphQL request with the (Host|Origin|Content-Type) header "([^"]*)":$`,
+		func(name, value string, doc *godog.DocString) error {
+			body, err := json.Marshal(map[string]string{"query": doc.Content})
+			if err != nil {
+				return err
+			}
+			return cur().sendGraphQL(http.MethodPost, map[string]string{name: value}, body)
+		})
+	ctx.Step(`^retriever serve receives this GraphQL request with the HTTP method "([^"]*)":$`,
+		func(method string, doc *godog.DocString) error {
+			body, err := json.Marshal(map[string]string{"query": doc.Content})
+			if err != nil {
+				return err
+			}
+			return cur().sendGraphQL(method, nil, body)
+		})
+	ctx.Step(`^retriever serve receives a GraphQL request of (\d+) MiB$`, func(mib string) error {
+		n, err := strconv.Atoi(mib)
+		if err != nil {
+			return err
+		}
+		body := `{"query":"{ sources { id } }","padding":"` + strings.Repeat("a", n<<20) + `"}`
+		return cur().sendGraphQL(http.MethodPost, nil, []byte(body))
+	})
+	ctx.Step(`^the HTTP response has the header "([^"]*)" with the value "([^"]*)"$`, func(name, value string) error {
+		return cur().checkReplyHeader(name, value)
+	})
+	ctx.Step(`^the HTTP response has no header whose name starts with "([^"]*)"$`, func(prefix string) error {
+		return cur().checkNoReplyHeaderPrefix(prefix)
+	})
+	ctx.Step(`^the GraphQL response contains "([^"]*)"$`, func(text string) error {
+		return cur().checkGraphQLContains(text)
 	})
 	ctx.Step(`^the HTTP status is (\d+)$`, func(want string) error {
 		return cur().checkHTTPStatus(want)
@@ -286,6 +320,42 @@ func (w *world) checkGraphQLErrors(wantErrors bool) error {
 }
 
 // checkGraphQLText checks that the raw body of the last GraphQL answer does not contain a text.
+// checkReplyHeader checks that the last HTTP answer carries the header with the value, compared case-insensitively.
+func (w *world) checkReplyHeader(name, value string) error {
+	if w.reply == nil {
+		return errors.New("no GraphQL request was sent in this scenario")
+	}
+	if got := w.reply.header.Get(name); got != value {
+		return fmt.Errorf("the header %s is %q, want %q", name, got, value)
+	}
+	return nil
+}
+
+// checkNoReplyHeaderPrefix checks that no header of the last HTTP answer has a name that starts with the prefix. Names
+// are compared case-insensitively, so "Access-Control-" catches every CORS header.
+func (w *world) checkNoReplyHeaderPrefix(prefix string) error {
+	if w.reply == nil {
+		return errors.New("no GraphQL request was sent in this scenario")
+	}
+	for name := range w.reply.header {
+		if strings.HasPrefix(strings.ToLower(name), strings.ToLower(prefix)) {
+			return fmt.Errorf("the HTTP answer carries the header %s", name)
+		}
+	}
+	return nil
+}
+
+// checkGraphQLContains checks that the body of the last HTTP answer contains the text.
+func (w *world) checkGraphQLContains(text string) error {
+	if w.reply == nil {
+		return errors.New("no GraphQL request was sent in this scenario")
+	}
+	if !strings.Contains(w.reply.body, text) {
+		return fmt.Errorf("the GraphQL response does not contain %q", text)
+	}
+	return nil
+}
+
 func (w *world) checkGraphQLText(text string) error {
 	if w.reply == nil {
 		return errors.New("no GraphQL request was sent in this scenario")

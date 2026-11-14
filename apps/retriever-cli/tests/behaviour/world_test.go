@@ -43,7 +43,8 @@ type world struct {
 	// be keeps the scenario's files, working directory, and environment, and runs its production adapters.
 	be backend
 
-	dir    string            // the scenario's working directory and the root of its files, an absolute path
+	dir    string            // the root of the scenario's files, an absolute path
+	cwd    string            // the working directory of the commands, relative to dir; "" is the root itself
 	env    map[string]string // the environment the command sees, and the only one a process receives
 	inputs map[string]bool   // files the scenario wrote as inputs (catalog, env file, CA certificate); never scanned
 	// envFileVars holds the values of the env file the scenario wrote, so the secret scan can look for them.
@@ -106,6 +107,17 @@ func (w *world) teardown() {
 // absPath returns the absolute path of a slash path inside the scenario folder.
 func (w *world) absPath(rel string) string {
 	return filepath.Join(w.dir, filepath.FromSlash(rel))
+}
+
+// workdir returns the absolute working directory of the scenario's commands: the scenario folder, or the folder that a
+// working-directory step named.
+func (w *world) workdir() string {
+	return w.absPath(w.cwd)
+}
+
+// getwd is the working-directory lookup of the in-process levels. It names the same folder a child process starts in.
+func (w *world) getwd() (string, error) {
+	return w.workdir(), nil
 }
 
 // inProcess reports whether the scenario runs its commands in this process, which the unit and integration levels do.

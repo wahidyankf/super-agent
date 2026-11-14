@@ -186,7 +186,7 @@ func (d *diskBackend) spawnServe(w *world, argv []string) (*serveSession, error)
 		return nil, errNoBinary
 	}
 	cmd := exec.Command(d.binary, argv...)
-	cmd.Dir = w.dir
+	cmd.Dir = w.workdir()
 	cmd.Env = w.envList()
 	cmd.Stderr = io.Discard
 	stdout, err := cmd.StdoutPipe()
@@ -221,7 +221,7 @@ func (d *diskBackend) spawnMCP(w *world, argv []string) (*mcpSession, error) {
 		return nil, errNoBinary
 	}
 	cmd := exec.Command(d.binary, argv...)
-	cmd.Dir = w.dir
+	cmd.Dir = w.workdir()
 	cmd.Env = w.envList()
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -260,7 +260,7 @@ func (d *diskBackend) runBinary(w *world, argv []string) error {
 		return errNoBinary
 	}
 	cmd := exec.Command(d.binary, argv...)
-	cmd.Dir = w.dir
+	cmd.Dir = w.workdir()
 	cmd.Env = w.envList()
 	cmd.Stdin = strings.NewReader("")
 	var out, errb bytes.Buffer

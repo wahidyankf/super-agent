@@ -1,5 +1,6 @@
-# Export to files: one command writes one plain Markdown file into the folder named by --out. The file holds the
-# source's own Markdown and no front matter, provenance block, or vault layout.
+# Export to files: one command writes one plain Markdown file into the folder named by --out. The file is named by the
+# document ID, holds the source's own Markdown, and has no front matter, provenance block, or vault layout. A later export
+# of the same document replaces the file. No title, and no other file, decides the name.
 Feature: Export to Markdown files
   As a person who keeps notes on disk
   I want to export one document, test case, or issue as a Markdown file into a folder I choose
@@ -25,6 +26,35 @@ Feature: Export to Markdown files
     And the Markdown file in the output folder "out" contains "Synthetic body one"
 
   @integration @e2e @unit
+  Scenario: An export names the file by the document ID
+    When I run "retriever outline export d0c1d0c1-0000-4000-8000-000000000001 --out out"
+    Then the exit status is 0
+    And the output folder "out" holds the file "d0c1d0c1-0000-4000-8000-000000000001.md"
+
+  @integration @e2e @unit
+  Scenario: The title of a document does not decide the export file name
+    Given the stub Outline server holds these documents:
+      | id    | collection | parent | title              | markdown           |
+      | d0c1d0c1-0000-4000-8000-000000000001 | 1c1c1c1c-0000-4000-8000-000000000001 |        | ../Escaped / title | Synthetic body one |
+    When I run "retriever outline export d0c1d0c1-0000-4000-8000-000000000001 --out out"
+    Then the exit status is 0
+    And the output folder "out" holds exactly 1 Markdown file
+    And the output folder "out" holds the file "d0c1d0c1-0000-4000-8000-000000000001.md"
+
+  @integration @e2e @unit
+  Scenario: Two documents with the same title are exported to two files
+    Given the stub Outline server holds these documents:
+      | id    | collection | parent | title | markdown            |
+      | d0c1d0c1-0000-4000-8000-000000000001 | 1c1c1c1c-0000-4000-8000-000000000001 |        | Setup | Synthetic body one |
+      | d0c2d0c2-0000-4000-8000-000000000002 | 1c1c1c1c-0000-4000-8000-000000000001 |        | Setup | Synthetic body two |
+    When I run "retriever outline export d0c1d0c1-0000-4000-8000-000000000001 --out out"
+    And I run "retriever outline export d0c2d0c2-0000-4000-8000-000000000002 --out out"
+    Then the exit status is 0
+    And the output folder "out" holds exactly 2 Markdown files
+    And the output folder "out" holds the file "d0c1d0c1-0000-4000-8000-000000000001.md"
+    And the output folder "out" holds the file "d0c2d0c2-0000-4000-8000-000000000002.md"
+
+  @integration @e2e @unit
   Scenario: An exported file is plain Markdown with no front matter
     When I run "retriever outline export d0c1d0c1-0000-4000-8000-000000000001 --out out"
     Then the exit status is 0
@@ -32,7 +62,7 @@ Feature: Export to Markdown files
 
   @integration @e2e @unit
   Scenario: Exporting the same document again replaces the file and keeps one copy
-    Given the output folder "out" already holds a file named "setup.md" with the text "Earlier text"
+    Given the output folder "out" already holds a file named "d0c1d0c1-0000-4000-8000-000000000001.md" with the text "Earlier text"
     When I run "retriever outline export d0c1d0c1-0000-4000-8000-000000000001 --out out"
     Then the exit status is 0
     And the output folder "out" holds exactly 1 Markdown file
@@ -68,7 +98,7 @@ Feature: Export to Markdown files
     And the output folder "nested/out" holds exactly 1 Markdown file
 
   @integration @e2e @unit
-  Scenario: A test case exported from Kiwi is written as one Markdown file
+  Scenario: A test case exported from Kiwi is written as one Markdown file named by its case ID
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
       | example-kiwi | kiwi | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
@@ -80,17 +110,19 @@ Feature: Export to Markdown files
         "Plans":      [],
         "Cases":      [{"ID": 40, "Summary": "Synthetic case", "Text": "Case text", "Plans": [], "Sortkey": 10, "Status": 1, "Priority": 1, "Category": 1}],
         "Categories": [{"ID": 1, "Name": "Functional", "Product": 3}],
-        "Priorities": [{"ID": 1, "Name": "High"}],
+        "Priorities": [{"ID": 1, "Value": "High"}],
         "Statuses":   [{"ID": 1, "Name": "PROPOSED"}]
       }
       """
     When I run "retriever --catalog reviewed.yml kiwi export case-40 --out out"
     Then the exit status is 0
     And the output folder "out" holds exactly 1 Markdown file
+    And the output folder "out" holds the file "case-40.md"
     And the Markdown file in the output folder "out" contains "Case text"
+    And the Markdown file in the output folder "out" contains "High"
 
   @integration @e2e @unit
-  Scenario: An issue exported from Jira is written as one Markdown file that holds its description
+  Scenario: An issue exported from Jira is written as one Markdown file named by its key that holds its description
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | tags    | endpoint                  | credential_env         | identity_env       |
       | example-jira | jira | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
@@ -110,5 +142,6 @@ Feature: Export to Markdown files
     When I run "retriever --catalog reviewed.yml jira export issue-EXAMPLE-1 --out out"
     Then the exit status is 0
     And the output folder "out" holds exactly 1 Markdown file
+    And the output folder "out" holds the file "issue-EXAMPLE-1.md"
     And the Markdown file in the output folder "out" contains "Synthetic description"
     And the value of "EXAMPLE_JIRA_EMAIL" never appears in the standard output, the standard error, or the output folder

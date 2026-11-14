@@ -7,12 +7,24 @@ Feature: Command-line contract of retriever
 
   # No source is configured in these scenarios, so each one runs without any network or catalog.
 
+  # Bare invocation is a usage mistake. The status is 2, and the diagnostic goes to standard error, as the help and
+  # discovery convention requires. The convention permits a list of subcommands here, but does not require one, so the
+  # diagnostic names the missing subcommand and the help command, and it lists nothing.
   @unit @integration @e2e
   Scenario: Running retriever with no command exits 2 and prints nothing to standard output
     When I run "retriever"
     Then the exit status is 2
     And the standard output is empty
     And the standard error is not empty
+    And the standard error contains "no valid subcommand has been specified"
+    And the standard error contains "retriever --help"
+
+  @unit @integration @e2e
+  Scenario: A command group named alone exits 2 and prints nothing to standard output
+    When I run "retriever outline"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error contains "no valid subcommand has been specified"
 
   @unit @integration @e2e
   Scenario: The version flag prints the tool name and the alpha banner and exits 0
@@ -28,6 +40,8 @@ Feature: Command-line contract of retriever
     Then the exit status is 0
     And the standard output contains "sources"
     And the standard output contains "outline"
+    And the standard output contains "kiwi"
+    And the standard output contains "jira"
     And the standard output contains "--output"
 
   @unit @integration @e2e

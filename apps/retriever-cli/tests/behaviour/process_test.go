@@ -58,6 +58,7 @@ type graphqlReply struct {
 	status int
 	body   string
 	doc    any
+	header http.Header
 }
 
 // mcpTool is one tool the MCP server lists, with the hints the scenario checks.
@@ -167,18 +168,33 @@ func (w *world) serveInProcess() (*serveSession, error) {
 
 // postGraphQL sends one query to the served endpoint, with the loopback Host the server expects, and records the answer.
 func (w *world) postGraphQL(query string) error {
-	if err := w.startServe(); err != nil {
-		return err
-	}
 	body, err := json.Marshal(map[string]string{"query": query})
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, "http://"+w.serve.addr+"/", bytes.NewReader(body))
+	return w.sendGraphQL(http.MethodPost, nil, body)
+}
+
+// sendGraphQL sends one request to the served endpoint with the method, the headers, and the body given, and records the
+// answer. The request has a JSON Content-Type unless the headers replace it. A Host header sets the request's Host, which
+// a Go client does not send as an ordinary header. A "{port}" in a header value becomes the served port.
+func (w *world) sendGraphQL(method string, headers map[string]string, body []byte) error {
+	if err := w.startServe(); err != nil {
+		return err
+	}
+	req, err := http.NewRequest(method, "http://"+w.serve.addr+"/", bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	for name, value := range headers {
+		value = strings.ReplaceAll(value, "{port}", portOf(w.serve.addr))
+		if name == "Host" {
+			req.Host = value
+			continue
+		}
+		req.Header.Set(name, value)
+	}
 	client := &http.Client{Timeout: replyTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -189,12 +205,21 @@ func (w *world) postGraphQL(query string) error {
 	if err != nil {
 		return err
 	}
-	reply := &graphqlReply{status: resp.StatusCode, body: string(raw)}
+	reply := &graphqlReply{status: resp.StatusCode, body: string(raw), header: resp.Header}
 	if doc, perr := parseJSON(string(raw)); perr == nil {
 		reply.doc = doc
 	}
 	w.reply = reply
 	return nil
+}
+
+// portOf returns the port of a host:port address, or the address itself when it has no port.
+func portOf(addr string) string {
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return addr
+	}
+	return port
 }
 
 // isLoopback reports whether an address names a loopback host, with or without a port.
