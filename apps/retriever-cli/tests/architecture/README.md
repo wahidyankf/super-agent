@@ -7,7 +7,8 @@ repository: which module may import which, and that the hermetic rule holds for 
 
 `imports_rules_test.go` and `imports_test.go` hold the layering table. The table names each module's kind, and the
 checks read the kind from the `type:` tag of its Nx project. A contract imports no other module. A runtime, a connector,
-or the testkit imports only the contract in production code, and a test of those modules may also import the testkit.
+the testkit, or the spec module imports only the contract in production code, and a test of those modules may also
+import the testkit.
 The app may import the contract, the runtime, and the connectors, but production code may not import the testkit, and
 no module imports the app. The full table is in [library layering](../../../../docs/explanation/library-layering.md).
 
@@ -15,8 +16,8 @@ no module imports the app. The full table is in [library layering](../../../../d
 
 - each module's `go.mod` starts with its own module path, and each Nx project carries its `type:` tag;
 - each module's Nx `implicitDependencies` names every other module that its Go files import; and
-- the production code of the contract and of the runtime's `sources` package imports no package that reaches outside
-  the process, such as `os` or `net/http`.
+- the production code of the contract, of the spec module, and of the runtime's `sources` package imports no package
+  that reaches outside the process, such as `os` or `net/http`.
 
 ## Hermetic guard
 

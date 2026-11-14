@@ -1,0 +1,107 @@
+{
+  "name": "retriever-spec",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/retriever-spec",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go vet -tags 'integration e2e' ./... && test -z \"$(gofmt -l .)\"",
+        "cwd": "libs/retriever-spec"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go build ./... && go test -count=1 -tags 'integration e2e' -run '^$' ./...",
+        "cwd": "libs/retriever-spec"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "install": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go mod download",
+        "cwd": "libs/retriever-spec"
+      },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go build ./...",
+        "cwd": "libs/retriever-spec"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "test:unit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "if grep -rn --include='*_test.go' -E '\\.Skip\\(' . ; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; COVERAGE_PACKAGES='./...' sh ../../scripts/go-coverage-gate.sh",
+        "cwd": "libs/retriever-spec"
+      },
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/**/*.go",
+        "{projectRoot}/scripts/**",
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum",
+        "{workspaceRoot}/scripts/go-coverage-gate.sh"
+      ]
+    },
+    "test:integration": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -count=1 -tags integration ./...",
+        "cwd": "libs/retriever-spec"
+      },
+      "cache": false
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "COVERAGE_PACKAGES='./...' sh ../../scripts/go-coverage-gate.sh",
+        "cwd": "libs/retriever-spec"
+      },
+      "cache": false
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "gofmt -w .",
+        "cwd": "libs/retriever-spec"
+      },
+      "cache": false
+    },
+    "format:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "test -z \"$(gofmt -l .)\"",
+        "cwd": "libs/retriever-spec"
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    },
+    "test:quick": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          { "command": "npm exec -- nx run retriever-spec:lint", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-spec:typecheck", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-spec:test:unit", "forwardAllArgs": false }
+        ],
+        "parallel": false,
+        "forwardAllArgs": false
+      },
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+    }
+  },
+  "tags": ["type:spec", "lang:go", "domain:retriever"],
+  "implicitDependencies": ["retriever-contract"]
+}

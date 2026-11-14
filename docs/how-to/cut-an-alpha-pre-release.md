@@ -151,7 +151,7 @@ Confirm on the release page that it is marked **Pre-release**.
 
 ## Library module tags in v0.x
 
-The six libraries are Go modules with their own tags, `libs/<name>/vX.Y.Z`.
+The seven libraries are Go modules with their own tags, `libs/<name>/vX.Y.Z`.
 [Go modules and tags](../reference/go-modules-and-tags.md) states the tag form, the shared version, and the order of the
 tags. The steps above cut the app tag only. None of them creates a library tag, and no library tag exists yet.
 
@@ -162,7 +162,7 @@ libraries at the app's tag. The build never reads a library tag, so a release do
 A library tag is a separate decision for the repository owner, and a consumer outside this repository needs one before
 it can resolve that library. When the owner cuts one, in v0.x:
 
-- Use one version for all six libraries, and follow the minor-version rule for a contract change in
+- Use one version for all seven libraries, and follow the minor-version rule for a contract change in
   [Go modules and tags](../reference/go-modules-and-tags.md#versions).
 - Tag `libs/retriever-contract/vX.Y.Z` first, then each library that requires it, so every requirement names a tag
   that exists.

@@ -14,6 +14,7 @@ const (
 	kindRuntime   = "runtime"
 	kindConnector = "connector"
 	kindTestkit   = "testkit"
+	kindSpec      = "spec"
 )
 
 // moduleKinds maps the directory of each Go module, relative to the repository root, to its kind. Every module of the
@@ -26,13 +27,16 @@ var moduleKinds = map[string]string{
 	"libs/retriever-connector-outline": kindConnector,
 	"libs/retriever-connector-kiwi":    kindConnector,
 	"libs/retriever-connector-jira":    kindConnector,
+	"libs/retriever-spec":              kindSpec,
 }
 
 // pureDirs are the directories, relative to the repository root, whose production code reaches the outside world only
-// through a port. The contract is pure, and so is the use-case package of the runtime.
+// through a port. The contract is pure, and so is the use-case package of the runtime, and so is the spec module, which
+// reads a document it is given and touches no file or network.
 var pureDirs = []string{
 	"libs/retriever-contract",
 	"libs/retriever-runtime/sources",
+	"libs/retriever-spec",
 }
 
 // effectfulStd are the standard-library packages that reach the world outside the process: the network, the file system,
@@ -97,7 +101,7 @@ func importViolation(self string, test bool, importPath string) string {
 		return ""
 	case kindContract:
 		return "is the contract, and the contract may import no other module of the workspace"
-	case kindRuntime, kindConnector, kindTestkit:
+	case kindRuntime, kindConnector, kindTestkit, kindSpec:
 		if targetKind == kindContract {
 			return ""
 		}

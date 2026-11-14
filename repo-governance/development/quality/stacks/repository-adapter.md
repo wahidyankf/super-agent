@@ -24,7 +24,7 @@ A file with no owner is a defect, and the repository check reports it.
 
 ## Projects and Targets
 
-- The repository has seven Go modules: the app `apps/retriever-cli` and six libraries under `libs/`. Each has its own
+- The repository has eight Go modules: the app `apps/retriever-cli` and seven libraries under `libs/`. Each has its own
   `go.mod` and is one Nx project in its folder.
 - Each Nx project declares its targets in its project configuration, using the [Nx targets standard](../nx-targets.md).
   A Go target runs from its module's folder, so it reads that module's `go.mod`.

@@ -19,6 +19,13 @@ upgrade.
   `unknown kind (known: jira, kiwi, outline)` in place of `unknown kind (known: outline, kiwi, jira)`. The stable code
   `retriever.sources.unknown_source_kind` does not change, and the `--kind` flag and GraphQL messages keep their text.
 
+### Added
+
+- `libs/retriever-spec` is a Go library for the declarative connector spec of ADR 001. It reads one YAML document of at
+  most 256 KiB, checks it against a JSON Schema, and refuses it with the stable code `retriever.connector.spec_invalid`
+  and the path of each broken field. A valid spec gives a plain-text review of what it can do. No command loads a spec
+  yet.
+
 ### Changed
 
 - The repository page shows the root `README.md`. The `.github/README.md` file is removed, because GitHub shows that

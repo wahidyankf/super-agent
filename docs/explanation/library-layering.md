@@ -13,9 +13,9 @@ tags:
 
 # Library layering
 
-The Go code of super-agent is one app and six libraries. Each library is its own Go module, so an import rule is also a
-rule between modules. This page explains the layers, the rules between them, and why the rules exist. The module paths,
-versions, and tags are in [Go modules and tags](../reference/go-modules-and-tags.md).
+The Go code of super-agent is one app and seven libraries. Each library is its own Go module, so an import rule is
+also a rule between modules. This page explains the layers, the rules between them, and why the rules exist. The module
+paths, versions, and tags are in [Go modules and tags](../reference/go-modules-and-tags.md).
 
 ## The layers
 
@@ -49,6 +49,7 @@ out to keep it readable.
 | `retriever-runtime`       | `retriever-contract`                      | `retriever-testkit`        |
 | `retriever-connector-*`   | `retriever-contract`                      | `retriever-testkit`        |
 | `retriever-testkit`       | `retriever-contract`                      | nothing else               |
+| `retriever-spec`          | `retriever-contract`                      | `retriever-testkit`        |
 | `retriever-cli` (the app) | `retriever-contract`, runtime, connectors | `retriever-testkit`        |
 
 These rules follow from them:
@@ -57,7 +58,8 @@ These rules follow from them:
 - A runtime does not import a connector, and a connector does not import the runtime or another connector.
 - The contract imports no other module, in production code or in tests.
 - Production code never imports the testkit.
-- The contract and the runtime's `sources` package reach the outside world only through a port. Their production code
+- The contract, the spec module, and the runtime's `sources` package reach the outside world only
+  through a port. Their production code
   imports none of the standard packages that reach outside the process: `net`, `net/http`, `os`, `os/exec`,
   `path/filepath`, `io/fs`, `log`, and `syscall`.
 
