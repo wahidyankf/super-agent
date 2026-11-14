@@ -9,6 +9,12 @@ upgrade.
 
 ## Unreleased
 
+### Changed
+
+- The repository page shows the root `README.md`. The `.github/README.md` file is removed, because GitHub shows that
+  file in place of the root one. Its content moved to the [repository layout
+  reference](docs/reference/repository-layout.md).
+
 ## v0.2.0
 
 Alpha pre-release. Expect breaking changes: commands, flags, file formats, connector specs, JSON output, and APIs can
