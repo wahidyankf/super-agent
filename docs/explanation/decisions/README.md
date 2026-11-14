@@ -19,6 +19,10 @@ folder existed, the repository kept no decision records, so the first one starts
   describe connectors as declarative specs, run by one engine, with an opt-in plugin and separate profiles.
 - [Companion pages of ADR 001](./001-user-defined-connectors-and-profiles/) hold its threat model, its module layout,
   and its split into pull requests.
+- [ADR 002: Spec language extensions](./002-spec-language-extensions.md) records the choice to extend the spec language
+  with nine closed features and to port Outline, Kiwi, and Jira onto it. It replaces the migration order of ADR 001.
+- [Companion pages of ADR 002](./002-spec-language-extensions/) hold its threat model delta, its nine extensions, its
+  version impact, and its pull-request sequence.
 
 ## Form of a record
 

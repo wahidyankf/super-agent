@@ -75,9 +75,6 @@ commands, and the connector how-to. Proves C2.
 
 ## 6. Port Outline reads
 
-A bundled `outline.yml` serves the read operations. A composite builder routes each operation to the spec or the Go
-gateway until pull request 7.
-
-- Given the unchanged Outline read, redaction, and transport scenarios, when they run against the engine, then every
-  one passes without edit.
-- Given the MCP read tools before and after, when they are compared, then names and hints match.
+Superseded by [ADR 002](../002-spec-language-extensions.md). A probe found that the spec language cannot express any
+Outline read. The port is now pull request 16, after nine language pull requests.
+Pull requests 1 to 5 are built.

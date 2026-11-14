@@ -10,7 +10,8 @@ tags:
 
 # ADR 001: User-defined connectors and profiles
 
-**Status:** accepted on 2026-11-14. Every change below is planned, and none is built.
+**Status:** accepted on 2026-11-14. Pull requests 1 to 5 are built. [ADR 002](./002-spec-language-extensions.md)
+replaces the migration order and pull requests 6 to 12.
 
 ## Context
 
@@ -69,7 +70,6 @@ The [software-factory](../software-factory-note.md) orchestration, channel conne
 
 ## Migration order
 
-Engine, then Outline, Kiwi, and Jira ported onto it, then the conformance suite, the plugin host, and profiles. A Go
-connector retires in its port, once its scenarios pass unchanged. The
-[module layout](./001-user-defined-connectors-and-profiles/005-module-layout.md) says which module owns which part. The
-[pull-request split](./001-user-defined-connectors-and-profiles/006-pull-requests-engine.md) gives twelve steps.
+Superseded by [ADR 002](./002-spec-language-extensions.md) after pull request 5: the engine is built, and the spec
+language grows before any port. A Go connector still retires in its port, once its scenarios pass unchanged. The
+[module layout](./001-user-defined-connectors-and-profiles/005-module-layout.md) says which module owns which part.
