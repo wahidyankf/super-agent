@@ -29,9 +29,13 @@ upgrade.
   token to the reads or writes you want. A catalog that still has an `access:` key is refused when it loads, with
   `retriever.sources.catalog_invalid`. `--max-access` is an unrecognized argument and exits `2`. The `access` field is
   gone from `retriever --output json sources list`, from the GraphQL `Source` type, and from the MCP `list_sources`
-  result. The JSON sources list keeps `schemaVersion` 1.
+  result. The JSON sources list is now `schemaVersion` 2, because removing `access` is a breaking change, and every other JSON
+  document stays at `1`.
 - **Breaking**: `retriever mcp` offers every tool of the catalog. `--tools` still limits the resources, and the tool
   list no longer depends on an access level.
+- **Breaking**: `retriever outline export`, `kiwi export`, and `jira export` name the file by the document ID, `<id>.md`,
+  not by a title slug. A file of the same name is always replaced, with no collision check. A script that looked for a
+  file by its title must look for `<id>.md` instead. The GraphQL server has no export mutation.
 
 ### Changed
 
@@ -52,6 +56,11 @@ upgrade.
 - The unit coverage floor stays at 99 percent, and no exclusion is added. The real-disk wrappers of the catalog, the
   credentials, the Markdown sink, and the composition root now run only at the integration and end-to-end levels, so the
   unit figure moves to 99.01 percent.
+
+- The behaviour specs add 44 scenarios, from 220 to 264, and one feature file, `config-discovery`. They cover the catalog
+  and env-file rungs, the catalog size, version, and credential refusals, the source selection and wrong-kind refusals,
+  the GraphQL request guards (Host, method, content type, Origin, body size, depth, complexity, and introspection), and
+  the export file names.
 
 ### Fixed
 

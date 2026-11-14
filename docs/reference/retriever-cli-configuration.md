@@ -48,6 +48,10 @@ themselves. A file at rule 4 is used even when it does not exist yet, and a miss
 The env file follows the same order with `--env-file`, `RETRIEVER_ENV_FILE`, `./.env.local`, and
 `retriever/.env.local` in the user folder.
 
+Only the working directory is checked for rule 3. Parent folders are never searched, so a `sources.yml` in a folder
+above the working directory is not found. The rule is the same from any folder, and a file found by walking up the tree
+could belong to another project.
+
 ## Missing files
 
 - **A missing catalog** fails every source command with exit status `2`. The message is
