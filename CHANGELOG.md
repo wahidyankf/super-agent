@@ -21,6 +21,10 @@ upgrade.
 
 ### Added
 
+- The Outline read tools have a golden of their MCP surface, which pins each tool's name, description, input schema, and
+  hints. The reads still run on the Go gateway. The connector spec language cannot yet express them, because Outline
+  sends every call as a POST, and the [connector spec fields](docs/reference/connector-spec-fields.md) page lists the
+  limits.
 - `libs/retriever-spec` is a Go library for the declarative connector spec of ADR 001. It reads one YAML document of at
   most 256 KiB, checks it against a JSON Schema, and refuses it with the stable code `retriever.connector.spec_invalid`
   and the path of each broken field. A valid spec gives a plain-text review of what it can do. The `retriever` command

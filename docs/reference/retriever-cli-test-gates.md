@@ -187,6 +187,12 @@ Integration and end-to-end tests stay outside the figure for both.
 - `behaviour-coverage.json` must match the feature files. It records, for each feature, the scenario count and the count
   of `@unit`, `@integration`, and `@e2e` tags, with the totals. A difference fails the check.
 
+### Outline read surface
+
+`internal/adapters/in/mcp/testdata/outline-read-tools.golden` holds the MCP tools of the Outline reads: their names,
+descriptions, input schemas, and hints. `TestOutlineReadToolsMatchTheGoBackedGolden` compares the server's list to it
+byte for byte. A change to a read tool must update the golden in the same change, on purpose.
+
 ### Connector spec scenarios
 
 `specs/behaviours/connectors/spec-connectors.feature` covers the connectors folder, the CLI and MCP switches, the catalog

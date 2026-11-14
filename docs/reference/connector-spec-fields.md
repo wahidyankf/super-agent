@@ -116,6 +116,20 @@ Each example holds `request` (parameter values), `response` (status, optional co
 may hold a bearer or basic credential or a token-shaped run of 32 characters. A spec holds no host, so an example names
 none. The bundled fixture uses `example.test` names only.
 
+## Limits for the Outline reads
+
+The language cannot yet express the Outline reads, so they still run on the Go gateway. Four limits block them:
+
+- Outline sends every call as a `POST` with a JSON body. A `read` operation takes only `GET` or `HEAD`, so no Outline
+  read can be a spec read.
+- Outline paging puts `offset` and `limit` in the body. A paging rule names query parameters only.
+- A field is never required. A missing field maps to null, where the Go connectors refuse a reply with no ID.
+- A field holds one scalar. A nested record, the first item of a list, a list merged from several lists, a tree with a
+  computed depth, and a fallback read have no form in the language.
+
+A spec named `outline` is also refused, because the kind is a built-in source. A bundled Outline spec would need an
+exception for bundled files only.
+
 ## Error reasons
 
 A refused spec carries the stable code `retriever.connector.spec_invalid`, which the spec module defines. The app reports it
