@@ -147,6 +147,15 @@ jobs:
               npx nx run "retriever-cli:${target}"
           done
 
+      # DIAGNOSTIC (temporary, to be removed before merge): the runner's CPUs and memory, and HIPPO's view of them.
+      - name: Record the runner capacity and HIPPO state
+        if: always() && matrix.os == 'macos-15'
+        shell: bash
+        run: |
+          sysctl -n hw.ncpu hw.memsize || true
+          ./hippo status --json || true
+          ./hippo history --since 2h --json || true
+
   cross-compile:
     name: Cross-compile check
     needs: detect
