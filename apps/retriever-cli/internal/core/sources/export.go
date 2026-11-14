@@ -9,8 +9,9 @@ import (
 )
 
 // ExportDocument fetches one document of the selected source of the kind and hands its Markdown body to sink. The sink
-// receives a file name made from the document's title, such as "getting-started.md", and the sink decides where the file
-// goes. It returns the location the sink reports. A refused ID or source, or a failed fetch, makes no write.
+// receives a file name made from the document ID, such as "doc-1.md". No title, and no other file, decides the name, so
+// a second export of the same document replaces the first, and two documents never share a file. The sink decides where
+// the file goes. It returns the location the sink reports. A refused ID or source, or a failed fetch, makes no write.
 func ExportDocument(
 	ctx context.Context,
 	svc Service,
@@ -35,26 +36,9 @@ func ExportDocument(
 	if err != nil {
 		return "", err
 	}
-	location, err := sink.Write(ctx, fileStem(kind, doc.Title, id)+".md", []byte(doc.Markdown))
+	location, err := sink.Write(ctx, id.String()+".md", []byte(doc.Markdown))
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", domain.ErrExportWriteFailed, err)
 	}
 	return location, nil
-}
-
-// fileStem names an export. Outline takes the title slug, or the ID when the title has no slug. Kiwi and Jira put the ID
-// first and then the slug, such as case-12-login-works or issue-EXAMPLE-12-login-fails, because many documents share a title;
-// a title with no slug is the ID alone.
-func fileStem(kind domain.SourceKind, title string, id domain.DocumentID) string {
-	s := slug(title)
-	if kind != domain.KindKiwi && kind != domain.KindJira {
-		if s != "" {
-			return s
-		}
-		return id.String()
-	}
-	if s == "" {
-		return id.String()
-	}
-	return id.String() + "-" + s
 }

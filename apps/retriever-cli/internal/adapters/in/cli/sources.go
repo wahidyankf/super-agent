@@ -23,11 +23,15 @@ func sourcesList(inv *invocation) error {
 	}
 	rows := sources.ListSources(rt.service.Catalog, filter)
 	if rt.format == domain.FormatJSON {
-		return writeJSON(rt.out, sourcesJSON{SchemaVersion: schemaVersion, Sources: sourceRowsJSON(rows)})
+		return writeJSON(rt.out, sourcesJSON{SchemaVersion: sourcesSchemaVersion, Sources: sourceRowsJSON(rows)})
 	}
 	writeSourceRows(rt.out, rows)
 	return nil
 }
+
+// sourcesSchemaVersion is the version of the sources list document. The access field left it in version 2, because a
+// removed field raises the version of its document. The other documents keep schemaVersion.
+const sourcesSchemaVersion = 2
 
 // sourcesJSON is the document of sources list in JSON mode. Its field order is fixed.
 type sourcesJSON struct {
