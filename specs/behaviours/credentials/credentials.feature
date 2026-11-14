@@ -389,6 +389,17 @@ Feature: Source credentials
       | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
       | example-kiwi | kiwi | write  | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     And the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
+    And the stub Kiwi server holds this dataset:
+      """
+      {
+        "Products":   [{"ID": 3, "Name": "Synthetic product"}],
+        "Plans":      [{"ID": 12, "Name": "Synthetic plan", "Product": 3, "Parent": 0, "Text": "Plan text"}],
+        "Cases":      [{"ID": 40, "Summary": "Synthetic case", "Text": "Case text", "Plans": [12], "Sortkey": 10, "Status": 1, "Priority": 1, "Category": 1}],
+        "Categories": [{"ID": 1, "Name": "Functional", "Product": 3}],
+        "Priorities": [{"ID": 1, "Value": "High"}],
+        "Statuses":   [{"ID": 1, "Name": "PROPOSED"}]
+      }
+      """
     When I run "retriever --catalog reviewed.yml kiwi test-cases create Synthetic-case --product product-3 --category Functional --priority High --source example-kiwi"
     Then the exit status is 0
     And the stub Kiwi server received 1 request to "TestCase.create"
