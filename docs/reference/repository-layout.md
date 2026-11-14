@@ -65,6 +65,19 @@ super-agent/
 └── .env.example             environment template; no names yet, values stay empty
 ```
 
+## GitHub configuration
+
+The `.github/` folder holds the pull-request template, the CI workflows, and the local composite actions. The workflows
+run on GitHub-hosted runners only, and no job uses a secret or a self-hosted runner.
+
+- [workflows](../../.github/workflows/README.md): the pull-request quality gate and the consumer smoke checks.
+- [actions](../../.github/actions/README.md): composite actions that set up the toolchains the workflows use.
+- [pull_request_template.md](../../.github/pull_request_template.md): the description every pull request fills in. It
+  has the summary, the gate results, the leak-scan statement, and the alpha breaking-change checkbox.
+
+The repository front page is the root [README.md](../../README.md). GitHub prefers a `README.md` in `.github/` over the
+root one, so keep no README there.
+
 ## Where to look
 
 - Gate ids and the surfaces they run on: [Quality gates](./quality-gates.md).
