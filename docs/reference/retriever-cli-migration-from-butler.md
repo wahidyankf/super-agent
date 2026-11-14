@@ -61,9 +61,9 @@ Each entry gives the Butler behaviour first, then the retriever behaviour.
 
 These are the places where retriever behaves differently on purpose, beyond a rename.
 
-- **Refusals before reads.** Butler reads the target of a critical change before it checks `--confirm`. retriever
-  refuses a missing or wrong `--confirm` before any read when the canonical value is already known without a read. That
-  refusal sends no request. A change whose value must be read still reads it first, then compares the two.
+- **No confirmation gates.** Butler reads the target of a critical change before it checks `--confirm`. retriever has no
+  `--confirm`, `--yes`, or `--dry-run`, so a change runs as the command names it. Each of those flags is an unrecognized
+  argument, with exit `2`. A change still names its source with `--source`.
 - **Missing catalog.** There is no built-in source. A missing catalog exits `2` with `retriever.<area>.catalog_missing`.
   For `sources list` the code is `retriever.sources.catalog_missing`.
 - **Plain HTTP refused at load.** An endpoint that is not HTTPS is refused when the catalog loads, before any request.
