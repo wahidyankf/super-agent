@@ -40,8 +40,8 @@ func TestSliceC3EveryRequestIsSentOnceWithItsExactBody(t *testing.T) {
 	for _, tc := range requestCasesC3 {
 		t.Run(tc.name, func(t *testing.T) {
 			gw, rec := recordingAdminCall(t, tc.op)
-			if _, err := gw.Administer(context.Background(), tc.op, domain.NewArgs(tc.args)); err != nil {
-				t.Fatalf("Administer = %v", err)
+			if _, err := gw.Write(context.Background(), tc.op, domain.NewArgs(tc.args)); err != nil {
+				t.Fatalf("Write = %v", err)
 			}
 			calls := rec.recorded()
 			if want := 1 + len(adminPreReadsOf(tc.op)); len(calls) != want {
@@ -87,9 +87,9 @@ func TestSliceC3RepliesAreReadLikeTheirRows(t *testing.T) {
 			method := adminEndpoints[tc.op].method
 			r.stub.SetReply(method, http.StatusOK, string(loadSynthetic(t, method)))
 			setPreReadReplies(t, r.stub, tc.op)
-			out, err := r.gw.Administer(context.Background(), tc.op, domain.NewArgs(adminArgsFor(tc.op)))
+			out, err := r.gw.Write(context.Background(), tc.op, domain.NewArgs(adminArgsFor(tc.op)))
 			if err != nil {
-				t.Fatalf("Administer = %v", err)
+				t.Fatalf("Write = %v", err)
 			}
 			if v, _ := out.Get(tc.field); fmt.Sprint(v) != tc.expect {
 				t.Fatalf("field %s = %v, want %q", tc.field, v, tc.expect)
@@ -104,7 +104,7 @@ func TestSliceC3ProjectionsDropTheAddressAndTheRedirect(t *testing.T) {
 	r := adminRig(t)
 	r.stub.SetReply(adminEndpoints[domain.OpIntegrationsCreate].method, http.StatusOK,
 		string(loadSynthetic(t, adminEndpoints[domain.OpIntegrationsCreate].method)))
-	out, err := r.gw.Administer(context.Background(), domain.OpIntegrationsCreate, domain.NewArgs(map[string]any{
+	out, err := r.gw.Write(context.Background(), domain.OpIntegrationsCreate, domain.NewArgs(map[string]any{
 		"url": "https://matomo.example.com/SYNTHETICPATHTOKEN", "type": "analytics", "service": "matomo",
 	}))
 	if err != nil {
@@ -120,7 +120,7 @@ func TestSliceC3ProjectionsDropTheAddressAndTheRedirect(t *testing.T) {
 	r = adminRig(t)
 	r.stub.SetReply(adminEndpoints[domain.OpAuthenticationProvidersStartGroupSync].method, http.StatusOK,
 		string(loadSynthetic(t, adminEndpoints[domain.OpAuthenticationProvidersStartGroupSync].method)))
-	started, err := r.gw.Administer(context.Background(), domain.OpAuthenticationProvidersStartGroupSync,
+	started, err := r.gw.Write(context.Background(), domain.OpAuthenticationProvidersStartGroupSync,
 		domain.NewArgs(map[string]any{"authenticationProviderId": uuidOther}))
 	if err != nil {
 		t.Fatalf("startGroupSync: %v", err)
@@ -141,7 +141,7 @@ func TestSliceC3IntegrationsUpdateSendsTheEventsAndChannelsItRead(t *testing.T) 
 	stub.SetReply(endpoints[domain.OpIntegrationsGet].method, http.StatusOK,
 		`{"ok":true,"status":200,"data":{"id":"`+uuidOther+`","type":"post","service":"slack","events":["documents.update","documents.publish"],"collectionId":null,"userId":null,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-02T00:00:00Z","settings":{"url":"https://hooks.example.test/SECRETPATH","channel":"general","channelId":"C123"}}}`)
 	stub.SetReply(adminEndpoints[domain.OpIntegrationsUpdate].method, http.StatusOK, string(loadSynthetic(t, "integrations.update")))
-	if _, err := gw.Administer(context.Background(), domain.OpIntegrationsUpdate, domain.NewArgs(map[string]any{
+	if _, err := gw.Write(context.Background(), domain.OpIntegrationsUpdate, domain.NewArgs(map[string]any{
 		"integrationId": uuidOther, "url": "https://new.example.test/x",
 	})); err != nil {
 		t.Fatalf("integrations.update: %v", err)
@@ -167,7 +167,7 @@ func TestSliceC3AuthProviderUpdateKeepsTheSettingsItRead(t *testing.T) {
 	stub.SetReply(endpoints[domain.OpAuthenticationProvidersGet].method, http.StatusOK,
 		`{"ok":true,"status":200,"data":{"id":"`+uuidOther+`","name":"Google","providerId":"google","isEnabled":false,"isConnected":true,"createdAt":"2026-01-01T00:00:00Z","settings":{"groupSyncEnabled":false,"groupClaim":null,"groupSyncScopes":["read","openid"]}}}`)
 	stub.SetReply(adminEndpoints[domain.OpAuthenticationProvidersUpdate].method, http.StatusOK, string(loadSynthetic(t, "authenticationProviders.update")))
-	if _, err := gw.Administer(context.Background(), domain.OpAuthenticationProvidersUpdate, domain.NewArgs(map[string]any{
+	if _, err := gw.Write(context.Background(), domain.OpAuthenticationProvidersUpdate, domain.NewArgs(map[string]any{
 		"authenticationProviderId": uuidOther, "isEnabled": true,
 	})); err != nil {
 		t.Fatalf("authenticationProviders.update: %v", err)
@@ -206,7 +206,7 @@ func TestIntegrationsUpdateResendsEverySettingsKeyOfTheWiki(t *testing.T) {
 			gw, rec, stub := adminRecorder(t)
 			stub.SetReply(endpoints[domain.OpIntegrationsGet].method, http.StatusOK, integrationInfoFixture)
 			stub.SetReply(adminEndpoints[domain.OpIntegrationsUpdate].method, http.StatusOK, string(loadSynthetic(t, "integrations.update")))
-			if _, err := gw.Administer(context.Background(), domain.OpIntegrationsUpdate, domain.NewArgs(tc.raw)); err != nil {
+			if _, err := gw.Write(context.Background(), domain.OpIntegrationsUpdate, domain.NewArgs(tc.raw)); err != nil {
 				t.Fatalf("integrations.update: %v", err)
 			}
 			calls := rec.recorded()
@@ -241,7 +241,7 @@ func TestAuthProvidersUpdateFillsOnlyTheKeysTheReplyHolds(t *testing.T) {
 			gw, rec, stub := adminRecorder(t)
 			stub.SetReply(endpoints[domain.OpAuthenticationProvidersGet].method, http.StatusOK, tc.reply)
 			stub.SetReply(adminEndpoints[domain.OpAuthenticationProvidersUpdate].method, http.StatusOK, string(loadSynthetic(t, "authenticationProviders.update")))
-			if _, err := gw.Administer(context.Background(), domain.OpAuthenticationProvidersUpdate, domain.NewArgs(map[string]any{
+			if _, err := gw.Write(context.Background(), domain.OpAuthenticationProvidersUpdate, domain.NewArgs(map[string]any{
 				"authenticationProviderId": uuidOther, "isEnabled": false,
 			})); err != nil {
 				t.Fatalf("authenticationProviders.update: %v", err)

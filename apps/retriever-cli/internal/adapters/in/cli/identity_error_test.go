@@ -26,10 +26,3 @@ func TestInvalidIdentityHasItsOwnErrorCode(t *testing.T) {
 		t.Fatalf("errorCode = %q, want retriever.outline.identity_invalid", got)
 	}
 }
-
-// TestAccessAboveKindCeilingHasItsReasonCode checks the public ceiling error has its own reason code.
-func TestAccessAboveKindCeilingHasItsReasonCode(t *testing.T) {
-	if got := errorCode(domain.ErrAccessAboveKindCeiling, "outline"); got != "retriever.outline.access_above_kind_ceiling" {
-		t.Fatalf("errorCode = %q, want retriever.outline.access_above_kind_ceiling", got)
-	}
-}

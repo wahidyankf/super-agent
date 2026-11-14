@@ -60,7 +60,7 @@ func testSourceAt(t *testing.T, host string) domain.Source {
 	if err != nil {
 		t.Fatalf("NewIdentityRef: %v", err)
 	}
-	return domain.NewSource(id, domain.KindJira, tags, domain.AccessRead, endpoint, key).WithIdentity(identity)
+	return domain.NewSource(id, domain.KindJira, tags, endpoint, key).WithIdentity(identity)
 }
 
 // fakeSecrets is the credentials double of the gateway. It records the order of its reads, so a test can prove the key

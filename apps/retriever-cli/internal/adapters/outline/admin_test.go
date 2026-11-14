@@ -120,13 +120,13 @@ var requestCasesC2 = []requestCase{
 // in admin_c3_test.go).
 var requestCasesC = slices.Concat(requestCasesC1, requestCasesC2, requestCasesC3, requestCasesC4)
 
-// adminRig returns a rig whose gateway is at admin access, so a test can script the stub's reply to an admin call.
+// adminRig returns a rig whose gateway is ready for admin calls, so a test can script the stub's reply to an admin call.
 func adminRig(t *testing.T) rig {
 	t.Helper()
 	clock := newFakeClock()
 	stub := outlinestub.New(outlinestub.WithClock(clock.Now))
 	client := &http.Client{Transport: stub.RoundTripper()}
-	gw, err := NewWithBase(testSourceAt(t, testHost, domain.AccessAdmin), testBase, client, &staticCreds{},
+	gw, err := NewWithBase(testSourceAt(t, testHost), testBase, client, &staticCreds{},
 		WithMinDelay(0), WithClock(clock.Now), WithSleep(clock.Sleep))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
@@ -152,19 +152,6 @@ func TestTheAdminTableHoldsExactlyTheStageCRowsOfThisSlice(t *testing.T) {
 	}
 }
 
-// TestAdminRefusesAWriteSourceBeforeAnyRequest checks layer 3: an admin call on a source below admin
-// never reaches the network.
-func TestAdminRefusesAWriteSourceBeforeAnyRequest(t *testing.T) {
-	gw, rec := recordingGatewayAt(t, domain.AccessWrite)
-	_, err := gw.Administer(context.Background(), domain.OpDocumentsArchive, domain.NewArgs(map[string]any{"documentId": "doc-1"}))
-	if err == nil {
-		t.Fatal("an admin call on a write source succeeded")
-	}
-	if n := len(rec.recorded()); n != 0 {
-		t.Fatalf("requests = %d, want 0", n)
-	}
-}
-
 // TestAdminRepliesAreReadLikeTheirRows checks the reply of each row: an acknowledgement needs success true, a membership
 // list is read under its key, a document or collection is projected, and an export answers its file operation.
 func TestAdminRepliesAreReadLikeTheirRows(t *testing.T) {
@@ -185,9 +172,9 @@ func TestAdminRepliesAreReadLikeTheirRows(t *testing.T) {
 	for _, tc := range cases {
 		r := adminRig(t)
 		r.stub.SetReply(string(adminEndpoints[tc.op].method), http.StatusOK, tc.reply)
-		out, err := r.gw.Administer(context.Background(), tc.op, domain.NewArgs(adminArgsFor(tc.op)))
+		out, err := r.gw.Write(context.Background(), tc.op, domain.NewArgs(adminArgsFor(tc.op)))
 		if err != nil {
-			t.Fatalf("%s: Administer = %v", tc.op, err)
+			t.Fatalf("%s: Write = %v", tc.op, err)
 		}
 		if v, _ := out.Get(tc.field); tc.field != "" && fmt.Sprint(v) != tc.expect {
 			t.Fatalf("%s: field %s = %v, want %q", tc.op, tc.field, v, tc.expect)
@@ -237,7 +224,7 @@ func TestAnAdminAckWithoutSuccessIsAnOutcomeUnknown(t *testing.T) {
 	for _, tc := range cases {
 		r := adminRig(t)
 		r.stub.SetReply(string(adminEndpoints[tc.op].method), http.StatusOK, tc.reply)
-		_, err := r.gw.Administer(context.Background(), tc.op, domain.NewArgs(adminArgsFor(tc.op)))
+		_, err := r.gw.Write(context.Background(), tc.op, domain.NewArgs(adminArgsFor(tc.op)))
 		if !errors.Is(err, domain.ErrWriteOutcomeUnknown) {
 			t.Fatalf("%s with %s: error = %v, want ErrWriteOutcomeUnknown", tc.op, tc.reply, err)
 		}

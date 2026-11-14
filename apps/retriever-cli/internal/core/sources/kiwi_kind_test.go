@@ -10,11 +10,10 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/ports"
 )
 
-// kindedSource describes one source of a test catalog: its ID, kind, and access level.
+// kindedSource describes one source of a test catalog: its ID and kind.
 type kindedSource struct {
-	id     string
-	kind   domain.SourceKind
-	access domain.Access
+	id   string
+	kind domain.SourceKind
 }
 
 // kindedCatalog returns a catalog of the given sources. Each source gets its own host and key name, so the catalog
@@ -35,7 +34,7 @@ func kindedCatalog(t *testing.T, list ...kindedSource) domain.Catalog {
 		if err != nil {
 			t.Fatalf("NewCredentialRef: %v", err)
 		}
-		out = append(out, domain.NewSource(id, s.kind, mustTagSet(t), s.access, ep, ref))
+		out = append(out, domain.NewSource(id, s.kind, mustTagSet(t), ep, ref))
 	}
 	cat, err := domain.NewCatalog(out)
 	if err != nil {
@@ -70,8 +69,8 @@ func kiwiDocumentReply() domain.Record {
 // kind is refused before any gateway call.
 func TestSelectSourceIsKindAware(t *testing.T) {
 	cat := kindedCatalog(t,
-		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
-		kindedSource{"kiwi", domain.KindKiwi, domain.AccessWrite},
+		kindedSource{"outline", domain.KindOutline},
+		kindedSource{"kiwi", domain.KindKiwi},
 	)
 	svc, resolver := kindedService(t, cat, &fakeGateway{}, nil, nil)
 
@@ -101,9 +100,9 @@ func TestSelectSourceIsKindAware(t *testing.T) {
 // names the kind.
 func TestDefaultRulePerKind(t *testing.T) {
 	two := kindedCatalog(t,
-		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
-		kindedSource{"kiwi-a", domain.KindKiwi, domain.AccessWrite},
-		kindedSource{"kiwi-b", domain.KindKiwi, domain.AccessWrite},
+		kindedSource{"outline", domain.KindOutline},
+		kindedSource{"kiwi-a", domain.KindKiwi},
+		kindedSource{"kiwi-b", domain.KindKiwi},
 	)
 	svc, _ := kindedService(t, two, &fakeGateway{}, nil, nil)
 	if got, err := Resolve(svc, domain.KindOutline, nil); err != nil || got.ID().String() != "outline" {
@@ -115,7 +114,7 @@ func TestDefaultRulePerKind(t *testing.T) {
 		t.Fatalf("Resolve(kiwi, nil) with two kiwi sources error = %v, want AmbiguousSourceError for kiwi", err)
 	}
 
-	outlineOnly := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	outlineOnly := kindedCatalog(t, kindedSource{"outline", domain.KindOutline})
 	svc, _ = kindedService(t, outlineOnly, &fakeGateway{}, nil, nil)
 	_, err = Resolve(svc, domain.KindKiwi, nil)
 	var none domain.NoSourceOfKindError
@@ -131,8 +130,8 @@ func TestDefaultRulePerKind(t *testing.T) {
 // and reach the gateway of that source only.
 func TestListGetAndExportTakeTheKind(t *testing.T) {
 	cat := kindedCatalog(t,
-		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
-		kindedSource{"kiwi", domain.KindKiwi, domain.AccessRead},
+		kindedSource{"outline", domain.KindOutline},
+		kindedSource{"kiwi", domain.KindKiwi},
 	)
 	gw := &fakeGateway{
 		collections: []domain.Collection{{ID: "product-3", Name: "Lending"}},
@@ -162,8 +161,8 @@ func TestListGetAndExportTakeTheKind(t *testing.T) {
 // for it.
 func TestReadTakesTheKindOfTheRow(t *testing.T) {
 	cat := kindedCatalog(t,
-		kindedSource{"outline", domain.KindOutline, domain.AccessRead},
-		kindedSource{"kiwi", domain.KindKiwi, domain.AccessRead},
+		kindedSource{"outline", domain.KindOutline},
+		kindedSource{"kiwi", domain.KindKiwi},
 	)
 	reader := &fakeReader{reply: kiwiDocumentReply()}
 	svc, resolver := kindedService(t, cat, &fakeGateway{}, reader, nil)
@@ -182,7 +181,7 @@ func TestReadTakesTheKindOfTheRow(t *testing.T) {
 		t.Fatalf("Read(kiwi row, outline) error = %v, want ErrWrongSourceKind", err)
 	}
 
-	outlineOnly := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	outlineOnly := kindedCatalog(t, kindedSource{"outline", domain.KindOutline})
 	svc, _ = kindedService(t, outlineOnly, &fakeGateway{}, reader, nil)
 	_, err = Read(context.Background(), svc, domain.OpKiwiProductsList, nil, nil)
 	var none domain.NoSourceOfKindError
@@ -234,7 +233,7 @@ func TestFileStemPerKind(t *testing.T) {
 // TestExportDocumentNamesAKiwiCaseByIDAndTitle checks the whole export: the file of a Kiwi case is named by its ID and
 // its title slug.
 func TestExportDocumentNamesAKiwiCaseByIDAndTitle(t *testing.T) {
-	cat := kindedCatalog(t, kindedSource{"kiwi", domain.KindKiwi, domain.AccessRead})
+	cat := kindedCatalog(t, kindedSource{"kiwi", domain.KindKiwi})
 	gw := &fakeGateway{doc: domain.SourceDocument{ID: "case-12", Title: "Login works", Markdown: "Body.\n"}}
 	svc, _ := kindedService(t, cat, gw, nil, nil)
 	sink := newFakeSink()

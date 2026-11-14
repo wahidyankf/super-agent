@@ -40,18 +40,18 @@ func sourceRows(t *testing.T, r reply) []map[string]any {
 	return rows
 }
 
-// TestSourcesQueryListsEachSourceWithKindAccessAndTags checks each row of the sources query. A row carries only the
-// four fields of the Source type.
-func TestSourcesQueryListsEachSourceWithKindAccessAndTags(t *testing.T) {
-	rows := sourceRows(t, sendServed(t, twoOutlineSources(nil), `{ sources { id kind access tags } }`))
+// TestSourcesQueryListsEachSourceWithKindAndTags checks each row of the sources query. A row carries only the three
+// fields of the Source type that remain: id, kind, and tags.
+func TestSourcesQueryListsEachSourceWithKindAndTags(t *testing.T) {
+	rows := sourceRows(t, sendServed(t, twoOutlineSources(nil), `{ sources { id kind tags } }`))
 	if len(rows) != 2 {
 		t.Fatalf("sources returned %d rows, want 2", len(rows))
 	}
-	if rows[0]["id"] != "outline" || rows[0]["kind"] != "outline" || rows[0]["access"] != "read" {
-		t.Errorf("first row = %v, want outline, outline, read", rows[0])
+	if rows[0]["id"] != "outline" || rows[0]["kind"] != "outline" {
+		t.Errorf("first row = %v, want outline, outline", rows[0])
 	}
-	if rows[1]["id"] != "outline-engineering" || rows[1]["access"] != "write" {
-		t.Errorf("second row = %v, want outline-engineering with write", rows[1])
+	if rows[1]["id"] != "outline-engineering" {
+		t.Errorf("second row = %v, want outline-engineering", rows[1])
 	}
 	if tags, _ := rows[1]["tags"].([]any); len(tags) != 2 {
 		t.Errorf("second row tags = %v, want two tags", rows[1]["tags"])

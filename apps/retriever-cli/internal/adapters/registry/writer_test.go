@@ -26,8 +26,8 @@ type readOnlyGateway struct {
 	ports.SourceGateway
 }
 
-// writeTestSource builds an outline source at the given access level from valid literals. It makes no network call.
-func writeTestSource(t *testing.T, access string) domain.Source {
+// writeTestSource builds an outline source from valid literals. It makes no network call.
+func writeTestSource(t *testing.T) domain.Source {
 	t.Helper()
 	sid, err := domain.NewSourceID("outline")
 	if err != nil {
@@ -41,10 +41,6 @@ func writeTestSource(t *testing.T, access string) domain.Source {
 	if err != nil {
 		t.Fatal(err)
 	}
-	acc, err := domain.NewAccess(access)
-	if err != nil {
-		t.Fatal(err)
-	}
 	endpoint, err := domain.NewEndpoint("https://outline-stub.invalid")
 	if err != nil {
 		t.Fatal(err)
@@ -53,7 +49,7 @@ func writeTestSource(t *testing.T, access string) domain.Source {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return domain.NewSource(sid, kind, set, acc, endpoint, credential)
+	return domain.NewSource(sid, kind, set, endpoint, credential)
 }
 
 // writeTestKind returns the kind that writeTestSource names, so a test can key a builder map by it.
@@ -73,7 +69,7 @@ func TestWriterReturnsTheGatewayThatWrites(t *testing.T) {
 	r := New(map[domain.SourceKind]Builder{
 		writeTestKind(t): func(domain.Source) (ports.SourceGateway, error) { return gw, nil },
 	})
-	source := writeTestSource(t, "write")
+	source := writeTestSource(t)
 
 	writer, err := r.Writer(source)
 	if err != nil {
@@ -99,7 +95,7 @@ func TestWriterRefusesAGatewayThatCannotWrite(t *testing.T) {
 	r := New(map[domain.SourceKind]Builder{
 		writeTestKind(t): func(domain.Source) (ports.SourceGateway, error) { return &readOnlyGateway{}, nil },
 	})
-	writer, err := r.Writer(writeTestSource(t, "write"))
+	writer, err := r.Writer(writeTestSource(t))
 	if !errors.Is(err, domain.ErrUnsupportedSource) {
 		t.Fatalf("Writer = (%v, %v), want ErrUnsupportedSource", writer, err)
 	}
@@ -115,7 +111,7 @@ func TestWriterReportsABuildFailure(t *testing.T) {
 	r := New(map[domain.SourceKind]Builder{
 		writeTestKind(t): func(domain.Source) (ports.SourceGateway, error) { return nil, want },
 	})
-	if _, err := r.Writer(writeTestSource(t, "write")); !errors.Is(err, want) {
+	if _, err := r.Writer(writeTestSource(t)); !errors.Is(err, want) {
 		t.Fatalf("Writer = error %v, want %v", err, want)
 	}
 }
@@ -123,7 +119,7 @@ func TestWriterReportsABuildFailure(t *testing.T) {
 // TestWriterIsUnsupportedForAKindWithoutABuilder checks that a source of a kind with no builder cannot be written.
 func TestWriterIsUnsupportedForAKindWithoutABuilder(t *testing.T) {
 	r := New(map[domain.SourceKind]Builder{})
-	if _, err := r.Writer(writeTestSource(t, "write")); !errors.Is(err, domain.ErrUnsupportedSource) {
+	if _, err := r.Writer(writeTestSource(t)); !errors.Is(err, domain.ErrUnsupportedSource) {
 		t.Fatalf("Writer = error %v, want ErrUnsupportedSource", err)
 	}
 }

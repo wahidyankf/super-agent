@@ -19,8 +19,8 @@ func TestSliceC4EveryRequestIsSentOnceWithItsExactBody(t *testing.T) {
 	for _, tc := range requestCasesC4 {
 		t.Run(tc.name, func(t *testing.T) {
 			gw, rec := recordingAdminCall(t, tc.op)
-			if _, err := gw.Administer(context.Background(), tc.op, domain.NewArgs(tc.args)); err != nil {
-				t.Fatalf("Administer = %v", err)
+			if _, err := gw.Write(context.Background(), tc.op, domain.NewArgs(tc.args)); err != nil {
+				t.Fatalf("Write = %v", err)
 			}
 			calls := rec.recorded()
 			if want := 1 + len(adminPreReadsOf(tc.op)); len(calls) != want {
@@ -65,9 +65,9 @@ func TestSliceC4RepliesAreReadLikeTheirRows(t *testing.T) {
 			method := adminEndpoints[tc.op].method
 			r.stub.SetReply(method, http.StatusOK, string(loadSynthetic(t, method)))
 			setPreReadReplies(t, r.stub, tc.op)
-			out, err := r.gw.Administer(context.Background(), tc.op, domain.NewArgs(caseArgsC4(t, tc.op)))
+			out, err := r.gw.Write(context.Background(), tc.op, domain.NewArgs(caseArgsC4(t, tc.op)))
 			if err != nil {
-				t.Fatalf("Administer = %v", err)
+				t.Fatalf("Write = %v", err)
 			}
 			if v, _ := out.Get(tc.field); fmt.Sprint(v) != tc.expect {
 				t.Fatalf("field %s = %v, want %q", tc.field, v, tc.expect)
@@ -91,7 +91,7 @@ func TestSliceC4SecretsAndLinksAreNeverProjected(t *testing.T) {
 			r := adminRig(t)
 			method := adminEndpoints[op].method
 			r.stub.SetReply(method, http.StatusOK, string(loadSynthetic(t, method)))
-			out, err := r.gw.Administer(context.Background(), op, domain.NewArgs(caseArgsC4(t, op)))
+			out, err := r.gw.Write(context.Background(), op, domain.NewArgs(caseArgsC4(t, op)))
 			if err != nil {
 				t.Fatalf("the call did not succeed, so the proof would pass vacuously: %v", err)
 			}

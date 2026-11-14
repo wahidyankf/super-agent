@@ -41,18 +41,18 @@ type rpcErrorObject struct {
 	Message string `json:"message"`
 }
 
-// call sends one allowlisted method with its named params and returns the raw result of a 2xx reply. The method must be one
-// the source's access level allows, so a write method on a read source never reaches the network. It retries a 429 reply
+// call sends one allowlisted method with its named params and returns the raw result of a 2xx reply. The method must be
+// one of the closed allowlist, so a method outside it never reaches the network. It retries a 429 reply
 // after its Retry-After wait, at most maxRetries times; a write is retried for no other reason. The request lock is held
 // for the whole call, wait included, so no other request goes out while Kiwi asks for a pause.
 func (g *Gateway) call(ctx context.Context, method string, params map[string]any) (json.RawMessage, error) {
-	if !permittedMethod(method, g.access) {
+	if !allowedMethods[method] {
 		return nil, errMethodNotAllowed
 	}
 	if err := guardArguments(params); err != nil {
 		return nil, err
 	}
-	write := methodAccess[method] == domain.AccessWrite
+	write := writeMethods[method]
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.nextID++

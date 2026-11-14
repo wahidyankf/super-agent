@@ -14,6 +14,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"go.yaml.in/yaml/v3"
 
@@ -23,6 +24,11 @@ import (
 
 // maxBytes caps the catalog file size.
 const maxBytes = 64 << 10
+
+// accessRemovedRule is the rule of a catalog that still holds the access key, which the access levels replaced. It names
+// the key, a fixed word, and never the value the key holds. A catalog with the key fails at load, so the key is never
+// silently accepted and ignored.
+const accessRemovedRule = "unknown field \"access\": the access level was removed; remove the key and limit the source's API token instead"
 
 // schemaVersion is the only catalog version this code reads.
 const schemaVersion = 1
@@ -127,12 +133,11 @@ type fileDoc struct {
 	Sources []sourceEntry `yaml:"sources"`
 }
 
-// sourceEntry is one source as written. A nil Access means the field was absent or null, so the level is read.
+// sourceEntry is one source as written.
 type sourceEntry struct {
 	ID            string   `yaml:"id"`
 	Kind          string   `yaml:"kind"`
 	Tags          []string `yaml:"tags"`
-	Access        *string  `yaml:"access"`
 	Endpoint      string   `yaml:"endpoint"`
 	CredentialEnv string   `yaml:"credential_env"`
 	// IdentityEnv is the optional name of the variable that holds the source's e-mail address. A nil
@@ -146,6 +151,10 @@ func parse(data []byte) (domain.Catalog, error) {
 	dec.KnownFields(true)
 	var doc fileDoc
 	if err := dec.Decode(&doc); err != nil {
+		// The access key was removed. A catalog that still names it is refused under its own rule, so the change is seen.
+		if strings.Contains(err.Error(), "field access not found") {
+			return domain.Catalog{}, catalogErr(accessRemovedRule)
+		}
 		return domain.Catalog{}, catalogErr("the file is not valid YAML, or it has an unknown or repeated field")
 	}
 	if err := dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
@@ -183,13 +192,6 @@ func toSource(position int, e sourceEntry) (domain.Source, error) {
 	if err != nil {
 		return domain.Source{}, fieldErr(position, "tags", err)
 	}
-	access := domain.AccessRead
-	if e.Access != nil {
-		access, err = domain.NewAccess(*e.Access)
-		if err != nil {
-			return domain.Source{}, fieldErr(position, "access", err)
-		}
-	}
 	endpoint, err := domain.NewEndpoint(e.Endpoint)
 	if err != nil {
 		if errors.Is(err, domain.ErrHTTPSRequired) {
@@ -202,7 +204,7 @@ func toSource(position int, e sourceEntry) (domain.Source, error) {
 	if err != nil {
 		return domain.Source{}, fieldErr(position, "credential_env", err)
 	}
-	src := domain.NewSource(id, kind, tags, access, endpoint, credential)
+	src := domain.NewSource(id, kind, tags, endpoint, credential)
 	// A nil pointer means the field is absent, so the source has no identity. An empty value is a name that fails the
 	// rule.
 	if e.IdentityEnv != nil {
@@ -256,8 +258,6 @@ func fieldRule(err error) string {
 		return "must be lowercase slugs"
 	case errors.Is(err, domain.ErrTooManyTags):
 		return "at most 16 distinct tags"
-	case errors.Is(err, domain.ErrInvalidAccess):
-		return domain.ErrInvalidAccess.Error()
 	case errors.Is(err, domain.ErrUnknownSourceKind):
 		return "unknown kind (known: outline, kiwi, jira)"
 	case errors.Is(err, domain.ErrInvalidEndpoint), errors.Is(err, domain.ErrHTTPSRequired):
@@ -279,8 +279,7 @@ func invariantRule(err error) string {
 		return "one credential serves one host only"
 	case errors.Is(err, domain.ErrIdentityHostMismatch):
 		return domain.ErrIdentityHostMismatch.Error()
-	case errors.Is(err, domain.ErrIdentityRequired), errors.Is(err, domain.ErrIdentityNotUsed),
-		errors.Is(err, domain.ErrAccessAboveKindCeiling):
+	case errors.Is(err, domain.ErrIdentityRequired), errors.Is(err, domain.ErrIdentityNotUsed):
 		// These texts name the kind and the rule, never a value, so the typed error's own text is the rule.
 		return err.Error()
 	}

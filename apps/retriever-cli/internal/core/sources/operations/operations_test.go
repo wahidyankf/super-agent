@@ -23,7 +23,7 @@ func rowOf(t *testing.T, id domain.OperationID) Row {
 }
 
 // stageAReads is every read of stage a: the seven built reads of part 1, the thirty-one reads of part 2a, the eighteen
-// reads of part 2b (access read), then the ten admin-level reads of part 2b. The order is the catalog order. The vault
+// reads of part 2b, then the ten further reads of part 2b. The order is the catalog order. The vault
 // export (documents.export) is not a row, so it is not here.
 var stageAReads = []domain.OperationID{
 	domain.OpCollectionsList, domain.OpCollectionsInfo, domain.OpCollectionsDocuments,
@@ -46,13 +46,6 @@ var stageAReads = []domain.OperationID{
 	domain.OpOAuthAuthenticationsList, domain.OpReactionsList, domain.OpRelationshipsGet,
 	domain.OpRelationshipsList, domain.OpSearchesList, domain.OpSuggestionsMention,
 	domain.OpUserMembershipsList, domain.OpViewsList,
-	domain.OpAPIKeysList, domain.OpAuthenticationProvidersGet, domain.OpAuthenticationProvidersList,
-	domain.OpImportsGet, domain.OpImportsList, domain.OpIntegrationsGet, domain.OpIntegrationsList,
-	domain.OpOAuthClientsGet, domain.OpOAuthClientsList, domain.OpWebhookSubscriptionsList,
-}
-
-// stageAAdminReads is the ten reads that need an admin source.
-var stageAAdminReads = []domain.OperationID{
 	domain.OpAPIKeysList, domain.OpAuthenticationProvidersGet, domain.OpAuthenticationProvidersList,
 	domain.OpImportsGet, domain.OpImportsList, domain.OpIntegrationsGet, domain.OpIntegrationsList,
 	domain.OpOAuthClientsGet, domain.OpOAuthClientsList, domain.OpWebhookSubscriptionsList,
@@ -89,27 +82,6 @@ func TestCatalogHoldsEveryStageAReadInOrder(t *testing.T) {
 	want := append(append(slices.Clone(stageAReads), stageBWrites...), stageCIDs()...)
 	if !slices.Equal(got, want) {
 		t.Fatalf("catalog IDs = %v, want %v", got, want)
-	}
-}
-
-// TestWriteRowsNeedWriteAccessAndAnEffectThatChanges checks the write rows: each one changes the
-// wiki, so each needs write access and an effect that is not read. Only documents.update repeats a different change,
-// so only it is NotIdempotent. Every write tool says that it changes data.
-func TestWriteRowsNeedWriteAccessAndAnEffectThatChanges(t *testing.T) {
-	for _, id := range stageBWrites {
-		r := rowOf(t, id)
-		if r.Effect == domain.EffectRead {
-			t.Errorf("%s: a write row needs an effect that changes data, not read", id)
-		}
-		if r.Access != domain.AccessWrite {
-			t.Errorf("%s: access = %s, want write", id, r.Access)
-		}
-		if r.Tool == "" || !strings.Contains(r.Description, "This tool changes data in the wiki.") {
-			t.Errorf("%s: the tool %q must say that it changes data", id, r.Tool)
-		}
-		if want := id == domain.OpDocumentsUpdate; r.NotIdempotent != want {
-			t.Errorf("%s: NotIdempotent = %v, want %v", id, r.NotIdempotent, want)
-		}
 	}
 }
 
@@ -164,7 +136,7 @@ func TestWriteToolNamesAreTheFixedNames(t *testing.T) {
 	}
 }
 
-// TestWritesFollowTheInventoryClass checks the CLI command, the effect, and the access of the collections and comments
+// TestWritesFollowTheInventoryClass checks the CLI command and the effect of the collections and comments
 // writes against the inventory (outline-api-operations.md, collections and comments tables). The creates, the duplicate,
 // the export, and the add-reaction are additive; the move, the restore, the updates, the resolves, and the remove-reaction
 // are updates. Each one is a write.
@@ -209,8 +181,8 @@ func TestWritesFollowTheInventoryClass(t *testing.T) {
 	}
 	for id, w := range want {
 		r := rowOf(t, id)
-		if r.CLI != w.cli || r.Effect != w.effect || r.Access != domain.AccessWrite {
-			t.Errorf("%s = (%q, %s, %s), want (%q, %s, write)", id, r.CLI, r.Effect, r.Access, w.cli, w.effect)
+		if r.CLI != w.cli || r.Effect != w.effect {
+			t.Errorf("%s = (%q, %s), want (%q, %s)", id, r.CLI, r.Effect, w.cli, w.effect)
 		}
 	}
 }
@@ -240,12 +212,8 @@ func TestEveryRowIsWellFormed(t *testing.T) {
 		if r.Summary == "" || r.Description == "" {
 			t.Errorf("%s: a summary and a description are required", r.ID)
 		}
-		if r.Access.String() == "" || r.Effect == "" {
-			t.Errorf("%s: an access level and an effect are required", r.ID)
-		}
-		// A read changes nothing, so it needs read access, or admin access when it shows admin data.
-		if r.Effect == domain.EffectRead && r.Access != domain.AccessRead && r.Access != domain.AccessAdmin {
-			t.Errorf("%s: a read effect needs read access, or admin access for an admin read", r.ID)
+		if r.Effect == "" {
+			t.Errorf("%s: an effect is required", r.ID)
 		}
 		names := map[string]bool{}
 		for _, p := range r.Params {
@@ -401,8 +369,8 @@ func TestBindSplitsAnIDListGivenAsText(t *testing.T) {
 	}
 }
 
-// sourceAt returns an outline source with the given access level.
-func sourceAt(t *testing.T, access domain.Access) domain.Source {
+// sourceAt returns an outline source.
+func sourceAt(t *testing.T) domain.Source {
 	t.Helper()
 	id, err := domain.NewSourceID("outline")
 	if err != nil {
@@ -416,21 +384,7 @@ func sourceAt(t *testing.T, access domain.Access) domain.Source {
 	if err != nil {
 		t.Fatalf("NewCredentialRef: %v", err)
 	}
-	return domain.NewSource(id, domain.KindOutline, domain.TagSet{}, access, ep, ref)
-}
-
-func TestRefuseNamesTheSourceAndBothLevels(t *testing.T) {
-	src := sourceAt(t, domain.AccessRead)
-	err := Refuse(Row{Access: domain.AccessWrite}, src)
-	if !errors.Is(err, domain.ErrAccessLevelTooLow) {
-		t.Fatalf("Refuse error = %v, want ErrAccessLevelTooLow", err)
-	}
-	if err.Error() != `source "outline" allows read only; this operation needs write` {
-		t.Fatalf("Refuse text = %q", err.Error())
-	}
-	if err := Refuse(Row{Access: domain.AccessRead}, src); err != nil {
-		t.Fatalf("Refuse of a read by a read source = %v", err)
-	}
+	return domain.NewSource(id, domain.KindOutline, domain.TagSet{}, ep, ref)
 }
 
 func TestSupportsTheOutlineKindForEveryRow(t *testing.T) {

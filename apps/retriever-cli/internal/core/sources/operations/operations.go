@@ -1,5 +1,5 @@
 // Package operations is the Retriever operation catalog. One Row describes one operation completely: its ID,
-// the command and tool that expose it, its effect and access, its parameters, and the shape of its result. The CLI
+// the command and tool that expose it, its effect, its parameters, and the shape of its result. The CLI
 // command tree, the MCP tools, the binder, and the use cases are all built from these rows, so an operation is added by
 // one row, one endpoint entry in the Outline adapter, and its scenarios, and no handler is written by hand.
 package operations
@@ -78,7 +78,6 @@ type Row struct {
 	Summary     string
 	Description string
 	Effect      domain.Effect
-	Access      domain.Access
 	OpensWorld  bool
 	Params      []Param
 	Fields      []string
@@ -192,13 +191,4 @@ func Supports(kind domain.SourceKind, row Row) bool {
 		return slices.Contains(jiraOperations, row.ID)
 	}
 	return false
-}
-
-// Refuse returns an AccessLevelError when the source's access level is below the row's need. It makes no call, so a
-// use case checks it before it reaches a gateway.
-func Refuse(row Row, src domain.Source) error {
-	if src.Access().Allows(row.Access) {
-		return nil
-	}
-	return domain.AccessLevelError{Source: src.ID().String(), Have: src.Access(), Need: row.Access}
 }

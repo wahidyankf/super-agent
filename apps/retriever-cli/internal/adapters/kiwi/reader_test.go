@@ -47,7 +47,7 @@ func describeTree(nodes []domain.TreeNode) []string {
 
 // TestListCollectionsReturnsEveryProductInOneRequest checks that the products come back in one Product.filter call.
 func TestListCollectionsReturnsEveryProductInOneRequest(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	got, err := r.gw.ListCollections(context.Background())
 	if err != nil {
 		t.Fatalf("ListCollections: %v", err)
@@ -63,7 +63,7 @@ func TestListCollectionsReturnsEveryProductInOneRequest(t *testing.T) {
 
 // TestCollectionTreeFlattensPlansCasesAndChildren checks the depth-first order: a plan, its cases, then its child plans.
 func TestCollectionTreeFlattensPlansCasesAndChildren(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	nodes, err := r.gw.CollectionTree(context.Background(), mustCollectionID(t, "product-1"))
 	if err != nil {
 		t.Fatalf("CollectionTree: %v", err)
@@ -84,7 +84,7 @@ func TestCollectionTreeFlattensPlansCasesAndChildren(t *testing.T) {
 
 // TestCollectionTreeOfAProductWithNoPlansIsEmpty checks an empty product: no error, no nodes.
 func TestCollectionTreeOfAProductWithNoPlansIsEmpty(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	nodes, err := r.gw.CollectionTree(context.Background(), mustCollectionID(t, "product-2"))
 	if err != nil || len(nodes) != 0 {
 		t.Fatalf("empty product = (%d nodes, %v), want no nodes and no error", len(nodes), err)
@@ -93,7 +93,7 @@ func TestCollectionTreeOfAProductWithNoPlansIsEmpty(t *testing.T) {
 
 // TestCollectionTreeOfAnUnknownProductIsNotFound checks that a product that does not exist is named as such.
 func TestCollectionTreeOfAnUnknownProductIsNotFound(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	_, err := r.gw.CollectionTree(context.Background(), mustCollectionID(t, "product-999"))
 	if !errors.Is(err, domain.ErrCollectionNotFound) {
 		t.Fatalf("error = %v, want ErrCollectionNotFound", err)
@@ -107,7 +107,7 @@ func TestCollectionTreeStopsBeforeAnyCaseWhenTooManyPlans(t *testing.T) {
 	for i := 1; i <= planCap+1; i++ {
 		d.Plans = append(d.Plans, kiwistub.Plan{ID: i, Name: "Plan", Product: 1})
 	}
-	r := newRig(t, d, domain.AccessRead)
+	r := newRig(t, d)
 	_, err := r.gw.CollectionTree(context.Background(), mustCollectionID(t, "product-1"))
 	if !errors.Is(err, domain.ErrPageCapReached) {
 		t.Fatalf("error = %v, want ErrPageCapReached", err)
@@ -125,7 +125,7 @@ func TestPlansInAParentCycleAreStillListed(t *testing.T) {
 		{ID: 2, Name: "Beta", Product: 1, Parent: 1},
 	}
 	d.Cases = nil
-	r := newRig(t, d, domain.AccessRead)
+	r := newRig(t, d)
 	nodes, err := r.gw.CollectionTree(context.Background(), mustCollectionID(t, "product-1"))
 	if err != nil {
 		t.Fatalf("CollectionTree: %v", err)
@@ -138,7 +138,7 @@ func TestPlansInAParentCycleAreStillListed(t *testing.T) {
 
 // TestDocumentOfAPlanHoldsItsCases checks a plan's document: its ID, title, collection, and the cases it lists.
 func TestDocumentOfAPlanHoldsItsCases(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	doc, err := r.gw.Document(context.Background(), mustDocumentID(t, "plan-2"))
 	if err != nil {
 		t.Fatalf("Document: %v", err)
@@ -156,7 +156,7 @@ func TestDocumentOfAPlanHoldsItsCases(t *testing.T) {
 // TestDocumentOfACaseNamesItsLookups checks that a case shows its status, priority, and category by name, and that its
 // product is the product of its category.
 func TestDocumentOfACaseNamesItsLookups(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	doc, err := r.gw.Document(context.Background(), mustDocumentID(t, "case-12"))
 	if err != nil {
 		t.Fatalf("Document: %v", err)
@@ -173,7 +173,7 @@ func TestDocumentOfACaseNamesItsLookups(t *testing.T) {
 
 // TestUnknownDocumentsAreNotFound checks that a missing plan and a missing case are both named as not found.
 func TestUnknownDocumentsAreNotFound(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	for _, raw := range []string{"plan-999", "case-999"} {
 		_, err := r.gw.Document(context.Background(), mustDocumentID(t, raw))
 		if !errors.Is(err, domain.ErrDocumentNotFound) {
@@ -184,7 +184,7 @@ func TestUnknownDocumentsAreNotFound(t *testing.T) {
 
 // TestLookupTablesAreReadOncePerGateway checks the cache: two case reads read each lookup table once.
 func TestLookupTablesAreReadOncePerGateway(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	for _, raw := range []string{"case-12", "case-13"} {
 		if _, err := r.gw.Document(context.Background(), mustDocumentID(t, raw)); err != nil {
 			t.Fatalf("Document(%s): %v", raw, err)
@@ -199,7 +199,7 @@ func TestLookupTablesAreReadOncePerGateway(t *testing.T) {
 
 // TestReadProductsListRecord checks the record of kiwi.products.list: one item per product.
 func TestReadProductsListRecord(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	rec, err := r.gw.Read(context.Background(), domain.OpKiwiProductsList, domain.NewArgs(map[string]any{}))
 	if err != nil {
 		t.Fatalf("Read products list: %v", err)
@@ -212,7 +212,7 @@ func TestReadProductsListRecord(t *testing.T) {
 
 // TestReadProductsTreeRecord checks the record of kiwi.products.tree: each item has its parent and its depth.
 func TestReadProductsTreeRecord(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	rec, err := r.gw.Read(context.Background(), domain.OpKiwiProductsTree, domain.NewArgs(map[string]any{"collectionId": "product-1"}))
 	if err != nil {
 		t.Fatalf("Read products tree: %v", err)
@@ -228,7 +228,7 @@ func TestReadProductsTreeRecord(t *testing.T) {
 
 // TestReadDocumentsGetRecord checks the record of kiwi.documents.get for one case.
 func TestReadDocumentsGetRecord(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessRead)
+	r := newRig(t, sampleDataset())
 	rec, err := r.gw.Read(context.Background(), domain.OpKiwiDocumentsGet, domain.NewArgs(map[string]any{"documentId": "case-12"}))
 	if err != nil {
 		t.Fatalf("Read documents get: %v", err)
@@ -240,7 +240,7 @@ func TestReadDocumentsGetRecord(t *testing.T) {
 
 // TestReadRefusesAWriteOperation checks that the read path refuses a write operation before any request.
 func TestReadRefusesAWriteOperation(t *testing.T) {
-	r := newRig(t, sampleDataset(), domain.AccessWrite)
+	r := newRig(t, sampleDataset())
 	_, err := r.gw.Read(context.Background(), domain.OpKiwiPlansAddCase, domain.NewArgs(map[string]any{"planId": "plan-2", "caseId": "case-13"}))
 	if !errors.Is(err, domain.ErrWrongOperationClass) {
 		t.Fatalf("error = %v, want ErrWrongOperationClass", err)
@@ -260,13 +260,13 @@ func TestRepliesWithAnIDOutsideTheIDRangeAreRefused(t *testing.T) {
 		caseBad := sampleDataset()
 		caseBad.Cases = append(caseBad.Cases, kiwistub.Case{ID: bad, Summary: "Odd", Plans: []int{2}, Sortkey: 3, Status: 1, Priority: 2, Category: 1})
 		for name, d := range map[string]kiwistub.Dataset{"plan": planBad, "case": caseBad} {
-			r := newRig(t, d, domain.AccessRead)
+			r := newRig(t, d)
 			_, err := r.gw.CollectionTree(context.Background(), mustCollectionID(t, "product-1"))
 			if !errors.Is(err, domain.ErrUnexpectedResponse) {
 				t.Fatalf("tree with a %s ID %d: error = %v, want ErrUnexpectedResponse", name, bad, err)
 			}
 		}
-		r := newRig(t, caseBad, domain.AccessRead)
+		r := newRig(t, caseBad)
 		if _, err := r.gw.Document(context.Background(), mustDocumentID(t, "plan-2")); !errors.Is(err, domain.ErrUnexpectedResponse) {
 			t.Fatalf("plan document with a case ID %d: error = %v, want ErrUnexpectedResponse", bad, err)
 		}

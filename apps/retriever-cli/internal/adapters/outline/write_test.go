@@ -275,7 +275,7 @@ func TestCollectionsExportAnswersTheFileOperation(t *testing.T) {
 const updatedDocument = `{"data":{"id":"doc-1","title":"New","url":"/doc/new",` +
 	`"collectionId":"col-1","revision":4,"text":"Body"},"policies":[]}`
 
-// writeRig is a rig whose source is at write access, so a write row reaches the wire. Its base is the in-process stub's
+// writeRig is a rig whose source is a plain outline source, so a write row reaches the wire. Its base is the in-process stub's
 // .invalid name, so the stub answers it and refuses any host that is not a loopback or .invalid name.
 func writeRig(t *testing.T, stubOpts []outlinestub.Option, gwOpts ...Option) rig {
 	t.Helper()
@@ -284,7 +284,7 @@ func writeRig(t *testing.T, stubOpts []outlinestub.Option, gwOpts ...Option) rig
 	stub := outlinestub.New(append([]outlinestub.Option{outlinestub.WithClock(clock.Now)}, stubOpts...)...)
 	client := &http.Client{Transport: stub.RoundTripper()}
 	opts := append([]Option{WithMinDelay(0), WithClock(clock.Now), WithSleep(clock.Sleep)}, gwOpts...)
-	gw, err := NewWithBase(testSourceAt(t, testHost, domain.AccessWrite), testBase, client, creds, opts...)
+	gw, err := NewWithBase(testSourceAt(t, testHost), testBase, client, creds, opts...)
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
@@ -322,11 +322,11 @@ func TestTheWriteTableHoldsExactlyTheStageBWrites(t *testing.T) {
 	}
 }
 
-// TestEveryWriteSendsItsExactRequest checks each write's method path and JSON body, sent by a source at write access.
+// TestEveryWriteSendsItsExactRequest checks each write's method path and JSON body, sent by an outline source.
 func TestEveryWriteSendsItsExactRequest(t *testing.T) {
 	for _, tc := range requestCasesB {
 		t.Run(tc.name, func(t *testing.T) {
-			gw, rec := recordingGatewayAt(t, domain.AccessWrite)
+			gw, rec := recordingGatewayAt(t)
 			_, _ = gw.Write(context.Background(), tc.op, domain.NewArgs(tc.args))
 			calls := rec.recorded()
 			if len(calls) != 1 {
@@ -447,19 +447,6 @@ func TestA409DocumentConflictIsItsOwnErrorAndIsNotRetried(t *testing.T) {
 	}
 }
 
-// TestAWriteOnAReadSourceIsRefusedBeforeAnyRequest checks layer 3: the client refuses a write
-// method on a read source, so a write never reaches the network from a read source.
-func TestAWriteOnAReadSourceIsRefusedBeforeAnyRequest(t *testing.T) {
-	r := newRig(t, sampleOptions())
-	_, err := r.gw.Write(context.Background(), domain.OpDocumentsUpdate, domain.NewArgs(map[string]any{"documentId": "doc-1", "title": "New"}))
-	if !errors.Is(err, errMethodNotAllowed) {
-		t.Fatalf("error = %v, want errMethodNotAllowed", err)
-	}
-	if n := len(r.stub.Requests()); n != 0 {
-		t.Fatalf("requests = %d, want 0", n)
-	}
-}
-
 // TestTheWrongClassIsRefusedInBothDirections checks that a read sent to the write path, a write sent to the read path,
 // and an unknown operation are each refused before any request.
 func TestTheWrongClassIsRefusedInBothDirections(t *testing.T) {
@@ -567,7 +554,7 @@ func TestDuplicateAnswersTheCopiesAsAList(t *testing.T) {
 func TestTheNonLoopbackGuardCatchesAWrite(t *testing.T) {
 	stub := outlinestub.New(sampleOptions()...)
 	client := &http.Client{Transport: stub.RoundTripper()}
-	gw, err := NewWithBase(testSourceAt(t, testHost, domain.AccessWrite), "https://"+testHost, client, &staticCreds{}, WithMinDelay(0))
+	gw, err := NewWithBase(testSourceAt(t, testHost), "https://"+testHost, client, &staticCreds{}, WithMinDelay(0))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}

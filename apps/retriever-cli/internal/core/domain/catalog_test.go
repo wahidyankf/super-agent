@@ -28,12 +28,12 @@ func testSource(t *testing.T, id, kind string, host, cred string) Source {
 	if kind == otherKind.value {
 		k = otherKind
 	}
-	return NewSource(sid, k, mustTagSet(t), AccessRead, ep, ref)
+	return NewSource(sid, k, mustTagSet(t), ep, ref)
 }
 
-func tagged(t *testing.T, src Source, access Access, tags ...string) Source {
+func tagged(t *testing.T, src Source, tags ...string) Source {
 	t.Helper()
-	return NewSource(src.ID(), src.Kind(), mustTagSet(t, tags...), access, src.Endpoint(), src.Credential())
+	return NewSource(src.ID(), src.Kind(), mustTagSet(t, tags...), src.Endpoint(), src.Credential())
 }
 
 func manySources(t *testing.T, n int) []Source {
@@ -113,9 +113,9 @@ func TestCatalogAllIsSortedAndByIDFinds(t *testing.T) {
 }
 
 func TestCatalogFindIsAllOfTagsAndKind(t *testing.T) {
-	company := tagged(t, testSource(t, "outline", "outline", "docs.example.com", "O_API_KEY"), AccessRead, "company", "wiki")
-	eng := tagged(t, testSource(t, "outline-engineering", "outline", "wiki.example.com", "E_API_KEY"), AccessWrite, "engineering", "wiki")
-	other := tagged(t, testSource(t, "notes", "other", "notes.example.com", "N_API_KEY"), AccessRead, "wiki")
+	company := tagged(t, testSource(t, "outline", "outline", "docs.example.com", "O_API_KEY"), "company", "wiki")
+	eng := tagged(t, testSource(t, "outline-engineering", "outline", "wiki.example.com", "E_API_KEY"), "engineering", "wiki")
+	other := tagged(t, testSource(t, "notes", "other", "notes.example.com", "N_API_KEY"), "wiki")
 	cat, err := NewCatalog([]Source{company, eng, other})
 	if err != nil {
 		t.Fatalf("NewCatalog error = %v", err)

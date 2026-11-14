@@ -5,7 +5,7 @@ import (
 )
 
 // The Outline method names of the stage a part 2b reads. Each one is the wire path /api/<method>. Each is used by one
-// endpoint row below. The eighteen reads of access read come first, then the ten admin-level reads.
+// endpoint row below. The eighteen reads come first, then the ten further reads.
 const (
 	methodAccessRequestsInfo          = "accessRequests.info"
 	methodAttachmentsList             = "attachments.list"

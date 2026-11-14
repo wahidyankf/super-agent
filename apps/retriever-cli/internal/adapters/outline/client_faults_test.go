@@ -40,13 +40,13 @@ func clientFaultReply(status int, body string) *http.Response {
 	return &http.Response{StatusCode: status, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(body))}
 }
 
-// clientFaultGateway builds a gateway at access over rt, with no pacing wait and a fake clock. Options given here replace
+// clientFaultGateway builds a gateway over rt, with no pacing wait and a fake clock. Options given here replace
 // the defaults.
-func clientFaultGateway(t *testing.T, access domain.Access, rt http.RoundTripper, opts ...Option) *Gateway {
+func clientFaultGateway(t *testing.T, rt http.RoundTripper, opts ...Option) *Gateway {
 	t.Helper()
 	clock := newFakeClock()
 	all := append([]Option{WithMinDelay(0), WithClock(clock.Now), WithSleep(clock.Sleep)}, opts...)
-	gw, err := NewWithBase(testSourceAt(t, testHost, access), testBase, &http.Client{Transport: rt}, &staticCreds{}, all...)
+	gw, err := NewWithBase(testSourceAt(t, testHost), testBase, &http.Client{Transport: rt}, &staticCreds{}, all...)
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
@@ -57,7 +57,7 @@ func clientFaultGateway(t *testing.T, access domain.Access, rt http.RoundTripper
 // request is sent.
 func TestAnUnencodableRequestIsRefusedBeforeAnyRequest(t *testing.T) {
 	sent := 0
-	gw := clientFaultGateway(t, domain.AccessRead, clientFaultRT(func(*http.Request) (*http.Response, error) {
+	gw := clientFaultGateway(t, clientFaultRT(func(*http.Request) (*http.Response, error) {
 		sent++
 		return clientFaultReply(http.StatusOK, `{"data":{}}`), nil
 	}))
@@ -80,7 +80,7 @@ func TestAFailedRetryWaitStopsTheCallWithItsFault(t *testing.T) {
 		r.Header.Set("Retry-After", "1")
 		return r, nil
 	})
-	gw := clientFaultGateway(t, domain.AccessRead, rt, WithSleep(func(context.Context, time.Duration) error { return errClientFault }))
+	gw := clientFaultGateway(t, rt, WithSleep(func(context.Context, time.Duration) error { return errClientFault }))
 	var out any
 	if err := gw.call(context.Background(), domain.OpCollectionsInfo, methodCollectionsInfo, map[string]any{}, &out); !errors.Is(err, errClientFault) {
 		t.Fatalf("call error = %v, want the wait fault", err)
@@ -98,7 +98,7 @@ func TestAFailedPacingWaitStopsTheNextRequest(t *testing.T) {
 		sent++
 		return clientFaultReply(http.StatusOK, `{"data":{}}`), nil
 	})
-	gw := clientFaultGateway(t, domain.AccessRead, rt,
+	gw := clientFaultGateway(t, rt,
 		WithMinDelay(time.Second),
 		WithSleep(func(context.Context, time.Duration) error { return errClientFault }))
 	var out any
@@ -125,7 +125,7 @@ func TestPacingNeverWaitsWhenTheGapHasPassed(t *testing.T) {
 	rt := clientFaultRT(func(*http.Request) (*http.Response, error) {
 		return clientFaultReply(http.StatusOK, `{"data":{}}`), nil
 	})
-	gw := clientFaultGateway(t, domain.AccessRead, rt,
+	gw := clientFaultGateway(t, rt,
 		WithMinDelay(time.Second),
 		WithClock(clock),
 		WithSleep(func(context.Context, time.Duration) error { slept++; return nil }))
@@ -144,7 +144,7 @@ func TestPacingNeverWaitsWhenTheGapHasPassed(t *testing.T) {
 // request is sent.
 func TestAnInvalidBaseIsRefusedBeforeAnyRequest(t *testing.T) {
 	sent := 0
-	gw := clientFaultGateway(t, domain.AccessRead, clientFaultRT(func(*http.Request) (*http.Response, error) {
+	gw := clientFaultGateway(t, clientFaultRT(func(*http.Request) (*http.Response, error) {
 		sent++
 		return clientFaultReply(http.StatusOK, `{}`), nil
 	}))
@@ -166,12 +166,12 @@ func TestAReplyBodyFaultIsUnknownForAWriteAndUnreachableForARead(t *testing.T) {
 	})
 	var out any
 
-	write := clientFaultGateway(t, domain.AccessWrite, broken)
+	write := clientFaultGateway(t, broken)
 	if err := write.call(context.Background(), domain.OpCollectionsMove, "collections.move", map[string]any{}, &out); !errors.Is(err, domain.ErrWriteOutcomeUnknown) {
 		t.Fatalf("write error = %v, want ErrWriteOutcomeUnknown", err)
 	}
 
-	read := clientFaultGateway(t, domain.AccessRead, broken)
+	read := clientFaultGateway(t, broken)
 	if err := read.call(context.Background(), domain.OpCollectionsInfo, methodCollectionsInfo, map[string]any{}, &out); !errors.Is(err, domain.ErrUnreachable) {
 		t.Fatalf("read error = %v, want ErrUnreachable", err)
 	}

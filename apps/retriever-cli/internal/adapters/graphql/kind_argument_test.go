@@ -46,20 +46,8 @@ func (r byKindResolver) Writer(src domain.Source) (ports.SourceWriter, error) {
 	return writer, nil
 }
 
-func (r byKindResolver) Admin(src domain.Source) (ports.SourceAdmin, error) {
-	gw, err := r.For(src)
-	if err != nil {
-		return nil, err
-	}
-	admin, ok := gw.(ports.SourceAdmin)
-	if !ok {
-		return nil, domain.ErrUnsupportedSource
-	}
-	return admin, nil
-}
-
 // mustKindSource builds one source of the given kind. The constant inputs are valid, so a constructor failure panics.
-func mustKindSource(kind domain.SourceKind, id, host, credential string, tags []string, access domain.Access) domain.Source {
+func mustKindSource(kind domain.SourceKind, id, host, credential string, tags []string) domain.Source {
 	sid, err := domain.NewSourceID(id)
 	if err != nil {
 		panic(err)
@@ -76,15 +64,15 @@ func mustKindSource(kind domain.SourceKind, id, host, credential string, tags []
 	if err != nil {
 		panic(err)
 	}
-	return domain.NewSource(sid, kind, set, access, ep, ref)
+	return domain.NewSource(sid, kind, set, ep, ref)
 }
 
 // outlineAndKiwiServices returns a catalog with one Outline source and one Kiwi source, each served by its own gateway.
 func outlineAndKiwiServices(outlineGW, kiwiGW ports.SourceGateway) usecases.Service {
 	cat, err := domain.NewCatalog([]domain.Source{
-		mustSource("outline", "docs.example.test", "EXAMPLE_OUTLINE_API_KEY", []string{"company"}, domain.AccessRead),
+		mustSource("outline", "docs.example.test", "EXAMPLE_OUTLINE_API_KEY", []string{"company"}),
 		mustKindSource(domain.KindKiwi, "kiwi", "kiwi.example.test", "EXAMPLE_KIWI_API_KEY",
-			[]string{"testing"}, domain.AccessWrite),
+			[]string{"testing"}),
 	})
 	if err != nil {
 		panic(err)
@@ -205,12 +193,12 @@ func TestJiraKindWithNoJiraSourceSaysSo(t *testing.T) {
 	assertErrorContains(t, r, "no jira source is configured")
 }
 
-// TestServedKiwiSourceIsCappedToRead checks that the served service, capped to read, reports a Kiwi source at read.
-func TestServedKiwiSourceIsCappedToRead(t *testing.T) {
-	svc := outlineAndKiwiServices(&countingGateway{}, kiwiCases()).Capped(domain.AccessRead)
-	rows := sourceRows(t, sendServed(t, svc, `{ sources(kind: "kiwi") { id access } }`))
-	if len(rows) != 1 || rows[0]["access"] != "read" {
-		t.Fatalf("sources = %v, want the Kiwi source at read", rows)
+// TestServedKiwiSourceIsListedByKind checks that the served service lists the Kiwi source when a query asks for its kind.
+func TestServedKiwiSourceIsListedByKind(t *testing.T) {
+	svc := outlineAndKiwiServices(&countingGateway{}, kiwiCases())
+	rows := sourceRows(t, sendServed(t, svc, `{ sources(kind: "kiwi") { id } }`))
+	if len(rows) != 1 || rows[0]["id"] != "kiwi" {
+		t.Fatalf("sources = %v, want the Kiwi source", rows)
 	}
 }
 

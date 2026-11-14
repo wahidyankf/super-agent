@@ -19,8 +19,8 @@ func listCatalog(t *testing.T) domain.Catalog {
 	tagsA, _ := domain.NewTagSet("company", "wiki")
 	tagsB, _ := domain.NewTagSet("engineering", "wiki")
 	cat, err := domain.NewCatalog([]domain.Source{
-		domain.NewSource(company, domain.KindOutline, tagsA, domain.AccessRead, docs, keyA),
-		domain.NewSource(eng, domain.KindOutline, tagsB, domain.AccessWrite, wiki, keyB),
+		domain.NewSource(company, domain.KindOutline, tagsA, docs, keyA),
+		domain.NewSource(eng, domain.KindOutline, tagsB, wiki, keyB),
 	})
 	if err != nil {
 		t.Fatalf("NewCatalog: %v", err)
@@ -28,9 +28,9 @@ func listCatalog(t *testing.T) domain.Catalog {
 	return cat
 }
 
-func TestListSourcesReturnsSummariesWithAccess(t *testing.T) {
+func TestListSourcesReturnsIDKindAndTags(t *testing.T) {
 	got := ListSources(listCatalog(t), domain.SourceFilter{Tags: mustTagSet(t)})
-	if len(got) != 2 || got[0].ID != "outline" || got[0].Access != "read" || got[1].Access != "write" {
+	if len(got) != 2 || got[0].ID != "outline" || got[1].ID != "outline-engineering" {
 		t.Fatalf("ListSources = %+v", got)
 	}
 	if strings.Join(got[1].Tags, ",") != "engineering,wiki" {

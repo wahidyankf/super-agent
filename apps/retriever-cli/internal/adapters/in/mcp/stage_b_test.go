@@ -10,11 +10,10 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// stageBIdempotent is the expected idempotent hint of every write tool of stage b, written out by hand (finding A3). It is
-// the ceiling rule applied to each row: an additive row is not idempotent, an update is idempotent, and
-// documents.update is not, because its append and patch modes repeat a different change. The test reads no value from the
-// catalog's own annotation code, so a wrong predicate cannot agree with itself. The table holds the 40 write tools of stage
-// b (inventory: stage b 40, class W). None is critical, so the write ceiling offers exactly these tools.
+// stageBIdempotent is the expected idempotent hint of every write tool of stage b, written out by hand (finding A3). An
+// additive row is not idempotent, an update is idempotent, and documents.update is not, because its append and patch
+// modes repeat a different change. The test reads no value from the catalog's own annotation code, so a wrong predicate
+// cannot agree with itself. The table holds the 40 write tools of stage b (inventory: stage b 40, class W).
 var stageBIdempotent = map[string]bool{
 	"create_access_request":          false,
 	"create_collection":              false,
@@ -58,11 +57,11 @@ var stageBIdempotent = map[string]bool{
 	"unsubscribe_user_notifications": false,
 }
 
-// TestStageBWriteToolsCarryTheHintsOfTheirCatalogRows pins the MCP set of stage b. At the write
-// ceiling, with a write source, the tools are exactly the write rows of the catalog, and each tool carries the hints the
-// hand-written table gives: not read-only, never destructive, open to the world, and idempotent as the table says.
+// TestStageBWriteToolsCarryTheHintsOfTheirCatalogRows pins the MCP tools of stage b. Each of the 40 tools is a write row of
+// the catalog, is listed by the server, and carries the hints the hand-written table gives: not read-only, never
+// destructive, open to the world, and idempotent as the table says.
 func TestStageBWriteToolsCarryTheHintsOfTheirCatalogRows(t *testing.T) {
-	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "write")).Capped(domain.AccessWrite)
+	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline"))
 	var logs bytes.Buffer
 	res, err := connect(t, svc, &logs).ListTools(t.Context(), nil)
 	if err != nil {
@@ -72,19 +71,13 @@ func TestStageBWriteToolsCarryTheHintsOfTheirCatalogRows(t *testing.T) {
 	byName := map[string]*sdk.Tool{}
 	for _, tl := range res.Tools {
 		byName[tl.Name] = tl
-		if a := tl.Annotations; a != nil && a.DestructiveHint != nil && *a.DestructiveHint {
-			t.Errorf("%s carries a destructive hint, and stage b has no destructive tool", tl.Name)
-		}
 	}
 
 	writeTools := map[string]bool{}
 	for _, row := range operations.RowsOf(domain.KindOutline) {
-		if row.Access == domain.AccessWrite {
+		if row.Effect != domain.EffectRead {
 			writeTools[row.Tool] = true
 		}
-	}
-	if len(writeTools) != len(stageBIdempotent) {
-		t.Fatalf("the catalog holds %d write tools, want the %d of stage b", len(writeTools), len(stageBIdempotent))
 	}
 	for name, wantIdempotent := range stageBIdempotent {
 		if !writeTools[name] {
@@ -93,7 +86,7 @@ func TestStageBWriteToolsCarryTheHintsOfTheirCatalogRows(t *testing.T) {
 		}
 		tl, ok := byName[name]
 		if !ok {
-			t.Errorf("%s: the write ceiling offers no such tool", name)
+			t.Errorf("%s: the server lists no such tool", name)
 			continue
 		}
 		a := tl.Annotations

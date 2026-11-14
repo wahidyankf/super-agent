@@ -13,8 +13,8 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// kindSource returns one source of the given kind at the given access, with the endpoint and key name of the catalog.
-func kindSource(t *testing.T, kind, id, host, credential, access string) domain.Source {
+// kindSource returns one source of the given kind, with the endpoint and key name of the catalog.
+func kindSource(t *testing.T, kind, id, host, credential string) domain.Source {
 	t.Helper()
 	sid, err := domain.NewSourceID(id)
 	if err != nil {
@@ -28,10 +28,6 @@ func kindSource(t *testing.T, kind, id, host, credential, access string) domain.
 	if err != nil {
 		t.Fatal(err)
 	}
-	acc, err := domain.NewAccess(access)
-	if err != nil {
-		t.Fatal(err)
-	}
 	endpoint, err := domain.NewEndpoint("https://" + host)
 	if err != nil {
 		t.Fatal(err)
@@ -40,70 +36,44 @@ func kindSource(t *testing.T, kind, id, host, credential, access string) domain.
 	if err != nil {
 		t.Fatal(err)
 	}
-	return domain.NewSource(sid, k, tags, acc, endpoint, ref)
+	return domain.NewSource(sid, k, tags, endpoint, ref)
 }
 
-// threeKindService returns a catalog with an Outline source at admin, a Kiwi source at write, and a Jira source at read
-// with its identity name. Every gateway answers from gw.
+// threeKindService returns a catalog with an Outline source, a Kiwi source, and a Jira source with its identity name.
+// Every gateway answers from gw.
 func threeKindService(t *testing.T, gw *fakeGateway) sources.Service {
 	t.Helper()
 	identity, err := domain.NewIdentityRef("EXAMPLE_JIRA_EMAIL")
 	if err != nil {
 		t.Fatal(err)
 	}
-	jira := kindSource(t, "jira", "jira", "jira.example.test", "EXAMPLE_JIRA_API_TOKEN", "read").WithIdentity(identity)
+	jira := kindSource(t, "jira", "jira", "jira.example.test", "EXAMPLE_JIRA_API_TOKEN").WithIdentity(identity)
 	return serviceWith(t, gw,
-		mustSource(t, "outline", "admin"),
-		kindSource(t, "kiwi", "kiwi", "kiwi.example.test", "EXAMPLE_KIWI_API_KEY", "write"),
+		mustSource(t, "outline"),
+		kindSource(t, "kiwi", "kiwi", "kiwi.example.test", "EXAMPLE_KIWI_API_KEY"),
 		jira,
 	)
 }
 
-// TestKindsOtherThanOutlineAddNoToolAtAnyCeiling checks that a catalog with Kiwi and Jira sources offers exactly the
-// tools of an Outline-only catalog, at every ceiling.
-func TestKindsOtherThanOutlineAddNoToolAtAnyCeiling(t *testing.T) {
-	for _, ceiling := range []domain.Access{domain.AccessRead, domain.AccessWrite, domain.AccessAdmin} {
-		outlineOnly := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "admin")).Capped(ceiling)
-		all := threeKindService(t, &fakeGateway{}).Capped(ceiling)
-		want, err := RegisteredTools(outlineOnly, nil)
-		if err != nil {
-			t.Fatalf("RegisteredTools(outline only, %s): %v", ceiling, err)
-		}
-		got, err := RegisteredTools(all, nil)
-		if err != nil {
-			t.Fatalf("RegisteredTools(three kinds, %s): %v", ceiling, err)
-		}
-		if !slices.Equal(sortedNames(got), sortedNames(want)) {
-			t.Fatalf("at %s the three-kind catalog offers %v, want the outline tools %v", ceiling, sortedNames(got), sortedNames(want))
-		}
+// TestKindsOtherThanOutlineAddNoTool checks that a catalog with Kiwi and Jira sources offers exactly the tools of an
+// Outline-only catalog.
+func TestKindsOtherThanOutlineAddNoTool(t *testing.T) {
+	outlineOnly := serviceWith(t, &fakeGateway{}, mustSource(t, "outline"))
+	all := threeKindService(t, &fakeGateway{})
+	want, err := RegisteredTools(outlineOnly, nil)
+	if err != nil {
+		t.Fatalf("RegisteredTools(outline only): %v", err)
+	}
+	got, err := RegisteredTools(all, nil)
+	if err != nil {
+		t.Fatalf("RegisteredTools(three kinds): %v", err)
+	}
+	if !slices.Equal(sortedNames(got), sortedNames(want)) {
+		t.Fatalf("the three-kind catalog offers %v, want the outline tools %v", sortedNames(got), sortedNames(want))
 	}
 }
 
-// TestAKiwiWriteSourceDoesNotRaiseTheToolCeiling checks the case the ceiling must get right: an Outline source at read
-// beside a Kiwi source at write. At every ceiling the server offers exactly the tools of the Outline source alone, so the
-// Kiwi write adds no Outline write tool.
-func TestAKiwiWriteSourceDoesNotRaiseTheToolCeiling(t *testing.T) {
-	for _, ceiling := range []domain.Access{domain.AccessRead, domain.AccessWrite, domain.AccessAdmin} {
-		outlineOnly := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "read")).Capped(ceiling)
-		withKiwi := serviceWith(t, &fakeGateway{},
-			mustSource(t, "outline", "read"),
-			kindSource(t, "kiwi", "kiwi", "kiwi.example.test", "EXAMPLE_KIWI_API_KEY", "write"),
-		).Capped(ceiling)
-		want, err := RegisteredTools(outlineOnly, nil)
-		if err != nil {
-			t.Fatalf("RegisteredTools(outline only, %s): %v", ceiling, err)
-		}
-		got, err := RegisteredTools(withKiwi, nil)
-		if err != nil {
-			t.Fatalf("RegisteredTools(outline and kiwi, %s): %v", ceiling, err)
-		}
-		if !slices.Equal(sortedNames(got), sortedNames(want)) {
-			t.Fatalf("at %s the outline and kiwi catalog offers %d tools, want the %d outline tools", ceiling, len(got), len(want))
-		}
-	}
-}
-
-// TestListSourcesShowsTheKiwiAndJiraSources checks that list_sources lists every source with its kind, access, and tags.
+// TestListSourcesShowsTheKiwiAndJiraSources checks that list_sources lists every source with its kind and tags.
 func TestListSourcesShowsTheKiwiAndJiraSources(t *testing.T) {
 	out, _, err := listSources(context.Background(), threeKindService(t, &fakeGateway{}), listSourcesIn{})
 	if err != nil {

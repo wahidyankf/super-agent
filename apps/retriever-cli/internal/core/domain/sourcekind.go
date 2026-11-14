@@ -23,33 +23,20 @@ var knownKinds = []SourceKind{KindOutline, KindKiwi, KindJira}
 type kindTraits struct {
 	// usesIdentity is true when a source of the kind needs an identity name (a non-secret variable beside the key).
 	usesIdentity bool
-	// maxAccess is the highest access level the catalog accepts for a source of the kind.
-	maxAccess Access
 }
 
-// traits holds the traits of every known kind. A kind missing from the table uses no identity and has no ceiling below
-// admin, the highest level Retriever knows. Production kinds always come from knownKinds, and zeroFault refuses a zero kind
-// before any rule reads it.
+// traits holds the traits of every known kind. A kind missing from the table uses no identity. Production kinds always
+// come from knownKinds, and zeroFault refuses a zero kind before any rule reads it.
 var traits = map[SourceKind]kindTraits{
-	KindOutline: {usesIdentity: false, maxAccess: AccessAdmin},
-	KindKiwi:    {usesIdentity: false, maxAccess: AccessAdmin},
-	KindJira:    {usesIdentity: true, maxAccess: AccessRead},
+	KindOutline: {usesIdentity: false},
+	KindKiwi:    {usesIdentity: false},
+	KindJira:    {usesIdentity: true},
 }
 
 // UsesIdentity reports whether a source of the kind needs an identity name, the non-secret variable that holds an account
 // e-mail address. Jira needs one; Outline and Kiwi refuse one.
 func (k SourceKind) UsesIdentity() bool {
 	return traits[k].usesIdentity
-}
-
-// MaxAccess returns the highest access level the catalog accepts for a source of the kind. A kind with no traits returns
-// admin, so it gets no ceiling below the highest level.
-func (k SourceKind) MaxAccess() Access {
-	t, ok := traits[k]
-	if !ok {
-		return AccessAdmin
-	}
-	return t.maxAccess
 }
 
 // knownKindNames returns the names of knownKinds joined with ", ", such as "outline, kiwi, jira". The unknown-kind text

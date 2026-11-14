@@ -112,14 +112,9 @@ sources:
 	}
 }
 
-func TestAccessAbsentOrNullIsRead(t *testing.T) {
-	for _, content := range []string{oneSource, withAccess(""), withAccess("null")} {
-		cat := mustLoad(t, content)
-		if got := cat.All()[0].Access(); got != domain.AccessRead {
-			t.Fatalf("access = %q, want read", got)
-		}
-	}
-}
+// accessKeyRule is the rule text of a catalog that still holds the removed access key. It names the key, which is a
+// fixed word, and never the value the key holds.
+const accessKeyRule = `unknown field "access": the access level was removed; remove the key and limit the source's API token instead`
 
 // withAccess adds an access line to oneSource. An empty value writes the bare key, which is YAML null.
 func withAccess(value string) string {
@@ -130,18 +125,11 @@ func withAccess(value string) string {
 	return strings.Replace(oneSource, "    endpoint:", line+"\n    endpoint:", 1)
 }
 
-func TestEachAccessWordIsKept(t *testing.T) {
-	for _, word := range []string{"read", "write", "admin"} {
-		cat := mustLoad(t, withAccess(word))
-		if got := cat.All()[0].Access().String(); got != word {
-			t.Fatalf("access = %q, want %q", got, word)
-		}
-	}
-}
-
-func TestInvalidAccessIsRefusedWithItsRule(t *testing.T) {
-	for _, word := range []string{`""`, "Read", "rw", "owner", sentinel} {
-		mustFailWith(t, withAccess(word), "source 1 access: must be read, write or admin")
+// TestAccessKeyIsRefusedAtLoadAndNamedInTheError covers the removed access key: a catalog that still holds it fails
+// at load, whatever the value, and the error names the key and never the value.
+func TestAccessKeyIsRefusedAtLoadAndNamedInTheError(t *testing.T) {
+	for _, value := range []string{"", "null", "read", "write", "admin", sentinel} {
+		mustFailWith(t, withAccess(value), accessKeyRule)
 	}
 }
 
@@ -248,13 +236,12 @@ sources:
   - id: outline-engineering
     kind: outline
     tags: [engineering, wiki]
-    access: write
     endpoint: https://wiki.engineering.example.com
     credential_env: ENGINEERING_OUTLINE_API_KEY
 `
 	cat := mustLoad(t, content)
 	all := cat.All()
-	if len(all) != 2 || all[1].Access() != domain.AccessWrite {
+	if len(all) != 2 {
 		t.Fatalf("catalog = %v", all)
 	}
 	if got := strings.Join(all[0].Tags().Values(), ","); got != "company,wiki" {
@@ -267,7 +254,6 @@ const oneJira = `version: 1
 sources:
   - id: jira
     kind: jira
-    access: read
     endpoint: https://jira.example.test
     credential_env: EXAMPLE_JIRA_API_TOKEN
     identity_env: EXAMPLE_JIRA_EMAIL
@@ -307,11 +293,8 @@ func TestIdentityEnvIsReadAndCheckedWithItsRule(t *testing.T) {
 		{name: "a jira source with no identity", content: withoutLine(oneJira, "identity_env"), want: "source 1 identity_env: required for a jira source"},
 		{name: "an outline source with an identity", content: withLine(oneSource, "    identity_env: EXAMPLE_OUTLINE_EMAIL"), want: "source 1 identity_env: not used by an outline source"},
 		{name: "a kiwi source with an identity", content: withLine(strings.Replace(oneSource, "kind: outline", "kind: kiwi", 1), "    identity_env: EXAMPLE_KIWI_EMAIL"), want: "source 1 identity_env: not used by a kiwi source"},
-		{name: "a jira source with write access", content: strings.Replace(oneJira, "access: read", "access: write", 1), want: "source 1 access: a jira source allows read at most"},
-		{name: "a jira source with admin access", content: strings.Replace(oneJira, "access: read", "access: admin", 1), want: "source 1 access: a jira source allows read at most"},
 		{name: "one identity on two hosts", content: oneJira + `  - id: jira-two
     kind: jira
-    access: read
     endpoint: https://other.example.test
     credential_env: OTHER_JIRA_API_KEY
     identity_env: EXAMPLE_JIRA_EMAIL
@@ -326,7 +309,6 @@ func TestIdentityEnvIsReadAndCheckedWithItsRule(t *testing.T) {
 func TestIdentityOnOneHostIsAccepted(t *testing.T) {
 	content := oneJira + `  - id: jira-two
     kind: jira
-    access: read
     endpoint: https://jira.example.test
     credential_env: OTHER_JIRA_API_KEY
     identity_env: EXAMPLE_JIRA_EMAIL

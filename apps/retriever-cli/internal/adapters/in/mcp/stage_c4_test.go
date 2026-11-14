@@ -3,8 +3,6 @@ package mcp
 import (
 	"bytes"
 	"testing"
-
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 )
 
 // stageCHints is the expected hint pair of one MCP tool of stage c.
@@ -13,7 +11,7 @@ type stageCHints struct {
 	idempotent  bool
 }
 
-// stageCTools is the expected annotation of each of the 48 MCP tools of stage c, written out by hand from the access rules
+// stageCTools is the expected annotation of each of the 48 MCP tools of stage c, written out by hand from the rows
 // (finding m3). The test reads no value from the catalog's annotation code, so a wrong predicate there cannot agree with
 // itself. The rule applied: a destructive tool announces destructive and not idempotent; an update announces idempotent,
 // because no stage c update repeats another change (the only non-idempotent update is in stage b); an additive tool is not
@@ -74,28 +72,28 @@ var stageCTools = map[string]stageCHints{
 	"delete_webhook_subscription": {true, false},
 }
 
-// stageCToolCount is the number of MCP tools of stage c, and adminCeilingToolCount the number of tools an admin source offers
-// at the admin ceiling, with list_sources.
+// stageCToolCount is the number of MCP tools of stage c, and allToolCount the number of tools the server lists in all,
+// with list_sources.
 const (
-	stageCToolCount       = 48
-	adminCeilingToolCount = 165
+	stageCToolCount = 48
+	allToolCount    = 165
 )
 
-// TestStageCToolsCarryTheHandWrittenHints lists the tools of an admin source at the admin ceiling and checks each stage c tool
-// against the literal table: the table holds 48 tools, every one is offered, the listing holds 165 tools in all, and every
-// stage c tool is not read-only, with the destructive and idempotent hints the table gives.
+// TestStageCToolsCarryTheHandWrittenHints lists the tools of an outline source and checks each stage c tool against the
+// literal table: the table holds 48 tools, every one is listed, the listing holds 165 tools in all, and every stage c
+// tool is not read-only, with the destructive and idempotent hints the table gives.
 func TestStageCToolsCarryTheHandWrittenHints(t *testing.T) {
 	if len(stageCTools) != stageCToolCount {
 		t.Fatalf("the table holds %d stage c tools, want %d", len(stageCTools), stageCToolCount)
 	}
-	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", "admin")).Capped(domain.AccessAdmin)
+	svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline"))
 	var logs bytes.Buffer
 	res, err := connect(t, svc, &logs).ListTools(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(res.Tools) != adminCeilingToolCount {
-		t.Fatalf("the admin ceiling offers %d tools, want %d with list_sources", len(res.Tools), adminCeilingToolCount)
+	if len(res.Tools) != allToolCount {
+		t.Fatalf("the server lists %d tools, want %d with list_sources", len(res.Tools), allToolCount)
 	}
 
 	byName := map[string]bool{}
@@ -123,11 +121,11 @@ func TestStageCToolsCarryTheHandWrittenHints(t *testing.T) {
 		}
 	}
 	if offered != stageCToolCount {
-		t.Errorf("the admin ceiling offers %d stage c tools, want %d", offered, stageCToolCount)
+		t.Errorf("the server offers %d stage c tools, want %d", offered, stageCToolCount)
 	}
 	for name := range stageCTools {
 		if !byName[name] {
-			t.Errorf("%s: the admin ceiling offers no such tool", name)
+			t.Errorf("%s: the server offers no such tool", name)
 		}
 	}
 }

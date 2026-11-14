@@ -20,7 +20,7 @@ func baseCommandTree() *command {
 				children: []*command{
 					{
 						name:    "list",
-						summary: "list the configured sources, filtered by kind and tags. Access is shown for each source; a command refuses a source whose level is below the one it needs.",
+						summary: "list the configured sources, filtered by kind and tags.",
 						leaf: &leaf{
 							usage: "retriever sources list [--kind <kind>] [--tag <tag[,tag...]>]",
 							flags: []flag{
@@ -82,9 +82,8 @@ func baseCommandTree() *command {
 				name:    "mcp",
 				summary: "serve the source catalog to an MCP client over stdio",
 				leaf: &leaf{
-					usage: "retriever mcp [--max-access read|write|admin] [--tools <resource,...>]",
+					usage: "retriever mcp [--tools <resource,...>]",
 					flags: []flag{
-						{name: "--max-access", meta: "read|write|admin", help: "the highest access level the tools may offer (default: read)"},
 						{name: "--tools", meta: "<resource,...>", help: "only the tools of these resources, comma-separated, such as documents,comments; list_sources is always offered (default: every resource)"},
 					},
 					protocol: true,

@@ -111,13 +111,13 @@ func scriptFor(answers map[string]scriptedAnswer) func(string, map[string]any) s
 	}
 }
 
-// newScriptedGateway builds a gateway at access over the given transport, with no pacing wait and a fake clock. Options
+// newScriptedGateway builds a gateway over the given transport, with no pacing wait and a fake clock. Options
 // given here replace the defaults.
-func newScriptedGateway(t *testing.T, access domain.Access, rt http.RoundTripper, opts ...Option) *Gateway {
+func newScriptedGateway(t *testing.T, rt http.RoundTripper, opts ...Option) *Gateway {
 	t.Helper()
 	clock := newFakeClock()
 	all := append([]Option{WithMinDelay(0), WithClock(clock.Now), WithSleep(clock.Sleep)}, opts...)
-	gw, err := NewWithBase(testSourceAt(t, access), testBase, &http.Client{Transport: rt}, &staticCreds{}, all...)
+	gw, err := NewWithBase(testSourceAt(t), testBase, &http.Client{Transport: rt}, &staticCreds{}, all...)
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
@@ -182,7 +182,7 @@ func TestKiwiReadRefusesAnOperationOutsideTheReadTable(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rt := &scriptedRT{answer: scriptFor(nil)}
-			gw := newScriptedGateway(t, domain.AccessRead, rt)
+			gw := newScriptedGateway(t, rt)
 			_, err := gw.Read(context.Background(), tt.op, domain.NewArgs(tt.args))
 			if err == nil {
 				t.Fatalf("Read returned no error")
@@ -351,7 +351,7 @@ func TestKiwiReadsReturnTheFaultOfTheReplyTheyNeed(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gw := newScriptedGateway(t, domain.AccessRead, &scriptedRT{answer: scriptFor(tt.answers)})
+			gw := newScriptedGateway(t, &scriptedRT{answer: scriptFor(tt.answers)})
 			_, err := gw.Read(context.Background(), tt.op, domain.NewArgs(tt.args))
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("Read error = %v, want %v", err, tt.want)
@@ -364,7 +364,7 @@ func TestKiwiReadsReturnTheFaultOfTheReplyTheyNeed(t *testing.T) {
 // rules: a product or a plan named with a leading zero is refused, so no request is sent for it.
 func TestKiwiIDsThatAreNotCanonicalAreRefusedBeforeAnyRequest(t *testing.T) {
 	rt := &scriptedRT{answer: scriptFor(nil)}
-	gw := newScriptedGateway(t, domain.AccessRead, rt)
+	gw := newScriptedGateway(t, rt)
 	if _, err := gw.CollectionTree(context.Background(), mustCollectionID(t, "product-0")); !errors.Is(err, domain.ErrInvalidCollectionID) {
 		t.Fatalf("CollectionTree(product-0) error = %v, want ErrInvalidCollectionID", err)
 	}
@@ -379,7 +379,7 @@ func TestKiwiIDsThatAreNotCanonicalAreRefusedBeforeAnyRequest(t *testing.T) {
 // TestKiwiUpdateRefusesAPlanNamedAsACase checks that an update names a case, so a plan ID is refused before any request.
 func TestKiwiUpdateRefusesAPlanNamedAsACase(t *testing.T) {
 	rt := &scriptedRT{answer: scriptFor(nil)}
-	gw := newScriptedGateway(t, domain.AccessWrite, rt)
+	gw := newScriptedGateway(t, rt)
 	_, err := gw.Write(context.Background(), domain.OpKiwiTestCasesUpdate, domain.NewArgs(map[string]any{"documentId": "plan-2", "summary": "x"}))
 	if !errors.Is(err, domain.ErrInvalidDocumentID) {
 		t.Fatalf("update of a plan error = %v, want ErrInvalidDocumentID", err)
@@ -393,7 +393,7 @@ func TestKiwiUpdateRefusesAPlanNamedAsACase(t *testing.T) {
 // Kiwi: the writer has no rule for it and refuses it.
 func TestKiwiWriteOfAnotherKindsOperationIsUnsupported(t *testing.T) {
 	rt := &scriptedRT{answer: scriptFor(nil)}
-	gw := newScriptedGateway(t, domain.AccessWrite, rt)
+	gw := newScriptedGateway(t, rt)
 	_, err := gw.Write(context.Background(), domain.OpDocumentsAddGroup, domain.NewArgs(map[string]any{
 		"documentId": "doc-1", "groupId": "123e4567-e89b-12d3-a456-426614174000",
 	}))
@@ -408,7 +408,7 @@ func TestKiwiWriteOfAnotherKindsOperationIsUnsupported(t *testing.T) {
 // TestKiwiTreeOrdersCasesWithTheSameSortKeyByID checks that two cases with one sort key are listed in ID order, whatever
 // order the server sent them in.
 func TestKiwiTreeOrdersCasesWithTheSameSortKeyByID(t *testing.T) {
-	gw := newScriptedGateway(t, domain.AccessRead, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
+	gw := newScriptedGateway(t, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
 		methodProductFilter:    sReply([]any{productRow(1, "Portal")}),
 		methodTestPlanFilter:   sReply([]any{planRow(2, 1, nil)}),
 		methodTestCaseFilter:   sReply([]any{caseRow(13, "Logout works"), caseRow(12, "Login works")}),
@@ -447,7 +447,7 @@ func TestKiwiWritesRefuseBadArgumentsAndReadOperations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rt := &scriptedRT{answer: scriptFor(nil)}
-			gw := newScriptedGateway(t, domain.AccessWrite, rt)
+			gw := newScriptedGateway(t, rt)
 			_, err := gw.Write(context.Background(), tt.op, domain.NewArgs(tt.args))
 			if err == nil {
 				t.Fatalf("Write returned no error")
@@ -506,7 +506,7 @@ func TestKiwiCreateFaultsAreReturnedBeforeTheWrite(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rt := &scriptedRT{answer: scriptFor(createAnswers(tt.answers))}
-			gw := newScriptedGateway(t, domain.AccessWrite, rt)
+			gw := newScriptedGateway(t, rt)
 			_, err := gw.Write(context.Background(), domain.OpKiwiTestCasesCreate, domain.NewArgs(createArgs()))
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("Write error = %v, want %v", err, tt.want)
@@ -540,7 +540,7 @@ func TestKiwiUpdateFaultsAreReturnedBeforeTheWrite(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rt := &scriptedRT{answer: scriptFor(tt.answers)}
-			gw := newScriptedGateway(t, domain.AccessWrite, rt)
+			gw := newScriptedGateway(t, rt)
 			_, err := gw.Write(context.Background(), domain.OpKiwiTestCasesUpdate, domain.NewArgs(tt.args))
 			if tt.want == nil && err != nil {
 				t.Fatalf("Write error = %v, want none", err)
@@ -558,7 +558,7 @@ func TestKiwiUpdateFaultsAreReturnedBeforeTheWrite(t *testing.T) {
 // TestKiwiAddCaseWriteFaultHasAnUnknownOutcome checks that an add-case whose exchange fails is an unknown outcome, so the
 // caller never retries it.
 func TestKiwiAddCaseWriteFaultHasAnUnknownOutcome(t *testing.T) {
-	gw := newScriptedGateway(t, domain.AccessWrite, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
+	gw := newScriptedGateway(t, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
 		methodTestPlanAddCase: {fault: errScripted},
 	})})
 	_, err := gw.Write(context.Background(), domain.OpKiwiPlansAddCase, domain.NewArgs(map[string]any{"planId": "plan-1", "caseId": "case-13"}))
@@ -586,7 +586,7 @@ func TestKiwiRetryAfterValuesAreReadOrRefused(t *testing.T) {
 			rt := &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
 				methodProductFilter: {status: http.StatusTooManyRequests, retryAfter: tt.retryAfter},
 			})}
-			gw := newScriptedGateway(t, domain.AccessRead, rt)
+			gw := newScriptedGateway(t, rt)
 			_, err := gw.Read(context.Background(), domain.OpKiwiProductsList, domain.NewArgs(map[string]any{}))
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("Read error = %v, want %v", err, tt.want)
@@ -604,7 +604,7 @@ func TestKiwiRetryWaitFaultIsReturned(t *testing.T) {
 	rt := &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
 		methodProductFilter: {status: http.StatusTooManyRequests, retryAfter: "1"},
 	})}
-	gw := newScriptedGateway(t, domain.AccessRead, rt, WithSleep(func(context.Context, time.Duration) error { return errScripted }))
+	gw := newScriptedGateway(t, rt, WithSleep(func(context.Context, time.Duration) error { return errScripted }))
 	_, err := gw.Read(context.Background(), domain.OpKiwiProductsList, domain.NewArgs(map[string]any{}))
 	if !errors.Is(err, errScripted) {
 		t.Fatalf("Read error = %v, want the wait fault", err)
@@ -618,7 +618,7 @@ func TestKiwiRetryWaitFaultIsReturned(t *testing.T) {
 // second request is never sent.
 func TestKiwiPacingFaultStopsTheNextRequest(t *testing.T) {
 	rt := &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{methodProductFilter: sReply([]any{})})}
-	gw := newScriptedGateway(t, domain.AccessRead, rt,
+	gw := newScriptedGateway(t, rt,
 		WithMinDelay(time.Second),
 		WithSleep(func(context.Context, time.Duration) error { return errScripted }))
 	if _, err := gw.Read(context.Background(), domain.OpKiwiProductsList, domain.NewArgs(map[string]any{})); err != nil {
@@ -643,7 +643,7 @@ func TestKiwiPacingNeverWaitsWhenTheGapHasPassed(t *testing.T) {
 	}
 	slept := 0
 	rt := &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{methodProductFilter: sReply([]any{})})}
-	gw := newScriptedGateway(t, domain.AccessRead, rt,
+	gw := newScriptedGateway(t, rt,
 		WithMinDelay(time.Second),
 		WithClock(clock),
 		WithSleep(func(context.Context, time.Duration) error { slept++; return nil }))
@@ -675,7 +675,7 @@ func TestKiwiTransportFaultsMapToTheirSentinels(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gw := newScriptedGateway(t, domain.AccessRead, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
+			gw := newScriptedGateway(t, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
 				methodProductFilter: {fault: tt.fault},
 			})})
 			_, err := gw.Read(tt.ctx, domain.OpKiwiProductsList, domain.NewArgs(map[string]any{}))
@@ -689,7 +689,7 @@ func TestKiwiTransportFaultsMapToTheirSentinels(t *testing.T) {
 // TestKiwiBodyFaultAfterAStatusIsUnreachableForARead checks a reply body that fails after its status: a read that cannot
 // finish reading is unreachable.
 func TestKiwiBodyFaultAfterAStatusIsUnreachableForARead(t *testing.T) {
-	gw := newScriptedGateway(t, domain.AccessRead, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
+	gw := newScriptedGateway(t, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
 		methodProductFilter: {bodyErr: errScripted},
 	})})
 	if _, err := gw.Read(context.Background(), domain.OpKiwiProductsList, domain.NewArgs(map[string]any{})); !errors.Is(err, domain.ErrUnreachable) {
@@ -700,7 +700,7 @@ func TestKiwiBodyFaultAfterAStatusIsUnreachableForARead(t *testing.T) {
 // TestKiwiBodyFaultAfterAStatusIsAnUnknownOutcomeForAWrite checks the same body fault on a write: Kiwi answered its status,
 // so the write may already have run, and the outcome is unknown.
 func TestKiwiBodyFaultAfterAStatusIsAnUnknownOutcomeForAWrite(t *testing.T) {
-	gw := newScriptedGateway(t, domain.AccessWrite, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
+	gw := newScriptedGateway(t, &scriptedRT{answer: scriptFor(map[string]scriptedAnswer{
 		methodTestPlanAddCase: {bodyErr: errScripted},
 	})})
 	_, err := gw.Write(context.Background(), domain.OpKiwiPlansAddCase, domain.NewArgs(map[string]any{"planId": "plan-1", "caseId": "case-13"}))
@@ -719,7 +719,7 @@ func TestKiwiTLSHandshakeFaultIsUnreachableEvenForAWrite(t *testing.T) {
 		}
 		return client, nil
 	}
-	gw := newScriptedGateway(t, domain.AccessWrite, &http.Transport{DialContext: pipeDial})
+	gw := newScriptedGateway(t, &http.Transport{DialContext: pipeDial})
 	_, err := gw.Write(context.Background(), domain.OpKiwiPlansAddCase, domain.NewArgs(map[string]any{"planId": "plan-1", "caseId": "case-13"}))
 	if !errors.Is(err, domain.ErrUnreachable) {
 		t.Fatalf("Write error = %v, want ErrUnreachable for a failed handshake", err)
@@ -739,7 +739,7 @@ func TestKiwiClientRefusesAForbiddenArgumentAndAnUnencodableOne(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rt := &scriptedRT{answer: scriptFor(nil)}
-			gw := newScriptedGateway(t, domain.AccessRead, rt)
+			gw := newScriptedGateway(t, rt)
 			if _, err := gw.call(context.Background(), methodProductFilter, tt.params); err == nil {
 				t.Fatalf("call returned no error")
 			}
@@ -754,7 +754,7 @@ func TestKiwiClientRefusesAForbiddenArgumentAndAnUnencodableOne(t *testing.T) {
 // invalid base, and no request is sent.
 func TestKiwiRequestWithAnInvalidURLIsInvalidBaseURL(t *testing.T) {
 	rt := &scriptedRT{answer: scriptFor(nil)}
-	gw := newScriptedGateway(t, domain.AccessRead, rt)
+	gw := newScriptedGateway(t, rt)
 	gw.base = "https://bad\x7fhost"
 	if _, err := gw.Read(context.Background(), domain.OpKiwiProductsList, domain.NewArgs(map[string]any{})); !errors.Is(err, errInvalidBaseURL) {
 		t.Fatalf("Read error = %v, want errInvalidBaseURL", err)

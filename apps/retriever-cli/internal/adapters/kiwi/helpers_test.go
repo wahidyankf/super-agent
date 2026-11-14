@@ -94,23 +94,23 @@ type rig struct {
 	gw    *Gateway
 }
 
-// newRig builds a gateway at access over the dataset. The pacing delay is zero unless a test passes WithMinDelay.
-func newRig(t *testing.T, d kiwistub.Dataset, access domain.Access, opts ...Option) rig {
+// newRig builds a gateway over the dataset. The pacing delay is zero unless a test passes WithMinDelay.
+func newRig(t *testing.T, d kiwistub.Dataset, opts ...Option) rig {
 	t.Helper()
 	stub := kiwistub.New(sentinelKey, kiwistub.WithDataset(d))
 	clock := newFakeClock()
 	creds := &staticCreds{}
 	client := &http.Client{Transport: stub.RoundTripper()}
 	all := append([]Option{WithMinDelay(0), WithClock(clock.Now), WithSleep(clock.Sleep)}, opts...)
-	gw, err := NewWithBase(testSourceAt(t, access), testBase, client, creds, all...)
+	gw, err := NewWithBase(testSourceAt(t), testBase, client, creds, all...)
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
 	return rig{stub: stub, clock: clock, creds: creds, gw: gw}
 }
 
-// testSourceAt returns a kiwi source at the given access level, whose endpoint is the test host.
-func testSourceAt(t *testing.T, access domain.Access) domain.Source {
+// testSourceAt returns a kiwi source whose endpoint is the test host.
+func testSourceAt(t *testing.T) domain.Source {
 	t.Helper()
 	id, err := domain.NewSourceID("kiwi")
 	if err != nil {
@@ -128,7 +128,7 @@ func testSourceAt(t *testing.T, access domain.Access) domain.Source {
 	if err != nil {
 		t.Fatalf("NewTagSet: %v", err)
 	}
-	return domain.NewSource(id, domain.KindKiwi, tags, access, endpoint, ref)
+	return domain.NewSource(id, domain.KindKiwi, tags, endpoint, ref)
 }
 
 // sampleDataset is the small Kiwi server most tests read: one product with two plans, two cases, and the lookup tables.

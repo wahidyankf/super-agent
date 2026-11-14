@@ -12,4 +12,4 @@ from outside: a source service, a file, the terminal, or a protocol.
 - [`kiwi/`](./kiwi/README.md) is the Kiwi test-management source.
 - [`out/`](./out/README.md) holds the outbound sinks, which write exports.
 - [`outline/`](./outline/README.md) is the Outline wiki source.
-- [`registry/`](./registry/README.md) builds one gateway for each source and access level.
+- [`registry/`](./registry/README.md) builds one gateway for each source.

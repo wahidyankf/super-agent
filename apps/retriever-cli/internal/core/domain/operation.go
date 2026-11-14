@@ -66,7 +66,7 @@ const (
 	OpUserMembershipsList      OperationID = "user-memberships.list"
 	OpViewsList                OperationID = "views.list"
 
-	// The admin-level reads of stage a. Each needs a source of access admin.
+	// The reads of stage a: wiki settings and integration data, read like any other read.
 	OpAPIKeysList                 OperationID = "api-keys.list"
 	OpAuthenticationProvidersGet  OperationID = "authentication-providers.get"
 	OpAuthenticationProvidersList OperationID = "authentication-providers.list"
@@ -79,8 +79,7 @@ const (
 	OpWebhookSubscriptionsList    OperationID = "webhook-subscriptions.list"
 )
 
-// The write operations of stage b, the documents writes. Each is a non-destructive change with access
-// write. A new write is a new constant and one catalog row.
+// The write operations of stage b, the documents writes. Each is a non-destructive change. A new write is a new constant and one catalog row.
 const (
 	OpDocumentsCreate     OperationID = "documents.create"
 	OpDocumentsDuplicate  OperationID = "documents.duplicate"
@@ -135,7 +134,7 @@ const (
 	OpUsersNotificationsUnsubscribe OperationID = "users.notifications-unsubscribe"
 )
 
-// The destructive and admin operations of stage c. Each one changes the wiki with access admin;
+// The destructive and admin operations of stage c. Each one changes the wiki;
 // a destructive one removes content.
 const (
 	OpDocumentsAddGroup    OperationID = "documents.add-group"

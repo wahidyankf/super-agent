@@ -1,7 +1,7 @@
 # internal/adapters/jira
 
 The Jira Cloud source. It reads projects, issues found by JQL, and the comments of an issue. It converts Atlassian
-Document Format to Markdown. It never writes: a Jira source may hold `read` access at most.
+Document Format to Markdown. It never writes: the adapter has no write path.
 
 Source files:
 

@@ -90,9 +90,9 @@ func TestSliceC2RepliesAreReadLikeTheirRows(t *testing.T) {
 		t.Run(string(tc.op), func(t *testing.T) {
 			r := adminRig(t)
 			r.stub.SetReply(string(adminEndpoints[tc.op].method), http.StatusOK, tc.reply)
-			out, err := r.gw.Administer(context.Background(), tc.op, domain.NewArgs(tc.args))
+			out, err := r.gw.Write(context.Background(), tc.op, domain.NewArgs(tc.args))
 			if err != nil {
-				t.Fatalf("Administer = %v", err)
+				t.Fatalf("Write = %v", err)
 			}
 			if tc.list {
 				items := out.Items()
@@ -119,9 +119,9 @@ func TestSliceC2ProjectionsDropTheEmailAddressesAndThePrivateSettings(t *testing
 		t.Run(string(tc.op), func(t *testing.T) {
 			r := adminRig(t)
 			r.stub.SetReply(string(adminEndpoints[tc.op].method), http.StatusOK, tc.reply)
-			out, err := r.gw.Administer(context.Background(), tc.op, domain.NewArgs(tc.args))
+			out, err := r.gw.Write(context.Background(), tc.op, domain.NewArgs(tc.args))
 			if err != nil {
-				t.Fatalf("Administer = %v", err)
+				t.Fatalf("Write = %v", err)
 			}
 			if k := deniedKey(out); k != "" {
 				t.Fatalf("the projection of %s holds the key %q, which the redaction rules drop", tc.op, k)
@@ -151,7 +151,7 @@ func TestSliceC2AckWithoutSuccessIsAnOutcomeUnknown(t *testing.T) {
 		for _, reply := range replies {
 			r := adminRig(t)
 			r.stub.SetReply(string(adminEndpoints[ack.op].method), http.StatusOK, reply)
-			_, err := r.gw.Administer(context.Background(), ack.op, domain.NewArgs(ack.args))
+			_, err := r.gw.Write(context.Background(), ack.op, domain.NewArgs(ack.args))
 			if !errors.Is(err, domain.ErrWriteOutcomeUnknown) {
 				t.Fatalf("%s with %s: error = %v, want ErrWriteOutcomeUnknown", ack.op, reply, err)
 			}

@@ -170,7 +170,7 @@ func TestMCPEndedBySignalNamesTheSignal(t *testing.T) {
 			Stdin:   strings.NewReader(""),
 			Stdout:  io.Discard,
 			Stderr:  &errOut,
-			MCP: func(_ context.Context, _ domain.Access, _ []string, _ io.Reader, _ io.Writer) error {
+			MCP: func(_ context.Context, _ []string, _ io.Reader, _ io.Writer) error {
 				cancel(SignalCause(c.sig))
 				return nil
 			},
@@ -190,7 +190,7 @@ func TestMCPCancelledWithoutASignalExitsTwo(t *testing.T) {
 		Stdin:   strings.NewReader(""),
 		Stdout:  io.Discard,
 		Stderr:  &errOut,
-		MCP: func(ctx context.Context, _ domain.Access, _ []string, _ io.Reader, _ io.Writer) error {
+		MCP: func(ctx context.Context, _ []string, _ io.Reader, _ io.Writer) error {
 			cancel(errors.New("the parent was dropped"))
 			<-ctx.Done()
 			return nil
@@ -264,15 +264,15 @@ type adminAcking struct {
 	*countingGateway
 }
 
-// Administer acknowledges the change without a request.
-func (adminAcking) Administer(context.Context, domain.OperationID, domain.Args) (domain.Record, error) {
+// Write acknowledges the change without a request.
+func (adminAcking) Write(context.Context, domain.OperationID, domain.Args) (domain.Record, error) {
 	return domain.NewRecord(domain.Field{Name: "ok", Value: true}), nil
 }
 
 // TestAdminCommandPrintsTheChangeItSent checks that a destructive command runs through the admin use case with no
 // confirmation flag, and prints the change it made.
 func TestAdminCommandPrintsTheChangeItSent(t *testing.T) {
-	setup := wikiGranted(t, domain.AccessAdmin)
+	setup := wikiSetup(t)
 	res := setup.service.Gateways.(fixedResolver)
 	setup.service.Gateways = fixedResolver{gw: adminAcking{countingGateway: res.gw.(*countingGateway)}}
 	code, out, errOut := runRetriever(t, []string{"outline", "documents", "delete", pathsDocumentID,
@@ -317,15 +317,15 @@ type adminFailing struct {
 	err error
 }
 
-// Administer refuses the change with the fixed error, without a request.
-func (g adminFailing) Administer(context.Context, domain.OperationID, domain.Args) (domain.Record, error) {
+// Write refuses the change with the fixed error, without a request.
+func (g adminFailing) Write(context.Context, domain.OperationID, domain.Args) (domain.Record, error) {
 	return domain.Record{}, g.err
 }
 
 // TestWriteCommandPrintsTheRecordAsJSON checks that a write in JSON mode prints the record the wiki answered, as one JSON
 // document.
 func TestWriteCommandPrintsTheRecordAsJSON(t *testing.T) {
-	setup := writableWiki(t)
+	setup := wikiSetup(t)
 	res := setup.service.Gateways.(fixedResolver)
 	setup.service.Gateways = fixedResolver{gw: writeAcking{countingGateway: res.gw.(*countingGateway)}}
 	code, out, errOut := runRetriever(t, []string{"--output", "json", "outline", "documents", "update", pathsDocumentID,
@@ -338,7 +338,7 @@ func TestWriteCommandPrintsTheRecordAsJSON(t *testing.T) {
 // TestAdminCommandPrintsTheChangeAsJSON checks that a destructive command in JSON mode prints the reply as one JSON
 // document.
 func TestAdminCommandPrintsTheChangeAsJSON(t *testing.T) {
-	setup := wikiGranted(t, domain.AccessAdmin)
+	setup := wikiSetup(t)
 	res := setup.service.Gateways.(fixedResolver)
 	setup.service.Gateways = fixedResolver{gw: adminAcking{countingGateway: res.gw.(*countingGateway)}}
 	code, out, errOut := runRetriever(t, []string{"--output", "json", "outline", "documents", "delete", pathsDocumentID,
@@ -350,7 +350,7 @@ func TestAdminCommandPrintsTheChangeAsJSON(t *testing.T) {
 
 // TestAdminFailureIsPrintedAndExitsFailed checks that a change the wiki refuses prints no standard output and exits failed.
 func TestAdminFailureIsPrintedAndExitsFailed(t *testing.T) {
-	setup := wikiGranted(t, domain.AccessAdmin)
+	setup := wikiSetup(t)
 	res := setup.service.Gateways.(fixedResolver)
 	setup.service.Gateways = fixedResolver{gw: adminFailing{countingGateway: res.gw.(*countingGateway), err: domain.ErrDocumentNotFound}}
 	code, out, errOut := runRetriever(t, []string{"outline", "documents", "delete", pathsDocumentID,
@@ -369,14 +369,8 @@ func TestASearchWithNoMatchExitsOne(t *testing.T) {
 	}
 }
 
-// writableWiki returns the wiki setup with its one source granted write access, so a write command reaches its reply.
-func writableWiki(t *testing.T) outlineSetup {
-	t.Helper()
-	return wikiGranted(t, domain.AccessWrite)
-}
-
-// wikiGranted returns the wiki setup with its one source granted access, so a command at that level reaches its reply.
-func wikiGranted(t *testing.T, access domain.Access) outlineSetup {
+// wikiSetup returns the wiki setup with its one outline source, so a command reaches its reply.
+func wikiSetup(t *testing.T) outlineSetup {
 	t.Helper()
 	setup, gw := wikiWith(treeDataset)
 	id, err := domain.NewSourceID("outline")
@@ -396,7 +390,7 @@ func wikiGranted(t *testing.T, access domain.Access) outlineSetup {
 		t.Fatal(err)
 	}
 	cat, err := domain.NewCatalog([]domain.Source{
-		domain.NewSource(id, domain.KindOutline, tags, access, ep, ref),
+		domain.NewSource(id, domain.KindOutline, tags, ep, ref),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -406,7 +400,7 @@ func wikiGranted(t *testing.T, access domain.Access) outlineSetup {
 }
 
 func TestSourceRowsAsJSONAreNeverNull(t *testing.T) {
-	rows := sourceRowsJSON([]domain.SourceSummary{{ID: "example-outline", Kind: "outline", Access: "read"}})
+	rows := sourceRowsJSON([]domain.SourceSummary{{ID: "example-outline", Kind: "outline"}})
 	if len(rows) != 1 || rows[0].Tags == nil || len(rows[0].Tags) != 0 {
 		t.Fatalf("an untagged source must read as an empty list, got %+v", rows)
 	}

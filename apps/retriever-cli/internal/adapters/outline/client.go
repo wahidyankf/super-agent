@@ -20,15 +20,12 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/sources/operations"
 )
 
-// call sends the request of one operation and decodes a 2xx reply into out. The operation must be one the source's
-// access level allows, so a write method on a read source never reaches the network. It
+// call sends the request of one operation and decodes a 2xx reply into out. The method comes from a closed endpoint
+// table, so only a method of the table reaches the network. It
 // retries a 429 reply after its Retry-After wait, at most maxRetries times. A write is retried for no other reason
 // . The request lock is held for the whole call, wait included, so no other request goes out while
 // the source asks for a pause.
 func (g *Gateway) call(ctx context.Context, op domain.OperationID, method string, in, out any) error {
-	if !g.permits(op) {
-		return errMethodNotAllowed
-	}
 	payload, err := json.Marshal(in)
 	if err != nil {
 		return fmt.Errorf("encode %s request: %w", method, err)
@@ -122,16 +119,6 @@ func (g *Gateway) attempt(ctx context.Context, method string, payload []byte, ou
 // about the request, so they keep their own sentinels (finding m1).
 func unusableWriteReply(status int) bool {
 	return status < http.StatusMultipleChoices || status >= http.StatusInternalServerError
-}
-
-// permits reports whether the source's access level allows the operation. The level of a catalog row comes from the
-// catalog, and the export call is a read.
-func (g *Gateway) permits(op domain.OperationID) bool {
-	if op == opExport {
-		return g.access.Allows(domain.AccessRead)
-	}
-	row, ok := operations.Lookup(op)
-	return ok && g.access.Allows(row.Access)
 }
 
 // pace waits until minDelay has passed since the previous request ended. The caller holds the lock.

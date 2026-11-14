@@ -11,7 +11,7 @@ import (
 // TestExportDocumentWritesTheMarkdownUnderTheTitleSlug checks that an Outline document goes to the sink as its Markdown
 // body, under a file name made from its title slug.
 func TestExportDocumentWritesTheMarkdownUnderTheTitleSlug(t *testing.T) {
-	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline})
 	gw := &fakeGateway{doc: domain.SourceDocument{ID: "doc-1", Title: "Getting Started", Markdown: "# Hi\n"}}
 	svc, _ := kindedService(t, cat, gw, nil, nil)
 	sink := newFakeSink()
@@ -28,7 +28,7 @@ func TestExportDocumentWritesTheMarkdownUnderTheTitleSlug(t *testing.T) {
 // TestExportDocumentNamesAnUntitledOutlineDocumentByID checks that a title with no letters or digits falls back to the
 // document ID as the file name.
 func TestExportDocumentNamesAnUntitledOutlineDocumentByID(t *testing.T) {
-	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline})
 	gw := &fakeGateway{doc: domain.SourceDocument{ID: "doc-1", Title: "!!!", Markdown: "Body.\n"}}
 	svc, _ := kindedService(t, cat, gw, nil, nil)
 	sink := newFakeSink()
@@ -42,7 +42,7 @@ func TestExportDocumentNamesAnUntitledOutlineDocumentByID(t *testing.T) {
 // TestExportDocumentRefusesAnInvalidIDBeforeAnyFetch checks that a malformed document ID stops the export before the
 // gateway is called and before the sink is used.
 func TestExportDocumentRefusesAnInvalidIDBeforeAnyFetch(t *testing.T) {
-	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline})
 	gw := &fakeGateway{}
 	svc, _ := kindedService(t, cat, gw, nil, nil)
 	sink := newFakeSink()
@@ -58,7 +58,7 @@ func TestExportDocumentRefusesAnInvalidIDBeforeAnyFetch(t *testing.T) {
 
 // TestExportDocumentStopsWhenTheFetchFails checks that a failed fetch writes nothing and keeps the gateway's error.
 func TestExportDocumentStopsWhenTheFetchFails(t *testing.T) {
-	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline})
 	gw := &fakeGateway{err: domain.ErrDocumentNotFound}
 	svc, _ := kindedService(t, cat, gw, nil, nil)
 	sink := newFakeSink()
@@ -74,7 +74,7 @@ func TestExportDocumentStopsWhenTheFetchFails(t *testing.T) {
 
 // TestExportDocumentReturnsTheSinkError checks that a failed write keeps the sink's error, so the caller can classify it.
 func TestExportDocumentReturnsTheSinkError(t *testing.T) {
-	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline, domain.AccessRead})
+	cat := kindedCatalog(t, kindedSource{"outline", domain.KindOutline})
 	gw := &fakeGateway{doc: domain.SourceDocument{ID: "doc-1", Title: "Doc", Markdown: "Body.\n"}}
 	svc, _ := kindedService(t, cat, gw, nil, nil)
 	sink := newFakeSink()

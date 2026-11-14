@@ -67,22 +67,6 @@ var requestCasesC4 = []requestCase{
 		`{"id":"` + webhookUUID + `","name":"CI events","url":"https://new.example.test/x","events":["documents.update"]}`},
 }
 
-// TestSliceC4EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest checks layer 3 for each row of the slice:
-// a source below admin never sends the change.
-func TestSliceC4EveryRowIsRefusedAtAWriteSourceBeforeAnyRequest(t *testing.T) {
-	for _, tc := range requestCasesC4 {
-		t.Run(tc.name, func(t *testing.T) {
-			gw, rec := recordingGatewayAt(t, domain.AccessWrite)
-			if _, err := gw.Administer(context.Background(), tc.op, domain.NewArgs(tc.args)); err == nil {
-				t.Fatal("an admin call on a write source succeeded")
-			}
-			if n := len(rec.recorded()); n != 0 {
-				t.Fatalf("requests = %d, want 0", n)
-			}
-		})
-	}
-}
-
 // caseArgsC4 returns the arguments of the case of an operation of this slice.
 func caseArgsC4(t *testing.T, op domain.OperationID) map[string]any {
 	t.Helper()
@@ -113,7 +97,7 @@ func TestSliceC4AckWithoutSuccessIsAnOutcomeUnknown(t *testing.T) {
 		r := adminRig(t)
 		method := adminEndpoints[tc.op].method
 		r.stub.SetReply(method, http.StatusOK, tc.reply)
-		_, err := r.gw.Administer(context.Background(), tc.op, domain.NewArgs(caseArgsC4(t, tc.op)))
+		_, err := r.gw.Write(context.Background(), tc.op, domain.NewArgs(caseArgsC4(t, tc.op)))
 		if !errors.Is(err, domain.ErrWriteOutcomeUnknown) {
 			t.Fatalf("%s with %s: error = %v, want ErrWriteOutcomeUnknown", tc.op, tc.reply, err)
 		}

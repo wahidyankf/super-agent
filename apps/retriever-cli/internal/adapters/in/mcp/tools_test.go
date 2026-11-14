@@ -70,9 +70,9 @@ func TestToolListHasExplicitHintsAndTheUntrustedSentence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Fifty-seven tools at the read ceiling: list_sources, which reads only the catalog, and the fifty-six catalog reads
-	// of parts 1, 2a, and the read rows of 2b. The open-world hint is exact per tool, so a tool that calls a wiki is never
-	// announced as closed, or the reverse.
+	// The read tools of the catalog, with list_sources, which reads only the catalog. The open-world hint is exact per
+	// tool, so a tool that calls a wiki is never announced as closed, or the reverse. Every other listed tool changes
+	// something, so it is checked below as not read-only.
 	wantOpenWorld := map[string]bool{
 		"list_sources": false, "list_collections": true, "collection_info": true, "collection_tree": true,
 		"get_document": true, "list_documents": true, "search_documents": true, "whoami": true,
@@ -91,57 +91,45 @@ func TestToolListHasExplicitHintsAndTheUntrustedSentence(t *testing.T) {
 		"list_oauth_authentications": true, "list_reactions": true, "get_relationship": true,
 		"list_relationships": true, "list_searches": true, "suggest_mentions": true,
 		"list_user_memberships": true, "list_views": true,
+		"get_authentication_provider": true, "list_api_keys": true, "list_authentication_providers": true,
+		"get_import": true, "list_imports": true, "get_integration": true, "list_integrations": true,
+		"get_oauth_client": true, "list_oauth_clients": true, "list_webhook_subscriptions": true,
 	}
-	if len(res.Tools) != len(wantOpenWorld) {
-		t.Fatalf("listed %d tools, want %d", len(res.Tools), len(wantOpenWorld))
-	}
+	listed := map[string]bool{}
 	for _, tl := range res.Tools {
-		world, known := wantOpenWorld[tl.Name]
-		if !known {
-			t.Errorf("%s is listed but is not one of the read tools", tl.Name)
-		}
+		listed[tl.Name] = true
 		if !strings.HasSuffix(tl.Description, untrustedSentence) {
 			t.Errorf("%s description does not end with the untrusted-data sentence", tl.Name)
 		}
 		a := tl.Annotations
-		if a == nil || !a.ReadOnlyHint || !a.IdempotentHint || a.DestructiveHint == nil || *a.DestructiveHint ||
-			a.OpenWorldHint == nil {
+		if a == nil || a.DestructiveHint == nil || a.OpenWorldHint == nil {
 			t.Errorf("%s has a hint that is not set explicitly: %+v", tl.Name, a)
-		} else if *a.OpenWorldHint != world {
+			continue
+		}
+		world, isRead := wantOpenWorld[tl.Name]
+		if !isRead {
+			if a.ReadOnlyHint {
+				t.Errorf("%s is announced as read-only, but it changes the wiki", tl.Name)
+			}
+			continue
+		}
+		if !a.ReadOnlyHint || !a.IdempotentHint || *a.DestructiveHint {
+			t.Errorf("%s has a read hint that is not set as a read: %+v", tl.Name, a)
+		}
+		if *a.OpenWorldHint != world {
 			t.Errorf("%s has OpenWorldHint %v, want %v", tl.Name, *a.OpenWorldHint, world)
 		}
 	}
-}
-
-// TestRegisterGateOffersOnlyTheToolsTheCatalogAllows checks the registration gate with a test-only tool that needs
-// write. The tool is offered only when a source has write access, which phase 2 never needs for its own tools.
-func TestRegisterGateOffersOnlyTheToolsTheCatalogAllows(t *testing.T) {
-	probe := tool{name: "write_probe", description: "probe", needs: domain.AccessWrite, effect: domain.EffectRead, bind: bind(listSources)}
-	for _, tc := range []struct {
-		name   string
-		access string
-		listed bool
-	}{
-		{name: "read-only catalog", access: "read", listed: false},
-		{name: "catalog with a write source", access: "write", listed: true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			svc := serviceWith(t, &fakeGateway{}, mustSource(t, "outline", tc.access))
-			server := sdk.NewServer(&sdk.Implementation{Name: "t", Version: "0"}, nil)
-			if _, err := register(server, svc, slog.New(slog.DiscardHandler), []tool{probe}); err != nil {
-				t.Fatal(err)
-			}
-			got := listedNames(t, server)
-			if has := len(got) == 1; has != tc.listed {
-				t.Fatalf("listed %v, want listed=%v", got, tc.listed)
-			}
-		})
+	for name := range wantOpenWorld {
+		if !listed[name] {
+			t.Errorf("%s is a read tool but the server does not list it", name)
+		}
 	}
 }
 
 // TestRegisterRefusesATableThatNamesOneToolTwice checks the table's own guard.
 func TestRegisterRefusesATableThatNamesOneToolTwice(t *testing.T) {
-	row := tool{name: "list_sources", needs: domain.AccessRead, effect: domain.EffectRead, bind: bind(listSources)}
+	row := tool{name: "list_sources", effect: domain.EffectRead, bind: bind(listSources)}
 	server := sdk.NewServer(&sdk.Implementation{Name: "t", Version: "0"}, nil)
 	_, err := register(server, emptyService(t), slog.New(slog.DiscardHandler), []tool{row, row})
 	if err == nil {
@@ -178,7 +166,7 @@ func listedNames(t *testing.T, server *sdk.Server) []string {
 func TestHostileGatewayErrorNeverReachesTheResultOrTheLog(t *testing.T) {
 	hostile := &fakeGateway{err: fmt.Errorf("upstream body %s at /srv/example/private/path", sentinelKey)}
 	var logs bytes.Buffer
-	cs := connect(t, serviceWith(t, hostile, mustSource(t, "outline", "read")), &logs)
+	cs := connect(t, serviceWith(t, hostile, mustSource(t, "outline")), &logs)
 	text, isErr := call(t, cs, "list_collections", nil)
 	if !isErr || text != "unexpected error" {
 		t.Fatalf("answer is (%v, %q), want the fixed unexpected-error text", isErr, text)
@@ -191,14 +179,14 @@ func TestHostileGatewayErrorNeverReachesTheResultOrTheLog(t *testing.T) {
 func TestPublicSentinelKeepsItsFixedTextAndTheKeyNameIsDropped(t *testing.T) {
 	var logs bytes.Buffer
 	upstream := &fakeGateway{err: fmt.Errorf("wrapped: %w", domain.ErrKeyRejected)}
-	cs := connect(t, serviceWith(t, upstream, mustSource(t, "outline", "read")), &logs)
+	cs := connect(t, serviceWith(t, upstream, mustSource(t, "outline")), &logs)
 	text, isErr := call(t, cs, "list_collections", nil)
 	if !isErr || text != "Outline rejected the API key" {
 		t.Fatalf("answer is (%v, %q), want the key-rejected text", isErr, text)
 	}
 
 	missing := &fakeGateway{err: domain.MissingKeyError{Variable: "EXAMPLE_OUTLINE_API_KEY"}}
-	cs2 := connect(t, serviceWith(t, missing, mustSource(t, "outline", "read")), &logs)
+	cs2 := connect(t, serviceWith(t, missing, mustSource(t, "outline")), &logs)
 	text2, _ := call(t, cs2, "list_collections", nil)
 	if strings.Contains(text2, "EXAMPLE") || text2 != missingKeyText {
 		t.Fatalf("missing key answer is %q, want the fixed text without the variable name", text2)
@@ -212,7 +200,7 @@ func TestLogLineHoldsNoContent(t *testing.T) {
 	const docID, title, body = "doc-distinct-7741", "Title distinct 7741", "Body distinct 7741 text"
 	var logs bytes.Buffer
 	gw := &fakeGateway{doc: domain.SourceDocument{ID: docID, Title: title, URL: "/doc/distinct", Markdown: body}}
-	cs := connect(t, serviceWith(t, gw, mustSource(t, "outline", "read")), &logs)
+	cs := connect(t, serviceWith(t, gw, mustSource(t, "outline")), &logs)
 	if _, isErr := call(t, cs, "get_document", map[string]any{"document_id": docID}); isErr {
 		t.Fatal("get_document failed")
 	}
@@ -257,7 +245,7 @@ func TestGetDocumentRefusesAnOffsetBeforeAnyRequest(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			gw := &fakeGateway{doc: domain.SourceDocument{ID: "doc-1", Title: "Doc", URL: "/doc/doc-1", Markdown: "Welcome."}}
 			var logs bytes.Buffer
-			cs := connect(t, serviceWith(t, gw, mustSource(t, "outline", "read")), &logs)
+			cs := connect(t, serviceWith(t, gw, mustSource(t, "outline")), &logs)
 			text, isErr := call(t, cs, "get_document", map[string]any{"document_id": "doc-1", "offset": tc.offset})
 			if !isErr || text != tc.text {
 				t.Fatalf("answer is (%v, %q), want the error %q", isErr, text, tc.text)
@@ -289,7 +277,7 @@ func panickingUse(context.Context, sources.Service, listSourcesIn) (listSourcesO
 // error, and that the log line names the type of the panic value and never its text.
 func TestPanickingUseCaseAnswersTheFixedTextAndLogsTheTypeOnly(t *testing.T) {
 	var logs bytes.Buffer
-	probe := tool{name: "panic_probe", description: "probe", needs: domain.AccessRead, effect: domain.EffectRead, bind: bind(panickingUse)}
+	probe := tool{name: "panic_probe", description: "probe", effect: domain.EffectRead, bind: bind(panickingUse)}
 	server := sdk.NewServer(&sdk.Implementation{Name: "t", Version: "0"}, nil)
 	if _, err := register(server, emptyService(t), slog.New(slog.NewTextHandler(&logs, nil)), []tool{probe}); err != nil {
 		t.Fatal(err)

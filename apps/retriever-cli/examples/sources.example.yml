@@ -8,21 +8,18 @@ sources:
   - id: example-outline
     kind: outline
     tags: [wiki, docs]
-    access: read
     endpoint: https://outline.example.test
     credential_env: EXAMPLE_OUTLINE_API_KEY
 
   - id: example-kiwi
     kind: kiwi
     tags: [tests]
-    access: read
     endpoint: https://kiwi.example.test
     credential_env: EXAMPLE_KIWI_API_KEY
 
   - id: example-jira
     kind: jira
     tags: [tickets]
-    access: read
     endpoint: https://jira.example.test
     credential_env: EXAMPLE_JIRA_API_TOKEN
     identity_env: EXAMPLE_JIRA_EMAIL

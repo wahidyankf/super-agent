@@ -56,10 +56,9 @@ type ComplexityRoot struct {
 	}
 
 	Source struct {
-		Access func(childComplexity int) int
-		ID     func(childComplexity int) int
-		Kind   func(childComplexity int) int
-		Tags   func(childComplexity int) int
+		ID   func(childComplexity int) int
+		Kind func(childComplexity int) int
+		Tags func(childComplexity int) int
 	}
 
 	TreeNode struct {
@@ -190,12 +189,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.Sources(childComplexity, args["kind"].(*string), args["tags"].([]string)), true
 
-	case "Source.access":
-		if e.ComplexityRoot.Source.Access == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Source.Access(childComplexity), true
 	case "Source.id":
 		if e.ComplexityRoot.Source.ID == nil {
 			break
@@ -366,8 +359,6 @@ func (ec *executionContext) childFields_Source(ctx context.Context, field graphq
 		return ec.fieldContext_Source_id(ctx, field)
 	case "kind":
 		return ec.fieldContext_Source_kind(ctx, field)
-	case "access":
-		return ec.fieldContext_Source_access(ctx, field)
 	case "tags":
 		return ec.fieldContext_Source_tags(ctx, field)
 	}
@@ -1154,29 +1145,6 @@ func (ec *executionContext) _Source_kind(ctx context.Context, field graphql.Coll
 	)
 }
 func (ec *executionContext) fieldContext_Source_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("Source", field, false, false, "String")
-}
-
-func (ec *executionContext) _Source_access(ctx context.Context, field graphql.CollectedField, obj *domain.SourceSummary) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Source_access(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.Access, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNString2string(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_Source_access(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Source", field, false, false, "String")
 }
 
@@ -2582,11 +2550,6 @@ func (ec *executionContext) _Source(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "kind":
 			out.Values[i] = ec._Source_kind(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "access":
-			out.Values[i] = ec._Source_access(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

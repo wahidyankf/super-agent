@@ -380,7 +380,7 @@ func (m *mcpSession) callTool(name string, args map[string]any) error {
 	if err != nil {
 		return err
 	}
-	// A call the server refuses at the protocol level, such as a tool above the access ceiling that it does not offer,
+	// A call the server refuses at the protocol level, such as a call to a tool the server does not offer,
 	// is a refused tool call. Its text is the error message, so the scenario can check that nothing else leaked.
 	if e, ok := reply["error"]; ok {
 		m.call = &mcpCall{isError: true, text: fmt.Sprint(e), size: len(raw)}

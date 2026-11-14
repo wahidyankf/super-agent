@@ -70,7 +70,7 @@ func (k *kiwiWiki) Write(_ context.Context, op domain.OperationID, _ domain.Args
 	), nil
 }
 
-// kiwiService returns a service whose only source is a Kiwi source at write access, served by gw.
+// kiwiService returns a service whose only source is a Kiwi source, served by gw.
 func kiwiService(gw ports.SourceGateway) sources.Service {
 	id, err := domain.NewSourceID("kiwi")
 	if err != nil {
@@ -89,7 +89,7 @@ func kiwiService(gw ports.SourceGateway) sources.Service {
 		panic(err)
 	}
 	cat, err := domain.NewCatalog([]domain.Source{
-		domain.NewSource(id, domain.KindKiwi, tags, domain.AccessWrite, ep, ref),
+		domain.NewSource(id, domain.KindKiwi, tags, ep, ref),
 	})
 	if err != nil {
 		panic(err)
@@ -329,7 +329,7 @@ func outlineAndKiwiCatalog(gw ports.SourceGateway) sources.Service {
 		panic(err)
 	}
 	cat, err := domain.NewCatalog([]domain.Source{
-		domain.NewSource(outlineID, domain.KindOutline, tags, domain.AccessRead, outlineEP, outlineRef),
+		domain.NewSource(outlineID, domain.KindOutline, tags, outlineEP, outlineRef),
 		kiwiService(gw).Catalog.All()[0],
 	})
 	if err != nil {

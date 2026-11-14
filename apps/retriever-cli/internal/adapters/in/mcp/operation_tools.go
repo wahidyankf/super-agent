@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -38,19 +37,6 @@ func operationTools() []operations.Row {
 	for _, row := range operations.Rows() {
 		if row.Tool != "" {
 			out = append(out, row)
-		}
-	}
-	return out
-}
-
-// toolKinds returns the kinds of the sources that the generated tools call: each kind that a row with a tool names, once.
-// Today that is Outline alone. A source of any other kind adds no level to the ceiling, so it
-// adds no tool, at any --max-access.
-func toolKinds() []domain.SourceKind {
-	var out []domain.SourceKind
-	for _, row := range operationTools() {
-		if kind, ok := row.Kind(); ok && !slices.Contains(out, kind) {
-			out = append(out, kind)
 		}
 	}
 	return out
@@ -188,14 +174,12 @@ func (s resourceSet) offers(resource string) bool {
 	return s == nil || s[resource]
 }
 
-// registerOperations adds the generated tools whose access need the catalog's ceiling allows and whose resource the set
-// offers. A tool that needs more, or belongs to another resource, is not offered. It returns the names it added.
+// registerOperations adds the generated tools whose resource the set offers. It returns the names it added.
 func registerOperations(server *sdk.Server, svc sources.Service, log *slog.Logger, offers resourceSet) []string {
-	ceiling := svc.Catalog.MaxAccessOf(toolKinds()...)
 	c := caller{svc: svc, log: log}
 	var names []string
 	for _, row := range operationTools() {
-		if !ceiling.Allows(row.Access) || !offers.offers(row.Resource()) {
+		if !offers.offers(row.Resource()) {
 			continue
 		}
 		server.AddTool(toolFor(row), operationHandler(c, row))
@@ -244,9 +228,6 @@ func runOperation(ctx context.Context, svc sources.Service, row operations.Row, 
 	if err != nil {
 		return nil, "", "bad arguments", err
 	}
-	if row.Effect != domain.EffectRead && row.Access == domain.AccessAdmin {
-		return runAdminOperation(ctx, svc, row, args, sourceArg)
-	}
 	if isWrite(row) {
 		return runWriteOperation(ctx, svc, row, args, sourceArg)
 	}
@@ -279,19 +260,6 @@ func runWriteOperation(ctx context.Context, svc sources.Service, row operations.
 	out map[string]any, source, class string, public error) {
 	id := resolvedID(svc, sourceArg)
 	rec, err := sources.Write(ctx, svc, row.ID, sourceArg, catalogArgs(row, args))
-	if err != nil {
-		public, class := publicError(err)
-		return nil, id, class, public
-	}
-	return renderObject(id, rec), id, outcomeOK, nil
-}
-
-// runAdminOperation runs one destructive or admin row for one call. The admin use case is called with the bound
-// arguments, and the call the model makes is the change that runs.
-func runAdminOperation(ctx context.Context, svc sources.Service, row operations.Row, args map[string]any, sourceArg *string) (
-	out map[string]any, source, class string, public error) {
-	id := resolvedID(svc, sourceArg)
-	rec, err := sources.Administer(ctx, svc, row.ID, sourceArg, catalogArgs(row, args))
 	if err != nil {
 		public, class := publicError(err)
 		return nil, id, class, public

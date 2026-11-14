@@ -162,11 +162,10 @@ func wireSources(paths configpaths.Paths, seams seamSet) (sourceWiring, error) {
 		},
 	})
 	svc := sources.Service{Catalog: cat, Gateways: resolver}
-	// The GraphQL server reads only, so its catalog is capped to read. The MCP server takes its
-	// ceiling from --max-access when it starts.
+	// The GraphQL server serves the reads of the catalog only: its schema has no mutation.
 	return sourceWiring{
 		service: svc,
-		serve:   graphqlServe(svc.Capped(domain.AccessRead)),
+		serve:   graphqlServe(svc),
 		mcp:     mcpServe(svc, os.Stderr),
 	}, nil
 }
@@ -220,12 +219,11 @@ func graphqlServe(svc sources.Service) cli.ServeFunc {
 	}
 }
 
-// mcpServe returns the function the mcp command runs, at the ceiling the command names, offering the tools of the
-// resources it names (nil for every resource). The catalog is capped before the server is built, so the tools it
-// registers and the use cases that serve them enforce the same level. The server writes
-// one log line per tool call to stderr, and standard output stays the protocol channel the caller passes in.
+// mcpServe returns the function the mcp command runs, offering the tools of the resources it names (nil for every
+// resource). The server writes one log line per tool call to stderr, and standard output stays the protocol channel the
+// caller passes in.
 func mcpServe(svc sources.Service, stderr io.Writer) cli.MCPFunc {
-	return func(ctx context.Context, ceiling domain.Access, resources []string, in io.Reader, out io.Writer) error {
-		return mcpadapter.Runner(svc.Capped(ceiling), cli.Version, stderr, resources)(ctx, in, out)
+	return func(ctx context.Context, resources []string, in io.Reader, out io.Writer) error {
+		return mcpadapter.Runner(svc, cli.Version, stderr, resources)(ctx, in, out)
 	}
 }

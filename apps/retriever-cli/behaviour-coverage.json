@@ -3,18 +3,18 @@
   "description": "Scenario counts of the behaviour specs, by feature file and by test level. A Scenario Outline counts once here; the test runner runs each of its Examples rows as its own scenario. A scenario that carries more than one level tag counts at each of those levels. Counts come from the feature files; test results are not recorded here.",
   "specs": "specs/behaviours",
   "totals": {
-    "scenarios": 227,
-    "unit": 227,
-    "integration": 227,
-    "e2e": 227
+    "scenarios": 220,
+    "unit": 220,
+    "integration": 220,
+    "e2e": 220
   },
   "features": [
     {
       "path": "specs/behaviours/catalog/sources-catalog.feature",
-      "scenarios": 15,
-      "unit": 15,
-      "integration": 15,
-      "e2e": 15
+      "scenarios": 14,
+      "unit": 14,
+      "integration": 14,
+      "e2e": 14
     },
     {
       "path": "specs/behaviours/cli/cli-contract.feature",
@@ -53,24 +53,24 @@
     },
     {
       "path": "specs/behaviours/kiwi/kiwi-operations.feature",
-      "scenarios": 18,
-      "unit": 18,
-      "integration": 18,
-      "e2e": 18
+      "scenarios": 17,
+      "unit": 17,
+      "integration": 17,
+      "e2e": 17
     },
     {
       "path": "specs/behaviours/mcp/mcp-server.feature",
-      "scenarios": 13,
-      "unit": 13,
-      "integration": 13,
-      "e2e": 13
+      "scenarios": 11,
+      "unit": 11,
+      "integration": 11,
+      "e2e": 11
     },
     {
       "path": "specs/behaviours/outline/outline-critical-actions.feature",
-      "scenarios": 7,
-      "unit": 7,
-      "integration": 7,
-      "e2e": 7
+      "scenarios": 6,
+      "unit": 6,
+      "integration": 6,
+      "e2e": 6
     },
     {
       "path": "specs/behaviours/outline/outline-reads.feature",
@@ -88,17 +88,17 @@
     },
     {
       "path": "specs/behaviours/outline/outline-writes.feature",
-      "scenarios": 5,
-      "unit": 5,
-      "integration": 5,
-      "e2e": 5
+      "scenarios": 4,
+      "unit": 4,
+      "integration": 4,
+      "e2e": 4
     },
     {
       "path": "specs/behaviours/transport/https-and-limits.feature",
-      "scenarios": 33,
-      "unit": 33,
-      "integration": 33,
-      "e2e": 33
+      "scenarios": 32,
+      "unit": 32,
+      "integration": 32,
+      "e2e": 32
     }
   ]
 }

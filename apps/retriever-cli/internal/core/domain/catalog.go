@@ -123,8 +123,6 @@ func zeroFault(position int, src Source) error {
 		return SourceFault{Position: position, Field: "id", Err: ErrInvalidSourceID}
 	case src.kind == SourceKind{}:
 		return SourceFault{Position: position, Field: "kind", Err: ErrUnknownSourceKind}
-	case src.access == Access{}:
-		return SourceFault{Position: position, Field: "access", Err: ErrInvalidAccess}
 	case src.endpoint == Endpoint{}:
 		return SourceFault{Position: position, Field: "endpoint", Err: ErrInvalidEndpoint}
 	case src.credential == CredentialRef{}:
@@ -232,51 +230,4 @@ type AmbiguousSourceError struct {
 // Error lists the sources that match.
 func (e AmbiguousSourceError) Error() string {
 	return fmt.Sprintf("more than one %s source exists: %s", e.Kind, strings.Join(e.IDs, ", "))
-}
-
-// MaxAccess returns the highest access level of any source in the catalog. A zero catalog returns the zero Access,
-// which allows nothing. It is MaxAccessOf over every kind.
-func (c Catalog) MaxAccess() Access {
-	var top Access
-	for _, src := range c.sources {
-		if src.access.rank > top.rank {
-			top = src.access
-		}
-	}
-	return top
-}
-
-// MaxAccessOf returns the highest access level of the sources whose kind is one of kinds. Sources of any other kind do
-// not count, so a kind's ceiling is not lifted by a source of another kind. With no kinds, or with no
-// source of the kinds, it returns the zero Access, which allows nothing.
-func (c Catalog) MaxAccessOf(kinds ...SourceKind) Access {
-	var top Access
-	for _, src := range c.sources {
-		if !slices.Contains(kinds, src.kind) {
-			continue
-		}
-		if src.access.rank > top.rank {
-			top = src.access
-		}
-	}
-	return top
-}
-
-// Capped returns a catalog in which every source's level is the lower of its own level and the ceiling. The IDs, kinds, tags, endpoints, and credential names do not change, and the receiver is not changed. A zero
-// ceiling allows nothing. The wiring applies it once, before it builds the service, so the use cases enforce the capped
-// level and the registration of MCP tools reads the capped maximum.
-func (c Catalog) Capped(ceiling Access) Catalog {
-	out := make([]Source, 0, len(c.sources))
-	for _, src := range c.sources {
-		out = append(out, src.withAccess(minAccess(src.access, ceiling)))
-	}
-	return Catalog{sources: out}
-}
-
-// minAccess returns the lower of two levels. A zero level is the lowest, so a zero ceiling caps every source to nothing.
-func minAccess(a, b Access) Access {
-	if b.rank < a.rank {
-		return b
-	}
-	return a
 }

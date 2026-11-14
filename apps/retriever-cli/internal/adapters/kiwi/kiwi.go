@@ -34,8 +34,8 @@ const (
 // errInvalidBaseURL reports a base URL that does not parse, has no host, or holds user information.
 var errInvalidBaseURL = errors.New("invalid Kiwi base URL")
 
-// errMethodNotAllowed reports a method outside the allowlist, or one the source's access level does not permit. The
-// adapter's own methods pass only allowed names, so a caller never sees it.
+// errMethodNotAllowed reports a method outside the closed allowlist. The adapter's own methods pass only allowed names,
+// so a caller never sees it.
 var errMethodNotAllowed = errors.New("kiwi method is not allowed")
 
 // Gateway implements the Kiwi source over one source. It holds the credentials port, never the key itself, and reads the
@@ -45,7 +45,6 @@ type Gateway struct {
 	base       string
 	host       string
 	endpoint   string
-	access     domain.Access
 	client     *http.Client
 	creds      ports.Credentials
 	credential domain.CredentialRef
@@ -156,7 +155,6 @@ func build(src domain.Source, base string, httpClient *http.Client, creds ports.
 		base:       strings.TrimRight(base, "/"),
 		host:       host,
 		endpoint:   strings.TrimRight(src.Endpoint().String(), "/"),
-		access:     src.Access(),
 		client:     client,
 		creds:      creds,
 		credential: src.Credential(),

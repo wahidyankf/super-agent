@@ -10,7 +10,7 @@ import (
 )
 
 // sourcesList prints the configured sources that match --kind and --tag. The tag filter is one comma-separated
-// value, and every tag given must be on a source. Each row shows the id, kind, access, and tags, and never an
+// value, and every tag given must be on a source. Each row shows the id, kind, and tags, and never an
 // endpoint or a credential name. JSON mode prints the same fields as one document.
 func sourcesList(inv *invocation) error {
 	rt := inv.rt
@@ -37,10 +37,9 @@ type sourcesJSON struct {
 
 // sourceRowJSON is one source of the sources list in JSON mode. Tags is never null, so an untagged source reads as [].
 type sourceRowJSON struct {
-	ID     string   `json:"id"`
-	Kind   string   `json:"kind"`
-	Access string   `json:"access"`
-	Tags   []string `json:"tags"`
+	ID   string   `json:"id"`
+	Kind string   `json:"kind"`
+	Tags []string `json:"tags"`
 }
 
 // sourceRowsJSON returns the JSON rows of the sources, in the order the catalog lists them.
@@ -51,7 +50,7 @@ func sourceRowsJSON(rows []domain.SourceSummary) []sourceRowJSON {
 		if tags == nil {
 			tags = []string{}
 		}
-		out = append(out, sourceRowJSON{ID: r.ID, Kind: r.Kind, Access: r.Access, Tags: tags})
+		out = append(out, sourceRowJSON{ID: r.ID, Kind: r.Kind, Tags: tags})
 	}
 	return out
 }
@@ -79,17 +78,16 @@ func writeSourceRows(w io.Writer, rows []domain.SourceSummary) {
 	default:
 		fmt.Fprintf(w, "%d sources\n", len(rows))
 	}
-	idW, kindW, accessW := 0, 0, 0
+	idW, kindW := 0, 0
 	for _, r := range rows {
 		idW = max(idW, len(r.ID))
 		kindW = max(kindW, len(r.Kind))
-		accessW = max(accessW, len(r.Access))
 	}
 	for _, r := range rows {
 		tags := strings.Join(r.Tags, ",")
 		if tags == "" {
 			tags = "-"
 		}
-		fmt.Fprintf(w, "  %-*s  %-*s  %-*s  %s\n", idW, r.ID, kindW, r.Kind, accessW, r.Access, tags)
+		fmt.Fprintf(w, "  %-*s  %-*s  %s\n", idW, r.ID, kindW, r.Kind, tags)
 	}
 }

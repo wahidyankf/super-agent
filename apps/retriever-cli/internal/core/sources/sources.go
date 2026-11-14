@@ -18,14 +18,6 @@ type Service struct {
 	Gateways ports.GatewayResolver
 }
 
-// Capped returns the service with its catalog capped to ceiling. The gateway resolver is shared:
-// a capped source is a different source value, and the resolver keeps its gateway apart by access level, so the
-// gateway's own method allowlist follows the cap too.
-func (s Service) Capped(ceiling domain.Access) Service {
-	s.Catalog = s.Catalog.Capped(ceiling)
-	return s
-}
-
 // ListCollections returns the collections of the selected source of the kind. A nil source applies the default rule.
 func ListCollections(ctx context.Context, svc Service, kind domain.SourceKind, source *string) ([]domain.Collection, error) {
 	src, err := selectSource(svc, kind, source)
@@ -75,7 +67,7 @@ func GetDocument(ctx context.Context, svc Service, kind domain.SourceKind, sourc
 
 // rowOf returns the catalog row of op and its source kind. An operation that the catalog does not hold, one with no
 // known kind, or one that its kind does not support is ErrUnsupportedOperation, and it is refused before any source is
-// selected. The kind of a row comes from its command path, so Read, Write, and Administer need no
+// selected. The kind of a row comes from its command path, so Read and Write need no
 // kind argument.
 func rowOf(op domain.OperationID) (operations.Row, domain.SourceKind, error) {
 	row, found := operations.Lookup(op)

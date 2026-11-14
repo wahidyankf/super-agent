@@ -69,20 +69,6 @@ func (w *fakeWriter) Write(_ context.Context, op domain.OperationID, args domain
 	return w.reply, w.err
 }
 
-// fakeAdmin is an in-memory ports.SourceAdmin. It records each destructive or admin call it receives.
-type fakeAdmin struct {
-	reply domain.Record
-	err   error
-	ops   []domain.OperationID
-	args  []domain.Args
-}
-
-func (a *fakeAdmin) Administer(_ context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
-	a.ops = append(a.ops, op)
-	a.args = append(a.args, args)
-	return a.reply, a.err
-}
-
 // fakeResolver is an in-memory ports.GatewayResolver. It serves one gateway per source ID and records each
 // source it was asked for, so a test can prove that a bad input never reached For. reader is the reader every
 // source gets, and writer is the writer; nil means the source has no reader or no writer.
@@ -91,7 +77,6 @@ type fakeResolver struct {
 	asked    []string
 	reader   *fakeReader
 	writer   *fakeWriter
-	admin    *fakeAdmin
 }
 
 func (r *fakeResolver) For(src domain.Source) (ports.SourceGateway, error) {
@@ -121,16 +106,6 @@ func (r *fakeResolver) Writer(src domain.Source) (ports.SourceWriter, error) {
 		return nil, domain.ErrUnsupportedSource
 	}
 	return r.writer, nil
-}
-
-func (r *fakeResolver) Admin(src domain.Source) (ports.SourceAdmin, error) {
-	if _, err := r.For(src); err != nil {
-		return nil, err
-	}
-	if r.admin == nil {
-		return nil, domain.ErrUnsupportedSource
-	}
-	return r.admin, nil
 }
 
 // fakeSink is an in-memory ports.ExportSink. writeErr makes Write fail. names records the file name of every successful
@@ -173,7 +148,7 @@ func testCatalog(t *testing.T, ids ...string) domain.Catalog {
 			t.Fatalf("NewCredentialRef: %v", err)
 		}
 		tags, _ := domain.NewTagSet()
-		list = append(list, domain.NewSource(id, domain.KindOutline, tags, domain.AccessRead, ep, ref))
+		list = append(list, domain.NewSource(id, domain.KindOutline, tags, ep, ref))
 	}
 	cat, err := domain.NewCatalog(list)
 	if err != nil {

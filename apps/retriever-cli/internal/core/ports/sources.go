@@ -17,29 +17,21 @@ type SourceGateway interface {
 	Document(ctx context.Context, id domain.DocumentID) (domain.SourceDocument, error)
 }
 
-// SourceReader runs the read operations of the catalog against one source. The use case binds the arguments and checks
-// the access level first, so a reader receives only validated Args for an operation that the source may run. The
+// SourceReader runs the read operations of the catalog against one source. The use case binds the arguments first, so a
+// reader receives only validated Args for an operation of the catalog. The
 // reader validates the Args again before it builds a request (operations.Validate), and an operation the reader does
 // not serve returns domain.ErrUnsupportedOperation. The Record it returns holds the fields of the operation's row.
 type SourceReader interface {
 	Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error)
 }
 
-// SourceWriter runs the write operations of the catalog against one source. It is the write
-// port: a read operation sent to it returns domain.ErrWrongOperationClass, and an operation the writer does not serve
-// returns domain.ErrUnsupportedOperation. The use case binds the arguments, checks the access level, and runs a dry
-// run before it calls a writer. A writer that times out after it sent a request returns domain.ErrWriteOutcomeUnknown,
-// and the caller never retries that call.
+// SourceWriter runs the change operations of the catalog against one source, every operation of a non-read effect,
+// destructive ones included. It is the write port: a read operation sent to it returns domain.ErrWrongOperationClass,
+// and an operation the writer does not serve returns domain.ErrUnsupportedOperation. The use case binds the arguments
+// before it calls a writer. A writer that times out after it sent a request returns domain.ErrWriteOutcomeUnknown, and
+// the caller never retries that call.
 type SourceWriter interface {
 	Write(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error)
-}
-
-// SourceAdmin runs the destructive and admin operations of the catalog against one source. It
-// is the admin port: an operation of another effect class returns domain.ErrWrongOperationClass, and an operation the
-// admin port does not serve returns domain.ErrUnsupportedOperation. The use case checks the access level before it calls an admin port, and it never retries a
-// call after a timeout.
-type SourceAdmin interface {
-	Administer(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error)
 }
 
 // Credentials supplies the API key that a credential name holds. A missing key returns a domain.MissingKeyError.
@@ -61,8 +53,6 @@ type GatewayResolver interface {
 	For(source domain.Source) (SourceGateway, error)
 	Reader(source domain.Source) (SourceReader, error)
 	Writer(source domain.Source) (SourceWriter, error)
-	// Admin does the same for a SourceAdmin.
-	Admin(source domain.Source) (SourceAdmin, error)
 }
 
 // CatalogLoader reads the sources catalog once. A problem with the catalog returns a domain.CatalogError.

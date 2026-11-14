@@ -27,11 +27,11 @@ func testRef(t *testing.T) domain.CredentialRef {
 // testSource returns an outline read source whose endpoint is host, with the key name the outline tests use.
 func testSource(t *testing.T, host string) domain.Source {
 	t.Helper()
-	return testSourceAt(t, host, domain.AccessRead)
+	return testSourceAt(t, host)
 }
 
-// testSourceAt returns an outline source at the given access level, whose endpoint is host.
-func testSourceAt(t *testing.T, host string, access domain.Access) domain.Source {
+// testSourceAt returns an outline source whose endpoint is host.
+func testSourceAt(t *testing.T, host string) domain.Source {
 	t.Helper()
 	id, err := domain.NewSourceID("outline")
 	if err != nil {
@@ -45,5 +45,5 @@ func testSourceAt(t *testing.T, host string, access domain.Access) domain.Source
 	if err != nil {
 		t.Fatalf("NewTagSet: %v", err)
 	}
-	return domain.NewSource(id, domain.KindOutline, tags, access, endpoint, testRef(t))
+	return domain.NewSource(id, domain.KindOutline, tags, endpoint, testRef(t))
 }

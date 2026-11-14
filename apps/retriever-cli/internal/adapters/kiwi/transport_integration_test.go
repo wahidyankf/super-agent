@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/core/domain"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/support/kiwistub"
 )
 
@@ -31,7 +30,7 @@ func startTLSStub(t *testing.T) (*kiwistub.Stub, *http.Client) {
 // header are the endpoint host, and the Bearer key is accepted.
 func TestTLSReadReachesTheStubWithTheEndpointHostAndTheKey(t *testing.T) {
 	stub, client := startTLSStub(t)
-	gw, err := NewWithBase(testSourceAt(t, domain.AccessRead), stub.URL(), client, &staticCreds{}, WithMinDelay(0))
+	gw, err := NewWithBase(testSourceAt(t), stub.URL(), client, &staticCreds{}, WithMinDelay(0))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
@@ -52,7 +51,7 @@ func TestTLSReadReachesTheStubWithTheEndpointHostAndTheKey(t *testing.T) {
 // the handshake, so no request and no key reach the server.
 func TestUntrustedCertificateSendsNoRequestAndNoKey(t *testing.T) {
 	stub, _ := startTLSStub(t)
-	gw, err := NewWithBase(testSourceAt(t, domain.AccessRead), stub.URL(), &http.Client{}, &staticCreds{}, WithMinDelay(0))
+	gw, err := NewWithBase(testSourceAt(t), stub.URL(), &http.Client{}, &staticCreds{}, WithMinDelay(0))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
