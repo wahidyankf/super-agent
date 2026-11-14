@@ -16,6 +16,10 @@ var ErrNetworkRefused = errors.New("the source address is refused: an IP literal
 // request leaves, so a value can never add a header line.
 var ErrInvalidHeader = errors.New("a header value holds a control character or is not UTF-8")
 
+// ErrBodyLimit reports the body of a POST read that is over 64 KiB or nests over 8 levels once it is rendered. It is refused
+// before any request is sent, so no body that the limit forbids leaves.
+var ErrBodyLimit = errors.New("the rendered body of the POST read is over 64 KiB or nests over 8 levels")
+
 // ErrNotConfigured reports an engine that is built without a port or a setting that it needs to run.
 var ErrNotConfigured = errors.New("the engine is missing a port or a setting that it needs")
 
@@ -40,6 +44,7 @@ var reasons = []struct {
 	{domain.ErrReplyTooLarge, "reply_too_large"},
 	{domain.ErrUnexpectedResponse, "unexpected_response"},
 	{ErrInvalidHeader, "invalid_header"},
+	{ErrBodyLimit, "body_limit"},
 	{ErrNotConfigured, "not_configured"},
 	{domain.ErrKeyRejected, "key_rejected"},
 	{domain.ErrAccessDenied, "access_denied"},

@@ -366,8 +366,10 @@ func reservedHeader(name string) bool {
 
 // checkSpecShape refuses a model that a validated spec would refuse. A model built by hand goes through the same rules,
 // so it cannot send a path, a header, or a pointer that the spec does not allow. The finding names the field path only.
+// The access matrix and the rules of a POST read are re-checked here too, so a label that the matrix forbids never reaches
+// a request.
 func checkSpecShape(model *spec.Spec) error {
-	var fs []spec.Finding
+	fs := spec.CheckAccessMatrix(model)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {

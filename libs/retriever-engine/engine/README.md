@@ -12,7 +12,8 @@ through the `Ports` that the caller passes.
 - [write.go](./write.go) holds `Write`, the port of the change operations. It binds the arguments, resolves each
   declared name, sends the one write, and maps the reply. It also holds the name lookup and the outcome rules.
 - [render.go](./render.go) builds each request: the path slots, the encoded query, the headers, and the JSON body. It
-  also holds `ExampleTarget`, which the replay stub uses to key each canned reply.
+  also holds `ExampleTarget`, which the replay stub uses to key each canned reply. It checks the rendered body of a POST
+  read against the size and nesting limits, and it returns `ErrBodyLimit` when a limit fails.
 - [send.go](./send.go) sends one request. It sets the auth header, runs the request under the time limit, reads the
   reply up to the size cap, and classifies the status. It retries a rate limit and maps each failure to its error. For a
   write it also decides whether a failure is an unknown outcome.
@@ -39,6 +40,8 @@ through the `Ports` that the caller passes.
   in-memory pipe, so a refused dial, a failed handshake, and a connection cut after the send run without a socket.
 - `write_integration_test.go` has the `integration` build tag. It proves on a real connection that a timed out write is
   sent once.
+- `post_read_test.go` covers a POST read through the public API: its declared slot as the JSON body, its fixed content
+  type, the 64 KiB and 8-level limits, and the access matrix that `New` checks again.
 
 ## Rules that the code follows
 

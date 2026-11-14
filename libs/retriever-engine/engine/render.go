@@ -149,13 +149,40 @@ func headerSafe(s string) bool {
 
 // renderBody builds the JSON body of an operation. A string that is exactly {{name}} takes the value of its parameter,
 // and a parameter with no value leaves its key out. A string with a slot inside other text stays as it is. The
-// encoder escapes every value, so a value never changes the shape of the body.
+// encoder escapes every value, so a value never changes the shape of the body. The body of a POST read is also checked once
+// it is rendered: it is at most spec.MaxPostBodyBytes, and it nests at most spec.MaxPostBodyDepth levels, so a list that a
+// slot fills counts. A body over either limit is ErrBodyLimit, and no request is built from it.
 func renderBody(o spec.Operation, vals map[string]any) ([]byte, error) {
 	if o.Body == nil {
 		return nil, nil
 	}
 	out, _ := renderValue(o.Body, vals)
-	return json.Marshal(out)
+	raw, err := json.Marshal(out)
+	if err != nil {
+		return nil, err
+	}
+	if o.ReadOverPost {
+		if err := checkPostBody(raw); err != nil {
+			return nil, err
+		}
+	}
+	return raw, nil
+}
+
+// checkPostBody refuses the rendered body of a POST read that is over the size limit or nests over the depth limit. The
+// depth is read from the JSON text, so every list and object the slots add is counted.
+func checkPostBody(raw []byte) error {
+	if len(raw) > spec.MaxPostBodyBytes {
+		return ErrBodyLimit
+	}
+	var decoded any
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		return err
+	}
+	if spec.BodyDepth(decoded) > spec.MaxPostBodyDepth {
+		return ErrBodyLimit
+	}
+	return nil
 }
 
 // renderValue renders one node of a body. It returns false when the node is a slot with no value.
