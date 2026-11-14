@@ -58,14 +58,15 @@ func (s *stubSet) close() {
 
 // datasetMethods are the methods the Outline stub answers from its dataset. A synthetic reply never replaces them.
 var datasetMethods = map[string]bool{
-	"auth.info":             true,
-	"collections.list":      true,
-	"collections.info":      true,
-	"collections.documents": true,
-	"documents.info":        true,
-	"documents.export":      true,
-	"documents.list":        true,
-	"documents.search":      true,
+	"auth.info":               true,
+	"collections.list":        true,
+	"collections.info":        true,
+	"collections.documents":   true,
+	"documents.info":          true,
+	"documents.export":        true,
+	"documents.list":          true,
+	"documents.search":        true,
+	"documents.search_titles": true,
 }
 
 // outlineStub returns the Outline stub, starting it on first use with the synthetic replies loaded.

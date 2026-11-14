@@ -90,6 +90,8 @@ func (sn snapshot) respond(c call) reply {
 		return sn.listDocuments(c.in)
 	case "documents.search":
 		return sn.searchDocuments(c.in)
+	case "documents.search_titles":
+		return sn.searchTitles(c.in)
 	}
 	return endpointNotFound()
 }
@@ -311,6 +313,27 @@ func (sn snapshot) searchDocuments(in requestBody) reply {
 			"ranking":  0.5,
 			"document": documentObject(d),
 		})
+	}
+	return jsonReply(http.StatusOK, pagedBody(items, in), nil)
+}
+
+// searchTitles answers documents.search_titles with one page of the documents whose title holds the query. Unlike
+// documents.search, it reads no body text, so a word that appears only in a body finds nothing.
+func (sn snapshot) searchTitles(in requestBody) reply {
+	if in.Limit < 1 || in.Limit > 100 || in.Offset < 0 || in.Query == "" {
+		return errorReply(http.StatusBadRequest)
+	}
+	query := strings.ToLower(in.Query)
+	var hits []Document
+	for _, d := range sn.documentsOf(in.CollectionID) {
+		if strings.Contains(strings.ToLower(d.Title), query) {
+			hits = append(hits, d)
+		}
+	}
+	start, end := window(len(hits), in.Offset, in.Limit)
+	items := make([]any, 0, end-start)
+	for _, d := range hits[start:end] {
+		items = append(items, documentObject(d))
 	}
 	return jsonReply(http.StatusOK, pagedBody(items, in), nil)
 }

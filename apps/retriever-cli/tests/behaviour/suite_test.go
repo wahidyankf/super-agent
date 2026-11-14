@@ -16,6 +16,7 @@ func registerSteps(ctx *godog.ScenarioContext, cur func() *world) {
 	registerCLISteps(ctx, cur)
 	registerStubSteps(ctx, cur)
 	registerProcessSteps(ctx, cur)
+	registerReadSteps(ctx, cur)
 }
 
 // runSuite runs the scenarios of one level, the ones that carry its tag. Strict mode fails the run on any undefined or
