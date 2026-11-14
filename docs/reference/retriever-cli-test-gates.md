@@ -7,10 +7,9 @@ in the repository's standards.
 ## Targets
 
 Each Nx project has its own targets, and each runs in its module's folder. The app is `retriever-cli`, in
-`apps/retriever-cli`. The seven libraries are `retriever-contract`, `retriever-runtime`, `retriever-testkit`,
-`retriever-connector-outline`, `retriever-connector-kiwi`, `retriever-connector-jira`, and `retriever-spec`, in their
-folders under
-`libs/`. The targets below come from each `project.json`.
+`apps/retriever-cli`. The eight libraries are `retriever-contract`, `retriever-runtime`, `retriever-testkit`,
+`retriever-connector-outline`, `retriever-connector-kiwi`, `retriever-connector-jira`, `retriever-spec`, and
+`retriever-engine`, in their folders under `libs/`. The targets below come from each `project.json`.
 
 ### App targets (`retriever-cli`)
 
@@ -218,7 +217,7 @@ A cross-compile check, on `ubuntu-24.04`, builds the app's `./cmd/retriever` for
 and nothing is uploaded or published. The app's `replace` directives name the libraries' folders in the checkout, so the
 build uses the libraries of the working tree.
 
-The Go toolchain is pinned by the `toolchain` line of each `go.mod`, which is `go1.27.4` in all eight modules. The `go`
+The Go toolchain is pinned by the `toolchain` line of each `go.mod`, which is `go1.27.4` in all nine modules. The `go`
 line sets the minimum language version, `1.27.0`. The Go setup fails when the installed toolchain differs from any
 module's `toolchain` line, or when two modules declare different `go` lines. The module cache is keyed on
 every `go.sum`.

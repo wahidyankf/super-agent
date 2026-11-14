@@ -16,6 +16,8 @@ too. Each library is its own Go module, with its own `go.mod`, its own Nx projec
 - [retriever-connector-jira/](./retriever-connector-jira/) is the Jira Cloud source.
 - [retriever-spec/](./retriever-spec/) holds the model of a declarative connector spec, its JSON Schema, the validation
   that refuses a bad spec, and the review of a valid one. It imports the contract.
+- [retriever-engine/](./retriever-engine/) runs the read operations of a valid spec against one source. It imports the
+  contract and the spec, and its replay stub in `engine/replay` serves the spec's read examples to tests.
 
 Each library folder is one level deep, directly under `libs/`. The root `package.json` lists `libs/*` as an npm
 workspace pattern. Go does not read that pattern, so each module resolves its siblings through its own `replace`

@@ -15,6 +15,7 @@ const (
 	kindConnector = "connector"
 	kindTestkit   = "testkit"
 	kindSpec      = "spec"
+	kindEngine    = "engine"
 )
 
 // moduleKinds maps the directory of each Go module, relative to the repository root, to its kind. Every module of the
@@ -28,6 +29,28 @@ var moduleKinds = map[string]string{
 	"libs/retriever-connector-kiwi":    kindConnector,
 	"libs/retriever-connector-jira":    kindConnector,
 	"libs/retriever-spec":              kindSpec,
+	"libs/retriever-engine":            kindEngine,
+}
+
+// engineDirs are the directories whose production code is the engine. The engine speaks HTTP, so it may import the
+// network and TLS packages, but it reads no local file, folder, or working directory, and it starts no process.
+var engineDirs = []string{
+	"libs/retriever-engine",
+}
+
+// engineForbiddenStd are the standard-library packages that the engine may not import: the file system, the working
+// directory, and processes. Time and sleep come through the Clock port, and the disk is out of reach.
+var engineForbiddenStd = map[string]bool{
+	"os":            true,
+	"os/exec":       true,
+	"path/filepath": true,
+	"io/fs":         true,
+	"syscall":       true,
+}
+
+// engineEffectViolation reports whether the engine imports a package that reads or writes a local file or runs a process.
+func engineEffectViolation(importPath string) bool {
+	return engineForbiddenStd[importPath]
 }
 
 // pureDirs are the directories, relative to the repository root, whose production code reaches the outside world only
@@ -106,6 +129,11 @@ func importViolation(self string, test bool, importPath string) string {
 			return ""
 		}
 		return "may import only the contract from the workspace"
+	case kindEngine:
+		if targetKind == kindContract || targetKind == kindSpec {
+			return ""
+		}
+		return "may import only the contract and the spec module from the workspace"
 	}
 	return "belongs to a module of unknown kind " + selfKind
 }

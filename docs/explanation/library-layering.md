@@ -13,7 +13,7 @@ tags:
 
 # Library layering
 
-The Go code of super-agent is one app and seven libraries. Each library is its own Go module, so an import rule is
+The Go code of super-agent is one app and eight libraries. Each library is its own Go module, so an import rule is
 also a rule between modules. This page explains the layers, the rules between them, and why the rules exist. The module
 paths, versions, and tags are in [Go modules and tags](../reference/go-modules-and-tags.md).
 
@@ -50,6 +50,7 @@ out to keep it readable.
 | `retriever-connector-*`   | `retriever-contract`                      | `retriever-testkit`        |
 | `retriever-testkit`       | `retriever-contract`                      | nothing else               |
 | `retriever-spec`          | `retriever-contract`                      | `retriever-testkit`        |
+| `retriever-engine`        | `retriever-contract`, `retriever-spec`    | `retriever-testkit`        |
 | `retriever-cli` (the app) | `retriever-contract`, runtime, connectors | `retriever-testkit`        |
 
 These rules follow from them:
@@ -62,6 +63,9 @@ These rules follow from them:
   through a port. Their production code
   imports none of the standard packages that reach outside the process: `net`, `net/http`, `os`, `os/exec`,
   `path/filepath`, `io/fs`, `log`, and `syscall`.
+- The engine is the one module whose production code imports `net`, `net/http`, and `crypto/tls`, because it reaches its
+  source over HTTPS. It imports none of `os`, `os/exec`, `path/filepath`, `io/fs`, or `syscall`, so it reads no local
+  file, no environment variable, and no process. The key and the clock reach it through ports.
 
 Third-party modules sit outside these rules. The runtime uses `go.yaml.in/yaml/v3` to parse the catalog, for example.
 

@@ -25,6 +25,12 @@ upgrade.
   most 256 KiB, checks it against a JSON Schema, and refuses it with the stable code `retriever.connector.spec_invalid`
   and the path of each broken field. A valid spec gives a plain-text review of what it can do. No command loads a spec
   yet.
+- `libs/retriever-engine` is the generic engine of ADR 001, which runs the read operations of a validated spec against
+  one source. It renders each request from the spec, sends the key only in its auth header, and sends it over HTTPS with
+  the safeguards of the ADR: no redirect is followed, a reply is capped at 10 MiB and a request at 30 seconds, an IP
+  literal and a private address are never dialed, paths and headers are checked before any request, and nested JSON is
+  capped. The replay stub in `engine/replay` answers the read examples of a spec, so tests run without a network. No
+  command runs the engine yet.
 
 ### Changed
 
