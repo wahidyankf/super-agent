@@ -52,6 +52,7 @@ question.
 - [Explanation](./explanation/) gives the reasons behind the project:
   - [What super-agent is](./explanation/what-super-agent-is.md) describes the super agent and its scope.
   - [The sourcing layer](./explanation/sourcing-layer.md) explains why the command-line tool works as it does.
+  - [Who guards what](./explanation/who-guards-what.md) explains which checks retriever and the API token make.
   - [Stability and versioning](./explanation/stability-and-versioning.md) explains what alpha means for you.
   - [Public data policy](./explanation/public-data-policy.md) explains why the repository is public and what stays
     out.

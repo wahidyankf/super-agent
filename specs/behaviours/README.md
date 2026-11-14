@@ -14,7 +14,7 @@ connector contract. A feature never describes an internal function.
 - [jira/](jira/README.md): Jira Cloud reads, with descriptions rendered as escaped Markdown.
 - [export/](export/README.md): exports to plain Markdown files in a folder the caller names.
 - [graphql/](graphql/README.md): the read-only GraphQL server.
-- [mcp/](mcp/README.md): the MCP tool server and its access ceiling.
+- [mcp/](mcp/README.md): the MCP tool server and the tools it offers.
 
 ## Conventions
 

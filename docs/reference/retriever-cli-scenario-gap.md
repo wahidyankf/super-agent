@@ -15,7 +15,7 @@ This page maps each feature file of the older Butler CLI specs to the retriever 
 and it lists what is not ported. It states facts. It ports no scenario.
 
 Butler's specs hold 98 feature files and 1013 scenario headings, 170 of them outlines. The retriever specs under
-`specs/behaviours` hold 13 feature files and 235 scenario headings. Both counts count `Scenario` and `Scenario Outline`
+`specs/behaviours` hold 13 feature files and 220 scenario headings. Both counts count `Scenario` and `Scenario Outline`
 lines. The retriever count matches `apps/retriever-cli/behaviour-coverage.json`, which `bdd:check` verifies.
 
 ## Status
@@ -63,12 +63,12 @@ File names omit the `.feature` suffix. The number in brackets is the Butler scen
 | kiwi-transport-safety (13)                    | kiwi-operations, https-and-limits       | Partly   |
 | kiwi-writes (17)                              | kiwi-operations: create, update         | Partly   |
 | lang-source-naming-validate (4)               | not in retriever                        | Out      |
-| mcp-access-ceiling (7)                        | mcp-server: ceilings                    | Partly   |
-| mcp-destructive-tools (8)                     | mcp-server: admin tools                 | Partly   |
+| mcp-access-ceiling (7)                        | removed by design, no ceiling           | Out      |
+| mcp-destructive-tools (8)                     | mcp-server: destructive hints           | Partly   |
 | mcp-every-outline-tool (11)                   | no scenario; tools ship                 | Gap      |
 | mcp-server (58)                               | mcp-server (13 scenarios)               | Partly   |
 | mcp-tool-profile (9)                          | mcp-server: list_sources                | Partly   |
-| mcp-write-tools (16)                          | mcp-server: write ceiling               | Partly   |
+| mcp-write-tools (16)                          | mcp-server: write tools                 | Partly   |
 | outline-access-requests-admin (7)             | no scenario; tools ship                 | Gap      |
 | outline-access-requests-writes (10)           | no scenario; tools ship                 | Gap      |
 | outline-admin-reads (4)                       | no scenario; tools ship                 | Gap      |
@@ -149,6 +149,8 @@ scenario covers its behaviour.
 - **Naming and coverage checks** (`harness-naming-validate`, `lang-source-naming-validate`,
   `repo-governance-workflows-naming-validate`, `test-coverage-validate`): they check Butler's own files. They are not
   source behaviour. retriever's coverage gate is `scripts/coverage-gate.sh`.
+- **Access ceilings** (`mcp-access-ceiling`): retriever has no access level by design. The API token of each source
+  decides what a change may do, so no ceiling is ported. See [who guards what](../explanation/who-guards-what.md).
 - **Vault layouts** (in `jira-export`, `kiwi-export`, and `outline-document-export`): the vault layout stays in Butler.
   retriever writes plain Markdown with `--out`. The Partly status covers only that Markdown export.
 

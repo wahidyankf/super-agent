@@ -1,7 +1,7 @@
 {
   "name": "super-agent",
   "version": "0.1.0",
-  "description": "Connects coding harnesses and people to data sources through one catalog and one access model.",
+  "description": "Connects coding harnesses and people to data sources through one catalog and one credential model.",
   "private": true,
   "license": "MIT",
   "workspaces": [

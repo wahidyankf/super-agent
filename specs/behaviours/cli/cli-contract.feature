@@ -127,11 +127,11 @@ Feature: Command-line contract of retriever
     And the standard error is a JSON error with the code "retriever.serve.usage_invalid_argument" and retryable false
 
   @unit @integration @e2e
-  Scenario: An invalid enum value for a flag is refused before any work starts
-    When I run "retriever --output json mcp --max-access nope"
+  Scenario: The removed max-access flag is an unrecognized argument
+    When I run "retriever --output json mcp --max-access read"
     Then the exit status is 2
     And the standard output is empty
-    And the standard error is a JSON error with the code "retriever.mcp.usage_invalid_argument" and retryable false
+    And the standard error is a JSON error with the code "retriever.mcp.usage_unrecognized_argument" and retryable false
 
   @unit @integration @e2e
   Scenario: A text-mode failure keeps its message on standard error and prints nothing to standard output

@@ -7,8 +7,8 @@ Feature: Kiwi test management operations
 
   Background:
     Given the sources catalog holds these sources:
-      | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
-      | example-kiwi | kiwi | write  | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
+      | example-kiwi | kiwi | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     And the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server holds this dataset:
       """
@@ -61,16 +61,6 @@ Feature: Kiwi test management operations
     When I run "retriever kiwi test-cases update case-40 --summary Renamed-case --source example-kiwi"
     Then the exit status is 0
     And the stub Kiwi server received 1 request to "TestCase.update"
-
-  @integration @e2e @unit
-  Scenario: A case write on a read-access source is refused before any request
-    Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
-      | example-kiwi | kiwi | read   | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
-    When I run "retriever --output json --catalog reviewed.yml kiwi test-cases create Synthetic-case --product product-3 --category Functional --priority High --source example-kiwi"
-    Then the exit status is 2
-    And the standard error is a JSON error with the code "retriever.kiwi.access_level_too_low" and retryable false
-    And the stub Kiwi server received no requests
 
   @integration @e2e @unit
   Scenario: A JSON-RPC error with an unknown code on a read is an upstream failure sent once, and never shows its message

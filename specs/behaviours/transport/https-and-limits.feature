@@ -9,10 +9,10 @@ Feature: Transport safety and bounded requests
 
   Background:
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags    | endpoint                  | credential_env          | identity_env       |
-      | example-outline | outline | read   | wiki    | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |                    |
-      | example-kiwi    | kiwi    | read   | tests   | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY    |                    |
-      | example-jira    | jira    | read   | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN  | EXAMPLE_JIRA_EMAIL |
+      | id              | kind    | tags    | endpoint                  | credential_env          | identity_env       |
+      | example-outline | outline | wiki    | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |                    |
+      | example-kiwi    | kiwi    | tests   | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY    |                    |
+      | example-jira    | jira    | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN  | EXAMPLE_JIRA_EMAIL |
     And the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
     And the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
@@ -24,8 +24,8 @@ Feature: Transport safety and bounded requests
   @integration @e2e @unit
   Scenario: A source whose endpoint is plain HTTP is refused before any request
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id              | kind    | access | tags | endpoint                 | credential_env          | identity_env |
-      | plain-outline   | outline | read   | wiki | http://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                 | credential_env          | identity_env |
+      | plain-outline   | outline | wiki | http://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     When I run "retriever --output json --catalog reviewed.yml outline collections list --source plain-outline"
     Then the exit status is 2
     And the standard error is a JSON error with the code "retriever.outline.https_required" and retryable false
@@ -34,8 +34,8 @@ Feature: Transport safety and bounded requests
   @integration @e2e @unit
   Scenario: A Kiwi source whose endpoint is plain HTTP is refused before any request
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id         | kind | access | tags  | endpoint                 | credential_env       | identity_env |
-      | plain-kiwi | kiwi | read   | tests | http://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id         | kind | tags  | endpoint                 | credential_env       | identity_env |
+      | plain-kiwi | kiwi | tests | http://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     When I run "retriever --output json --catalog reviewed.yml kiwi products list --source plain-kiwi"
     Then the exit status is 2
     And the standard error is a JSON error with the code "retriever.kiwi.https_required" and retryable false
@@ -44,8 +44,8 @@ Feature: Transport safety and bounded requests
   @integration @e2e @unit
   Scenario: A Jira source whose endpoint is plain HTTP is refused before any request
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id         | kind | access | tags    | endpoint                 | credential_env         | identity_env       |
-      | plain-jira | jira | read   | tickets | http://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
+      | id         | kind | tags    | endpoint                 | credential_env         | identity_env       |
+      | plain-jira | jira | tickets | http://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
     When I run "retriever --output json --catalog reviewed.yml jira whoami --source plain-jira"
     Then the exit status is 2
     And the standard error is a JSON error with the code "retriever.jira.https_required" and retryable false
@@ -140,13 +140,6 @@ Feature: Transport safety and bounded requests
     And every request to the stub Outline server had the Host header "docs.example.test"
 
   @integration @e2e @unit
-  Scenario: A write command on a read-access Outline source sends no request
-    When I run "retriever --output json outline documents create --title Synthetic-note --text Synthetic --source example-outline"
-    Then the exit status is 2
-    And the standard error is a JSON error with the code "retriever.outline.access_level_too_low" and retryable false
-    And the stub Outline server received no requests
-
-  @integration @e2e @unit
   Scenario: A reply larger than the 10 MiB cap is refused as too large
     Given the stub Outline server answers "collections.list" with a body of 11 MiB
     When I run "retriever --output json outline collections list"
@@ -224,8 +217,8 @@ Feature: Transport safety and bounded requests
   @integration @e2e @unit
   Scenario: A Kiwi write that is answered 429 waits and is sent again, and the write lands once
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
-      | example-kiwi | kiwi | write  | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
+      | example-kiwi | kiwi | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     And the stub Kiwi server holds this dataset:
       """
       {
@@ -283,8 +276,8 @@ Feature: Transport safety and bounded requests
   @integration @e2e @unit
   Scenario: A Kiwi write whose reply is over the 10 MiB cap is not known to have failed
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
-      | example-kiwi | kiwi | write  | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
+      | example-kiwi | kiwi | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     And the stub Kiwi server holds this dataset:
       """
       {
@@ -305,8 +298,8 @@ Feature: Transport safety and bounded requests
   @integration @e2e @unit
   Scenario: A Kiwi write that is refused by a redirect is not sent a second time
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
-      | example-kiwi | kiwi | write  | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
+      | example-kiwi | kiwi | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     And the stub Kiwi server holds this dataset:
       """
       {

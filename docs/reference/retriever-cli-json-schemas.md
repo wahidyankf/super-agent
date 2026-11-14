@@ -31,8 +31,8 @@ whether output is a terminal.
 {
   "schemaVersion": 1,
   "sources": [
-    { "id": "example-jira", "kind": "jira", "access": "read", "tags": ["tickets"] },
-    { "id": "example-kiwi", "kind": "kiwi", "access": "read", "tags": ["tests"] }
+    { "id": "example-jira", "kind": "jira", "tags": ["tickets"] },
+    { "id": "example-kiwi", "kind": "kiwi", "tags": ["tests"] }
   ]
 }
 ```
@@ -40,7 +40,6 @@ whether output is a terminal.
 - `sources`: an array with one object per configured source, sorted by `id`.
 - `id`: a string, the source ID from the catalog.
 - `kind`: a string, `outline`, `kiwi`, or `jira`.
-- `access`: a string, `read`, `write`, or `admin`. It is the most the source allows.
 - `tags`: an array of the source's tags. It is empty when the source has none.
 
 The endpoint and the credential names are never printed.
@@ -132,7 +131,6 @@ Reasons that the CLI can emit:
 - `identity_invalid`: a source's account e-mail variable holds a value that is not an address.
 - `unknown_source`: no configured source has the ID given.
 - `ambiguous_source`: more than one source of the kind exists, and no `--source` was given.
-- `access_level_too_low`: the source's access level is below the level the command needs.
 - `operation_unavailable`: the Outline server does not offer the endpoint, often because its version is older.
 - `not_configured`: the composition root did not wire the command.
 - `usage_invalid_argument`: a value is not valid for its option.
@@ -142,9 +140,8 @@ Reasons that the CLI can emit:
 - `usage_invalid_color`: `--color` is not `auto`, `always`, or `never`.
 - `usage_no_subcommand`: a group was named with no subcommand.
 - `invalid_*`: a typed value failed its rule, such as `invalid_uuid`, `invalid_url`, or `invalid_enum`.
-- `source_required`: a write or an admin change does not name its source with `--source`.
+- `source_required`: a change does not name its source with `--source`.
 - `document_conflict`: a write was refused because the document changed since it was read.
-- `access_above_kind_ceiling`: the access level is above the most the source's kind allows.
 - `panic`: an internal failure. See [exit codes](./retriever-cli-exit-codes.md#panics).
 
 The list is a summary. The `invalid_*`, `*_required`, and `*_mismatch` entries stand for groups of reasons, and the

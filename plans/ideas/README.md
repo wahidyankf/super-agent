@@ -12,6 +12,6 @@ The owner has named these ideas. None has a two-pager yet. Each one is described
 note](../../docs/explanation/software-factory-note.md).
 
 - A `vault` kind for local Markdown and Obsidian vaults.
-- Work and personal profiles, each with its own catalog and access ceiling.
+- Work and personal profiles, each with its own catalog and its own API tokens.
 - User-defined connectors, written as a declarative spec.
 - Channel connectors that send messages as well as read documents.

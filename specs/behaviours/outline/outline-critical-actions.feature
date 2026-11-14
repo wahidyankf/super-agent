@@ -18,8 +18,8 @@ Feature: Outline critical actions
   @integration @e2e @unit
   Scenario: Emptying the trash sends the request once
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     When I run "retriever outline documents empty-trash --source example-outline"
     Then the exit status is 0
     And the stub Outline server received 1 request to "documents.empty_trash"
@@ -27,8 +27,8 @@ Feature: Outline critical actions
   @integration @e2e @unit
   Scenario: Deleting a document for good sends the request once
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     When I run "retriever outline documents delete d0c1d0c1-0000-4000-8000-000000000001 --permanent true --source example-outline"
     Then the exit status is 0
     And the stub Outline server received 1 request to "documents.delete"
@@ -36,8 +36,8 @@ Feature: Outline critical actions
   @integration @e2e @unit
   Scenario: Moving a document to the trash sends the request once
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     When I run "retriever outline documents delete d0c1d0c1-0000-4000-8000-000000000001 --source example-outline"
     Then the exit status is 0
     And the stub Outline server received 1 request to "documents.delete"
@@ -45,27 +45,17 @@ Feature: Outline critical actions
   @integration @e2e @unit
   Scenario: Deleting a user sends the request once
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     When I run "retriever outline users delete 5e52e52e-0000-4000-8000-000000000002 --source example-outline"
     Then the exit status is 0
     And the stub Outline server received 1 request to "users.delete"
 
   @integration @e2e @unit
-  Scenario: A destructive change on a write-access source is refused as an access failure
-    Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | write  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
-    When I run "retriever --output json outline documents empty-trash --source example-outline"
-    Then the exit status is 2
-    And the standard error is a JSON error with the code "retriever.outline.access_level_too_low" and retryable false
-    And the stub Outline server received no requests
-
-  @integration @e2e @unit
   Scenario: Creating an integration shows the host and never the path
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     When I run "retriever outline integrations create https://hooks.example.test/synthetic/path --type post --service matomo --source example-outline"
     Then the exit status is 0
     And the standard output does not contain "/synthetic/path"
@@ -74,8 +64,8 @@ Feature: Outline critical actions
   @integration @e2e @unit
   Scenario: Rotating an OAuth client secret shows no secret in standard output or standard error
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     And the stub Outline server answers "oauthClients.rotateSecret" with the body:
       """
       {"data": {"id": "0c0c0c0c-0000-4000-8000-000000000001", "name": "Synthetic client", "clientSecret": "synthetic-client-secret"}}

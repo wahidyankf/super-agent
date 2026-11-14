@@ -1,5 +1,5 @@
 # Read commands of an Outline wiki source: documents, collections, search, and the signed-in account.
-# Every read needs read access only. Synthetic documents and collections come from the stub Outline server.
+# Reads change nothing in the wiki. Synthetic documents and collections come from the stub Outline server.
 Feature: Outline reads
   As a person who searches and reads an Outline wiki from the command line
   I want each read to return the document text, the lists, and the account, in text or in JSON
@@ -7,8 +7,8 @@ Feature: Outline reads
 
   Background:
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | read   | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     And the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
     And the stub Outline server holds these collections:
       | id | name      |
@@ -130,9 +130,9 @@ Feature: Outline reads
   @integration @e2e @unit
   Scenario: A read with more than one Outline source needs the source flag
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | read   | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
-      | second-outline  | outline | read   | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | second-outline  | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     When I run "retriever --output json outline collections list"
     Then the exit status is 2
     And the standard error is a JSON error with the code "retriever.outline.ambiguous_source" and retryable false
@@ -141,9 +141,9 @@ Feature: Outline reads
   @integration @e2e @unit
   Scenario: The source flag picks one of two Outline sources
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | read   | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
-      | second-outline  | outline | read   | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | second-outline  | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     When I run "retriever outline collections list --source second-outline"
     Then the exit status is 0
     And the standard output contains "Synthetic"

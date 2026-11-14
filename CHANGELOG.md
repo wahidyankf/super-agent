@@ -14,7 +14,8 @@ upgrade.
 - **Breaking**: a `retriever` read on Outline, Kiwi, or Jira that a rate limit stops now exits `124`, not `2`. Exit
   `124` means a bounded wait ended in a retryable failure, the same status a timeout uses, and the JSON error still
   says `retryable: true`. A `Retry-After` longer than 60 seconds still exits `2`, because that failure is not
-  retryable. $1- **Breaking**: `retriever` no longer gates the changes it runs against a source. The confirmation and preview gates are
+  retryable.
+- **Breaking**: `retriever` no longer gates the changes it runs against a source. The confirmation and preview gates are
   removed. `--yes`, `--confirm`, and `--dry-run` are unrecognized arguments now, and each exits `2` with
   `retriever.<area>.usage_unrecognized_argument`. A destructive or admin command runs the change it names, so a script
   that passed `--yes` must drop it. The error codes `yes_required`, `confirm_required`, `confirm_mismatch`,
@@ -23,17 +24,25 @@ upgrade.
   `delete_all_groups`, `delete_team`, `delete_authentication_provider`, `create_integration`, `update_integration`,
   `create_oauth_client`, `rotate_oauth_client_secret`, `create_webhook_subscription`, and
   `update_webhook_subscription`. The MCP write and admin tools no longer take a `dry_run` input.
+- **Breaking**: the access levels are removed, with the per-kind ceilings and the `--max-access` flag. `retriever` no
+  longer checks what a command may change. The API token of a source decides what that source allows, so limit the
+  token to the reads or writes you want. A catalog that still has an `access:` key is refused when it loads, with
+  `retriever.sources.catalog_invalid`. `--max-access` is an unrecognized argument and exits `2`. The `access` field is
+  gone from `retriever --output json sources list`, from the GraphQL `Source` type, and from the MCP `list_sources`
+  result. The JSON sources list keeps `schemaVersion` 1.
+- **Breaking**: `retriever mcp` offers every tool of the catalog. `--tools` still limits the resources, and the tool
+  list no longer depends on an access level.
 
 ### Changed
 
-- The behaviour specs add 33 scenarios, from 194 to 227, for the transport limits (HTTPS, redirects, timeouts,
+- The behaviour specs add 26 scenarios, from 194 to 220, for the transport limits (HTTPS, redirects, timeouts,
   rate-limit waits and spacing, and reply size), the Kiwi and Jira error codes, the Jira search and projects reads, and
   the redaction of MCP replies. The behaviour harness now drives the in-process Outline, Kiwi, and Jira stubs with a
   fake clock, so the waits are checked without real sleeping at the unit and integration levels.
 - `retriever` unit tests no longer read or write real files, read or change the process environment, change the working
   directory, or start child processes. The tests that need those move to files with the `integration` build tag. The
   unit tests reach the file system and the environment through fakes at the seams of the catalog, the credentials, the
-  Markdown sink, the source seams, and the composition root. The behaviour harness runs its 227 `@unit` scenarios in
+  Markdown sink, the source seams, and the composition root. The behaviour harness runs its 220 `@unit` scenarios in
   memory, through an in-memory file tree and an in-memory export sink. The integration and end-to-end levels keep the
   real disk, the real environment at the integration level, and the built binary at the end-to-end level. The synthetic
   Outline replies move to `tests/support/synthetic`.

@@ -7,8 +7,8 @@ Feature: Outline reply redaction
 
   Background:
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | admin  | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     And the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
 
   @integration @e2e @unit
@@ -131,7 +131,7 @@ Feature: Outline reply redaction
       | webhookSubscriptions.list | retriever outline webhook-subscriptions list | synthetic-signing-secret |
 
   @integration @e2e @unit
-  Scenario: An integration list on an admin source prints the host of each address and never its path or query
+  Scenario: An integration list prints the host of each address and never its path or query
     Given the stub Outline server answers "integrations.list" with the body:
       """
       {"data": [{"id": "b6000000-0000-4000-8000-000000000031", "type": "webhook", "service": "slack", "events": ["documents.update"], "settings": {"url": "https://hooks.example.test/synthetic/secret-path?token=synthetic-query-token", "channel": "#synthetic"}, "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-02T00:00:00Z"}], "pagination": {"offset": 0, "limit": 25}}
@@ -261,7 +261,7 @@ Feature: Outline reply redaction
       """
       {"data": {"id": "d0c1d0c1-0000-4000-8000-000000000001", "title": "\u001b]0;hostile\u0007Red title", "text": "Before \u001b[2J after", "url": "/doc/d0c1d0c1-0000-4000-8000-000000000001", "collectionId": "1c1c1c1c-0000-4000-8000-000000000001", "revision": 1}}
       """
-    And an MCP client starts "retriever mcp --max-access read"
+    And an MCP client starts "retriever mcp"
     When the client calls the tool "get_document" with these arguments:
       """
       {"document_id": "d0c1d0c1-0000-4000-8000-000000000001"}
@@ -275,7 +275,7 @@ Feature: Outline reply redaction
       """
       {"ok": false, "error": "upstream failure", "echo": "Bearer synthetic-outline-key"}
       """
-    And an MCP client starts "retriever mcp --max-access read"
+    And an MCP client starts "retriever mcp"
     When the client calls the tool "get_document" with these arguments:
       """
       {"document_id": "d0c1d0c1-0000-4000-8000-000000000001"}
@@ -289,7 +289,7 @@ Feature: Outline reply redaction
       """
       {"data": [{"id": "b6000000-0000-4000-8000-000000000051", "oauthClientId": "0c0c0c0c-0000-4000-8000-000000000001", "scope": ["read"], "createdAt": "2026-01-01T00:00:00Z", "lastActiveAt": null, "clientSecret": "synthetic-client-secret", "oauthClient": {"id": "0c0c0c0c-0000-4000-8000-000000000001", "name": "Synthetic client", "clientSecret": "synthetic-client-secret"}}], "pagination": {"offset": 0, "limit": 25}}
       """
-    And an MCP client starts "retriever mcp --max-access admin"
+    And an MCP client starts "retriever mcp"
     When the client calls the tool "list_oauth_authentications" with no arguments
     Then the tool result is not an error
     And the tool result text contains "0c0c0c0c-0000-4000-8000-000000000001"

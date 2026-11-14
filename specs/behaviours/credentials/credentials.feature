@@ -7,10 +7,10 @@ Feature: Source credentials
 
   Background:
     Given the sources catalog holds these sources:
-      | id              | kind    | access | tags      | endpoint                  | credential_env          | identity_env       |
-      | example-outline | outline | read   | wiki      | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |                    |
-      | example-kiwi    | kiwi    | read   | tests     | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY    |                    |
-      | example-jira    | jira    | read   | tickets   | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN  | EXAMPLE_JIRA_EMAIL |
+      | id              | kind    | tags      | endpoint                  | credential_env          | identity_env       |
+      | example-outline | outline | wiki      | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |                    |
+      | example-kiwi    | kiwi    | tests     | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY    |                    |
+      | example-jira    | jira    | tickets   | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN  | EXAMPLE_JIRA_EMAIL |
     And the stub Outline server holds these collections:
       | id | name       |
       | 1c1c1c1c-0000-4000-8000-000000000001 | Synthetic  |
@@ -113,9 +113,9 @@ Feature: Source credentials
   @integration @e2e @unit
   Scenario: The local env file supplies the key of a second Outline source
     Given the sources catalog file "two.yml" holds these sources:
-      | id                  | kind    | access | tags | endpoint                      | credential_env              | identity_env |
-      | example-outline     | outline | read   | wiki | https://docs.example.test     | EXAMPLE_OUTLINE_API_KEY     |              |
-      | example-outline-two | outline | read   | wiki | https://docs.example.test | EXAMPLE_OUTLINE_TWO_API_KEY |              |
+      | id                  | kind    | tags | endpoint                      | credential_env              | identity_env |
+      | example-outline     | outline | wiki | https://docs.example.test     | EXAMPLE_OUTLINE_API_KEY     |              |
+      | example-outline-two | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_TWO_API_KEY |              |
     And the env file ".env.local" holds these lines:
       """
       EXAMPLE_OUTLINE_TWO_API_KEY=synthetic-second-key
@@ -127,9 +127,9 @@ Feature: Source credentials
   @integration @e2e @unit
   Scenario: A missing key for a second Outline source names that source's own variable
     Given the sources catalog file "two.yml" holds these sources:
-      | id                  | kind    | access | tags | endpoint                      | credential_env              | identity_env |
-      | example-outline     | outline | read   | wiki | https://docs.example.test     | EXAMPLE_OUTLINE_API_KEY     |              |
-      | example-outline-two | outline | read   | wiki | https://docs.example.test | EXAMPLE_OUTLINE_TWO_API_KEY |              |
+      | id                  | kind    | tags | endpoint                      | credential_env              | identity_env |
+      | example-outline     | outline | wiki | https://docs.example.test     | EXAMPLE_OUTLINE_API_KEY     |              |
+      | example-outline-two | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_TWO_API_KEY |              |
     When I run "retriever --output json --catalog two.yml outline collections list --source example-outline-two"
     Then the exit status is 2
     And the standard output is empty
@@ -307,8 +307,8 @@ Feature: Source credentials
   @integration @e2e @unit
   Scenario: A refused Jira export writes no file that holds the token or the e-mail address
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags    | endpoint                  | credential_env         | identity_env       |
-      | example-jira | jira | read   | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
+      | id           | kind | tags    | endpoint                  | credential_env         | identity_env       |
+      | example-jira | jira | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
     And the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
     And the stub Jira server answers every request with status 403 and echoes the token and the e-mail address
@@ -321,8 +321,8 @@ Feature: Source credentials
   @integration @e2e @unit
   Scenario: A successful Jira export writes one file that holds neither the token nor the e-mail address
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags    | endpoint                  | credential_env         | identity_env       |
-      | example-jira | jira | read   | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
+      | id           | kind | tags    | endpoint                  | credential_env         | identity_env       |
+      | example-jira | jira | tickets | https://jira.example.test | EXAMPLE_JIRA_API_TOKEN | EXAMPLE_JIRA_EMAIL |
     And the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
     And the stub Jira server holds this configuration:
@@ -386,8 +386,8 @@ Feature: Source credentials
   @integration @e2e @unit
   Scenario: A Kiwi write never prints the key
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
-      | example-kiwi | kiwi | write  | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
+      | example-kiwi | kiwi | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     And the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server holds this dataset:
       """
@@ -475,8 +475,8 @@ Feature: Source credentials
   @integration @e2e @unit
   Scenario Outline: A failed Kiwi write never prints the key, in text or in the JSON error body
     Given the sources catalog file "reviewed.yml" holds these sources:
-      | id           | kind | access | tags  | endpoint                  | credential_env       | identity_env |
-      | example-kiwi | kiwi | write  | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
+      | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
+      | example-kiwi | kiwi | tests | https://kiwi.example.test | EXAMPLE_KIWI_API_KEY |              |
     And the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server answers every request with status 500 and echoes the key
     When I run "<command>"
