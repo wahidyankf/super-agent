@@ -110,7 +110,7 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet) (sources.Ser
 	if err != nil {
 		return sources.Service{}, err
 	}
-	cat, err := w.be.loadCatalog(paths.Catalog)
+	cat, err := w.be.loadCatalog(paths.Catalog, w.kinds)
 	if err != nil {
 		return sources.Service{}, err
 	}

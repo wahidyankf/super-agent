@@ -1,0 +1,4 @@
+3 sources
+  example-jira     jira     tickets
+  example-kiwi     kiwi     tests
+  example-outline  outline  docs,wiki

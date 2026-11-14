@@ -3,5 +3,6 @@
 package contract
 
 // ContractVersion is the version of the contract. The libraries are released in lockstep, so the value matches the
-// release tag of the libraries (libs/<name>/v0.3.0 and the binary tag).
-const ContractVersion = "0.3.0"
+// release tag of the libraries (libs/<name>/v0.4.0 and the binary tag). Version 0.4.0 opens the kind set: a composition
+// root registers kinds and rows at start-up.
+const ContractVersion = "0.4.0"

@@ -39,8 +39,8 @@ func TestKindJiraIsAKnownKindAfterKiwi(t *testing.T) {
 	if err != nil || got != KindJira {
 		t.Fatalf("NewSourceKind(jira) = %v, %v; want KindJira", got, err)
 	}
-	if knownKindNames() != "outline, kiwi, jira" {
-		t.Fatalf("knownKindNames() = %q, want %q", knownKindNames(), "outline, kiwi, jira")
+	if ErrUnknownSourceKind.Error() != "unknown source kind (known: outline, kiwi, jira)" {
+		t.Fatalf("ErrUnknownSourceKind = %q, want the built-in list in its order", ErrUnknownSourceKind.Error())
 	}
 	if KindJira.String() != "jira" {
 		t.Fatalf("KindJira.String() = %q, want jira", KindJira.String())

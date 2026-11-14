@@ -6,7 +6,7 @@ GraphQL API (`serve`) and a Model Context Protocol server (`mcp`). The tool is a
 in any release.
 
 The Go module path is `github.com/wahidyankf/super-agent/apps/retriever-cli`. The binary is `retriever`. The module
-requires the six libraries under [libs/](../../libs/README.md) at `v0.3.0`, and it replaces each one with its local
+requires the six libraries under [libs/](../../libs/README.md) at `v0.4.0`, and it replaces each one with its local
 folder.
 
 ## Prerequisites

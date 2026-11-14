@@ -23,7 +23,7 @@ func (r Row) Resource() string {
 func Resources() []string {
 	seen := map[string]bool{}
 	var out []string
-	for _, row := range rows {
+	for _, row := range builtinRows() {
 		if k, ok := row.Kind(); !ok || k != domain.KindOutline {
 			continue
 		}

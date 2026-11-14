@@ -92,7 +92,3 @@ var jiraRows = []Row{
 		Quiet:   true,
 	},
 }
-
-func init() {
-	rows = append(rows, jiraRows...)
-}

@@ -102,6 +102,9 @@ func registerCLISteps(ctx *godog.ScenarioContext, cur func() *world) {
 	ctx.Step(`^the sources catalog file "([^"]*)" holds these sources:$`, func(name string, tbl *godog.Table) error {
 		return cur().writeCatalog(name, tbl)
 	})
+	ctx.Step(`^the registered kinds are the built-in kinds and "([^"]*)"$`, func(name string) error {
+		return cur().registerKind(name)
+	})
 	ctx.Step(`^the sources catalog file "([^"]*)" is absent$`, func(name string) error {
 		if cur().be.regularFile(cur().absPath(name)) {
 			return fmt.Errorf("the catalog %q must be absent, and it exists", name)

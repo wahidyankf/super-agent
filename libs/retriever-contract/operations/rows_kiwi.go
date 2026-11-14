@@ -106,7 +106,3 @@ var kiwiRows = []Row{
 		Fields: []string{"planId", "caseId"},
 	},
 }
-
-func init() {
-	rows = append(rows, kiwiRows...)
-}

@@ -645,7 +645,3 @@ var (
 	templateManagers      = []string{"admin", "read_write"}
 	exportFormats         = []string{"json", "outline-markdown", "okf", "html", "textbundle", "pdf", "notion"}
 )
-
-func init() {
-	rows = append(rows, writeRows...)
-}

@@ -4,9 +4,12 @@ The operation catalog. Each row describes one operation completely: its ID, its 
 and its effect. The use cases look up a row, so a command and its help text come from the same description.
 
 - `bind.go` binds a row to its parameters and checks the values against the row.
-- `operations.go` holds the catalog type and the lookups over it.
+- `catalog.go` holds `Catalog`, an immutable set of rows over a kind set. `NewCatalog` registers rows at start-up, and
+  `BuiltinCatalog` holds the built-in rows.
+- `operations.go` holds the package lookups (`Rows`, `Lookup`, `RowsOf`, `Supports`), which read the built-in catalog.
 - `resources.go` holds the resource names that group the rows.
-- `rows.go` holds the Outline rows for the first group, and the field lists that several rows share.
+- `rows.go` holds the Outline rows for the first group, and the field lists that several rows share. Each rows file
+  declares its slice, and `builtinRows` in `catalog.go` gathers them. No file appends at start-up.
 - `rows_b.go`, `rows_c.go`, `rows_c2.go`, `rows_c3.go`, `rows_c4.go`, and `rows_2b.go` hold the Outline rows of the
   later groups. The suffix names the group.
 - `rows_kiwi.go` holds the Kiwi rows.

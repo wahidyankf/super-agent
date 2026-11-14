@@ -67,7 +67,7 @@ func attachSourcesFrom(deps *cli.Deps, g cli.Globals, seams seamSet, getenv func
 	if err != nil {
 		return err
 	}
-	w, err := wireSources(paths, seams, h)
+	w, err := wireSources(paths, seams, h, registeredKinds())
 	if err != nil {
 		return err
 	}

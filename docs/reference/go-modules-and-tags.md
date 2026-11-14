@@ -38,7 +38,7 @@ an affected project.
 
 ## Requirements
 
-Each module names its sibling modules in its `go.mod`, at `v0.3.0`. Each requirement has a `replace` directive to the
+Each module names its sibling modules in its `go.mod`, at `v0.4.0`. Each requirement has a `replace` directive to the
 sibling's folder, so a build in this repository uses the working tree.
 
 - `apps/retriever-cli` requires all six libraries. Its Nx `implicitDependencies` lists the same six.
@@ -52,8 +52,8 @@ architecture test checks that each list is complete.
 
 ## Versions
 
-- Each library is at `v0.3.0`. The six libraries are released in lockstep, so one version applies to all of them.
-- `ContractVersion` in [contract.go](../../libs/retriever-contract/contract.go) is `0.3.0`. Its comment says that the
+- Each library is at `v0.4.0`. The six libraries are released in lockstep, so one version applies to all of them.
+- `ContractVersion` in [contract.go](../../libs/retriever-contract/contract.go) is `0.4.0`. Its comment says that the
   value matches the release tag of the libraries.
 - The app module has no version of its own. The app is released with the repository tag, and the latest tag is
   `v0.2.0`.
@@ -66,7 +66,7 @@ lists each change under the release that makes it.
 | Module  | Tag form             | Example                          |
 | ------- | -------------------- | -------------------------------- |
 | app     | `vX.Y.Z`             | `v0.2.0`                         |
-| library | `libs/<name>/vX.Y.Z` | `libs/retriever-contract/v0.3.0` |
+| library | `libs/<name>/vX.Y.Z` | `libs/retriever-contract/v0.4.0` |
 
 The library tag has the module's folder as its prefix. Go reads a tag with a path prefix as a version of the module in
 that folder, so the prefix must match the folder exactly.

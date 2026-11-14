@@ -46,7 +46,7 @@ func TestUnknownKindTextNamesEveryKnownKind(t *testing.T) {
 	if got := ErrUnknownSourceKind.Error(); got != want {
 		t.Fatalf("ErrUnknownSourceKind = %q, want %q", got, want)
 	}
-	for _, kind := range knownKinds {
+	for _, kind := range []SourceKind{KindOutline, KindKiwi, KindJira} {
 		if !strings.Contains(ErrUnknownSourceKind.Error(), kind.String()) {
 			t.Fatalf("the unknown-kind text does not name the known kind %q", kind)
 		}

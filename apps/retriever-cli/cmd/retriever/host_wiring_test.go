@@ -5,6 +5,7 @@ import (
 	"testing/fstest"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 )
@@ -31,8 +32,8 @@ sources:
 func memoryHost() host {
 	files := fstest.MapFS{"sources.yml": &fstest.MapFile{Data: []byte(exampleCatalogYAML)}}
 	h := testHost()
-	h.openCatalog = func(path string) (*catalog.Loader, error) {
-		return catalog.NewWithFiles(path, catalog.Files{FS: files, SameFile: sameName})
+	h.openCatalog = func(path string, kinds domain.KindSet) (*catalog.Loader, error) {
+		return catalog.NewWithFiles(path, catalog.Files{FS: files, SameFile: sameName}, kinds)
 	}
 	return h
 }
@@ -63,7 +64,7 @@ func TestAttachSourcesWiresTheCatalogOfMemory(t *testing.T) {
 // TestEveryKindOfTheCatalogBuildsItsGateway checks each gateway builder: the resolver builds a gateway for each source of
 // the example catalog, with the seams off.
 func TestEveryKindOfTheCatalogBuildsItsGateway(t *testing.T) {
-	w, err := wireSources(examplePaths, seamSet{}, memoryHost())
+	w, err := wireSources(examplePaths, seamSet{}, memoryHost(), registeredKinds())
 	if err != nil {
 		t.Fatalf("wireSources error = %v, want nil", err)
 	}
@@ -82,7 +83,7 @@ func TestEveryKindOfTheCatalogBuildsItsGateway(t *testing.T) {
 func TestWireSourcesReportsAFailingEnvFileOpen(t *testing.T) {
 	h := memoryHost()
 	h.openEnvFile = failingEnvFile
-	if _, err := wireSources(examplePaths, seamSet{}, h); err == nil {
+	if _, err := wireSources(examplePaths, seamSet{}, h, registeredKinds()); err == nil {
 		t.Fatal("wireSources accepted a failing env file open")
 	}
 }

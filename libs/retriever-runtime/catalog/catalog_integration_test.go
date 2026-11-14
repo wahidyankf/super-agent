@@ -15,7 +15,7 @@ import (
 // passes: os.DirFS of the file's folder and os.SameFile.
 func loadRealFile(t *testing.T, path string) (domain.Catalog, error) {
 	t.Helper()
-	l, err := NewWithFiles(path, Files{FS: os.DirFS(filepath.Dir(path)), SameFile: os.SameFile})
+	l, err := NewWithFiles(path, Files{FS: os.DirFS(filepath.Dir(path)), SameFile: os.SameFile}, domain.BuiltinKinds())
 	if err != nil {
 		t.Fatalf("NewWithFiles(%q): %v", path, err)
 	}

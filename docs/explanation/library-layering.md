@@ -74,6 +74,10 @@ not change.
 `ContractVersion` constant, and a contract change bumps the minor version in v0.x. The [changelog](../../CHANGELOG.md)
 records each such change.
 
+**The kinds and the rows are values, not a registry.** The contract keeps no global list that a package appends to at
+start-up. The composition root builds a `KindSet` and a row `Catalog`, and it passes them to the runtime. A new kind is
+one more definition in the set that the root builds.
+
 **The runtime works through ports.** Its use cases call a `SourceGateway`, a `SourceReader`, or a `SourceWriter`, and
 the app supplies the concrete one through a builder in the registry. The runtime never names a connector, so a new
 connector needs no change in the runtime.

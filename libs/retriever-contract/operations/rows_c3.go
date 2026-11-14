@@ -191,7 +191,3 @@ var adminRowsC3 = []Row{
 		Fields: integrationFields,
 	},
 }
-
-func init() {
-	rows = append(rows, adminRowsC3...)
-}

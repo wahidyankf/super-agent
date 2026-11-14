@@ -7,6 +7,7 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
@@ -32,8 +33,8 @@ func testHostWithGetwd(getwd func() (string, error)) host {
 		openEnvFile: func(path string) (*envfile.Credentials, error) {
 			return envfile.NewWithFiles(path, func(string) string { return "" }, envfile.Files{FS: files, SameFile: sameName})
 		},
-		openCatalog: func(path string) (*catalog.Loader, error) {
-			return catalog.NewWithFiles(path, catalog.Files{FS: files, SameFile: sameName})
+		openCatalog: func(path string, kinds domain.KindSet) (*catalog.Loader, error) {
+			return catalog.NewWithFiles(path, catalog.Files{FS: files, SameFile: sameName}, kinds)
 		},
 		exportSink: func(string) ports.ExportSink { return nil },
 	}

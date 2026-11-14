@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/markdownfiles"
@@ -18,9 +19,9 @@ func openEnvFile(path string) (*envfile.Credentials, error) {
 	return envfile.NewWithFiles(path, os.Getenv, envfile.Files{FS: os.DirFS(filepath.Dir(path)), SameFile: os.SameFile})
 }
 
-// openCatalog returns the loader of the sources catalog at path, over the real files.
-func openCatalog(path string) (*catalog.Loader, error) {
-	return catalog.NewWithFiles(path, catalog.Files{FS: os.DirFS(filepath.Dir(path)), SameFile: os.SameFile})
+// openCatalog returns the loader of the sources catalog at path, over the real files, for the kinds the root registered.
+func openCatalog(path string, kinds domain.KindSet) (*catalog.Loader, error) {
+	return catalog.NewWithFiles(path, catalog.Files{FS: os.DirFS(filepath.Dir(path)), SameFile: os.SameFile}, kinds)
 }
 
 // exportFolder returns the export sink over the real folder dir, with the calls of package os.

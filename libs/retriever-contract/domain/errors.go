@@ -18,8 +18,16 @@ var (
 	ErrInvalidTag = errors.New("invalid tag")
 	// ErrTooManyTags reports more than 16 distinct tags in one set.
 	ErrTooManyTags = errors.New("invalid tag")
-	// ErrUnknownSourceKind reports a kind name the code does not know.
-	ErrUnknownSourceKind = errors.New("unknown source kind (known: " + knownKindNames() + ")")
+	// ErrUnknownSourceKind reports a kind name that the built-in kinds do not hold. UnknownKindError matches it and lists
+	// the kinds of a set, which a catalog may register beyond the built-in three.
+	ErrUnknownSourceKind = errors.New("unknown source kind (known: outline, kiwi, jira)")
+	// ErrInvalidKindName reports a kind name outside the slug grammar: lowercase letters, digits, and single hyphens, from
+	// 1 to 32 characters, starting with a letter. It is a start-up error of a composition root, not a catalog error.
+	ErrInvalidKindName = errors.New("invalid kind name: use a lowercase slug of at most 32 characters")
+	// ErrDuplicateKind reports two kind definitions that share one name.
+	ErrDuplicateKind = errors.New("duplicate kind name")
+	// ErrNoKinds reports a kind set built from no definition.
+	ErrNoKinds = errors.New("a kind set needs at least one kind")
 	// ErrInvalidEndpoint reports an endpoint that is not an HTTPS host name with no userinfo, port, path, query, or fragment.
 	ErrInvalidEndpoint = errors.New("invalid endpoint")
 	// ErrInvalidCredentialRef reports a variable name that is not a *_API_KEY name.

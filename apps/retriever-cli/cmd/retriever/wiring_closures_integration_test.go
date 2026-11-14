@@ -149,7 +149,7 @@ func TestCheckSeamsAcceptsAnOnSeamWithAGoodBase(t *testing.T) {
 func TestWireSourcesStopsOnABadSeam(t *testing.T) {
 	paths := configpaths.Paths{Catalog: absPath(t, exampleCatalog), EnvFile: filepath.Join(t.TempDir(), ".env.local")}
 	seams := seamSet{domain.KindJira: seamConfig{on: true, base: "http://127.0.0.1:1"}}
-	if _, err := wireSources(paths, seams, realHost); err == nil {
+	if _, err := wireSources(paths, seams, realHost, registeredKinds()); err == nil {
 		t.Fatal("wireSources accepted a bad seam")
 	}
 }
@@ -158,10 +158,10 @@ func TestWireSourcesStopsOnABadSeam(t *testing.T) {
 func TestWireSourcesRefusesARelativePath(t *testing.T) {
 	absolute := absPath(t, exampleCatalog)
 	envPath := filepath.Join(t.TempDir(), ".env.local")
-	if _, err := wireSources(configpaths.Paths{Catalog: absolute, EnvFile: "relative.env"}, seamSet{}, realHost); err == nil {
+	if _, err := wireSources(configpaths.Paths{Catalog: absolute, EnvFile: "relative.env"}, seamSet{}, realHost, registeredKinds()); err == nil {
 		t.Fatal("wireSources accepted a relative env file path")
 	}
-	if _, err := wireSources(configpaths.Paths{Catalog: "sources.yml", EnvFile: envPath}, seamSet{}, realHost); err == nil {
+	if _, err := wireSources(configpaths.Paths{Catalog: "sources.yml", EnvFile: envPath}, seamSet{}, realHost, registeredKinds()); err == nil {
 		t.Fatal("wireSources accepted a relative catalog path")
 	}
 }
@@ -172,7 +172,7 @@ func TestWireSourcesReportsAMissingCatalog(t *testing.T) {
 		Catalog: filepath.Join(t.TempDir(), "sources.yml"),
 		EnvFile: filepath.Join(t.TempDir(), ".env.local"),
 	}
-	if _, err := wireSources(paths, seamSet{}, realHost); err == nil {
+	if _, err := wireSources(paths, seamSet{}, realHost, registeredKinds()); err == nil {
 		t.Fatal("wireSources accepted a missing catalog")
 	}
 }
@@ -181,7 +181,7 @@ func TestWireSourcesReportsAMissingCatalog(t *testing.T) {
 // resolves to a gateway through the registry, with every seam off.
 func TestWireSourcesBuildsAGatewayForEverySourceOfTheExampleCatalog(t *testing.T) {
 	paths := configpaths.Paths{Catalog: absPath(t, exampleCatalog), EnvFile: filepath.Join(t.TempDir(), ".env.local")}
-	w, err := wireSources(paths, seamSet{}, realHost)
+	w, err := wireSources(paths, seamSet{}, realHost, registeredKinds())
 	if err != nil {
 		t.Fatalf("wireSources: %v", err)
 	}
@@ -203,7 +203,7 @@ func TestWireSourcesBuildsSeamGatewaysForEveryKind(t *testing.T) {
 	for _, kind := range seamKinds {
 		seams[kind] = seamConfig{on: true, base: f.base, client: f.client(t), timeout: time.Second}
 	}
-	w, err := wireSources(paths, seams, realHost)
+	w, err := wireSources(paths, seams, realHost, registeredKinds())
 	if err != nil {
 		t.Fatalf("wireSources: %v", err)
 	}
@@ -326,7 +326,7 @@ func absPath(t *testing.T, rel string) string {
 // exampleSources loads the example catalog and returns its sources.
 func exampleSources(t *testing.T) []domain.Source {
 	t.Helper()
-	loader, err := openCatalog(absPath(t, exampleCatalog))
+	loader, err := openCatalog(absPath(t, exampleCatalog), registeredKinds())
 	if err != nil {
 		t.Fatal(err)
 	}

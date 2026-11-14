@@ -7,7 +7,7 @@ no write path.
 - Module path: `github.com/wahidyankf/super-agent/libs/retriever-connector-jira`.
 - Nx project `retriever-connector-jira`, with the tags `type:connector`, `lang:go`, `domain:retriever`, and
   `source:jira`.
-- `go.mod` requires the contract and the testkit at `v0.3.0`. The testkit serves the tests only. The production code
+- `go.mod` requires the contract and the testkit at `v0.4.0`. The testkit serves the tests only. The production code
   imports the contract alone.
 
 ## Folders

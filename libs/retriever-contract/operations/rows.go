@@ -2,9 +2,10 @@ package operations
 
 import "github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 
-// rows is the operation catalog of stage a: the thirty-eight reads of part 1 (seven) and part 2a (thirty-one). Every row
-// is a read. A row is added here, with one endpoint entry in the Outline
-// adapter, one request case in its endpoint test, and its scenario rows.
+// rows holds the stage a rows: the thirty-eight reads of part 1 (seven) and part 2a (thirty-one). Every row is a read. The
+// other built-in rows live in their own files, and builtinRows gathers them in catalog order. A row is added to a slice
+// like this one, with one endpoint entry in the Outline adapter, one request case in its endpoint test, and its scenario
+// rows. No file appends to a package variable at start-up.
 var rows = []Row{
 	{
 		ID:          domain.OpCollectionsList,

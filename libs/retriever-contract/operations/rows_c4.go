@@ -198,7 +198,3 @@ var adminRowsC4 = []Row{
 		Fields: webhookFields,
 	},
 }
-
-func init() {
-	rows = append(rows, adminRowsC4...)
-}
