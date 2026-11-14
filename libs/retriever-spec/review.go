@@ -2,6 +2,7 @@ package spec
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -28,7 +29,41 @@ func Review(s *Spec) string {
 			s.Endpoint.BasePath, op.Path, yesNo(op.Access != "read"), surfaceWord(op.CLI), surfaceWord(op.MCP))
 		fmt.Fprintf(&b, "   %s\n", op.Summary)
 	}
+	writePostReads(&b, s)
 	return b.String()
+}
+
+// writePostReads writes the block of the reads that are sent as POST, one line each, with the path and the slots of the
+// body. A spec with no POST read writes nothing, so its review keeps its text.
+func writePostReads(b *strings.Builder, s *Spec) {
+	var posts []Operation
+	for _, op := range s.Operations {
+		if op.ReadOverPost {
+			posts = append(posts, op)
+		}
+	}
+	if len(posts) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "POST reads: %d\n", len(posts))
+	for i, op := range posts {
+		fmt.Fprintf(b, "%d. %s: POST %s%s, body from slots: %s\n", i+1, op.ID, s.Endpoint.BasePath, op.Path, slotsOf(op.Body))
+	}
+}
+
+// slotsOf names the slots of a body in sorted order, or "none" when the body takes no slot.
+func slotsOf(body map[string]any) string {
+	names := map[string]bool{}
+	bodySlotNames(body, names)
+	if len(names) == 0 {
+		return "none"
+	}
+	var list []string
+	for name := range names {
+		list = append(list, name)
+	}
+	sort.Strings(list)
+	return strings.Join(list, ", ")
 }
 
 // endpointLine names the path prefix and the host suffixes. A spec with no host suffix binds to any host of the catalog.

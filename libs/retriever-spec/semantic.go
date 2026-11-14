@@ -25,6 +25,7 @@ func semanticFindings(s *Spec) []Finding {
 	if _, err := domain.BuiltinKinds().Kind(s.Kind); err == nil {
 		fs = append(fs, finding("/kind", "is the kind of a built-in source"))
 	}
+	fs = append(fs, CheckAccessMatrix(s)...)
 	index := make(map[string]int, len(s.Operations))
 	for i, op := range s.Operations {
 		at := "/operations/" + strconv.Itoa(i) + "/id"
