@@ -30,10 +30,10 @@ variable names, and quality gates is in [docs/reference](./docs/reference/README
 
 ## Go modules
 
-The repository holds eight Go modules. The app `retriever-cli` lives in `apps/retriever-cli`. Seven libraries live under
+The repository holds nine Go modules. The app `retriever-cli` lives in `apps/retriever-cli`. Eight libraries live under
 `libs/`: `retriever-contract`, `retriever-runtime`, `retriever-testkit`, `retriever-connector-outline`,
-`retriever-connector-kiwi`, `retriever-connector-jira`, and `retriever-spec`. Each module has its own `go.mod`, and
-each library has its own tag format, `libs/<name>/vX.Y.Z`. Read
+`retriever-connector-kiwi`, `retriever-connector-jira`, `retriever-spec`, and `retriever-engine`. Each module has its
+own `go.mod`, and each library has its own tag format, `libs/<name>/vX.Y.Z`. Read
 [library layering](./docs/explanation/library-layering.md) for what each module may import, and
 [Go modules and tags](./docs/reference/go-modules-and-tags.md) for the paths and versions.
 

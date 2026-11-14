@@ -1,6 +1,6 @@
 ---
 description: >-
-  Sets the Go standard for the repository's eight Go modules: the command-line app and its seven libraries.
+  Sets the Go standard for the repository's nine Go modules: the command-line app and its eight libraries.
 when_to_use: >-
   Use when writing, reviewing, or changing Go code under apps/ or libs/, or when adding a Go dependency, tool, or
   module.
