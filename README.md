@@ -28,6 +28,14 @@ Start at the [documentation index](./docs/README.md). Reference material for the
 variable names, and quality gates is in [docs/reference](./docs/reference/README.md). The
 [stability and versioning](./docs/explanation/stability-and-versioning.md) page explains what alpha means for you.
 
+## Go modules
+
+The repository holds seven Go modules. The app `retriever-cli` lives in `apps/retriever-cli`. Six libraries live under
+`libs/`: `retriever-contract`, `retriever-runtime`, `retriever-testkit`, `retriever-connector-outline`,
+`retriever-connector-kiwi`, and `retriever-connector-jira`. Each module has its own `go.mod`, and each library has its
+own tag format, `libs/<name>/vX.Y.Z`. Read [library layering](./docs/explanation/library-layering.md) for what each
+module may import, and [Go modules and tags](./docs/reference/go-modules-and-tags.md) for the paths and versions.
+
 ## Status
 
 The latest release is `v0.2.0`, an alpha pre-release. It follows `v0.1.0`. The archives and checksum lists are on the

@@ -149,6 +149,26 @@ gh release download v0.2.0 --dir <empty-directory>
 Run the check from step 5 in that directory. Run `retriever --version` and `retriever --help` for your host platform.
 Confirm on the release page that it is marked **Pre-release**.
 
+## Library module tags in v0.x
+
+The six libraries are Go modules with their own tags, `libs/<name>/vX.Y.Z`.
+[Go modules and tags](../reference/go-modules-and-tags.md) states the tag form, the shared version, and the order of the
+tags. The steps above cut the app tag only. None of them creates a library tag, and no library tag exists yet.
+
+The app release asset build is unaffected by library tags. Step 4 clones the app's tag and builds `apps/retriever-cli`
+in that clone. The module's `replace` directives name the libraries' folders in the clone, so the build uses the
+libraries at the app's tag. The build never reads a library tag, so a release does not wait for one.
+
+A library tag is a separate decision for the repository owner, and a consumer outside this repository needs one before
+it can resolve that library. When the owner cuts one, in v0.x:
+
+- Use one version for all six libraries, and follow the minor-version rule for a contract change in
+  [Go modules and tags](../reference/go-modules-and-tags.md#versions).
+- Tag `libs/retriever-contract/vX.Y.Z` first, then each library that requires it, so every requirement names a tag
+  that exists.
+- Create each tag as an annotated tag on the merged commit on `main`, and push it, as step 3 does for the app tag.
+- Never move a tag. A version that has a tag is spent, so the next change takes the next version.
+
 ## If a release is wrong
 
 Never move a tag, replace an asset, or edit `SHA256SUMS` by hand. Cut the next version instead, as

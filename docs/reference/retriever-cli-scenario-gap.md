@@ -148,7 +148,7 @@ scenario covers its behaviour.
 - **PDF** (`pdf-*`): PDF tools are not a source connector.
 - **Naming and coverage checks** (`harness-naming-validate`, `lang-source-naming-validate`,
   `repo-governance-workflows-naming-validate`, `test-coverage-validate`): they check Butler's own files. They are not
-  source behaviour. retriever's coverage gate is `scripts/coverage-gate.sh`.
+  source behaviour. retriever's coverage gate is `scripts/go-coverage-gate.sh`.
 - **Access ceilings** (`mcp-access-ceiling`): retriever has no access level by design. The API token of each source
   decides what a change may do, so no ceiling is ported. See [who guards what](../explanation/who-guards-what.md).
 - **Vault layouts** (in `jira-export`, `kiwi-export`, and `outline-document-export`): the vault layout stays in Butler.

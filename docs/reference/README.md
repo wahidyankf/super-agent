@@ -31,6 +31,10 @@ walkthrough, start with the [how-to guides](../how-to/).
   and lists the gaps still to close.
 - [retriever test gates](./retriever-cli-test-gates.md) lists the test targets, what the coverage gate measures and
   excludes, and what the binding check reports.
+- [Go modules and tags](./go-modules-and-tags.md) lists the seven Go modules, their Nx projects and tags, their
+  versions, and the tag format.
+- [Operation and spec JSON Schema](./operation-json-schema.md) is PLANNED. It says what the schema will cover and that
+  no schema file exists yet.
 
 ## Glossary
 
