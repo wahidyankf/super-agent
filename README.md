@@ -30,8 +30,8 @@ variable names, and quality gates is in [docs/reference](./docs/reference/README
 
 ## Status
 
-The first release is `v0.1.0`, an alpha pre-release. Its archives and checksum list are on the GitHub Releases page. Each
-release names its breaking changes in [CHANGELOG.md](./CHANGELOG.md).
+The latest release is `v0.2.0`, an alpha pre-release. It follows `v0.1.0`. The archives and checksum lists are on the
+GitHub Releases page. Each release names its breaking changes in [CHANGELOG.md](./CHANGELOG.md).
 
 ## Repository
 

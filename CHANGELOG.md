@@ -9,58 +9,56 @@ upgrade.
 
 ## Unreleased
 
+## v0.2.0
+
+Alpha pre-release. Expect breaking changes: commands, flags, file formats, connector specs, JSON output, and APIs can
+change in any release, including minor and patch releases, until a stable 1.0. Read the
+[migration table](docs/reference/retriever-cli-migration-from-butler.md) before you move from Butler, and the
+[scenario-gap page](docs/reference/retriever-cli-scenario-gap.md) for the behaviours that no scenario covers yet. The
+breaking changes below are the ones made since `v0.1.0`.
+
 ### Breaking
 
-- **Breaking**: a `retriever` read on Outline, Kiwi, or Jira that a rate limit stops now exits `124`, not `2`. Exit
-  `124` means a bounded wait ended in a retryable failure, the same status a timeout uses, and the JSON error still
-  says `retryable: true`. A `Retry-After` longer than 60 seconds still exits `2`, because that failure is not
-  retryable.
-- **Breaking**: `retriever` no longer gates the changes it runs against a source. The confirmation and preview gates are
-  removed. `--yes`, `--confirm`, and `--dry-run` are unrecognized arguments now, and each exits `2` with
-  `retriever.<area>.usage_unrecognized_argument`. A destructive or admin command runs the change it names, so a script
-  that passed `--yes` must drop it. The error codes `yes_required`, `confirm_required`, `confirm_mismatch`,
-  `self_target`, and `last_revision_required` are gone. A document update no longer needs `last_revision`.
-- **Breaking**: the MCP server gains eleven write and admin tools that had no tool before: `empty_trash`, `delete_user`,
-  `delete_all_groups`, `delete_team`, `delete_authentication_provider`, `create_integration`, `update_integration`,
-  `create_oauth_client`, `rotate_oauth_client_secret`, `create_webhook_subscription`, and
-  `update_webhook_subscription`. The MCP write and admin tools no longer take a `dry_run` input.
-- **Breaking**: the access levels are removed, with the per-kind ceilings and the `--max-access` flag. `retriever` no
-  longer checks what a command may change. The API token of a source decides what that source allows, so limit the
-  token to the reads or writes you want. A catalog that still has an `access:` key is refused when it loads, with
-  `retriever.sources.catalog_invalid`. `--max-access` is an unrecognized argument and exits `2`. The `access` field is
-  gone from `retriever --output json sources list`, from the GraphQL `Source` type, and from the MCP `list_sources`
-  result. The JSON sources list is now `schemaVersion` 2, because removing `access` is a breaking change, and every other JSON
-  document stays at `1`.
-- **Breaking**: `retriever mcp` offers every tool of the catalog. `--tools` still limits the resources, and the tool
-  list no longer depends on an access level.
-- **Breaking**: `retriever outline export`, `kiwi export`, and `jira export` name the file by the document ID, `<id>.md`,
-  not by a title slug. A file of the same name is always replaced, with no collision check. A script that looked for a
-  file by its title must look for `<id>.md` instead. The GraphQL server has no export mutation.
+- **Breaking**: the access levels are removed, with the per-kind ceilings, the `--max-access` flag, and the `access`
+  column. `retriever` no longer checks what a command may change. The API token of a source decides what that source
+  allows, so limit the token to the reads or writes you want. A catalog that still has an `access:` key is refused when
+  it loads, with `retriever.sources.catalog_invalid`. `--max-access` is an unrecognized argument and exits `2`. The
+  `access` field is gone from `retriever --output json sources list`, from the GraphQL `Source` type, and from the MCP
+  `list_sources` result. The JSON sources list is now `schemaVersion` 2, because removing `access` is a breaking change.
+  Every other JSON document stays at `1`.
+- **Breaking**: the confirmation and preview gates are removed. `--yes`, `--confirm`, and `--dry-run` are unrecognized
+  arguments, and each exits `2` with `retriever.<area>.usage_unrecognized_argument`. A destructive or admin command runs
+  the change it names, so a script that passed `--yes` must drop it. A write no longer takes `--dry-run`. The error codes
+  `yes_required`, `confirm_required`, `confirm_mismatch`, `self_target`, and `last_revision_required` are gone. A document
+  update no longer needs `last_revision`.
+- **Breaking**: a `retriever` read on Outline, Kiwi, or Jira that a rate limit stops now exits `124`, not `2`. Exit `124`
+  means a bounded wait ended in a retryable failure, the same status a timeout uses, and the JSON error still says
+  `retryable: true`. A `Retry-After` longer than 60 seconds still exits `2`, because that failure is not retryable.
+- **Breaking**: `retriever mcp` exits `2` when a session is cancelled before any signal arrives. Before this release the
+  exit status could be `0`, depending on timing. A cancelled session does not complete, so it now exits with the status
+  the exit-code contract names for that case.
+- **Breaking**: `retriever mcp` offers every tool of the catalog, so the tool list no longer depends on an access level.
+  The server offers 165 tools, and `--tools` still limits the resources. Eleven of the tools are write and admin tools
+  that had no MCP tool before: `empty_trash`, `delete_user`, `delete_all_groups`, `delete_team`,
+  `delete_authentication_provider`, `create_integration`, `update_integration`, `create_oauth_client`,
+  `rotate_oauth_client_secret`, `create_webhook_subscription`, and `update_webhook_subscription`. The MCP write and admin
+  tools no longer take a `dry_run` input.
+- **Breaking**: `retriever outline export`, `kiwi export`, and `jira export` name the file by the document ID, `<id>.md`.
+  Outline exports were named by the title slug, and Kiwi and Jira exports by the ID and a slug. A file of the same name is
+  replaced without a collision check. A script that looked for a file by its title must look for `<id>.md` instead.
 
 ### Changed
 
-- The behaviour specs add 26 scenarios, from 194 to 220, for the transport limits (HTTPS, redirects, timeouts,
-  rate-limit waits and spacing, and reply size), the Kiwi and Jira error codes, the Jira search and projects reads, and
-  the redaction of MCP replies. The behaviour harness now drives the in-process Outline, Kiwi, and Jira stubs with a
-  fake clock, so the waits are checked without real sleeping at the unit and integration levels.
+- The behaviour specs grow from 156 scenarios in 13 feature files at `v0.1.0` to 333 scenarios in 14 feature files. The
+  new scenarios cover the transport limits (HTTPS, redirects, timeouts, rate-limit waits, and reply size), the
+  credentials and secret redaction, the catalog and env-file rules, the GraphQL request guards, the export file names,
+  and the Outline, Jira, and Kiwi read contracts.
 - `retriever` unit tests no longer read or write real files, read or change the process environment, change the working
   directory, or start child processes. The tests that need those move to files with the `integration` build tag. The
-  unit tests reach the file system and the environment through fakes at the seams of the catalog, the credentials, the
-  Markdown sink, the source seams, and the composition root. The behaviour harness runs its 220 `@unit` scenarios in
-  memory, through an in-memory file tree and an in-memory export sink. The integration and end-to-end levels keep the
-  real disk, the real environment at the integration level, and the built binary at the end-to-end level. The synthetic
-  Outline replies move to `tests/support/synthetic`.
-- The architecture guard that keeps untagged tests hermetic has no exemption. It reads the source of every untagged test
-  file, and it flags a reference to the disk, the environment, the working directory, a child process, or a pipe, even
-  when the call sits in a helper. Its negative tests run in `test:unit`.
-- The unit coverage floor stays at 99 percent, and no exclusion is added. The real-disk wrappers of the catalog, the
-  credentials, the Markdown sink, and the composition root now run only at the integration and end-to-end levels, so the
-  unit figure moves to 99.01 percent.
-
-- The behaviour specs add 44 scenarios, from 220 to 264, and one feature file, `config-discovery`. They cover the catalog
-  and env-file rungs, the catalog size, version, and credential refusals, the source selection and wrong-kind refusals,
-  the GraphQL request guards (Host, method, content type, Origin, body size, depth, complexity, and introspection), and
-  the export file names.
+  behaviour harness runs its `@unit` scenarios in memory. This changes the tests, not the behaviour of any command.
+- The architecture guard that keeps untagged tests hermetic has no exemption. It flags a reference to the disk, the
+  environment, the working directory, a child process, or a pipe, even when the call sits in a helper.
+- The unit coverage floor stays at 99 percent, and no exclusion is added.
 
 ### Fixed
 
@@ -68,9 +66,6 @@ upgrade.
   binaries name the standard library's `crypto/x509` type `local` in that form, so the `internal-hostname` rule blocked
   every binary although it names no host. The rule now skips only that shape. URLs, absolute paths, dotted or hyphenated
   paths, and bare host names still block. The release procedure now screens the unpacked binaries.
-- `retriever mcp` no longer exits `0` when a session is cancelled before any signal arrives. A race between the end of
-  the session and its cancellation made the exit status depend on scheduling. A cancelled session now exits `2`, as the
-  exit-code contract says.
 
 ## v0.1.0
 

@@ -24,7 +24,7 @@ func (stubFS) Exists(string) bool { return false }
 
 func TestVersionPrintsNameVersionAndBanner(t *testing.T) {
 	code, out, errOut := runRetriever(t, []string{"--version"}, outlineSetup{})
-	if code != 0 || out != "retriever 0.1.0\nALPHA: expect breaking changes\n" || errOut != "" {
+	if code != 0 || out != "retriever 0.2.0\nALPHA: expect breaking changes\n" || errOut != "" {
 		t.Fatalf("--version = %q (exit %d, stderr %q)", out, code, errOut)
 	}
 }

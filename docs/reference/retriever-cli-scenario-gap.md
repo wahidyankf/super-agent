@@ -1,6 +1,6 @@
 ---
 title: Retriever CLI scenario gap
-description: Maps each Butler feature file to its retriever counterpart, and lists the gaps to close before v0.1.0.
+description: Maps each Butler feature file to its retriever counterpart, and lists the gaps still to close.
 category: reference
 tags:
   - reference
@@ -15,7 +15,7 @@ This page maps each feature file of the older Butler CLI specs to the retriever 
 and it lists what is not ported. It states facts. It ports no scenario.
 
 Butler's specs hold 98 feature files and 1013 scenario headings, 170 of them outlines. The retriever specs under
-`specs/behaviours` hold 14 feature files and 264 scenario headings. Both counts count `Scenario` and `Scenario Outline`
+`specs/behaviours` hold 14 feature files and 333 scenario headings. Both counts count `Scenario` and `Scenario Outline`
 lines. The retriever count matches `apps/retriever-cli/behaviour-coverage.json`, which `bdd:check` verifies.
 
 ## Status
@@ -26,7 +26,7 @@ lines. The retriever count matches `apps/retriever-cli/behaviour-coverage.json`,
 - **Covered**: every heading of the Butler feature has a retriever scenario that asserts the same behaviour.
 - **Deferred**: the behaviour is planned for a later release.
 
-Every **Partly** and **Gap** row is a follow-up that must close before the v0.1.0 release. Each one closes in its own
+Every **Partly** and **Gap** row is a follow-up that must close in a later release. Each one closes in its own
 change, with its scenario written first and its binding tags set, as the [test gates](./retriever-cli-test-gates.md)
 describe.
 
@@ -175,8 +175,8 @@ assert the retriever behaviour, so the Butler text is not ported as written.
 
 ## Deferred
 
-- **Vault write confinement** (`vault-write-confinement`): the vault source kind is planned for v0.2.0 or a later
-  release. It is not a v0.1.0 gap.
+- **Vault write confinement** (`vault-write-confinement`): the vault source kind is planned for a later release. It
+  is not in v0.2.0.
 - **Kiwi writes** (`kiwi-writes`, the write rows that are not dry runs or access ceilings): adoption does not use Kiwi
   writes, so they are not ported in this series. Each one is a follow-up for a later release.
 
