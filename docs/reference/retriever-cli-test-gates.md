@@ -122,11 +122,16 @@ tree, and it belongs with the change that produced it.
 
 ## CI runs
 
-The Go job runs only when an affected Nx project carries the `lang:go` tag. Within that job:
+The Go job runs only when an affected Nx project carries the `lang:go` tag. Within that job, each row admits its targets
+once, through one HIPPO run under the row's resource tier, and runs them in order:
 
 - `ubuntu-24.04` runs `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `test:conformance`,
-  `bdd:check`, and `deps:audit`.
-- `macos-15` runs `test:unit`, `test:e2e`, and `test:conformance`.
+  `bdd:check`, and `deps:audit`, under the `heavy` tier.
+- `macos-15` runs `test:unit`, `test:e2e`, and `test:conformance`, under the `standard` tier.
+
+The tier follows the work. The Ubuntu row runs a whole project's suite, which is heavy work. The macOS row runs a subset
+of one project's tests, which is standard work. A `macos-15` runner has 3 CPUs and about 7 GiB of memory, less than the
+`heavy` tier's minimum reservation of 4 CPUs and 8192 MiB, so a `heavy` reservation does not fit that runner.
 
 The macOS targets cover the behaviour that depends on the platform: signals, exit statuses 130, 141, and 143, the user
 configuration directory, atomic renames, file modes, symbolic links, and port binding.
