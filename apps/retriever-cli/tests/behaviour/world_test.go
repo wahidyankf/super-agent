@@ -57,6 +57,8 @@ type world struct {
 	procKill []func()
 	// stdoutClosed is set by a step that makes standard output a pipe with no reader, so the next command meets EPIPE.
 	stdoutClosed bool
+	// kept holds the standard error of an earlier command, by the name a step gave it, for a later identical-text check.
+	kept map[string]string
 }
 
 // newWorld returns the state of one scenario at the given level, kept by the given backend.

@@ -87,6 +87,15 @@ func registerOutlineSteps(ctx *godog.ScenarioContext, cur func() *world) {
 		cur().outlineStub().SetReply(method, 200, doc.Content)
 		return nil
 	})
+	ctx.Step(`^the stub Outline server answers "([^"]*)" with status (\d+) and the body:$`,
+		func(method, status string, doc *godog.DocString) error {
+			n, err := strconv.Atoi(status)
+			if err != nil {
+				return err
+			}
+			cur().outlineStub().SetFault(outlinestub.Fault{Method: method, Status: n, Body: doc.Content})
+			return nil
+		})
 	ctx.Step(`^the stub Outline server answers "([^"]*)" with status (\d+)$`, func(method, status string) error {
 		n, err := strconv.Atoi(status)
 		if err != nil {
@@ -234,6 +243,50 @@ func registerKiwiSteps(ctx *godog.ScenarioContext, cur func() *world) {
 		s.SetMethodFault(kiwiMethod(method), kiwistub.Fault{Redirect: true, Location: location})
 		return nil
 	})
+	ctx.Step(`^the stub Kiwi server answers every request with status (\d+) and Retry-After "([^"]*)"$`,
+		func(status, retryAfter string) error {
+			n, err := strconv.Atoi(status)
+			if err != nil {
+				return err
+			}
+			s, err := cur().kiwiStub()
+			if err != nil {
+				return err
+			}
+			s.SetFault(kiwistub.Fault{Status: n, RetryAfter: retryAfter})
+			return nil
+		})
+	ctx.Step(`^the stub Kiwi server answers every request with status (\d+) and echoes the key$`, func(status string) error {
+		n, err := strconv.Atoi(status)
+		if err != nil {
+			return err
+		}
+		s, err := cur().kiwiStub()
+		if err != nil {
+			return err
+		}
+		s.SetFault(kiwistub.Fault{Status: n, EchoKey: true})
+		return nil
+	})
+	ctx.Step(`^the stub Kiwi server answers every request with a body that is not JSON and echoes the key$`, func() error {
+		s, err := cur().kiwiStub()
+		if err != nil {
+			return err
+		}
+		s.SetFault(kiwistub.Fault{NotJSON: true, EchoKey: true})
+		return nil
+	})
+	ctx.Step(`^the stub Kiwi server is not listening$`, func() error {
+		s, err := cur().kiwiStub()
+		if err != nil {
+			return err
+		}
+		s.Close()
+		return nil
+	})
+	ctx.Step(`^no request to the stub Kiwi server carried the value of "([^"]*)" in its body or its path$`, func(name string) error {
+		return cur().checkNoSecretInKiwi(name)
+	})
 	ctx.Step(`^every request to the stub Kiwi server used the path "([^"]*)"$`, func(path string) error {
 		return cur().checkEveryKiwi(func(r kiwistub.Request) error {
 			if r.Path != path {
@@ -316,6 +369,19 @@ func registerJiraSteps(ctx *godog.ScenarioContext, cur func() *world) {
 				return err
 			}
 			s.SetFaultFirst(n, jirastub.Fault{Path: path, Status: code, RetryAfter: retryAfter})
+			return nil
+		})
+	ctx.Step(`^the stub Jira server answers every request with status (\d+) and echoes the token and the e-mail address$`,
+		func(status string) error {
+			n, err := strconv.Atoi(status)
+			if err != nil {
+				return err
+			}
+			s, err := cur().jiraStub()
+			if err != nil {
+				return err
+			}
+			s.SetFault(jirastub.Fault{Status: n, EchoToken: true, EchoEmail: true})
 			return nil
 		})
 	ctx.Step(`^every request to the stub Jira server carried the credentials of the synthetic e-mail address and token$`,
@@ -435,6 +501,29 @@ func (w *world) checkNoSecretInRequests(name string) error {
 		}
 		if strings.Contains(string(body), value) || strings.Contains(r.Path, value) {
 			return fmt.Errorf("the request %s carried the value of %s", r.Method, name)
+		}
+	}
+	return nil
+}
+
+// checkNoSecretInKiwi checks that no Kiwi request carried a secret's value in its body or its path. It fails when the stub
+// received no request, so the check is never true by default.
+func (w *world) checkNoSecretInKiwi(name string) error {
+	value, err := w.valueOf(name)
+	if err != nil {
+		return err
+	}
+	s, err := w.kiwiStub()
+	if err != nil {
+		return err
+	}
+	reqs := s.Requests()
+	if len(reqs) == 0 {
+		return errors.New("the stub Kiwi server received no requests to check")
+	}
+	for _, r := range reqs {
+		if strings.Contains(string(r.Body), value) || strings.Contains(r.Path, value) {
+			return fmt.Errorf("a request %s carried the value of %s", r.Verb, name)
 		}
 	}
 	return nil
