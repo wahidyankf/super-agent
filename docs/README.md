@@ -50,6 +50,8 @@ question.
   - [Sources catalog format](./reference/retriever-cli-catalog-format.md) describes the sources file.
   - [Migrating from Butler to retriever](./reference/retriever-cli-migration-from-butler.md) maps each old behaviour to
     the new one.
+  - [Connector spec fields](./reference/connector-spec-fields.md) and [Profile layout](./reference/profile-layout.md)
+    are planned drafts, not built.
 - [Explanation](./explanation/) gives the reasons behind the project:
   - [What super-agent is](./explanation/what-super-agent-is.md) describes the super agent and its scope.
   - [The sourcing layer](./explanation/sourcing-layer.md) explains why the command-line tool works as it does.
@@ -59,6 +61,8 @@ question.
     out.
   - [Software-factory note](./explanation/software-factory-note.md) records a later direction. It is out of scope
     now.
+  - [Decision records](./explanation/decisions/) hold the architecture decisions. ADR 001 covers planned user-defined
+    connectors and profiles.
 
 ## Related
 

@@ -45,5 +45,7 @@ Each item below is planned. None is built.
 
 ## Related
 
+- [ADR 001](./decisions/001-user-defined-connectors-and-profiles.md) decides items 1 and 2 above: user-defined
+  connectors and profiles. It keeps room in the spec schema for item 4, channel connectors.
 - [What super-agent is](./what-super-agent-is.md) describes the scope of the project today.
 - [Public data policy](./public-data-policy.md) applies to every planned item, including the vault path.
