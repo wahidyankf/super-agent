@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"os"
 	"time"
@@ -12,10 +13,12 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 	mcpadapter "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/mcp"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/connectorspec"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/registry"
@@ -140,6 +143,13 @@ func registeredKinds() domain.KindSet {
 // MCP functions for the configuration paths the caller resolved. The catalog is read once here. A catalog error stops the
 // sources commands, and the process still starts for every other command.
 func wireSources(paths configpaths.Paths, seams seamSet, h host, kinds domain.KindSet) (sourceWiring, error) {
+	return wireSourcesWith(paths, seams, h, connectorspec.Set{Kinds: kinds, Operations: operations.BuiltinCatalog()})
+}
+
+// wireSourcesWith is wireSources for a run that loaded connector specs. The set supplies the kinds the catalog may name,
+// the digests its spec pins are checked against, the operation rows the commands and tools are built from, and one engine
+// builder for each spec kind.
+func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connectorspec.Set) (sourceWiring, error) {
 	if err := checkSeams(seams); err != nil {
 		return sourceWiring{}, err
 	}
@@ -147,15 +157,15 @@ func wireSources(paths configpaths.Paths, seams seamSet, h host, kinds domain.Ki
 	if err != nil {
 		return sourceWiring{}, err
 	}
-	loader, err := h.openCatalog(paths.Catalog, kinds)
+	loader, err := h.openCatalog(paths.Catalog, set.Kinds)
 	if err != nil {
 		return sourceWiring{}, err
 	}
-	cat, err := loader.Load()
+	cat, err := loader.WithSpecDigests(set.Digests).Load()
 	if err != nil {
 		return sourceWiring{}, err
 	}
-	resolver := registry.New(map[domain.SourceKind]registry.Builder{
+	builders := map[domain.SourceKind]registry.Builder{
 		domain.KindOutline: func(src domain.Source) (ports.SourceGateway, error) {
 			return buildOutline(src, creds, seams[domain.KindOutline])
 		},
@@ -165,8 +175,11 @@ func wireSources(paths configpaths.Paths, seams seamSet, h host, kinds domain.Ki
 		domain.KindJira: func(src domain.Source) (ports.SourceGateway, error) {
 			return buildJira(src, creds, seams[domain.KindJira])
 		},
-	})
-	svc := sources.Service{Catalog: cat, Gateways: resolver}
+	}
+	maps.Copy(builders, specBuilders(set, h.engine, creds))
+	resolver := registry.New(builders)
+	ops := set.Operations
+	svc := sources.Service{Catalog: cat, Gateways: resolver, Operations: &ops}
 	// The GraphQL server serves the reads of the catalog only: its schema has no mutation.
 	return sourceWiring{
 		service: svc,

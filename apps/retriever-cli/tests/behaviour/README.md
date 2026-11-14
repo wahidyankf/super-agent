@@ -28,7 +28,12 @@ working directory and the process environment.
 - `inprocess_wiring_test.go`: the in-process wiring, mirrored from `cmd/retriever`.
 - `stubs_test.go`: the stub lifecycle and the seam variables. It loads the synthetic Outline replies.
 - `process_test.go`: the `serve` and `mcp` sessions and the GraphQL request.
-- `steps_cli_test.go`, `steps_stub_test.go`, `steps_process_test.go`: the step definitions.
+- `steps_cli_test.go`, `steps_stub_test.go`, `steps_process_test.go`, `steps_connectors_test.go`: the step definitions.
+- `connector_fixtures_test.go`: the example wiki spec and its variants, which the connector steps write into the scenario.
+- `spec_runtime_test.go`: how the in-process levels reach a spec source. The unit level answers from the replay stubs in
+  memory, behind a network that refuses every call.
+- `spec_loopback_integration_test.go`: the integration level's spec source, the loopback stub of `tests/specstub`. It is
+  tagged `integration`, so the unit and end-to-end builds never import the stub.
 - `suite_test.go`, `unit_suite_test.go`, `integration_suite_test.go`, `e2e_suite_test.go`: the suite entry points.
 - The stub servers come from [libs/retriever-testkit](../../../../libs/retriever-testkit/README.md). The synthetic
   Outline replies for the write and admin methods are in

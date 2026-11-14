@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 )
 
 // TestEveryGeneratedInputMapsBackToItsCatalogName covers finding F4: each snake_case input the model sees is advertised
 // in the tool schema, and the call maps it back to the catalog name the binder checks. A name that does not map back
 // would reach the binder as an unknown argument, which is refused, so the model could not use the parameter.
 func TestEveryGeneratedInputMapsBackToItsCatalogName(t *testing.T) {
-	for _, row := range operationTools() {
+	for _, row := range operationTools(sources.Service{}) {
 		props, ok := inputSchema(row)["properties"].(map[string]any)
 		if !ok {
 			t.Fatalf("%s: the input schema has no properties", row.Tool)
@@ -51,7 +52,7 @@ func TestCamelCaseParametersAreSnakeCaseOnTheWire(t *testing.T) {
 // rowWithParam returns the first generated tool that declares the catalog parameter, and fails the test when none does.
 func rowWithParam(t *testing.T, name string) operations.Row {
 	t.Helper()
-	for _, row := range operationTools() {
+	for _, row := range operationTools(sources.Service{}) {
 		for _, p := range row.Params {
 			if p.Name == name {
 				return row

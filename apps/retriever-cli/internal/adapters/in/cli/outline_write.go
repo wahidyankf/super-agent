@@ -18,9 +18,8 @@ var writeSourceFlag = flag{name: "--source", meta: "<id>", help: "configured sou
 
 // runWrite runs one write row against the named source. It prints the reply of the wiki: the projected record in JSON
 // mode, or one line naming the change and the record in text mode.
-func runWrite(inv *invocation, row operations.Row) error {
+func runWrite(inv *invocation, row operations.Row, kind domain.SourceKind) error {
 	rt := inv.rt
-	kind, _ := row.Kind()
 	service, err := rt.outlineWiring()
 	if err != nil {
 		return withKind(kind, err)

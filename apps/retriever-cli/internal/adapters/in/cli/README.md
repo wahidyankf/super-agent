@@ -9,12 +9,14 @@ Production files:
 - `cli.go` holds the root command, the global options, and the output writers.
 - `command.go` holds the command type, the help text, and the exit-status table that help prints.
 - `commands.go` builds the command tree and sets the signal and exit rows of each command.
-- `catalog_paths.go` passes the catalog and env-file flags to the configuration paths.
+- `catalog_paths.go` passes the catalog, env-file, and connectors-folder flags to the configuration paths.
 - `environment.go` builds the lookup of the source keys that the composition root passes in as `getenv`. It reads only
   the variables that the sources name.
 - `failure.go` writes the failure body, in text or JSON.
 - `sources.go` holds the `sources` and `document` commands.
 - `outline.go`, `outline_read.go`, and `outline_write.go` hold the `outline` commands, split by read and write.
+  `outline_read.go` also adds one command group for each loaded connector spec kind, named by the kind. A spec operation
+  with `cli` off has no command there.
 - `serve.go` holds the `serve` command, and `mcp.go` holds the `mcp` command.
 - `signals.go` gives the cancellation cause that ends `serve` or `mcp` as if the process had received a signal.
 - `pipe.go` maps a closed standard output or standard error to the status of a process that ends by `SIGPIPE`.

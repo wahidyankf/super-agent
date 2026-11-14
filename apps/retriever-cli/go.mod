@@ -13,7 +13,9 @@ require (
 	github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-connector-outline v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-contract v0.4.0
+	github.com/wahidyankf/super-agent/libs/retriever-engine v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-runtime v0.4.0
+	github.com/wahidyankf/super-agent/libs/retriever-spec v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-testkit v0.4.0
 )
 
@@ -30,13 +32,14 @@ require (
 	github.com/hashicorp/go-memdb v1.3.5 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/sosodev/duration v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/urfave/cli/v3 v3.14.0 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
-	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
@@ -58,6 +61,8 @@ replace (
 	github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi => ../../libs/retriever-connector-kiwi
 	github.com/wahidyankf/super-agent/libs/retriever-connector-outline => ../../libs/retriever-connector-outline
 	github.com/wahidyankf/super-agent/libs/retriever-contract => ../../libs/retriever-contract
+	github.com/wahidyankf/super-agent/libs/retriever-engine => ../../libs/retriever-engine
 	github.com/wahidyankf/super-agent/libs/retriever-runtime => ../../libs/retriever-runtime
+	github.com/wahidyankf/super-agent/libs/retriever-spec => ../../libs/retriever-spec
 	github.com/wahidyankf/super-agent/libs/retriever-testkit => ../../libs/retriever-testkit
 )

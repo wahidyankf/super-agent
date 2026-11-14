@@ -14,7 +14,7 @@ import (
 func TestUsageShowsRequiredFlagsWithoutBrackets(t *testing.T) {
 	for _, kind := range []domain.SourceKind{domain.KindOutline, domain.KindKiwi, domain.KindJira} {
 		for _, row := range operations.RowsOf(kind) {
-			usage := readLeaf(row, row.CLI).usage
+			usage := readLeaf(kind, row, row.CLI).usage
 			positional := row.Positional()
 			for _, p := range row.Params {
 				if p.Name == positional {

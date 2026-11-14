@@ -66,6 +66,9 @@ type world struct {
 	// kinds is the set of kinds the in-process levels register. A step may replace it with a registration, and it starts as
 	// the built-in set, which the composition root registers.
 	kinds domain.KindSet
+	// spec is the outbound side of the connector spec sources of the in-process levels, built on the first run that loads
+	// a spec. It is nil until then, and the end-to-end level never sets it.
+	spec *specRuntime
 }
 
 // newWorld returns the state of one scenario at the given level, kept by the given backend.

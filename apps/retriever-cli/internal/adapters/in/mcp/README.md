@@ -7,7 +7,9 @@ tool is always offered.
 Source files:
 
 - `mcp.go` runs one protocol session over standard input and standard output.
-- `operation_tools.go` builds one tool for each operation row of the catalog, with its input schema and its handler.
+- `operation_tools.go` builds one tool for each operation row of the service's catalog, with its input schema and its
+  handler. The catalog holds the built-in rows and the rows of each loaded connector spec whose `mcp` is on, so a spec
+  adds its tools without a Go change.
 - `tools.go` defines the hand-written tools, such as `list_sources`, and binds each one to its use case.
 - `fit.go` fits a result to the size that a client accepts.
 - `page.go` pages a list result.
@@ -24,3 +26,4 @@ Test files:
 - `serve_test.go` tests the server session.
 - `stage_b_test.go` and `stage_c4_test.go` hold the tests of two groups of tools. Their names carry the group label.
 - `fixtures_test.go` holds the fixtures that the tests share.
+- `spec_tools_test.go` tests that the tool list comes from the service's composed catalog, so a spec row becomes a tool.

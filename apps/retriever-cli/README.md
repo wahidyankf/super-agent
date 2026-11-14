@@ -2,12 +2,12 @@
 
 `retriever` is the sourcing command-line tool of super-agent. It lists the sources in a catalog, reads documents from
 Outline wikis, Kiwi test management, and Jira Cloud, and writes Markdown exports to a folder. It also serves a read-only
-GraphQL API (`serve`) and a Model Context Protocol server (`mcp`). The tool is alpha, and breaking changes are allowed
-in any release.
+GraphQL API (`serve`) and a Model Context Protocol server (`mcp`). A connector spec, a YAML file in a connectors folder,
+adds a source kind with its commands and MCP tools, and no Go change is needed. The tool is alpha, and breaking changes
+are allowed in any release.
 
 The Go module path is `github.com/wahidyankf/super-agent/apps/retriever-cli`. The binary is `retriever`. The module
-requires the six libraries under [libs/](../../libs/README.md) at `v0.4.0`, and it replaces each one with its local
-folder.
+requires the libraries under [libs/](../../libs/README.md) at `v0.4.0`, and it replaces each one with its local folder.
 
 ## Prerequisites
 
@@ -68,7 +68,8 @@ The CI cross-compile check builds four platforms and publishes nothing.
   [cmd](./cmd/README.md).
 - `internal/adapters/` holds the inbound adapters: the command-line interface, the MCP server, and the GraphQL service.
   See [internal](./internal/README.md).
-- `examples/` holds the example sources catalog, `sources.example.yml`. See [examples](./examples/README.md).
+- `examples/` holds the example sources catalog, `sources.example.yml`, and the example connector spec in
+  `examples/connectors/`. See [examples](./examples/README.md).
 - `tests/` holds the behaviour tests, the conformance tests, and the architecture tests. See [tests](./tests/README.md).
 - `scripts/` holds the release build, its self-test, and the coverage exclusions of the app. See
   [scripts](./scripts/README.md). The shared coverage gate is `scripts/go-coverage-gate.sh` at the repository root.
@@ -84,6 +85,7 @@ this folder. They are libraries under [libs/](../../libs/README.md). See
 
 ## Related
 
+- [Add a spec connector](../../docs/how-to/add-a-spec-connector.md)
 - [Command reference](../../docs/reference/retriever-cli-commands.md)
 - [Exit codes](../../docs/reference/retriever-cli-exit-codes.md)
 - [JSON schemas](../../docs/reference/retriever-cli-json-schemas.md)

@@ -293,6 +293,8 @@ func (w *world) mcpInProcess(args []string) (*mcpSession, error) {
 	}
 	go func() {
 		m.end.exited <- cli.Run(args, deps)
+		// A command that ends without reading its input must not leave a write blocked forever, so the reader closes too.
+		_ = inR.Close()
 		_ = outW.Close()
 	}()
 	go readLines(outR, m.lines)

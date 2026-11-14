@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
@@ -66,6 +67,16 @@ type Deps struct {
 	MCP      MCPFunc
 	Sink     SinkFactory
 	SetupErr error
+	// Specs are the connector specs that the run loaded. Their commands exist even when the wiring failed, so that the failure
+	// is reported by the command that names the kind. The zero value registers no spec.
+	Specs Specs
+}
+
+// Specs is what the connector specs of a run register with the CLI: the operation catalog that knows their kinds, and the
+// CLI rows of the spec kinds, which become one command group per kind.
+type Specs struct {
+	Catalog operations.Catalog
+	Rows    []operations.Row
 }
 
 // runtime is what a leaf action reads: the ports, the output writers, the parsed output format, and the wiring.
@@ -151,7 +162,7 @@ func run(argv []string, d Deps) (status int) {
 		g.help = true
 		rest = rest[1:]
 	}
-	cur, path, idx := walk(rest)
+	cur, path, idx := walk(commandTreeWith(d.Specs.Catalog, d.Specs.Rows), rest)
 	command = strings.Join(path, " ")
 	area := areaOf(path)
 
@@ -213,8 +224,8 @@ func run(argv []string, d Deps) (status int) {
 // walk descends the command tree along rest. It returns the deepest command it reaches, that command's path, and how many
 // tokens of rest it used. A node that is both a leaf and a group, such as outline collections, descends only when the next
 // token names one of its children; any other token is left for the leaf.
-func walk(rest []string) (cur *command, path []string, idx int) {
-	cur, path = commandTree(), []string{"retriever"}
+func walk(tree *command, rest []string) (cur *command, path []string, idx int) {
+	cur, path = tree, []string{"retriever"}
 	for idx < len(rest) {
 		next := cur.child(rest[idx])
 		if next == nil {
@@ -240,12 +251,14 @@ type Globals struct {
 	// Catalog and EnvFile hold the values of --catalog and --env-file, or "" when the flag is absent.
 	Catalog string
 	EnvFile string
+	// ConnectorsDir holds the value of --connectors-dir, or "" when the flag is absent.
+	ConnectorsDir string
 }
 
 // ParseGlobals returns the path options of argv. A malformed command line returns the error that Run would report.
 func ParseGlobals(argv []string) (Globals, error) {
 	g, _, err := splitGlobals(argv)
-	return Globals{Catalog: g.catalog, EnvFile: g.envFile}, err
+	return Globals{Catalog: g.catalog, EnvFile: g.envFile, ConnectorsDir: g.connectors}, err
 }
 
 // outputFormat returns the format named by --output in argv, text when it is absent or malformed. It chooses the stream

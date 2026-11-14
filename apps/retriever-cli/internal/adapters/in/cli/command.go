@@ -137,12 +137,13 @@ func angled(names []string) string {
 
 // globals are the options accepted before, after, or between subcommand names.
 type globals struct {
-	output  string
-	color   string
-	catalog string
-	envFile string
-	version bool
-	help    bool
+	output     string
+	color      string
+	catalog    string
+	envFile    string
+	connectors string
+	version    bool
+	help       bool
 }
 
 // format returns the output format the --output flag selects. Text is the default, and json is the machine-readable mode.
@@ -164,7 +165,7 @@ func splitGlobals(argv []string) (globals, []string, error) {
 
 		name, value, hasValue := strings.Cut(tok, "=")
 		switch name {
-		case "-o", "--output", "--color", "--catalog", "--env-file":
+		case "-o", "--output", "--color", "--catalog", "--env-file", "--connectors-dir":
 			if !hasValue {
 				if i+1 >= len(argv) {
 					return g, nil, fmt.Errorf("missing value for %s", name)
@@ -179,6 +180,8 @@ func splitGlobals(argv []string) (globals, []string, error) {
 				g.catalog = value
 			case "--env-file":
 				g.envFile = value
+			case "--connectors-dir":
+				g.connectors = value
 			default:
 				g.output = value
 			}
@@ -253,6 +256,7 @@ func globalOptionRows() [][2]string {
 		{"--color <when>", "colour control: auto (default), always, or never; the output carries no escape sequences either way"},
 		{"--catalog <path>", "sources catalog file (default: RETRIEVER_CATALOG, ./sources.yml, or the user configuration folder)"},
 		{"--env-file <path>", "local env file holding source keys (default: RETRIEVER_ENV_FILE, ./.env.local, or the user configuration folder)"},
+		{"--connectors-dir <path>", "folder of connector spec files (default: the connectors folder of the user configuration folder)"},
 		{"-V, --version", "print the retriever version and the alpha notice, then exit"},
 		{"-h, --help", "show help"},
 	}

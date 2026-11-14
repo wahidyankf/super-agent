@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net"
 	"net/http"
 	"path"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -48,8 +50,11 @@ type backend interface {
 	dirFiles(path string) (map[string]string, error)
 	// credentials returns the env-file reader of the file at path, which reads the environment through getenv.
 	credentials(path string, getenv func(string) string) (*envfile.Credentials, error)
-	// loadCatalog reads the sources catalog at path, and accepts the kinds of the set given.
-	loadCatalog(path string, kinds domain.KindSet) (domain.Catalog, error)
+	// loadCatalog reads the sources catalog at path, and accepts the kinds of the set given. Each spec_sha256 pin is checked
+	// against digests, the digests of the loaded spec files.
+	loadCatalog(path string, kinds domain.KindSet, digests map[string]string) (domain.Catalog, error)
+	// connectorsFolder returns the connector spec folder at dir as a file system. A missing folder fails when it is listed.
+	connectorsFolder(dir string) fs.FS
 	// sink returns the export sink that writes into dir.
 	sink(dir string) ports.ExportSink
 	// spawnServe starts retriever serve as the built binary. Only the end-to-end level has a binary.
@@ -158,7 +163,7 @@ func (m *memoryBackend) credentials(name string, getenv func(string) string) (*e
 }
 
 // loadCatalog reads the catalog from the in-memory tree, as catalog.NewWithFiles does, through the folder of the file.
-func (m *memoryBackend) loadCatalog(name string, kinds domain.KindSet) (domain.Catalog, error) {
+func (m *memoryBackend) loadCatalog(name string, kinds domain.KindSet, digests map[string]string) (domain.Catalog, error) {
 	loader, err := catalog.NewWithFiles(name, catalog.Files{
 		FS:       m.files.Folder(path.Dir(name)),
 		SameFile: m.files.SameFile,
@@ -166,7 +171,52 @@ func (m *memoryBackend) loadCatalog(name string, kinds domain.KindSet) (domain.C
 	if err != nil {
 		return domain.Catalog{}, err
 	}
-	return loader.Load()
+	return loader.WithSpecDigests(digests).Load()
+}
+
+// connectorsFolder returns the in-memory spec folder at dir, which lists and reads its files as a disk folder does.
+func (m *memoryBackend) connectorsFolder(dir string) fs.FS {
+	return memFolder{files: m.files, dir: dir}
+}
+
+// memFolder is the in-memory spec folder. It lists the regular files directly inside dir, so fs.ReadDir works on it as on
+// a disk folder. The tree's own folder view cannot list a folder, because it opens a folder as a file, so the listing is
+// here.
+type memFolder struct {
+	files *memfs.FS
+	dir   string
+}
+
+// Open opens the entry name under the folder.
+func (f memFolder) Open(name string) (fs.File, error) {
+	return f.files.Open(path.Join(f.dir, name))
+}
+
+// ReadDir lists the regular files directly inside the folder, in name order. A folder that does not exist fails with
+// fs.ErrNotExist, and a name that is a file fails as a folder that cannot be read.
+func (f memFolder) ReadDir(name string) ([]fs.DirEntry, error) {
+	dir := path.Join(f.dir, name)
+	if _, err := f.files.Lstat(dir); err != nil {
+		return nil, err
+	}
+	listed, err := f.files.Files(dir)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(listed))
+	for entry := range listed {
+		names = append(names, entry)
+	}
+	sort.Strings(names)
+	entries := make([]fs.DirEntry, 0, len(names))
+	for _, entry := range names {
+		info, err := f.files.Lstat(path.Join(dir, entry))
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, fs.FileInfoToDirEntry(info))
+	}
+	return entries, nil
 }
 
 // sink returns an export sink that stores each exported file in the in-memory tree. A relative folder is taken from the

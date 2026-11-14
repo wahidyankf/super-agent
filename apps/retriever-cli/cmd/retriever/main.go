@@ -58,16 +58,24 @@ func startupFailure(stderr io.Writer, argv []string, err error) int {
 // returned, so the CLI records it as the setup error, and only the commands that need the sources report it.
 func attachSourcesFrom(deps *cli.Deps, g cli.Globals, seams seamSet, getenv func(string) string, h host) error {
 	paths, err := configpaths.Resolve(configpaths.Inputs{
-		CatalogFlag: g.Catalog,
-		EnvFileFlag: g.EnvFile,
-		Getenv:      getenv,
-		Getwd:       h.getwd,
-		Exists:      h.exists,
+		CatalogFlag:    g.Catalog,
+		EnvFileFlag:    g.EnvFile,
+		ConnectorsFlag: g.ConnectorsDir,
+		Getenv:         getenv,
+		Getwd:          h.getwd,
+		Exists:         h.exists,
 	})
 	if err != nil {
 		return err
 	}
-	w, err := wireSources(paths, seams, h, registeredKinds())
+	set, err := loadConnectors(h, paths.Connectors, g.ConnectorsDir != "")
+	if err != nil {
+		return err
+	}
+	// The spec commands are registered before the wiring, so a catalog that fails to load still reports its failure
+	// through the command that names the spec kind, and not as an unknown command.
+	deps.Specs = cli.Specs{Catalog: set.Operations, Rows: set.CLIRows}
+	w, err := wireSourcesWith(paths, seams, h, set)
 	if err != nil {
 		return err
 	}
