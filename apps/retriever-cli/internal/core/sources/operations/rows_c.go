@@ -6,9 +6,8 @@ import (
 
 // adminRows are the destructive and admin operations of stage c that this slice builds: the document and collection
 // members, archives, and deletions. Each one changes the wiki with access admin, so a source below
-// admin refuses it. A destructive or admin call needs --yes on the CLI, and documents.empty-trash
-// and a permanent documents.delete are critical (section 3.5). Each runs through the admin use case and has one endpoint
-// entry in the Outline adapter (endpoints_c.go).
+// admin refuses it. Each runs through the admin use case and has one endpoint entry in the Outline
+// adapter (endpoints_c.go).
 var adminRows = []Row{
 	{
 		ID:          domain.OpDocumentsAddGroup,
@@ -24,7 +23,6 @@ var adminRows = []Row{
 			{Name: "groupId", Kind: KindUUID, Required: true, Help: "the group, by its UUID"},
 			permissionParam(documentPermissions...),
 		},
-		Target:  &Target{Read: domain.OpDocumentsGet, Field: "id", Name: "title"},
 		Fields:  groupMembershipFields,
 		ListKey: "groupMemberships",
 		Noun:    "group memberships",
@@ -44,7 +42,6 @@ var adminRows = []Row{
 			{Name: "userId", Kind: KindUUID, Required: true, Help: "the user, by its UUID"},
 			permissionParam(documentPermissions...),
 		},
-		Target:  &Target{Read: domain.OpDocumentsGet, Field: "id", Name: "title"},
 		Fields:  membershipFields,
 		ListKey: "memberships",
 		Noun:    "memberships",
@@ -63,37 +60,33 @@ var adminRows = []Row{
 			documentIDParam("the document ID, from list_documents"),
 			{Name: "reason", Kind: KindReason, Help: "why it is archived, at most 2000 characters"},
 		},
-		Target: &Target{Read: domain.OpDocumentsGet, Field: "id", Name: "title"},
 		Fields: docListFields,
 	},
 	{
 		ID:          domain.OpDocumentsDelete,
 		CLI:         "outline documents delete",
 		Tool:        "delete_document",
-		Summary:     "move one Outline document to the trash; --permanent deletes it for good (critical)",
+		Summary:     "move one Outline document to the trash; --permanent deletes it for good",
 		Description: "Moves one document to the trash, from which it can be restored. The permanent deletion is not offered here. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
 			documentIDParam("the document ID, from list_documents"),
-			{Name: "permanent", Kind: KindBool, CLIOnly: true, Help: "true to delete the document for good; critical, CLI only, needs --confirm"},
+			{Name: "permanent", Kind: KindBool, Help: "true to delete the document for good, without a trash step"},
 			{Name: "reason", Kind: KindReason, Help: "why it is deleted, at most 2000 characters"},
 		},
-		Critical: &Critical{When: "permanent", Kind: "the document ID"},
-		Target:   &Target{Read: domain.OpDocumentsGet, Field: "id", Name: "title"},
-		Fields:   ackFields,
+		Fields: ackFields,
 	},
 	{
 		ID:          domain.OpDocumentsEmptyTrash,
 		CLI:         "outline documents empty-trash",
-		Summary:     "delete every document in the trash of the source for good (critical, CLI only)",
-		Description: "Deletes every document in the trash of the source for good. It has no MCP tool, because it is critical.",
+		Tool:        "empty_trash",
+		Summary:     "delete every document in the trash of the source for good",
+		Description: "Deletes every document in the trash of the source for good.",
 		Effect:      domain.EffectDestructive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
-		Critical:    &Critical{Kind: "the source ID"},
-		Target:      &Target{Read: domain.OpDocumentsDeleted},
 		Fields:      ackFields,
 	},
 	{
@@ -109,7 +102,6 @@ var adminRows = []Row{
 			documentIDParam("the document ID, from list_documents"),
 			{Name: "groupId", Kind: KindUUID, Required: true, Help: "the group, by its UUID"},
 		},
-		Target: &Target{Read: domain.OpDocumentsGet, Field: "id", Name: "title"},
 		Fields: ackFields,
 	},
 	{
@@ -125,7 +117,6 @@ var adminRows = []Row{
 			documentIDParam("the document ID, from list_documents"),
 			{Name: "userId", Kind: KindUUID, Required: true, Help: "the user, by its UUID"},
 		},
-		Target: &Target{Read: domain.OpDocumentsGet, Field: "id", Name: "title"},
 		Fields: ackFields,
 	},
 	{
@@ -142,7 +133,6 @@ var adminRows = []Row{
 			{Name: "groupId", Kind: KindUUID, Required: true, Help: "the group, by its UUID"},
 			permissionParam(collectionPermissions...),
 		},
-		Target:  &Target{Read: domain.OpCollectionsInfo, Field: "id", Name: "name"},
 		Fields:  groupMembershipFields,
 		ListKey: "groupMemberships",
 		Noun:    "group memberships",
@@ -162,7 +152,6 @@ var adminRows = []Row{
 			{Name: "userId", Kind: KindUUID, Required: true, Help: "the user, by its UUID"},
 			permissionParam(collectionPermissions...),
 		},
-		Target:  &Target{Read: domain.OpCollectionsInfo, Field: "id", Name: "name"},
 		Fields:  membershipFields,
 		ListKey: "memberships",
 		Noun:    "memberships",
@@ -181,7 +170,6 @@ var adminRows = []Row{
 			collectionIDParam(),
 			{Name: "reason", Kind: KindReason, Help: "why it is archived, at most 2000 characters"},
 		},
-		Target: &Target{Read: domain.OpCollectionsInfo, Field: "id", Name: "name"},
 		Fields: colRecordFields,
 	},
 	{
@@ -197,7 +185,6 @@ var adminRows = []Row{
 			collectionIDParam(),
 			{Name: "reason", Kind: KindReason, Help: "why it is deleted, at most 2000 characters"},
 		},
-		Target: &Target{Read: domain.OpCollectionsInfo, Field: "id", Name: "name"},
 		Fields: ackFields,
 	},
 	{
@@ -229,7 +216,6 @@ var adminRows = []Row{
 			collectionIDParam(),
 			{Name: "groupId", Kind: KindUUID, Required: true, Help: "the group, by its UUID"},
 		},
-		Target: &Target{Read: domain.OpCollectionsInfo, Field: "id", Name: "name"},
 		Fields: ackFields,
 	},
 	{
@@ -245,7 +231,6 @@ var adminRows = []Row{
 			collectionIDParam(),
 			{Name: "userId", Kind: KindUUID, Required: true, Help: "the user, by its UUID"},
 		},
-		Target: &Target{Read: domain.OpCollectionsInfo, Field: "id", Name: "name"},
 		Fields: ackFields,
 	},
 }

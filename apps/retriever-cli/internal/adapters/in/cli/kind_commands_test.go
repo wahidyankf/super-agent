@@ -196,30 +196,6 @@ func TestKiwiTestCaseCreateWritesOnce(t *testing.T) {
 	}
 }
 
-// TestKiwiWriteDryRunMakesNoRequestAndEchoesNoText checks the dry run: no request, the byte count of a text argument,
-// and never the text itself.
-func TestKiwiWriteDryRunMakesNoRequestAndEchoesNoText(t *testing.T) {
-	gw := &kiwiWiki{}
-	argv := []string{"kiwi", "test-cases", "create", "New case", "--product", "product-3", "--category", "Smoke",
-		"--priority", "P1", "--text", "secret body text", "--source", "kiwi", "--dry-run"}
-	code, stdout, stderr := runRetriever(t, argv, kiwiSetup(gw))
-	if code != 0 {
-		t.Fatalf("exit %d, stderr %q", code, stderr)
-	}
-	if len(gw.writes) != 0 || len(gw.reads) != 0 {
-		t.Fatalf("a dry run reached the gateway: reads %v, writes %v", gw.reads, gw.writes)
-	}
-	if !strings.Contains(stdout, "dry run of kiwi.test-cases.create on source kiwi") {
-		t.Fatalf("stdout %q does not name the dry run", stdout)
-	}
-	if strings.Contains(stdout, "secret body text") {
-		t.Fatalf("a dry run echoed the text: %q", stdout)
-	}
-	if !strings.Contains(stdout, "nothing was changed") {
-		t.Fatalf("stdout %q does not say nothing changed", stdout)
-	}
-}
-
 // TestKiwiWriteWithoutSourceIsRefused checks that a Kiwi write names its source, and makes no request without it.
 func TestKiwiWriteWithoutSourceIsRefused(t *testing.T) {
 	gw := &kiwiWiki{}

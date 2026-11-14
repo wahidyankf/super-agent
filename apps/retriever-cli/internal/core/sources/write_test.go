@@ -3,7 +3,6 @@ package sources
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -68,7 +67,7 @@ func TestWriteRefusesEveryBadCallBeforeAnySourceIsAskedOrAnyRequestIsMade(t *tes
 		t.Run(tc.name, func(t *testing.T) {
 			writer := &fakeWriter{reply: writtenDocument()}
 			svc, res := writeService(t, writer, domain.AccessWrite)
-			if _, err := Write(context.Background(), svc, tc.op, tc.source, tc.raw, false); !errors.Is(err, tc.want) {
+			if _, err := Write(context.Background(), svc, tc.op, tc.source, tc.raw); !errors.Is(err, tc.want) {
 				t.Fatalf("error = %v, want %v", err, tc.want)
 			}
 			if len(res.asked) != 0 || len(writer.ops) != 0 {
@@ -78,63 +77,18 @@ func TestWriteRefusesEveryBadCallBeforeAnySourceIsAskedOrAnyRequestIsMade(t *tes
 	}
 }
 
-// TestWriteRefusesAReadSourceBeforeTheWriterIsAsked checks the access rule: a source below the
-// level a write needs is refused, and a dry run is refused the same way.
-func TestWriteRefusesAReadSourceBeforeTheWriterIsAsked(t *testing.T) {
-	for _, dryRun := range []bool{false, true} {
-		writer := &fakeWriter{reply: writtenDocument()}
-		svc, res := writeService(t, writer, domain.AccessRead)
-		_, err := Write(context.Background(), svc, domain.OpDocumentsUpdate, strPtr("outline"), map[string]any{"documentId": "doc-1"}, dryRun)
-		if !errors.Is(err, domain.ErrAccessLevelTooLow) {
-			t.Fatalf("dryRun %v: error = %v, want ErrAccessLevelTooLow", dryRun, err)
-		}
-		var lvl domain.AccessLevelError
-		if !errors.As(err, &lvl) || lvl.Have != domain.AccessRead || lvl.Need != domain.AccessWrite {
-			t.Fatalf("dryRun %v: the error does not name the two levels: %v", dryRun, err)
-		}
-		if len(res.asked) != 0 || len(writer.ops) != 0 {
-			t.Fatalf("dryRun %v: a refused write reached the source: asked %v, writer ran %v", dryRun, res.asked, writer.ops)
-		}
-	}
-}
-
-// TestWriteDryRunMakesNoCallAndReportsThePlan checks the dry run: it asks no gateway, and its
-// reply names the operation, the source, the arguments, and that nothing changed. Text is counted, never echoed.
-func TestWriteDryRunMakesNoCallAndReportsThePlan(t *testing.T) {
+// TestWriteRefusesASourceBelowTheLevelBeforeAnyRequest checks that a write to a source at read access is refused with the
+// level error, and that the writer is never asked.
+func TestWriteRefusesASourceBelowTheLevelBeforeAnyRequest(t *testing.T) {
 	writer := &fakeWriter{reply: writtenDocument()}
-	svc, res := writeService(t, writer, domain.AccessWrite)
-	raw := map[string]any{"documentId": "doc-1", "text": "hello world", "editMode": "append", "lastRevision": 3}
-	plan, err := Write(context.Background(), svc, domain.OpDocumentsUpdate, strPtr("outline"), raw, true)
-	if err != nil {
-		t.Fatalf("dry run = %v", err)
+	svc, _ := writeService(t, writer, domain.AccessRead)
+	_, err := Write(context.Background(), svc, domain.OpDocumentsUpdate, strPtr("outline"),
+		map[string]any{"documentId": "doc-1"})
+	if !errors.Is(err, domain.ErrAccessLevelTooLow) {
+		t.Fatalf("a write to a read source: %v, want ErrAccessLevelTooLow", err)
 	}
-	if len(res.asked) != 0 || len(writer.ops) != 0 {
-		t.Fatalf("a dry run reached the source: asked %v, writer ran %v", res.asked, writer.ops)
-	}
-	if got := plan.Str("operation"); got != "documents.update" {
-		t.Fatalf("operation = %q", got)
-	}
-	if got := plan.Str("source"); got != "outline" {
-		t.Fatalf("source = %q", got)
-	}
-	if v, _ := plan.Get("dryRun"); v != true {
-		t.Fatalf("dryRun = %v, want true", v)
-	}
-	if v, _ := plan.Get("changed"); v != false {
-		t.Fatalf("changed = %v, want false", v)
-	}
-	args := plan.Rec("arguments")
-	if got := args.Str("documentId"); got != "doc-1" {
-		t.Fatalf("arguments.documentId = %q", got)
-	}
-	if got := args.Str("text"); got != "<11 bytes of text>" {
-		t.Fatalf("arguments.text = %q, want the byte count only", got)
-	}
-	if got := args.Str("editMode"); got != "append" {
-		t.Fatalf("arguments.editMode = %q", got)
-	}
-	if v, _ := args.Get("lastRevision"); fmt.Sprint(v) != "3" {
-		t.Fatalf("arguments.lastRevision = %v, want 3", v)
+	if len(writer.ops) != 0 {
+		t.Fatalf("a refused write reached the writer: %v", writer.ops)
 	}
 }
 
@@ -143,7 +97,7 @@ func TestWriteDryRunMakesNoCallAndReportsThePlan(t *testing.T) {
 func TestWriteCallsTheWriterWithTheBoundArgsAndReturnsItsReply(t *testing.T) {
 	writer := &fakeWriter{reply: writtenDocument()}
 	svc, res := writeService(t, writer, domain.AccessWrite)
-	reply, err := Write(context.Background(), svc, domain.OpDocumentsUpdate, strPtr("outline"), map[string]any{"documentId": "doc-1", "title": "New"}, false)
+	reply, err := Write(context.Background(), svc, domain.OpDocumentsUpdate, strPtr("outline"), map[string]any{"documentId": "doc-1", "title": "New"})
 	if err != nil {
 		t.Fatalf("Write = %v", err)
 	}
@@ -169,7 +123,7 @@ func TestWriteCallsTheWriterWithTheBoundArgsAndReturnsItsReply(t *testing.T) {
 func TestWriteAcceptsAListReplyForAListRow(t *testing.T) {
 	writer := &fakeWriter{reply: domain.NewList([]domain.Record{writtenDocument()})}
 	svc, _ := writeService(t, writer, domain.AccessWrite)
-	reply, err := Write(context.Background(), svc, domain.OpDocumentsMove, strPtr("outline"), map[string]any{"documentId": "doc-1"}, false)
+	reply, err := Write(context.Background(), svc, domain.OpDocumentsMove, strPtr("outline"), map[string]any{"documentId": "doc-1"})
 	if err != nil {
 		t.Fatalf("Write = %v", err)
 	}
@@ -198,7 +152,7 @@ func TestWriteRefusesAReplyOfTheWrongShape(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			svc, _ := writeService(t, &fakeWriter{reply: tc.reply}, domain.AccessWrite)
-			if _, err := Write(context.Background(), svc, tc.op, strPtr("outline"), map[string]any{"documentId": "doc-1"}, false); !errors.Is(err, domain.ErrWriteOutcomeUnknown) {
+			if _, err := Write(context.Background(), svc, tc.op, strPtr("outline"), map[string]any{"documentId": "doc-1"}); !errors.Is(err, domain.ErrWriteOutcomeUnknown) {
 				t.Fatalf("error = %v, want ErrWriteOutcomeUnknown", err)
 			}
 		})
@@ -210,7 +164,7 @@ func TestWriteRefusesAReplyOfTheWrongShape(t *testing.T) {
 func TestWriteReturnsTheWritersErrors(t *testing.T) {
 	for _, want := range []error{domain.ErrWriteOutcomeUnknown, domain.ErrDocumentConflict} {
 		svc, _ := writeService(t, &fakeWriter{err: want}, domain.AccessWrite)
-		if _, err := Write(context.Background(), svc, domain.OpDocumentsUpdate, strPtr("outline"), map[string]any{"documentId": "doc-1"}, false); !errors.Is(err, want) {
+		if _, err := Write(context.Background(), svc, domain.OpDocumentsUpdate, strPtr("outline"), map[string]any{"documentId": "doc-1"}); !errors.Is(err, want) {
 			t.Fatalf("error = %v, want %v", err, want)
 		}
 	}
@@ -219,7 +173,7 @@ func TestWriteReturnsTheWritersErrors(t *testing.T) {
 // TestWriteReportsAMissingWriter checks that a source with no writer is unsupported, and that the call stops there.
 func TestWriteReportsAMissingWriter(t *testing.T) {
 	svc, _ := writeService(t, nil, domain.AccessWrite)
-	if _, err := Write(context.Background(), svc, domain.OpDocumentsUpdate, strPtr("outline"), map[string]any{"documentId": "doc-1"}, false); !errors.Is(err, domain.ErrUnsupportedSource) {
+	if _, err := Write(context.Background(), svc, domain.OpDocumentsUpdate, strPtr("outline"), map[string]any{"documentId": "doc-1"}); !errors.Is(err, domain.ErrUnsupportedSource) {
 		t.Fatalf("error = %v, want ErrUnsupportedSource", err)
 	}
 }

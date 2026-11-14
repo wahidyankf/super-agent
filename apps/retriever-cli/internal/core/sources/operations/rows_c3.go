@@ -15,11 +15,8 @@ var startGroupSyncFields = []string{"started"}
 var integrationCreateServices = []string{"matomo", "umami"}
 
 // The rows of stage c, slice c3: the access requests, attachments, sign-in providers, comments, emojis, file operations,
-// imports, and integrations changes. Each changes the wiki with access
-// admin, so a source below admin refuses it, and each needs --yes on the CLI. The three critical rows,
-// authentication-providers.delete, integrations.create, and integrations.update, have no MCP tool at any ceiling. The
-// integrations rows name the host of their URL as the canonical value of --confirm. attachments.delete
-// has no target read, because the catalog holds no read of one attachment by its ID, so its dry run shows the plan only.
+// imports, and integrations changes. Each changes the wiki with access admin, so a source below admin
+// refuses it.
 var adminRowsC3 = []Row{
 	{
 		ID:          domain.OpAccessRequestsApprove,
@@ -34,7 +31,6 @@ var adminRowsC3 = []Row{
 			uuidParamRequired("accessRequestId", "the access request UUID, from get_access_request"),
 			{Name: "permission", Kind: KindEnum, Values: documentPermissions, Help: "read, read_write, or admin; read when omitted"},
 		},
-		Target: &Target{Read: domain.OpAccessRequestsGet, Field: "id"},
 		Fields: accessRequestFields,
 	},
 	{
@@ -47,7 +43,6 @@ var adminRowsC3 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("accessRequestId", "the access request UUID, from get_access_request")},
-		Target:      &Target{Read: domain.OpAccessRequestsGet, Field: "id"},
 		Fields:      accessRequestFields,
 	},
 	{
@@ -55,7 +50,7 @@ var adminRowsC3 = []Row{
 		CLI:         "outline attachments delete",
 		Tool:        "delete_attachment",
 		Summary:     "delete one attachment of the Outline wiki",
-		Description: "Deletes one attachment of the wiki, by its UUID. A link to the attachment in a document stops working. The dry run shows the plan only, because the wiki has no read of one attachment by its ID. This tool changes data in the wiki.",
+		Description: "Deletes one attachment of the wiki, by its UUID. A link to the attachment in a document stops working. This tool changes data in the wiki.",
 		Effect:      domain.EffectDestructive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
@@ -65,14 +60,13 @@ var adminRowsC3 = []Row{
 	{
 		ID:          domain.OpAuthenticationProvidersDelete,
 		CLI:         "outline authentication-providers delete",
-		Summary:     "delete one sign-in provider of the Outline wiki (critical, CLI only)",
-		Description: "Deletes one sign-in provider of the wiki, so people who signed in only with it are locked out. Check the providers with list_authentication_providers first. It has no MCP tool, because it is critical.",
+		Tool:        "delete_authentication_provider",
+		Summary:     "delete one sign-in provider of the Outline wiki",
+		Description: "Deletes one sign-in provider of the wiki, so people who signed in only with it are locked out. Check the providers with list_authentication_providers first.",
 		Effect:      domain.EffectDestructive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("authenticationProviderId", "the sign-in provider UUID, from list_authentication_providers")},
-		Critical:    &Critical{Kind: "the authentication provider ID"},
-		Target:      &Target{Read: domain.OpAuthenticationProvidersGet, Field: "id", Name: "name"},
 		Fields:      ackFields,
 	},
 	{
@@ -85,7 +79,6 @@ var adminRowsC3 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("authenticationProviderId", "the sign-in provider UUID, from list_authentication_providers")},
-		Target:      &Target{Read: domain.OpAuthenticationProvidersGet, Field: "id", Name: "name"},
 		Fields:      startGroupSyncFields,
 	},
 	{
@@ -103,7 +96,6 @@ var adminRowsC3 = []Row{
 			{Name: "groupSyncEnabled", Kind: KindBool, Help: "true to sync the groups of the identity provider"},
 			{Name: "groupClaim", Kind: KindName, Help: "the claim of the identity provider that names the groups"},
 		},
-		Target: &Target{Read: domain.OpAuthenticationProvidersGet, Field: "id", Name: "name"},
 		Fields: authProviderFields,
 	},
 	{
@@ -116,7 +108,6 @@ var adminRowsC3 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("commentId", "the comment UUID, from list_comments")},
-		Target:      &Target{Read: domain.OpCommentsGet, Field: "id"},
 		Fields:      ackFields,
 	},
 	{
@@ -129,7 +120,6 @@ var adminRowsC3 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("emojiId", "the emoji UUID, from list_emojis")},
-		Target:      &Target{Read: domain.OpEmojisGet, Field: "id", Name: "name"},
 		Fields:      ackFields,
 	},
 	{
@@ -142,7 +132,6 @@ var adminRowsC3 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("fileOperationId", "the file operation UUID, from list_file_operations")},
-		Target:      &Target{Read: domain.OpFileOperationsGet, Field: "id", Name: "name"},
 		Fields:      ackFields,
 	},
 	{
@@ -155,7 +144,6 @@ var adminRowsC3 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("importId", "the import UUID, from list_imports")},
-		Target:      &Target{Read: domain.OpImportsGet, Field: "id", Name: "name"},
 		Fields:      importFields,
 	},
 	{
@@ -168,14 +156,14 @@ var adminRowsC3 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("importId", "the import UUID, from list_imports")},
-		Target:      &Target{Read: domain.OpImportsGet, Field: "id", Name: "name"},
 		Fields:      ackFields,
 	},
 	{
 		ID:          domain.OpIntegrationsCreate,
 		CLI:         "outline integrations create",
-		Summary:     "create one Outline integration that sends data to an address (critical, CLI only)",
-		Description: "Creates one integration of the wiki that sends data to the address given, which opens an outbound channel. Only the host of the address is shown. It has no MCP tool, because it is critical.",
+		Tool:        "create_integration",
+		Summary:     "create one Outline integration that sends data to an address",
+		Description: "Creates one integration of the wiki that sends data to the address given, which opens an outbound channel. Only the host of the address is shown.",
 		Effect:      domain.EffectAdditive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
@@ -186,8 +174,7 @@ var adminRowsC3 = []Row{
 			{Name: "channel", Kind: KindName, Help: "the channel the integration posts to, when the service takes one"},
 			{Name: "channelId", Kind: KindName, Help: "the ID of the channel, when the service takes one"},
 		},
-		Critical: &Critical{Kind: "the host of the URL setting", Host: "url"},
-		Fields:   integrationFields,
+		Fields: integrationFields,
 	},
 	{
 		ID:          domain.OpIntegrationsDelete,
@@ -199,14 +186,14 @@ var adminRowsC3 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("integrationId", "the integration UUID, from list_integrations")},
-		Target:      &Target{Read: domain.OpIntegrationsGet, Field: "id"},
 		Fields:      ackFields,
 	},
 	{
 		ID:          domain.OpIntegrationsUpdate,
 		CLI:         "outline integrations update",
-		Summary:     "change the address or the channel of one Outline integration (critical, CLI only)",
-		Description: "Changes the address and the channel of one integration, which opens its outbound channel to the new address. The events of the integration are kept as they are. Only the host of the address is shown. It has no MCP tool, because it is critical.",
+		Tool:        "update_integration",
+		Summary:     "change the address or the channel of one Outline integration",
+		Description: "Changes the address and the channel of one integration, which opens its outbound channel to the new address. The events of the integration are kept as they are. Only the host of the address is shown.",
 		Effect:      domain.EffectUpdate,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
@@ -216,9 +203,7 @@ var adminRowsC3 = []Row{
 			{Name: "channel", Kind: KindName, Help: "the channel the integration posts to, when the service takes one"},
 			{Name: "channelId", Kind: KindName, Help: "the ID of the channel, when the service takes one"},
 		},
-		Critical: &Critical{Kind: "the host of the URL setting", Host: "url"},
-		Target:   &Target{Read: domain.OpIntegrationsGet, Field: "id"},
-		Fields:   integrationFields,
+		Fields: integrationFields,
 	},
 }
 

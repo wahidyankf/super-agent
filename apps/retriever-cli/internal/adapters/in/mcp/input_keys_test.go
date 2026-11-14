@@ -48,45 +48,6 @@ func TestAnUndeclaredInputNameIsRefusedBeforeAnyCall(t *testing.T) {
 	}
 }
 
-// TestTheEditModeGuardDecidesFromTheBoundValue checks the revision guard of update_document against the value the
-// binder reads: an explicit replace needs last_revision, and an append or a patch does not.
-func TestTheEditModeGuardDecidesFromTheBoundValue(t *testing.T) {
-	cases := []struct {
-		name     string
-		args     map[string]any
-		wantErr  string
-		wantSent bool
-	}{
-		{"an explicit replace needs last_revision", map[string]any{
-			"source": "outline", "document_id": "doc-1", "text": "Plan", "edit_mode": "replace",
-		}, "last_revision is required", false},
-		{"an append needs no last_revision", map[string]any{
-			"source": "outline", "document_id": "doc-1", "text": "Plan", "edit_mode": "append",
-		}, "", true},
-		{"a replace with last_revision is sent", map[string]any{
-			"source": "outline", "document_id": "doc-1", "text": "Plan", "edit_mode": "replace", "last_revision": 5,
-		}, "", true},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			gw := &fakeGateway{writeReply: updateReply(t)}
-			svc := serviceWith(t, gw, mustSource(t, "outline", "write")).Capped(domain.AccessWrite)
-			var logs bytes.Buffer
-			text, isErr := call(t, connect(t, svc, &logs), "update_document", tc.args)
-			if tc.wantErr != "" {
-				if !isErr || !strings.Contains(text, tc.wantErr) {
-					t.Fatalf("answer = (%v, %q), want an error containing %q", isErr, text, tc.wantErr)
-				}
-			} else if isErr {
-				t.Fatalf("answer is an error %q, want it sent", text)
-			}
-			if sent := gw.calls > 0; sent != tc.wantSent {
-				t.Fatalf("sent = %v, want %v", sent, tc.wantSent)
-			}
-		})
-	}
-}
-
 // updateReply returns the Record the adapter answers an update with: every field the update row names, so the use case
 // accepts it.
 func updateReply(t *testing.T) domain.Record {

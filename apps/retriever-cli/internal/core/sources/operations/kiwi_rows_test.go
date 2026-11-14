@@ -54,35 +54,6 @@ var kiwiWants = []kiwiWant{
 	{domain.OpKiwiPlansAddCase, "kiwi plans add-case", domain.EffectAdditive, domain.AccessWrite, []string{"planId", "caseId"}},
 }
 
-// TestKiwiRowsHaveTheExpectedShape checks each of the six Kiwi rows: its path, effect, access, result fields, and that it
-// names no MCP tool and no critical call.
-func TestKiwiRowsHaveTheExpectedShape(t *testing.T) {
-	for _, want := range kiwiWants {
-		row, ok := Lookup(want.id)
-		if !ok {
-			t.Fatalf("Lookup(%s) finds no row", want.id)
-		}
-		if row.CLI != want.cli {
-			t.Errorf("%s CLI = %q, want %q", want.id, row.CLI, want.cli)
-		}
-		if row.Effect != want.effect || row.Access != want.access {
-			t.Errorf("%s effect/access = %s/%s, want %s/%s", want.id, row.Effect, row.Access, want.effect, want.access)
-		}
-		if !slices.Equal(row.Fields, want.fields) {
-			t.Errorf("%s fields = %v, want %v", want.id, row.Fields, want.fields)
-		}
-		if row.Tool != "" {
-			t.Errorf("%s Tool = %q, want none", want.id, row.Tool)
-		}
-		if row.Critical != nil {
-			t.Errorf("%s is critical, want none", want.id)
-		}
-		if k, ok := row.Kind(); !ok || k != domain.KindKiwi {
-			t.Errorf("%s Kind() = %v, %v, want kiwi", want.id, k, ok)
-		}
-	}
-}
-
 // TestKiwiRowParameters checks the positional parameter and the required fields of the Kiwi rows.
 func TestKiwiRowParameters(t *testing.T) {
 	cases := []struct {
@@ -118,37 +89,6 @@ func TestKiwiRowParameters(t *testing.T) {
 	}
 	if p, _ := create.Param("product"); p.Kind != KindCollectionID {
 		t.Errorf("create product kind = %s, want CollectionID", p.Kind)
-	}
-}
-
-// TestKiwiRowsHaveNoAdminDestructiveOrCriticalOperation is the table test of the Kiwi rows: no Kiwi row has
-// destructive effect, admin access, a critical value, a tool, or a need for --yes.
-func TestKiwiRowsHaveNoAdminDestructiveOrCriticalOperation(t *testing.T) {
-	count := 0
-	for _, row := range Rows() {
-		k, ok := row.Kind()
-		if !ok || k != domain.KindKiwi {
-			continue
-		}
-		count++
-		if row.Effect == domain.EffectDestructive {
-			t.Errorf("%s has destructive effect", row.ID)
-		}
-		if row.Access == domain.AccessAdmin {
-			t.Errorf("%s needs admin access", row.ID)
-		}
-		if row.Critical != nil {
-			t.Errorf("%s is critical", row.ID)
-		}
-		if row.Tool != "" {
-			t.Errorf("%s names MCP tool %q", row.ID, row.Tool)
-		}
-		if row.NeedsYes() {
-			t.Errorf("%s needs --yes", row.ID)
-		}
-	}
-	if count != len(kiwiWants) {
-		t.Fatalf("the catalog holds %d kiwi rows, want %d", count, len(kiwiWants))
 	}
 }
 

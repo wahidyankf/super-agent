@@ -36,10 +36,10 @@ func TestInvalidEmailTextNeverHoldsTheAddress(t *testing.T) {
 	}
 }
 
-// TestSelfTargetAndInvalidEmailArePublic checks that both new refusals are shown with their fixed texts.
-func TestSelfTargetAndInvalidEmailArePublic(t *testing.T) {
+// TestInvalidEmailIsPublic checks that the e-mail refusal is shown with its fixed text.
+func TestInvalidEmailIsPublic(t *testing.T) {
 	public := PublicErrors()
-	for _, want := range []error{ErrSelfTarget, ErrInvalidEmail} {
+	for _, want := range []error{ErrInvalidEmail} {
 		found := false
 		for _, e := range public {
 			if e == want {

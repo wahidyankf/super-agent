@@ -61,13 +61,8 @@ func PublicErrors() []error {
 		ErrWrongOperationClass,
 		ErrWriteOutcomeUnknown,
 		ErrUnresolvedName,
-		ErrLastRevisionRequired,
 		ErrDocumentConflict,
-		ErrYesRequired,
 		ErrInvalidReason,
-		ErrConfirmRequired,
-		ErrConfirmMismatch,
-		ErrSelfTarget,
 		ErrInvalidEmail,
 		ErrAccessAboveKindCeiling,
 	}

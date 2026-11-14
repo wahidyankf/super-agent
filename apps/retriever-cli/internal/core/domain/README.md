@@ -7,7 +7,6 @@ The plain types that the use cases share. The package has no I/O and no adapter 
 - `apikey.go` defines `ApiKey`, a key type that never prints its value, and the error for a missing key.
 - `args.go` defines the argument, field, record, and page types that carry a command's inputs and a result.
 - `catalog.go` defines the catalog and the errors for a missing, unknown, or ambiguous source.
-- `confirm.go` defines the error for an operation that needs a confirmation.
 - `credentialref.go` defines `CredentialRef`, the name of the variable that holds a key.
 - `document.go` defines the collection, document, and tree-node types.
 - `domain.go` defines the output format type.

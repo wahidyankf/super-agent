@@ -8,13 +8,10 @@ import (
 var oauthClientTypes = []string{"confidential", "public"}
 
 // The rows of stage c, slice c4: the OAuth authorizations and clients, revisions, shares, templates, and webhook
-// subscriptions. Each changes the wiki with admin access, so a source below
-// admin refuses it, and each needs --yes on the CLI. The four critical rows, oauth-clients.create, oauth-clients.rotate-secret,
-// webhook-subscriptions.create, and webhook-subscriptions.update, have no MCP tool at any ceiling. An OAuth client's reply
-// carries the client secret, and a webhook's reply carries the signing secret: neither is projected, so neither reaches a
-// caller (the field references, oauthClient and webhook). A share's link is never a field of its reply. The webhook rows name
-// the host of their destination URL as the canonical value of --confirm. A webhook has no read of one
-// subscription by its ID (the wiki lists them), so its rows read no target, and their dry run shows the plan only.
+// subscriptions. Each changes the wiki with admin access, so a source below admin refuses it. An OAuth
+// client's reply carries the client secret, and a webhook's reply carries the signing secret: neither
+// is projected, so neither reaches a caller (the field references, oauthClient and webhook). A share's
+// link is never a field of its reply.
 var adminRowsC4 = []Row{
 	{
 		ID:          domain.OpOAuthAuthenticationsDelete,
@@ -31,20 +28,20 @@ var adminRowsC4 = []Row{
 	{
 		ID:          domain.OpOAuthClientsCreate,
 		CLI:         "outline oauth-clients create",
-		Summary:     "create one OAuth client of the Outline wiki (critical, CLI only)",
-		Description: "Creates one OAuth client of the wiki, with the redirect addresses given. The client secret is shown neither on standard output nor anywhere else; it is only kept by the wiki. It has no MCP tool, because it is critical.",
+		Tool:        "create_oauth_client",
+		Summary:     "create one OAuth client of the Outline wiki",
+		Description: "Creates one OAuth client of the wiki, with the redirect addresses given. The client secret is shown neither on standard output nor anywhere else; it is only kept by the wiki.",
 		Effect:      domain.EffectAdditive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params: []Param{
-			{Name: "name", Kind: KindName, Required: true, Help: "the name of the new client; --confirm must give the same name"},
+			{Name: "name", Kind: KindName, Required: true, Help: "the name of the new client"},
 			{Name: "redirectUris", Kind: KindURLList, Required: true, Help: "1 to 10 HTTPS redirect addresses, separated by commas"},
 			{Name: "clientType", Kind: KindEnum, Values: oauthClientTypes, Help: "confidential or public; the wiki's default is confidential"},
 			{Name: "description", Kind: KindText, Help: "what the client is for"},
 			{Name: "published", Kind: KindBool, Help: "true to list the client to other users; the wiki's default is false"},
 		},
-		Critical: &Critical{Kind: "the new client name", Text: "name"},
-		Fields:   oauthClientFields,
+		Fields: oauthClientFields,
 	},
 	{
 		ID:          domain.OpOAuthClientsDelete,
@@ -56,20 +53,18 @@ var adminRowsC4 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("oauthClientId", "the OAuth client UUID, from list_oauth_clients")},
-		Target:      &Target{Read: domain.OpOAuthClientsGet, Field: "id", Name: "name"},
 		Fields:      ackFields,
 	},
 	{
 		ID:          domain.OpOAuthClientsRotateSecret,
 		CLI:         "outline oauth-clients rotate-secret",
-		Summary:     "replace the client secret of one OAuth client of the Outline wiki (critical, CLI only)",
-		Description: "Replaces the client secret of one OAuth client, so the app that uses the old secret stops working until it gets the new one. The new secret is shown neither on standard output nor anywhere else. It has no MCP tool, because it is critical.",
+		Tool:        "rotate_oauth_client_secret",
+		Summary:     "replace the client secret of one OAuth client of the Outline wiki",
+		Description: "Replaces the client secret of one OAuth client, so the app that uses the old secret stops working until it gets the new one. The new secret is shown neither on standard output nor anywhere else.",
 		Effect:      domain.EffectUpdate,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("oauthClientId", "the OAuth client UUID, from list_oauth_clients")},
-		Critical:    &Critical{Kind: "the OAuth client ID"},
-		Target:      &Target{Read: domain.OpOAuthClientsGet, Field: "id", Name: "name"},
 		Fields:      oauthClientFields,
 	},
 	{
@@ -88,7 +83,6 @@ var adminRowsC4 = []Row{
 			{Name: "published", Kind: KindBool, Help: "true to list the client to other users, false to unlist it"},
 			{Name: "clientType", Kind: KindEnum, Values: oauthClientTypes, Help: "confidential or public"},
 		},
-		Target: &Target{Read: domain.OpOAuthClientsGet, Field: "id", Name: "name"},
 		Fields: oauthClientFields,
 	},
 	{
@@ -101,7 +95,6 @@ var adminRowsC4 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("revisionId", "the revision UUID, from list_revisions")},
-		Target:      &Target{Read: domain.OpRevisionsGet, Field: "id", Name: "title"},
 		Fields:      ackFields,
 	},
 	{
@@ -137,7 +130,6 @@ var adminRowsC4 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{uuidParamRequired("shareId", "the share UUID, from list_shares")},
-		Target:      &Target{Read: domain.OpSharesGet, Field: "id"},
 		Fields:      ackFields,
 	},
 	{
@@ -159,7 +151,6 @@ var adminRowsC4 = []Row{
 			{Name: "showTOC", Kind: KindBool, Help: "true to show the table of contents"},
 			{Name: "title", Kind: KindName, Help: "the title shown for the share"},
 		},
-		Target: &Target{Read: domain.OpSharesGet, Field: "id"},
 		Fields: shareFields,
 	},
 	{
@@ -172,14 +163,14 @@ var adminRowsC4 = []Row{
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
 		Params:      []Param{{Name: "templateId", Kind: KindID, Required: true, Help: "the template ID, from list_templates"}},
-		Target:      &Target{Read: domain.OpTemplatesGet, Field: "id", Name: "title"},
 		Fields:      ackFields,
 	},
 	{
 		ID:          domain.OpWebhookSubscriptionsCreate,
 		CLI:         "outline webhook-subscriptions create",
-		Summary:     "create one Outline webhook subscription that sends events to an address (critical, CLI only)",
-		Description: "Creates one webhook subscription of the wiki that sends the events named to the HTTPS address given, which opens an outbound channel. Only the host of the address is shown, and the signing secret is never shown. It has no MCP tool, because it is critical.",
+		Tool:        "create_webhook_subscription",
+		Summary:     "create one Outline webhook subscription that sends events to an address",
+		Description: "Creates one webhook subscription of the wiki that sends the events named to the HTTPS address given, which opens an outbound channel. Only the host of the address is shown, and the signing secret is never shown.",
 		Effect:      domain.EffectAdditive,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
@@ -188,8 +179,7 @@ var adminRowsC4 = []Row{
 			{Name: "name", Kind: KindName, Required: true, Help: "the name of the subscription"},
 			{Name: "events", Kind: KindEventList, Required: true, Help: "the event names to send, such as documents.create, or * for every event; separated by commas"},
 		},
-		Critical: &Critical{Kind: "the host of the destination URL", Host: "url"},
-		Fields:   webhookFields,
+		Fields: webhookFields,
 	},
 	{
 		ID:          domain.OpWebhookSubscriptionsDelete,
@@ -206,8 +196,9 @@ var adminRowsC4 = []Row{
 	{
 		ID:          domain.OpWebhookSubscriptionsUpdate,
 		CLI:         "outline webhook-subscriptions update",
-		Summary:     "change the address, the name, or the events of one Outline webhook subscription (critical, CLI only)",
-		Description: "Replaces the name, the address, and the events of one webhook subscription, and enables it again. The events go to the new address, which opens its outbound channel. Only the host of the address is shown, and the signing secret is never shown. It has no MCP tool, because it is critical.",
+		Tool:        "update_webhook_subscription",
+		Summary:     "change the address, the name, or the events of one Outline webhook subscription",
+		Description: "Replaces the name, the address, and the events of one webhook subscription, and enables it again. The events go to the new address, which opens its outbound channel. Only the host of the address is shown, and the signing secret is never shown.",
 		Effect:      domain.EffectUpdate,
 		Access:      domain.AccessAdmin,
 		OpensWorld:  true,
@@ -217,8 +208,7 @@ var adminRowsC4 = []Row{
 			{Name: "name", Kind: KindName, Required: true, Help: "the new name of the subscription"},
 			{Name: "events", Kind: KindEventList, Required: true, Help: "the event names to send, or * for every event; separated by commas"},
 		},
-		Critical: &Critical{Kind: "the host of the destination URL", Host: "url"},
-		Fields:   webhookFields,
+		Fields: webhookFields,
 	},
 }
 

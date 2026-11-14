@@ -16,13 +16,6 @@ func TestEveryGeneratedInputMapsBackToItsCatalogName(t *testing.T) {
 			t.Fatalf("%s: the input schema has no properties", row.Tool)
 		}
 		for _, p := range row.Params {
-			if p.CLIOnly {
-				// A CLI-only parameter is not an input of the tool, so the schema must not list it.
-				if _, ok := props[snakeCase(p.Name)]; ok {
-					t.Errorf("%s: the schema advertises the CLI-only parameter %q", row.Tool, p.Name)
-				}
-				continue
-			}
 			wire := snakeCase(p.Name)
 			if _, ok := props[wire]; !ok {
 				t.Errorf("%s: the schema does not advertise %q for the catalog parameter %q", row.Tool, wire, p.Name)

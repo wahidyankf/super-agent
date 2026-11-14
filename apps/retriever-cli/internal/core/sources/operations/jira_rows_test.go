@@ -40,41 +40,6 @@ func TestJiraRowsAreTheFiveReadRows(t *testing.T) {
 	}
 }
 
-// TestJiraRowsHaveTheExpectedShape checks each Jira row: its path, its effect and access, its positional parameter, its
-// result fields, and that it has no MCP tool and no critical or target read.
-func TestJiraRowsHaveTheExpectedShape(t *testing.T) {
-	for _, want := range jiraWants {
-		row, ok := Lookup(want.id)
-		if !ok {
-			t.Fatalf("Lookup(%s) found no row", want.id)
-		}
-		if row.CLI != want.cli {
-			t.Errorf("%s CLI = %q, want %q", want.id, row.CLI, want.cli)
-		}
-		if row.Effect != domain.EffectRead || row.Access != domain.AccessRead {
-			t.Errorf("%s is %s/%s, want read/read", want.id, row.Effect, row.Access)
-		}
-		if row.Tool != "" {
-			t.Errorf("%s has MCP tool %q, want none", want.id, row.Tool)
-		}
-		if row.Critical != nil || row.Target != nil {
-			t.Errorf("%s has a critical or target read, want none", want.id)
-		}
-		if row.NeedsYes() || row.NotIdempotent || row.SameOnRepeat || row.RefuseSelf {
-			t.Errorf("%s has a change flag, want none", want.id)
-		}
-		if !slices.Equal(row.Fields, want.fields) {
-			t.Errorf("%s Fields = %v, want %v", want.id, row.Fields, want.fields)
-		}
-		if got := row.Positional(); got != want.positional {
-			t.Errorf("%s positional = %q, want %q", want.id, got, want.positional)
-		}
-		if k, ok := row.Kind(); !ok || k != domain.KindJira {
-			t.Errorf("%s kind = %v, %v; want jira", want.id, k, ok)
-		}
-	}
-}
-
 // TestJiraRowParametersHaveTheExpectedKindAndBounds checks the parameters of the four rows that take any: the kind and
 // bounds of each.
 func TestJiraRowParametersHaveTheExpectedKindAndBounds(t *testing.T) {

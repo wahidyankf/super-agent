@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -66,13 +67,6 @@ func TestAnOutputOptionWithoutItsValueIsAUsageError(t *testing.T) {
 	code := Run([]string{"--output"}, Deps{Stdout: &out, Stderr: &errOut})
 	if code != exitFailed || out.Len() != 0 || !strings.Contains(errOut.String(), "missing value for --output") {
 		t.Fatalf("want a missing-value usage error, got %q (exit %d)", errOut.String(), code)
-	}
-}
-
-func TestASwitchNeverTakesAValue(t *testing.T) {
-	code, out, errOut := runRetriever(t, []string{"outline", "documents", "delete", pathsDocumentID, "--yes=true"}, outlineSetup{})
-	if code != exitFailed || out != "" || !strings.Contains(errOut, "--yes does not take a value") {
-		t.Fatalf("want a switch-with-value usage error, got %q (exit %d)", errOut, code)
 	}
 }
 
@@ -259,14 +253,130 @@ func TestWriteWithoutWiringNamesTheSetupFailure(t *testing.T) {
 func TestAdminWithoutWiringNamesTheSetupFailure(t *testing.T) {
 	setup := outlineSetup{setupErr: errors.New("the wiring is missing")}
 	code, out, errOut := runRetriever(t, []string{"outline", "documents", "delete", pathsDocumentID,
-		"--permanent", "true", "--yes", "--confirm", pathsDocumentID, "--source", "example-outline"}, setup)
+		"--permanent", "true", "--source", "example-outline"}, setup)
 	if code != exitFailed || out != "" || !strings.Contains(errOut, "the wiring is missing") {
 		t.Fatalf("an admin call without wiring must name the setup failure, got %q (exit %d)", errOut, code)
 	}
 }
 
+// adminAcking is a wiki whose admin port acknowledges every change with ok true, so an admin command reaches its reply.
+type adminAcking struct {
+	*countingGateway
+}
+
+// Administer acknowledges the change without a request.
+func (adminAcking) Administer(context.Context, domain.OperationID, domain.Args) (domain.Record, error) {
+	return domain.NewRecord(domain.Field{Name: "ok", Value: true}), nil
+}
+
+// TestAdminCommandPrintsTheChangeItSent checks that a destructive command runs through the admin use case with no
+// confirmation flag, and prints the change it made.
+func TestAdminCommandPrintsTheChangeItSent(t *testing.T) {
+	setup := wikiGranted(t, domain.AccessAdmin)
+	res := setup.service.Gateways.(fixedResolver)
+	setup.service.Gateways = fixedResolver{gw: adminAcking{countingGateway: res.gw.(*countingGateway)}}
+	code, out, errOut := runRetriever(t, []string{"outline", "documents", "delete", pathsDocumentID,
+		"--permanent", "true", "--source", "outline"}, setup)
+	if code != exitOK || errOut != "" || !strings.Contains(out, "changed: outline documents delete") {
+		t.Fatalf("an admin command must print the change, got %q / %q (exit %d)", out, errOut, code)
+	}
+}
+
+// TestALeafSwitchFlagTakesNoValue checks the parser's switch form: a flag declared with no placeholder is set by its name,
+// and given a value with = it is a usage error.
+func TestALeafSwitchFlagTakesNoValue(t *testing.T) {
+	l := &leaf{flags: []flag{{name: "--quiet", help: "print nothing"}}}
+	inv, err := l.parse([]string{"--quiet"})
+	if err != nil || !inv.switches["--quiet"] {
+		t.Fatalf("a switch flag must be set by its name, got %+v (err %v)", inv, err)
+	}
+	if _, err := l.parse([]string{"--quiet=yes"}); err == nil || !strings.Contains(err.Error(), "does not take a value") {
+		t.Fatalf("a switch flag with a value must be refused, got %v", err)
+	}
+}
+
+// writeAcking is a wiki whose writer acknowledges every change with a document ID, so a write command reaches its reply.
+type writeAcking struct {
+	*countingGateway
+}
+
+// Write answers the change with the document fields a document write answers with, without a request.
+func (writeAcking) Write(context.Context, domain.OperationID, domain.Args) (domain.Record, error) {
+	return domain.NewRecord(
+		domain.Field{Name: "id", Value: "doc-1"},
+		domain.Field{Name: "title", Value: "Renamed"},
+		domain.Field{Name: "url", Value: "/doc/renamed"},
+		domain.Field{Name: "collectionId", Value: "col-1"},
+		domain.Field{Name: "revision", Value: 2},
+	), nil
+}
+
+// adminFailing is a wiki whose admin port refuses every change with one fixed error, so an admin command reaches its failure.
+type adminFailing struct {
+	*countingGateway
+	err error
+}
+
+// Administer refuses the change with the fixed error, without a request.
+func (g adminFailing) Administer(context.Context, domain.OperationID, domain.Args) (domain.Record, error) {
+	return domain.Record{}, g.err
+}
+
+// TestWriteCommandPrintsTheRecordAsJSON checks that a write in JSON mode prints the record the wiki answered, as one JSON
+// document.
+func TestWriteCommandPrintsTheRecordAsJSON(t *testing.T) {
+	setup := writableWiki(t)
+	res := setup.service.Gateways.(fixedResolver)
+	setup.service.Gateways = fixedResolver{gw: writeAcking{countingGateway: res.gw.(*countingGateway)}}
+	code, out, errOut := runRetriever(t, []string{"--output", "json", "outline", "documents", "update", pathsDocumentID,
+		"--title", "Renamed", "--source", "outline"}, setup)
+	if code != exitOK || errOut != "" || !json.Valid([]byte(out)) {
+		t.Fatalf("a write in JSON mode must print one JSON document, got %q / %q (exit %d)", out, errOut, code)
+	}
+}
+
+// TestAdminCommandPrintsTheChangeAsJSON checks that a destructive command in JSON mode prints the reply as one JSON
+// document.
+func TestAdminCommandPrintsTheChangeAsJSON(t *testing.T) {
+	setup := wikiGranted(t, domain.AccessAdmin)
+	res := setup.service.Gateways.(fixedResolver)
+	setup.service.Gateways = fixedResolver{gw: adminAcking{countingGateway: res.gw.(*countingGateway)}}
+	code, out, errOut := runRetriever(t, []string{"--output", "json", "outline", "documents", "delete", pathsDocumentID,
+		"--permanent", "true", "--source", "outline"}, setup)
+	if code != exitOK || errOut != "" || !json.Valid([]byte(out)) {
+		t.Fatalf("a destructive command in JSON mode must print one JSON document, got %q / %q (exit %d)", out, errOut, code)
+	}
+}
+
+// TestAdminFailureIsPrintedAndExitsFailed checks that a change the wiki refuses prints no standard output and exits failed.
+func TestAdminFailureIsPrintedAndExitsFailed(t *testing.T) {
+	setup := wikiGranted(t, domain.AccessAdmin)
+	res := setup.service.Gateways.(fixedResolver)
+	setup.service.Gateways = fixedResolver{gw: adminFailing{countingGateway: res.gw.(*countingGateway), err: domain.ErrDocumentNotFound}}
+	code, out, errOut := runRetriever(t, []string{"outline", "documents", "delete", pathsDocumentID,
+		"--permanent", "true", "--source", "outline"}, setup)
+	if code != exitFailed || out != "" || errOut == "" {
+		t.Fatalf("a refused change must print no standard output and fail, got %q / %q (exit %d)", out, errOut, code)
+	}
+}
+
+// TestASearchWithNoMatchExitsOne checks that a search that finds nothing prints the empty result and exits 1.
+func TestASearchWithNoMatchExitsOne(t *testing.T) {
+	setup, _ := wikiWith(treeDataset)
+	code, out, errOut := runRetriever(t, []string{"outline", "documents", "search", "no-such-text-anywhere"}, setup)
+	if code != exitNegative || errOut != "" || out == "" {
+		t.Fatalf("an empty search must print its result and exit 1, got %q / %q (exit %d)", out, errOut, code)
+	}
+}
+
 // writableWiki returns the wiki setup with its one source granted write access, so a write command reaches its reply.
 func writableWiki(t *testing.T) outlineSetup {
+	t.Helper()
+	return wikiGranted(t, domain.AccessWrite)
+}
+
+// wikiGranted returns the wiki setup with its one source granted access, so a command at that level reaches its reply.
+func wikiGranted(t *testing.T, access domain.Access) outlineSetup {
 	t.Helper()
 	setup, gw := wikiWith(treeDataset)
 	id, err := domain.NewSourceID("outline")
@@ -286,22 +396,13 @@ func writableWiki(t *testing.T) outlineSetup {
 		t.Fatal(err)
 	}
 	cat, err := domain.NewCatalog([]domain.Source{
-		domain.NewSource(id, domain.KindOutline, tags, domain.AccessWrite, ep, ref),
+		domain.NewSource(id, domain.KindOutline, tags, access, ep, ref),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	setup.service = sources.Service{Catalog: cat, Gateways: fixedResolver{gw: gw}}
 	return setup
-}
-
-func TestJSONWritePrintsOneDocument(t *testing.T) {
-	setup := writableWiki(t)
-	code, out, errOut := runRetriever(t, []string{"--output", "json", "outline", "documents", "update", pathsDocumentID,
-		"--title", "Renamed", "--dry-run", "--source", "outline"}, setup)
-	if code != exitOK || !strings.Contains(out, `"schemaVersion":1`) {
-		t.Fatalf("a JSON write must print one document, got %q (stderr %q, exit %d)", out, errOut, code)
-	}
 }
 
 func TestSourceRowsAsJSONAreNeverNull(t *testing.T) {

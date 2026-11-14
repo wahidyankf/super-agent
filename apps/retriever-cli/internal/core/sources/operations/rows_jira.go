@@ -12,8 +12,8 @@ var jiraOperations = []domain.OperationID{
 	domain.OpJiraCommentsList,
 }
 
-// jiraRows are the five read operations of the Jira Cloud source. Jira has no write, admin, destructive,
-// or critical operation, and no MCP tool, so Tool, Critical, and Target stay empty. A project is a collection and an issue
+// jiraRows are the five read operations of the Jira Cloud source. Jira has no write, admin, or destructive
+// operation, and no MCP tool, so Tool stays empty. A project is a collection and an issue
 // is a document; the adapter maps the provider's words to the domain's.
 var jiraRows = []Row{
 	{

@@ -38,8 +38,8 @@ func TestKiwiWriteUsageNamesTheRequiredFlags(t *testing.T) {
 	tree := commandTree()
 	want := map[string]string{
 		"test-cases create": "retriever kiwi test-cases create <summary> --product <id> --category <value> --priority <value> " +
-			"[--status <value>] [--text <value>] [--dry-run] [--source <id>]",
-		"plans add-case": "retriever kiwi plans add-case <planId> --case-id <id> [--dry-run] [--source <id>]",
+			"[--status <value>] [--text <value>] [--source <id>]",
+		"plans add-case": "retriever kiwi plans add-case <planId> --case-id <id> [--source <id>]",
 	}
 	for path, usage := range want {
 		c := findChild(tree, append([]string{"kiwi"}, strings.Fields(path)...)...)

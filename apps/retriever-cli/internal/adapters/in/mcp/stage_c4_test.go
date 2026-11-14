@@ -78,11 +78,11 @@ var stageCTools = map[string]stageCHints{
 // at the admin ceiling, with list_sources.
 const (
 	stageCToolCount       = 48
-	adminCeilingToolCount = 154
+	adminCeilingToolCount = 165
 )
 
 // TestStageCToolsCarryTheHandWrittenHints lists the tools of an admin source at the admin ceiling and checks each stage c tool
-// against the literal table: the table holds 48 tools, every one is offered, the listing holds 154 tools in all, and every
+// against the literal table: the table holds 48 tools, every one is offered, the listing holds 165 tools in all, and every
 // stage c tool is not read-only, with the destructive and idempotent hints the table gives.
 func TestStageCToolsCarryTheHandWrittenHints(t *testing.T) {
 	if len(stageCTools) != stageCToolCount {
