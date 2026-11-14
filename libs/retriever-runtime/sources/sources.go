@@ -16,6 +16,9 @@ import (
 type Service struct {
 	Catalog  domain.Catalog
 	Gateways ports.GatewayResolver
+	// Operations is the operation catalog the calls read, with the rows of every kind the run registers. Nil means the
+	// built-in catalog.
+	Operations *operations.Catalog
 }
 
 // ListCollections returns the collections of the selected source of the kind. A nil source applies the default rule.
@@ -69,13 +72,23 @@ func GetDocument(ctx context.Context, svc Service, kind domain.SourceKind, sourc
 // known kind, or one that its kind does not support is ErrUnsupportedOperation, and it is refused before any source is
 // selected. The kind of a row comes from its command path, so Read and Write need no
 // kind argument.
-func rowOf(op domain.OperationID) (operations.Row, domain.SourceKind, error) {
-	row, found := operations.Lookup(op)
-	kind, known := row.Kind()
-	if !found || !known || !operations.Supports(kind, row) {
+func rowOf(svc Service, op domain.OperationID) (operations.Row, domain.SourceKind, error) {
+	cat := svc.OperationCatalog()
+	row, found := cat.Lookup(op)
+	kind, known := cat.KindOf(row)
+	if !found || !known || !cat.Supports(kind, row) {
 		return operations.Row{}, domain.SourceKind{}, domain.ErrUnsupportedOperation
 	}
 	return row, kind, nil
+}
+
+// OperationCatalog returns the operation catalog the service reads: its composed catalog, or the built-in one when none is
+// set. The adapters build their commands and tools from the rows of this catalog.
+func (svc Service) OperationCatalog() operations.Catalog {
+	if svc.Operations != nil {
+		return *svc.Operations
+	}
+	return operations.BuiltinCatalog()
 }
 
 // selectSource validates the optional source ID and applies the default rule for the kind: with an ID, the source must

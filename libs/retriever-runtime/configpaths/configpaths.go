@@ -35,12 +35,17 @@ type Inputs struct {
 	Getwd func() (string, error)
 	// Exists reports whether a regular file exists at an absolute path.
 	Exists func(path string) bool
+	// ConnectorsFlag holds the value of --connectors-dir, or "" when the flag is absent.
+	ConnectorsFlag string
 }
 
 // Paths are the absolute paths the loaders read.
 type Paths struct {
 	Catalog string
 	EnvFile string
+	// Connectors is the folder of connector spec files, or "" when no folder applies. The default folder is empty only
+	// when the environment names no user configuration folder.
+	Connectors string
 }
 
 // Names of the files and of the environment variables that override them.
@@ -50,10 +55,11 @@ const (
 	catalogVar     = "RETRIEVER_CATALOG"
 	envFileVar     = "RETRIEVER_ENV_FILE"
 	userFolderName = "retriever"
+	connectorsName = "connectors"
 )
 
-// Resolve applies the rules to both files. It reads the working directory only when a rule needs it, and the user
-// configuration folder only when no earlier rule applies.
+// Resolve applies the rules to both files and to the connectors folder. It reads the working directory only when a rule
+// needs it, and the user configuration folder only when no earlier rule applies.
 func Resolve(in Inputs) (Paths, error) {
 	catalog, err := resolveOne(in, in.CatalogFlag, catalogVar, catalogName)
 	if err != nil {
@@ -63,7 +69,26 @@ func Resolve(in Inputs) (Paths, error) {
 	if err != nil {
 		return Paths{}, err
 	}
-	return Paths{Catalog: catalog, EnvFile: envFile}, nil
+	connectors, err := resolveConnectors(in)
+	if err != nil {
+		return Paths{}, err
+	}
+	return Paths{Catalog: catalog, EnvFile: envFile, Connectors: connectors}, nil
+}
+
+// resolveConnectors returns the folder of connector specs: the flag when it is given, else the connectors folder of the
+// user configuration folder. The default is returned whether or not the folder exists, and the loader treats a missing
+// default as no specs. When no user configuration folder can be named, the result is "" with no error. The rule has no
+// environment variable of its own.
+func resolveConnectors(in Inputs) (string, error) {
+	if in.ConnectorsFlag != "" {
+		return absolute(in, in.ConnectorsFlag)
+	}
+	base, err := userConfigBase(in)
+	if err != nil {
+		return "", nil
+	}
+	return filepath.Join(base, userFolderName, connectorsName), nil
 }
 
 // resolveOne applies the four rules to one file.

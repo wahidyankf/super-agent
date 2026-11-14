@@ -13,6 +13,7 @@ import (
 	"io"
 	"io/fs"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"go.yaml.in/yaml/v3"
@@ -42,12 +43,62 @@ type Files struct {
 
 // Loader implements ports.CatalogLoader over one catalog file. It accepts the kinds of its kind set and no other.
 type Loader struct {
-	path  string
-	files Files
-	kinds domain.KindSet
+	path    string
+	files   Files
+	kinds   domain.KindSet
+	digests map[string]string
 }
 
 var _ ports.CatalogLoader = (*Loader)(nil)
+
+// SpecPinCode is the stable code of a catalog source whose spec_sha256 pin does not match the loaded spec file. The code
+// is fixed, so a caller can test it without reading the text.
+const SpecPinCode = "retriever.connector.spec_pin_mismatch"
+
+// PinMismatchError reports a source whose spec_sha256 pin differs from the bytes of the loaded spec file. Its text names
+// the source and the field, never a value. Code returns SpecPinCode, the stable code of the failure.
+type PinMismatchError struct{}
+
+// Error returns the rule that broke, in fixed words.
+func (PinMismatchError) Error() string { return "does not match the loaded spec file" }
+
+// Code returns SpecPinCode.
+func (PinMismatchError) Code() string { return SpecPinCode }
+
+// ErrorCode returns SpecPinCode too, so the CLI reports the pin failure with its own stable code, whatever command runs.
+func (PinMismatchError) ErrorCode() string { return SpecPinCode }
+
+// errPinNotSpecKind reports a spec_sha256 pin on a source whose kind is not a loaded spec kind.
+var errPinNotSpecKind = errors.New("only for a spec kind")
+
+// errPinFormat reports a pin that is not 64 lower-case hexadecimal characters.
+var errPinFormat = errors.New("must be 64 lower-case hex characters")
+
+// sha256Hex is the shape of a SHA-256 digest in lower-case hexadecimal.
+var sha256Hex = regexp.MustCompile(`^[0-9a-f]{64}$`)
+
+// WithSpecDigests returns the loader with the digests of the loaded spec files, one per spec kind, each the lower-case hex
+// SHA-256 of the bytes that were parsed. A source may pin a spec_sha256 only when its kind has a digest here, and the pin
+// must equal that digest. The map is read, never changed, and a nil map means no spec kind is loaded.
+func (l *Loader) WithSpecDigests(digests map[string]string) *Loader {
+	l.digests = digests
+	return l
+}
+
+// checkPin checks the spec_sha256 pin of a source of kind against the digests of the loaded spec files.
+func checkPin(pin string, kind domain.SourceKind, digests map[string]string) error {
+	digest, isSpec := digests[kind.String()]
+	if !isSpec {
+		return errPinNotSpecKind
+	}
+	if !sha256Hex.MatchString(pin) {
+		return errPinFormat
+	}
+	if pin != digest {
+		return PinMismatchError{}
+	}
+	return nil
+}
 
 // NewWithFiles returns a loader for the catalog file at path that makes its file calls through files. path must be
 // absolute. A source names a kind of kinds, the set the composition root registered, and no other kind loads.
@@ -68,7 +119,7 @@ func (l *Loader) Load() (domain.Catalog, error) {
 	if !found {
 		return domain.Catalog{}, catalogCause("not found: set --catalog or RETRIEVER_CATALOG, or create ./sources.yml", domain.ErrCatalogMissing)
 	}
-	return parse(data, l.kinds)
+	return parse(data, l.kinds, l.digests)
 }
 
 // read returns the file bytes. found is false when no file exists at the path, with no error.
@@ -124,10 +175,14 @@ type sourceEntry struct {
 	// IdentityEnv is the optional name of the variable that holds the source's e-mail address. A nil
 	// pointer means the field is absent, which an empty value is not.
 	IdentityEnv *string `yaml:"identity_env"`
+	// SpecSHA256 is the optional pin of the spec file of a spec kind. A nil pointer means the field is absent. The
+	// loader accepts it only for a kind with a loaded spec, and it must match that spec's digest.
+	SpecSHA256 *string `yaml:"spec_sha256"`
 }
 
-// parse decodes data strictly and maps it onto a domain.Catalog. Each source kind is resolved through kinds.
-func parse(data []byte, kinds domain.KindSet) (domain.Catalog, error) {
+// parse decodes data strictly and maps it onto a domain.Catalog. Each source kind is resolved through kinds, and each
+// spec_sha256 pin is checked against digests.
+func parse(data []byte, kinds domain.KindSet, digests map[string]string) (domain.Catalog, error) {
 	dec := yaml.NewDecoder(bytes.NewReader(data))
 	dec.KnownFields(true)
 	var doc fileDoc
@@ -146,7 +201,7 @@ func parse(data []byte, kinds domain.KindSet) (domain.Catalog, error) {
 	}
 	list := make([]domain.Source, 0, len(doc.Sources))
 	for i, entry := range doc.Sources {
-		src, err := toSource(i+1, entry, kinds)
+		src, err := toSource(i+1, entry, kinds, digests)
 		if err != nil {
 			return domain.Catalog{}, err
 		}
@@ -161,7 +216,7 @@ func parse(data []byte, kinds domain.KindSet) (domain.Catalog, error) {
 
 // toSource maps one entry onto the value objects. position is the 1-based source number used in the error text, and kind
 // is resolved through kinds.
-func toSource(position int, e sourceEntry, kinds domain.KindSet) (domain.Source, error) {
+func toSource(position int, e sourceEntry, kinds domain.KindSet, digests map[string]string) (domain.Source, error) {
 	id, err := domain.NewSourceID(e.ID)
 	if err != nil {
 		return domain.Source{}, fieldErr(position, "id", err)
@@ -195,6 +250,11 @@ func toSource(position int, e sourceEntry, kinds domain.KindSet) (domain.Source,
 			return domain.Source{}, fieldErr(position, "identity_env", err)
 		}
 		src = src.WithIdentity(identity)
+	}
+	if e.SpecSHA256 != nil {
+		if err := checkPin(*e.SpecSHA256, kind, digests); err != nil {
+			return domain.Source{}, fieldErr(position, "spec_sha256", err)
+		}
 	}
 	return src, nil
 }
@@ -250,6 +310,12 @@ func fieldRule(err error) string {
 		return "must be an upper-case *_API_KEY name"
 	case errors.Is(err, domain.ErrInvalidIdentityRef):
 		return "must be an upper-case *_EMAIL name"
+	case errors.Is(err, errPinNotSpecKind):
+		return errPinNotSpecKind.Error()
+	case errors.Is(err, errPinFormat):
+		return errPinFormat.Error()
+	case errors.As(err, &PinMismatchError{}):
+		return PinMismatchError{}.Error()
 	}
 	return "invalid"
 }
