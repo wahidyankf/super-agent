@@ -175,16 +175,16 @@ Feature: Outline reply redaction
   Scenario Outline: A failing Outline response never prints the key
     Given the stub Outline server answers "collections.list" with status <status>
     When I run "retriever --output json outline collections list"
-    Then the exit status is 2
+    Then the exit status is <exit>
     And the standard output is empty
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
 
     Examples:
-      | status |
-      | 403    |
-      | 404    |
-      | 429    |
-      | 500    |
+      | status | exit |
+      | 403    | 2    |
+      | 404    | 2    |
+      | 429    | 124  |
+      | 500    | 2    |
 
   @integration @e2e @unit
   Scenario: A non-JSON reply that echoes the Authorization header never prints the key
@@ -212,7 +212,7 @@ Feature: Outline reply redaction
   Scenario: Outline rate-limit exhaustion never prints the key
     Given the stub Outline server answers "collections.list" with status 429 and Retry-After "0"
     When I run "retriever --output json outline collections list"
-    Then the exit status is 2
+    Then the exit status is 124
     And the standard error is a JSON error with the code "retriever.outline.rate_limited" and retryable true
     And the stub Outline server received 4 requests to "collections.list"
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
@@ -254,3 +254,43 @@ Feature: Outline reply redaction
     Then the HTTP status is 200
     And the GraphQL response has an error
     And the GraphQL response does not contain "synthetic-outline-key"
+
+  @integration @e2e @unit
+  Scenario: A hostile reply through an MCP tool leaves no terminal control byte in the tool result
+    Given the stub Outline server answers "documents.info" with the body:
+      """
+      {"data": {"id": "d0c1d0c1-0000-4000-8000-000000000001", "title": "\u001b]0;hostile\u0007Red title", "text": "Before \u001b[2J after", "url": "/doc/d0c1d0c1-0000-4000-8000-000000000001", "collectionId": "1c1c1c1c-0000-4000-8000-000000000001", "revision": 1}}
+      """
+    And an MCP client starts "retriever mcp --max-access read"
+    When the client calls the tool "get_document" with these arguments:
+      """
+      {"document_id": "d0c1d0c1-0000-4000-8000-000000000001"}
+      """
+    Then the tool result is not an error
+    And the tool result text contains no control characters except line breaks
+
+  @integration @e2e @unit
+  Scenario: A failing reply that echoes the key never puts the key in an MCP tool result
+    Given the stub Outline server answers "documents.info" with status 500 and the body:
+      """
+      {"ok": false, "error": "upstream failure", "echo": "Bearer synthetic-outline-key"}
+      """
+    And an MCP client starts "retriever mcp --max-access read"
+    When the client calls the tool "get_document" with these arguments:
+      """
+      {"document_id": "d0c1d0c1-0000-4000-8000-000000000001"}
+      """
+    Then the tool result is an error
+    And the tool result text does not contain "synthetic-outline-key"
+
+  @integration @e2e @unit
+  Scenario: The OAuth authentications MCP tool never returns a client secret that its reply holds
+    Given the stub Outline server answers "oauthAuthentications.list" with the body:
+      """
+      {"data": [{"id": "b6000000-0000-4000-8000-000000000051", "oauthClientId": "0c0c0c0c-0000-4000-8000-000000000001", "scope": ["read"], "createdAt": "2026-01-01T00:00:00Z", "lastActiveAt": null, "clientSecret": "synthetic-client-secret", "oauthClient": {"id": "0c0c0c0c-0000-4000-8000-000000000001", "name": "Synthetic client", "clientSecret": "synthetic-client-secret"}}], "pagination": {"offset": 0, "limit": 25}}
+      """
+    And an MCP client starts "retriever mcp --max-access admin"
+    When the client calls the tool "list_oauth_authentications" with no arguments
+    Then the tool result is not an error
+    And the tool result text contains "0c0c0c0c-0000-4000-8000-000000000001"
+    And the tool result text does not contain "synthetic-client-secret"

@@ -264,12 +264,13 @@ func areaOf(path []string) string {
 	return "usage"
 }
 
-// exitStatusOf returns the exit status of an error that carries no status of its own. A timeout is a bounded wait that
-// elapsed, and a refused setup is the environment refusing before work starts. Every other failure did not complete.
+// exitStatusOf returns the exit status of an error that carries no status of its own. A timeout and a rate limit are
+// both bounded waits that ended in a retryable failure, so both exit 124. A refused setup is the environment refusing
+// before work starts. Every other failure did not complete.
 func exitStatusOf(err error) int {
 	var refused refusedError
 	switch {
-	case errors.Is(err, domain.ErrTimedOut), errors.Is(err, context.DeadlineExceeded):
+	case errors.Is(err, domain.ErrTimedOut), errors.Is(err, context.DeadlineExceeded), errors.Is(err, domain.ErrSourceRateLimited):
 		return exitTimedOut
 	case errors.As(err, &refused), errors.Is(err, configpaths.ErrRefused):
 		return exitRefused

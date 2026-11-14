@@ -19,6 +19,7 @@ func registerStubSteps(ctx *godog.ScenarioContext, cur func() *world) {
 	registerOutlineSteps(ctx, cur)
 	registerKiwiSteps(ctx, cur)
 	registerJiraSteps(ctx, cur)
+	registerTransportSteps(ctx, cur)
 
 	ctx.Step(`^the stub (Outline|Kiwi|Jira) server received no requests$`, func(kind string) error {
 		return cur().checkRequestCount(kind, "", 0, exactCount)

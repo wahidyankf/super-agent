@@ -62,7 +62,7 @@ Feature: Jira reads
     When I run "retriever --output json jira issues get EXAMPLE-999"
     Then the exit status is 2
     And the standard output is empty
-    And the standard error is a JSON error with a code that starts with "retriever.jira."
+    And the standard error is a JSON error with the code "retriever.jira.document_not_found" and retryable false
 
   @integration @e2e @unit
   Scenario: A comment list prints the comment text of the issue
@@ -102,19 +102,101 @@ Feature: Jira reads
     And the value of "EXAMPLE_JIRA_API_TOKEN" never appears in the standard output, the standard error, or the output folder
 
   @integration @e2e @unit
-  Scenario: A rate-limited Jira read waits for Retry-After once and then succeeds
+  Scenario: A rate-limited Jira read waits for Retry-After once and then succeeds, with the wait measured
     Given the stub Jira server answers the first 1 request to "/rest/api/3/myself" with status 429 and Retry-After "1"
     When I run "retriever jira whoami"
     Then the exit status is 0
     And the stub Jira server received 2 requests to "/rest/api/3/myself"
+    And the requests to the stub Jira server to "/rest/api/3/myself" were 1000 ms apart
 
   @integration @e2e @unit
-  Scenario: The removed search path is reported as a clear failure and is never used
-    Given the stub Jira server answers "/rest/api/3/search" with status 410
+  Scenario: A Jira read that keeps answering 429 stops after three retries with status 124
+    Given the stub Jira server answers every request with status 429 and Retry-After "0"
+    When I run "retriever --output json jira whoami"
+    Then the exit status is 124
+    And the standard error is a JSON error with the code "retriever.jira.rate_limited" and retryable true
+    And the stub Jira server received 4 requests to "/rest/api/3/myself"
+
+  @integration @e2e @unit
+  Scenario: A Jira Retry-After longer than 60 seconds fails the read at once, without a retry
+    Given the stub Jira server answers every request with status 429 and Retry-After "61"
+    When I run "retriever --output json jira whoami"
+    Then the exit status is 2
+    And the standard error is a JSON error with the code "retriever.jira.retry_after_too_long" and retryable false
+    And the stub Jira server received 1 request to "/rest/api/3/myself"
+
+  @integration @e2e @unit
+  Scenario Outline: A Jira status that is not a success ends the command with its own code, and never shows the token
+    Given the stub Jira server answers "/rest/api/3/myself" with status <status>
+    When I run "retriever --output json jira whoami"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "<code>" and retryable false
+    And the standard error does not contain "synthetic-jira-token"
+
+    Examples:
+      | status | code                            |
+      | 400    | retriever.jira.bad_request      |
+      | 401    | retriever.jira.key_rejected     |
+      | 403    | retriever.jira.access_denied    |
+      | 404    | retriever.jira.not_found        |
+      | 500    | retriever.jira.upstream_failure |
+
+  @integration @e2e @unit
+  Scenario: A Jira JQL search refused with 400 shows the generic refusal and not the text Jira sent
+    Given the stub Jira server answers "/rest/api/3/search/jql" with status 400
     When I run "retriever --output json jira issues search project=EXAMPLE"
     Then the exit status is 2
-    And the standard error is a JSON error with a code that starts with "retriever.jira."
+    And the standard error is a JSON error with the code "retriever.jira.bad_request" and retryable false
+    And the standard error does not contain "Scripted fault"
+
+  @integration @e2e @unit
+  Scenario: The removed search path is never used, even when the search path answers 410
+    Given the stub Jira server answers "/rest/api/3/search/jql" with status 410
+    When I run "retriever --output json jira issues search project=EXAMPLE"
+    Then the exit status is 2
+    And the standard error is a JSON error with the code "retriever.jira.operation_unavailable" and retryable false
+    And the stub Jira server received 1 request to "/rest/api/3/search/jql"
     And the stub Jira server received 0 requests to "/rest/api/3/search"
+
+  @integration @e2e @unit
+  Scenario: A Jira reply that is not JSON is an unexpected response that names no host
+    Given the stub Jira server answers "/rest/api/3/myself" with a body that is not JSON
+    When I run "retriever --output json jira whoami"
+    Then the exit status is 2
+    And the standard error is a JSON error with the code "retriever.jira.unexpected_response" and retryable false
+    And the standard error does not contain "jira.example.test"
+
+  @integration @e2e @unit
+  Scenario: A Jira reply that lacks the members the command reads is an unexpected response
+    Given the stub Jira server answers "/rest/api/3/myself" with a body that lacks its members
+    When I run "retriever --output json jira whoami"
+    Then the exit status is 2
+    And the standard error is a JSON error with the code "retriever.jira.unexpected_response" and retryable false
+
+  @integration @e2e @unit
+  Scenario: A Jira search that is answered with a page token reads one page, marks it truncated, and sends no second request
+    Given the stub Jira server repeats the page token on "/rest/api/3/search/jql"
+    When I run "retriever --output json jira issues search project=EXAMPLE"
+    Then the exit status is 0
+    And the JSON field "truncated" of the standard output is true
+    And the stub Jira server received 1 request to "/rest/api/3/search/jql"
+
+  @integration @e2e @unit
+  Scenario: A Jira project listing whose empty page still carries a page token stops with an unexpected response
+    Given the stub Jira server answers "/rest/api/3/project/search" with an empty page that still has a page token
+    When I run "retriever --output json jira projects list"
+    Then the exit status is 2
+    And the standard error is a JSON error with the code "retriever.jira.unexpected_response" and retryable false
+
+  @integration @e2e @unit
+  Scenario: A Jira source that cannot be reached is reported as unreachable, is retryable, and names no host
+    Given no stub Jira server is listening
+    When I run "retriever --output json jira whoami"
+    Then the exit status is 2
+    And the standard error is a JSON error with the code "retriever.jira.unreachable" and retryable true
+    And the standard error does not contain "127.0.0.1"
+    And the standard error does not contain "jira.example.test"
 
   @unit @integration @e2e
   Scenario: Jira has no write command, so a create attempt is a usage error

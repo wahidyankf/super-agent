@@ -116,24 +116,24 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet) (sources.Ser
 	}
 	resolver := registry.New(map[domain.SourceKind]registry.Builder{
 		domain.KindOutline: func(src domain.Source) (ports.SourceGateway, error) {
-			return wireOutline(src, creds, seams[domain.KindOutline])
+			return wireOutline(src, creds, seams[domain.KindOutline], w.clock)
 		},
 		domain.KindKiwi: func(src domain.Source) (ports.SourceGateway, error) {
-			return wireKiwi(src, creds, seams[domain.KindKiwi])
+			return wireKiwi(src, creds, seams[domain.KindKiwi], w.clock)
 		},
 		domain.KindJira: func(src domain.Source) (ports.SourceGateway, error) {
-			return wireJira(src, creds, seams[domain.KindJira])
+			return wireJira(src, creds, seams[domain.KindJira], w.clock)
 		},
 	})
 	return sources.Service{Catalog: cat, Gateways: resolver}, nil
 }
 
 // wireOutline returns the gateway of one Outline source. The seam, when it is on, replaces only the connection base.
-func wireOutline(src domain.Source, creds ports.Credentials, seam seamConfig) (ports.SourceGateway, error) {
+func wireOutline(src domain.Source, creds ports.Credentials, seam seamConfig, clk *fakeClock) (ports.SourceGateway, error) {
+	opts := []outline.Option{outline.WithClock(clk.Now), outline.WithSleep(clk.Sleep)}
 	if !seam.on {
-		return outline.New(src, creds), nil
+		return outline.New(src, creds, opts...), nil
 	}
-	var opts []outline.Option
 	if seam.timeout > 0 {
 		opts = append(opts, outline.WithTimeout(seam.timeout))
 	}
@@ -145,11 +145,11 @@ func wireOutline(src domain.Source, creds ports.Credentials, seam seamConfig) (p
 }
 
 // wireKiwi returns the gateway of one Kiwi source, under the same rule as wireOutline.
-func wireKiwi(src domain.Source, creds ports.Credentials, seam seamConfig) (ports.SourceGateway, error) {
+func wireKiwi(src domain.Source, creds ports.Credentials, seam seamConfig, clk *fakeClock) (ports.SourceGateway, error) {
+	opts := []kiwi.Option{kiwi.WithClock(clk.Now), kiwi.WithSleep(clk.Sleep)}
 	if !seam.on {
-		return kiwi.New(src, creds), nil
+		return kiwi.New(src, creds, opts...), nil
 	}
-	var opts []kiwi.Option
 	if seam.timeout > 0 {
 		opts = append(opts, kiwi.WithTimeout(seam.timeout))
 	}
@@ -162,11 +162,11 @@ func wireKiwi(src domain.Source, creds ports.Credentials, seam seamConfig) (port
 
 // wireJira returns the gateway of one Jira source, under the same rule as wireOutline. The credentials adapter
 // provides both the token and the account e-mail address.
-func wireJira(src domain.Source, secrets jira.Secrets, seam seamConfig) (ports.SourceGateway, error) {
+func wireJira(src domain.Source, secrets jira.Secrets, seam seamConfig, clk *fakeClock) (ports.SourceGateway, error) {
+	opts := []jira.Option{jira.WithClock(clk.Now), jira.WithSleep(clk.Sleep)}
 	if !seam.on {
-		return jira.New(src, secrets), nil
+		return jira.New(src, secrets, opts...), nil
 	}
-	var opts []jira.Option
 	if seam.timeout > 0 {
 		opts = append(opts, jira.WithTimeout(seam.timeout))
 	}

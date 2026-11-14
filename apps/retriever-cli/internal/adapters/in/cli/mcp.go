@@ -75,15 +75,18 @@ func runMCP(inv *invocation) error {
 
 	// A signal wins over the session's own end: the session may end as a result of the same cancellation, and the status
 	// must still name the signal. The session is not waited for, because a blocked read on standard input cannot hold it.
-	// Both arms reach the same signal check, so the order in which select picks them does not change the status.
+	// A context cancelled without a signal ends the session with status 2 whichever arm select picks: a session that
+	// returns nil just as its context is cancelled must not be read as a clean end.
 	var ended error
 	select {
 	case ended = <-done:
 	case <-ctx.Done():
-		ended = fmt.Errorf("the session was cancelled: %w", context.Cause(ctx))
 	}
 	if code, ok := endedBySignal(ctx); ok {
 		return exitStatus{code: code}
+	}
+	if ended == nil && ctx.Err() != nil {
+		ended = fmt.Errorf("the session was cancelled: %w", context.Cause(ctx))
 	}
 	if ended != nil {
 		return exitStatus{code: mcpExitNotDone, err: ended}

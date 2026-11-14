@@ -71,7 +71,7 @@ var datasetMethods = map[string]bool{
 // outlineStub returns the Outline stub, starting it on first use with the synthetic replies loaded.
 func (w *world) outlineStub() *outlinestub.Stub {
 	if w.stubs.outline == nil {
-		s := outlinestub.Start(w.outer)
+		s := outlinestub.Start(w.outer, w.stubClockOutline()...)
 		if err := loadSyntheticReplies(s); err != nil {
 			w.outer.Fatalf("load the synthetic Outline replies: %v", err)
 		}
@@ -106,7 +106,11 @@ func loadSyntheticReplies(s *outlinestub.Stub) error {
 // keeps for every request.
 func (w *world) kiwiStub() (*kiwistub.Stub, error) {
 	if w.stubs.kiwi == nil {
-		s := kiwistub.New(w.env[kiwiKeyVar], kiwistub.WithAnyBearer())
+		opts := []kiwistub.Option{kiwistub.WithAnyBearer()}
+		if w.inProcess() {
+			opts = append(opts, kiwistub.WithClock(w.clock.Now))
+		}
+		s := kiwistub.New(w.env[kiwiKeyVar], opts...)
 		if err := s.Start(); err != nil {
 			return nil, fmt.Errorf("start the Kiwi stub: %w", err)
 		}
@@ -119,6 +123,9 @@ func (w *world) kiwiStub() (*kiwistub.Stub, error) {
 func (w *world) jiraStub() (*jirastub.Stub, error) {
 	if w.stubs.jira == nil {
 		s := jirastub.New("", "")
+		if w.inProcess() {
+			s.SetClock(w.clock.Now)
+		}
 		srv, err := jirastub.NewTLSServer(s)
 		if err != nil {
 			return nil, fmt.Errorf("start the Jira stub: %w", err)
