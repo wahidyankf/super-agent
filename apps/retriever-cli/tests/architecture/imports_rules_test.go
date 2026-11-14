@@ -10,12 +10,14 @@ func TestImportRulesByKind(t *testing.T) {
 		runtime   = "libs/retriever-runtime"
 		testkit   = "libs/retriever-testkit"
 		outline   = "libs/retriever-connector-outline"
+		spec      = "libs/retriever-spec"
 		app       = "apps/retriever-cli"
 		domainPkg = workspacePrefix + "libs/retriever-contract/domain"
 		outlinePk = workspacePrefix + "libs/retriever-connector-outline/outline"
 		runtimePk = workspacePrefix + "libs/retriever-runtime/sources"
 		kitPkg    = workspacePrefix + "libs/retriever-testkit/outlinestub"
 		appPkg    = workspacePrefix + "apps/retriever-cli/internal/adapters/in/cli"
+		specPk    = workspacePrefix + "libs/retriever-spec"
 	)
 	cases := []struct {
 		name   string
@@ -43,6 +45,17 @@ func TestImportRulesByKind(t *testing.T) {
 		{"the app imports the test kit in production code", app, false, kitPkg, true},
 		{"the app test imports the test kit", app, true, kitPkg, false},
 		{"a library imports the app", outline, false, appPkg, true},
+		{"a spec imports the contract", spec, false, domainPkg, false},
+		{"a spec imports a runtime", spec, false, runtimePk, true},
+		{"a spec imports a connector", spec, false, outlinePk, true},
+		{"a spec imports the test kit in production code", spec, false, kitPkg, true},
+		{"a spec test imports the test kit", spec, true, kitPkg, false},
+		{"a spec test imports a connector", spec, true, outlinePk, true},
+		{"a spec imports the app", spec, false, appPkg, true},
+		{"a connector imports the spec", outline, false, specPk, true},
+		{"a runtime imports the spec", runtime, false, specPk, true},
+		{"the contract imports the spec", contract, false, specPk, true},
+		{"the app imports the spec", app, false, specPk, false},
 		{"a module imports itself", outline, false, outlinePk, false},
 		{"an external module is never a workspace edge", contract, false, "example.test/other/pkg", false},
 		{"a standard package is never a workspace edge", contract, false, "fmt", false},
@@ -75,6 +88,17 @@ func TestModuleOfPicksTheLongestModule(t *testing.T) {
 	if got := importViolation("libs/retriever-contract", false, workspacePrefix+"libs/retriever-missing/pkg"); got == "" {
 		t.Fatal("an import of no module must be a violation")
 	}
+}
+
+// TestSpecModuleIsPure checks that the spec module is one of the pure directories, so that its production code is held to
+// the purity rule of the module layout: it reaches the outside world through no standard package in the effect list.
+func TestSpecModuleIsPure(t *testing.T) {
+	for _, dir := range pureDirs {
+		if dir == "libs/retriever-spec" {
+			return
+		}
+	}
+	t.Fatal("libs/retriever-spec must be listed in pureDirs: the spec module is pure")
 }
 
 // TestEffectfulStandardPackagesAreNamed checks the pure rule: the network, the disk, and processes are effects, and the

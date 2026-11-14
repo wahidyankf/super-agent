@@ -986,3 +986,7 @@ extensions:
         path: libs/retriever-connector-jira
         kind: connector
         stacks: [golang]
+      retriever-spec:
+        path: libs/retriever-spec
+        kind: spec
+        stacks: [golang]

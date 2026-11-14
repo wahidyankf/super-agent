@@ -106,7 +106,7 @@ jobs:
           # modes, symbolic links, and port binding. The application's end-to-end and conformance suites run the built
           # binary, which includes the libraries, so they cover the libraries on macOS. The libraries' integration tests
           # use the real file system and processes, and they run on Ubuntu only, as the application's integration tests
-          # do. Each row's tier follows its work. Ubuntu runs whole suites of seven projects, which is heavy work. macOS
+          # do. Each row's tier follows its work. Ubuntu runs whole suites of eight projects, which is heavy work. macOS
           # runs one project's tests, which is standard work, and a macos-15 runner (3 CPUs, about 7 GiB) has less than
           # the heavy tier's minimum reservation of 4 CPUs and 8192 MiB.
           - os: ubuntu-24.04
