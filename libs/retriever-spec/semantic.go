@@ -26,6 +26,13 @@ func semanticFindings(s *Spec) []Finding {
 	if _, err := domain.BuiltinKinds().Kind(s.Kind); err == nil {
 		fs = append(fs, finding("/kind", "is the kind of a built-in source"))
 	}
+	return append(fs, sharedSemanticFindings(s)...)
+}
+
+// sharedSemanticFindings checks every rule that both entries share: everything semanticFindings checks except the
+// built-in kind, which only the user-folder entry refuses.
+func sharedSemanticFindings(s *Spec) []Finding {
+	var fs []Finding
 	fs = append(fs, CheckAccessMatrix(s)...)
 	fs = append(fs, CheckObjectFields(s)...)
 	fs = append(fs, CheckResponseShape(s)...)

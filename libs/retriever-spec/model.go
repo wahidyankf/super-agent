@@ -59,6 +59,10 @@ type Limits struct {
 type Operation struct {
 	// ID is <kind>.<group>.<verb>, unique in the spec.
 	ID string `json:"id"`
+	// CatalogID names the operation row of the built-in catalog that a bundled operation serves, such as
+	// documents.get. The catalog row stays the source of the CLI name, the MCP tool name, and the parameters, and
+	// the spec supplies only the request and the reply rules. Only a bundled spec may name it.
+	CatalogID string `json:"catalog_id,omitempty"`
 	// Summary is one line for help and the MCP description.
 	Summary string `json:"summary"`
 	// Access is read, write, or admin.
