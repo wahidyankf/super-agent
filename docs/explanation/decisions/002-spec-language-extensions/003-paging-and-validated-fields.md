@@ -11,11 +11,13 @@ tags:
 
 # E2 and E3: body paging and validated fields
 
-This page belongs to [ADR 002](../002-spec-language-extensions.md). Everything here is planned.
+This page belongs to [ADR 002](../002-spec-language-extensions.md). E2 is built by pull request 8. E3 is still
+planned.
 
 ## E2: body paging
 
-Outline pages with `offset` and `limit` in the JSON body. Today a paging rule names query parameters only.
+Outline pages with `offset` and `limit` in the JSON body. Before pull request 8, a paging rule named query
+parameters only.
 
 ```yaml
 pagination:
@@ -31,8 +33,10 @@ pagination:
 - **Limits.** The page cap is the same as for a query: 1 to 20, and a spec may only lower it. The offset is a
   non-negative integer below 2^31. The engine advances it by the number of items in the page, and stops at the first
   short page, as the offset read does today. At the cap it returns the pages it has, with a continuation.
-- **Open.** The Go `collections.list` reads every page and fails at the cap with a page-cap error. The continuation
-  differs. Pull request 8 or 16 must pick one, and the owner is told which.
+- **Decided.** The Go `collections.list` keeps failing at the cap with a page-cap error, and the engine keeps
+  returning the pages it has with a continuation. The gateway call returns a list or an error and has no channel for a
+  continuation, so failing is its only honest option, while a spec read returns a page that names its continuation
+  (`HasMore` and `NextOffset`), so the caller continues. Pull request 8 records this, and the owner is told.
 - **Needs.** E1, because a body-paged read is a POST read.
 
 **L3. Paging in a body runs past the cap or never advances.** Control: the cap and the no-progress stop above. This

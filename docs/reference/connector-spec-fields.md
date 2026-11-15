@@ -116,10 +116,20 @@ alone sets them. The header parameter location of the draft is not in the spec: 
 ## Pagination
 
 - `style`: `offset`, `cursor`, or `none`.
+- `in`: `query` (the default) or `body`. With `in: body`, every parameter the paging rule names must be a declared
+  body parameter of the same operation; a rule cannot mix locations.
 - `max_pages`: the page cap of the read, from 1 to 20. It is the stop rule, so `offset` and `cursor` always name it.
-- `offset`: needs `limit_param` and `offset_param`, both query parameters of the operation.
-- `cursor`: needs `cursor_param`, a query parameter, and `next_pointer`, a JSON pointer in the reply.
+- `offset`: needs `limit_param` and `offset_param`. With `in: query` both name query parameters of the operation; with
+  `in: body` both name body parameters, and the values travel in the JSON body instead of the query. The offset is a
+  non-negative integer below 2^31. The engine advances it by the number of items in the page, and stops at the first
+  short page. At the cap it returns the pages it has, with a continuation that names the next offset.
+- `cursor`: needs `cursor_param` and `next_pointer`, a JSON pointer in the reply. The location rule is the same: with
+  `in: body` the cursor parameter is a body parameter, and the value travels in the JSON body. A next cursor that
+  repeats one already sent ends the read, so a reply that never advances cannot run to the cap. At the cap the engine
+  returns the pages it has, with no continuation.
 - `none`: takes no other field.
+
+The review text lists each body-paged read in its own block, with its style, its body parameters, and its page cap.
 
 ## Response
 
@@ -147,7 +157,8 @@ The language cannot yet express the Outline reads, so they still run on the Go g
 
 - Outline sends every call as a `POST` with a JSON body. A read may now use `POST` with `read_over_post`, which is
   described in [POST reads](#post-reads), so this limit no longer blocks a read.
-- Outline paging puts `offset` and `limit` in the body. A paging rule names query parameters only.
+- Outline paging puts `offset` and `limit` in the body. A paging rule may now travel in the body with `in: body`,
+  which is described in [Pagination](#pagination), so this limit no longer blocks a read.
 - A field is never required. A missing field maps to null, where the Go connectors refuse a reply with no ID.
 - A field holds one scalar. A nested record, the first item of a list, a list merged from several lists, a tree with a
   computed depth, and a fallback read have no form in the language.
@@ -169,7 +180,7 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 ## Planned extensions
 
 [ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
-that the Outline, Kiwi, and Jira connectors can run as specs. The first of them, POST reads (E1), is built and described
-above. The other eight are not built. The limits of the Outline reads, above, describe the language before ADR 002 for
-the paging, the fields, and the shapes that the other extensions cover. This page documents only what the module accepts
-today, and each extension moves here when its pull request lands.
+that the Outline, Kiwi, and Jira connectors can run as specs. The first two of them, POST reads (E1) and body paging
+(E2), are built and described above. The other seven are not built. The limits of the Outline reads, above, describe the
+language before ADR 002 for the fields and the shapes that the remaining extensions cover. This page documents only what
+the module accepts today, and each extension moves here when its pull request lands.
