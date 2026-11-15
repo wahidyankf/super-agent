@@ -225,10 +225,12 @@ func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (d
 
 // fieldValue maps one reply value to a field value: a strings field reads a
 // list of strings, an editor-data converter reads the plain text of editor JSON,
-// an ADF converter renders the document to Markdown, any other field reads one
-// scalar, and a hostname converter keeps the host of an address. A value the
-// reply holds as another shape is an unexpected response, which names the field
-// and never the value.
+// an ADF converter renders the document to Markdown, a Jira converter maps a
+// timestamp, a date, or a title to text with any other value mapping to the empty
+// text, any other field reads one scalar, and a hostname converter keeps the host
+// of an address. A value the reply holds as another shape is an unexpected
+// response, which names the field and never the value, except for the Jira
+// converters, which keep the row with an empty field.
 func fieldValue(f spec.Field, raw any, budget *int) (any, error) {
 	if f.Format == "strings" {
 		return stringsValue(raw, budget)
@@ -238,6 +240,15 @@ func fieldValue(f spec.Field, raw any, budget *int) (any, error) {
 	}
 	if f.Convert == "markdown-from-adf" {
 		return adfConvert(raw, budget)
+	}
+	if f.Convert == "jira-time" {
+		return jiraTime(raw, budget)
+	}
+	if f.Convert == "jira-date" {
+		return jiraDate(raw, budget)
+	}
+	if f.Convert == "jira-title" {
+		return jiraTitle(raw, budget)
 	}
 	v, err := scalarOf(raw, budget)
 	if err != nil {

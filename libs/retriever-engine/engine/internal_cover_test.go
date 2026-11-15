@@ -40,8 +40,8 @@ func intPtr(v int) *int {
 }
 
 // TestUnsupportedRefusesAResolveAndAConverter checks each part of a read that a later pull request serves: a name that is
-// resolved, and the HTML converter. The ADF converter is served, so an operation naming it passes the gate. An operation
-// with neither is served.
+// resolved, and the HTML converter. The ADF and Jira converters are served, so an operation naming one passes the
+// gate. An operation with neither is served.
 func TestUnsupportedRefusesAResolveAndAConverter(t *testing.T) {
 	resolve := spec.Operation{Params: []spec.Param{{Name: "name", Resolve: &spec.Resolve{Operation: "x.y.z", Field: "id"}}}}
 	if err := unsupported(resolve); !errors.Is(err, domain.ErrUnsupportedOperation) {
@@ -54,6 +54,12 @@ func TestUnsupportedRefusesAResolveAndAConverter(t *testing.T) {
 	adf := spec.Operation{Response: spec.Response{Fields: map[string]spec.Field{"body": {Pointer: "/body", Convert: "markdown-from-adf"}}}}
 	if err := unsupported(adf); err != nil {
 		t.Fatalf("an ADF converter = %v, want nil", err)
+	}
+	for _, convert := range []string{"jira-time", "jira-date", "jira-title"} {
+		op := spec.Operation{Response: spec.Response{Fields: map[string]spec.Field{"body": {Pointer: "/body", Convert: convert}}}}
+		if err := unsupported(op); err != nil {
+			t.Fatalf("a Jira converter %s = %v, want nil", convert, err)
+		}
 	}
 	if err := unsupported(spec.Operation{}); err != nil {
 		t.Fatalf("a plain operation = %v, want nil", err)
