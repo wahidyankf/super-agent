@@ -32,6 +32,7 @@ func Review(s *Spec) string {
 	writePostReads(&b, s)
 	writeBodyPaging(&b, s)
 	writeRequiredFields(&b, s)
+	writeNestedObjects(&b, s)
 	return b.String()
 }
 
@@ -116,6 +117,43 @@ func writeRequiredFields(b *strings.Builder, s *Spec) {
 			parts = append(parts, "formats "+strings.Join(e.formats, ", "))
 		}
 		fmt.Fprintf(b, "%d. %s: %s\n", i+1, e.id, strings.Join(parts, "; "))
+	}
+}
+
+// writeNestedObjects writes the block of the operations with nested record fields, one line each, with the object
+// field and each sub-field. A spec with no object field writes nothing, so its review keeps its text.
+func writeNestedObjects(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id    string
+		field string
+		subs  []string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		var names []string
+		for name := range op.Response.Fields {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			f := op.Response.Fields[name]
+			if f.Object == nil {
+				continue
+			}
+			var subs []string
+			for sub := range f.Object {
+				subs = append(subs, sub)
+			}
+			sort.Strings(subs)
+			entries = append(entries, entry{id: op.ID, field: name, subs: subs})
+		}
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Nested objects: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: %s with %s\n", i+1, e.id, e.field, strings.Join(e.subs, ", "))
 	}
 }
 

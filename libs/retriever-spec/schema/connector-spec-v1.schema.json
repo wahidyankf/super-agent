@@ -278,6 +278,9 @@
       ]
     },
     "field": {
+      "anyOf": [{ "$ref": "#/$defs/scalar_field" }, { "$ref": "#/$defs/object_field" }]
+    },
+    "scalar_field": {
       "type": "object",
       "additionalProperties": false,
       "required": ["pointer"],
@@ -286,6 +289,22 @@
         "required": { "type": "boolean" },
         "format": { "$ref": "#/$defs/field_format" },
         "convert": { "enum": ["plain", "markdown-from-html", "markdown-from-adf"] }
+      }
+    },
+    "object_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object"],
+      "properties": {
+        "object": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 32,
+          "patternProperties": {
+            "^[a-z][a-z0-9_]{0,63}$": { "$ref": "#/$defs/scalar_field" }
+          },
+          "additionalProperties": false
+        }
       }
     },
     "field_format": {

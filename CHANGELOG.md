@@ -74,6 +74,14 @@ upgrade.
   same checks the catalog kinds use on request parameters; a free pattern has no form in the language. The failure
   names the field and never the value. The review text lists each operation with required or checked fields. A request
   with a missing argument still sends no request.
+- A reply field of a connector spec takes one level of `object` with an allow-list of at most 32 sub-fields (ADR 002,
+  E4). Each sub-field is a pointer with its own optional `required`, `format`, and `convert`; a sub-field with its own
+  object is refused, and so is an object field with a scalar keyword of its own. A pointer that reaches an object or
+  a list is refused, so a whole object is never copied. The mapper reads declared pointers only, the reply tree is
+  dropped after mapping, and a planted e-mail reaches no output, error, or log. A failure names the dotted path and
+  never the value. The review text lists each operation with a nested record field, with the object field and each
+  sub-field. Renderers, the MCP adapter, and the JSON output already read a nested record, so the contract is
+  unchanged.
 
 ### Changed
 

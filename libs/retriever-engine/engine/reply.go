@@ -156,12 +156,23 @@ func scalarOf(v any, budget *int) (any, error) {
 
 // mapRecord maps one JSON object to a record, with one field for each declared field, in name order. A required field
 // with a missing, null, or empty value fails the read, and a format-checked field whose value is not of the named
-// shape fails it too. Either failure names the field and never the value, and no partial record is returned.
+// shape fails it too. Either failure names the field and never the value, and no partial record is returned. A field
+// that holds an object maps one nested record instead, with the same rules for each declared sub-field; a pointer that
+// reaches an object or a list is refused, so a whole object is never copied. The reply tree is dropped after mapping:
+// no value of a record aliases it.
 func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (domain.Record, error) {
 	names := sortedKeys(fields)
 	out := make([]domain.Field, 0, len(names))
 	for _, name := range names {
 		f := fields[name]
+		if f.Object != nil {
+			nested, err := mapObject(name, f.Object, obj, budget)
+			if err != nil {
+				return domain.Record{}, err
+			}
+			out = append(out, domain.Field{Name: name, Value: nested})
+			continue
+		}
 		raw, found := pointerValue(obj, f.Pointer)
 		if f.Required && isMissingValue(raw, found) {
 			return domain.Record{}, fieldError(name)
@@ -171,6 +182,31 @@ func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (d
 			return domain.Record{}, err
 		}
 		if err := checkFormat(name, f.Format, v); err != nil {
+			return domain.Record{}, err
+		}
+		out = append(out, domain.Field{Name: name, Value: v})
+	}
+	return domain.NewRecord(out...), nil
+}
+
+// mapObject maps one nested record field to a record, with one value for each declared sub-field, in name order. Each
+// sub-field follows the scalar rules, and its failure names the dotted path, never the value. A pointer that reaches
+// an object or a list is refused, so a whole object is never copied.
+func mapObject(field string, sub map[string]spec.Field, obj map[string]any, budget *int) (domain.Record, error) {
+	names := sortedKeys(sub)
+	out := make([]domain.Field, 0, len(names))
+	for _, name := range names {
+		f := sub[name]
+		path := field + "." + name
+		raw, found := pointerValue(obj, f.Pointer)
+		if f.Required && isMissingValue(raw, found) {
+			return domain.Record{}, fieldError(path)
+		}
+		v, err := scalarOf(raw, budget)
+		if err != nil {
+			return domain.Record{}, fieldError(path)
+		}
+		if err := checkFormat(path, f.Format, v); err != nil {
 			return domain.Record{}, err
 		}
 		out = append(out, domain.Field{Name: name, Value: v})

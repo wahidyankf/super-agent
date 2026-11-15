@@ -143,11 +143,17 @@ The review text lists each body-paged read in its own block, with its style, its
 - `format`: one closed name, `id`, `uuid`, or `share-id`, checked on the value with the same checks the catalog kinds
   use on request parameters. A free pattern has no form in the language. The failure names the field and never the
   value.
+- `object`: a reply field may hold one nested record instead of a scalar: `user` with `object` holding at most 32
+  named sub-fields, each a pointer with its own optional `required`, `format`, and `convert`. One level only: a
+  sub-field with its own `object` is refused, and so is an object field with a scalar keyword of its own. A pointer
+  that reaches an object or a list is refused, so a whole object is never copied. The mapper reads declared pointers
+  only, and the reply tree is dropped after mapping. A failure names the dotted path, never the value.
 - `markdown`: the output field that holds the Markdown body, for a document read. It must name a field.
 - `errors`: a map from HTTP status, from 100 to 599, to a reason from the closed list in the error section.
 
 The review text lists each operation with required or checked fields in its own block, with each required field and
-each checked field with its closed format name.
+each checked field with its closed format name. The review text lists each operation with a nested record field in
+its own block, with the object field and each sub-field.
 
 There are no expressions. A pointer reads, and nothing computes.
 
@@ -169,8 +175,9 @@ The language cannot yet express the Outline reads, so they still run on the Go g
   which is described in [Pagination](#pagination), so this limit no longer blocks a read.
 - A field is never required. A field takes `required` and a closed `format` now, which is described in
   [Response](#response), so this limit no longer blocks a read. A missing optional field still maps to null.
-- A field holds one scalar. A nested record, the first item of a list, a list merged from several lists, a tree with a
-  computed depth, and a fallback read have no form in the language.
+- A field holds one scalar or one nested record, which is described in [Response](#response). The first item of a
+  list, a list merged from several lists, a tree with a computed depth, and a fallback read have no form in the
+  language.
 
 A spec named `outline` is also refused, because the kind is a built-in source. A bundled Outline spec would need an
 exception for bundled files only.
@@ -189,7 +196,8 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 ## Planned extensions
 
 [ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
-that the Outline, Kiwi, and Jira connectors can run as specs. The first three of them, POST reads (E1), body paging
-(E2), and required and validated fields (E3), are built and described above. The other six are not built. The limits of
-the Outline reads, above, describe the language before ADR 002 for the shapes that the remaining extensions cover. This
-page documents only what the module accepts today, and each extension moves here when its pull request lands.
+that the Outline, Kiwi, and Jira connectors can run as specs. The first four of them, POST reads (E1), body paging
+(E2), required and validated fields (E3), and nested records with an allow-list (E4), are built and described above.
+The other five are not built. The limits of the Outline reads, above, describe the language before ADR 002 for the
+shapes that the remaining extensions cover. This page documents only what the module accepts today, and each extension
+moves here when its pull request lands.

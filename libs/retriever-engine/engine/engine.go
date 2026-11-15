@@ -370,6 +370,7 @@ func reservedHeader(name string) bool {
 // a request.
 func checkSpecShape(model *spec.Spec) error {
 	fs := spec.CheckAccessMatrix(model)
+	fs = append(fs, spec.CheckObjectFields(model)...)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {
@@ -413,11 +414,15 @@ func pathOK(path string) bool {
 	return true
 }
 
-// pointersOf returns every JSON pointer that a read of the operation names: the items list, the fields, and the cursor.
+// pointersOf returns every JSON pointer that a read of the operation names: the items list, the fields with the
+// pointers of each nested sub-field, and the cursor.
 func pointersOf(o spec.Operation) []string {
 	out := []string{o.Response.Items}
 	for _, f := range o.Response.Fields {
 		out = append(out, f.Pointer)
+		for _, name := range sortedKeys(f.Object) {
+			out = append(out, f.Object[name].Pointer)
+		}
 	}
 	if o.Pagination != nil {
 		out = append(out, o.Pagination.NextPointer)
