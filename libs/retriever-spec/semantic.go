@@ -2,6 +2,7 @@ package spec
 
 import (
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -26,6 +27,7 @@ func semanticFindings(s *Spec) []Finding {
 		fs = append(fs, finding("/kind", "is the kind of a built-in source"))
 	}
 	fs = append(fs, CheckAccessMatrix(s)...)
+	fs = append(fs, CheckObjectFields(s)...)
 	index := make(map[string]int, len(s.Operations))
 	for i, op := range s.Operations {
 		at := "/operations/" + strconv.Itoa(i) + "/id"
@@ -197,6 +199,61 @@ func checkExamples(op Operation, base string, params map[string]Param) []Finding
 			if reservedHeader(key) {
 				fs = append(fs, finding(at+"/response/headers/"+safeName(key), reservedRule))
 			}
+		}
+	}
+	return fs
+}
+
+// maxObjectFields is the most sub-fields one nested record field holds.
+const maxObjectFields = 32
+
+// The fixed rules of a nested record field. Each names the broken rule, never a value.
+const (
+	ruleObjectScalar = "is an object field with a scalar keyword"
+	ruleObjectCount  = "does not hold 1 to 32 sub-fields"
+	ruleObjectDepth  = "nests an object inside an object"
+)
+
+// CheckObjectFields returns the findings of the nested record fields of a spec model: an object field takes no scalar
+// keyword of its own, it holds 1 to 32 sub-fields, and a sub-field holds no object of its own, so a record nests one
+// level only. The schema states the same rules for documents. The validation and the engine constructor both call it,
+// so a model built by hand meets the same refusals as a document. Each finding names the field path and a fixed rule.
+func CheckObjectFields(s *Spec) []Finding {
+	var fs []Finding
+	for i, op := range s.Operations {
+		base := "/operations/" + strconv.Itoa(i) + "/response/fields"
+		var names []string
+		for name := range op.Response.Fields {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			fs = append(fs, checkObjectField(base+"/"+safeName(name), op.Response.Fields[name])...)
+		}
+	}
+	return fs
+}
+
+// checkObjectField checks one response field. A scalar field passes with no finding.
+func checkObjectField(at string, f Field) []Finding {
+	if f.Object == nil {
+		return nil
+	}
+	if f.Pointer != "" || f.Required || f.Format != "" || f.Convert != "" {
+		return []Finding{finding(at, ruleObjectScalar)}
+	}
+	if len(f.Object) < 1 || len(f.Object) > maxObjectFields {
+		return []Finding{finding(at+"/object", ruleObjectCount)}
+	}
+	var fs []Finding
+	var names []string
+	for name := range f.Object {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		if f.Object[name].Object != nil {
+			fs = append(fs, finding(at+"/object/"+safeName(name)+"/object", ruleObjectDepth))
 		}
 	}
 	return fs

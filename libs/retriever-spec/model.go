@@ -146,8 +146,9 @@ type Response struct {
 	Errors map[string]string `json:"errors,omitempty"`
 }
 
-// Field is one output field: the JSON pointer that reads it, whether the reply must hold it, the closed format that
-// checks it, and the converter that cleans it, when a converter is set.
+// Field is one output field: either the JSON pointer that reads a scalar, with whether the reply must hold it, the
+// closed format that checks it, and the converter that cleans it, when a converter is set; or one level of object with
+// the sub-fields that each read their own pointer. An object field takes no scalar keyword of its own.
 type Field struct {
 	// Pointer is the JSON pointer of the value in the reply.
 	Pointer string `json:"pointer"`
@@ -157,6 +158,9 @@ type Field struct {
 	Format string `json:"format,omitempty"`
 	// Convert is plain, markdown-from-html, or markdown-from-adf. Empty means plain.
 	Convert string `json:"convert,omitempty"`
+	// Object holds the sub-fields of a nested record field, each a scalar field of its own pointer. A sub-field holds
+	// no object of its own, so a record nests one level only.
+	Object map[string]Field `json:"object,omitempty"`
 }
 
 // Pagination says how a read walks the pages. It always names a stop rule: the page cap, which is at most 20.

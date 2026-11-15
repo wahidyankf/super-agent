@@ -255,6 +255,19 @@ var faults = []fault{
 		path: "/operations/4/response/fields/slug/format", echo: "share_id",
 		doc: efx("          format: share-id", "          format: share_id")},
 
+	// E4: a nested record with an allow-list. An object holds 1 to 32 pointer sub-fields and nests one level only,
+	// and it takes no scalar keyword of its own. The nested-record read is operation 4 of these rows.
+	{name: "an object inside an object is refused", layer: layerSchema, threats: []string{"L5"},
+		path: "/operations/4/response/fields/user/object/id/object",
+		doc: nfx("            id:\n              pointer: /data/user/id",
+			"            id:\n              object:\n                leaf:\n                  pointer: /data/user/id")},
+	{name: "an object with 33 sub-fields is refused", layer: layerSchema, threats: []string{"L5"},
+		path: "/operations/4/response/fields/user/object",
+		doc:  func() string { return nestedWithFields(33) }},
+	{name: "an object field with a pointer is refused", layer: layerSchema, threats: []string{"L5"},
+		path: "/operations/4/response/fields/user/pointer",
+		doc:  nfx("        user:\n          object:", "        user:\n          pointer: /data/user\n          object:")},
+
 	// Rules that only the Go validation states, because a JSON Schema cannot compare two fields of one document.
 	{name: "a built-in kind is refused", layer: layerSemantic, threats: []string{"S10"}, path: "/kind",
 		doc: fx("kind: example-wiki", "kind: outline")},
