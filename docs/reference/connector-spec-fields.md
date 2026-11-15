@@ -258,6 +258,21 @@ The review text lists each body-paged read in its own block, with its style, its
   `TestGatewayServesNotificationWritesOnTheEngine` (both notification writes run on the engine with every row
   field), `TestBoolMapRefusesScalarKeywords`, and `TestDynamicRecordFieldsStayRefused`.
 - `markdown`: the output field that holds the Markdown body, for a document read. It must name a field.
+- `document`: the Markdown layout of a read of one object, rendered from the mapped fields into the `markdown`
+  output field, in place of a `markdown` key naming a field. It names `title` (the output field whose value renders
+  as `# <title>`, one collapsed line), `lines` (one to 32 metadata lines, each `- <label>: <value>` with a constant
+  label of 1 to 32 characters), and `body` (the description body). A line names one closed kind: `field` escapes
+  its value with the moved `escapeText` algorithm, `verbatim` writes a shape-checked key or date as is, and `pair`
+  renders `name (key)` escaped, or the bare key when the name is empty. `join` renders a string list with the fixed
+  separator `", "`. `default` fills an empty value with its closed constant; `skip_empty` omits the line when the
+  value is still empty; otherwise the line is emitted even when empty, as the Go code emits Reporter. `valid`
+  checks the value against the issue-key shape, emptying it when it does not pass. The body names `field` (the
+  output field whose converted value it renders), `convert` (`markdown-from-adf`, matching the converter of its
+  field), `heading` (the fixed heading of `## <heading>`), and `empty` (the closed constant of a blank
+  description). Only a read of one object declares one, and an example may expect `markdown` exactly then.
+  Proof: `TestDocLayoutPlantStaysText` (a planted heading and link stay literal),
+  `TestDocLayoutSkipsEmptyLines` (an empty resolution, parent, and due leave no line), and
+  `TestDocLayoutDefaultsExact` (`Unassigned` and `(no description)` byte-identical).
 - `errors`: a map from HTTP status, from 100 to 599, to a reason from the closed list in the error section.
 - `unavailable_message`: the exact body message that proves the method is missing. A 404 carrying exactly this message
   fails as `operation_unavailable` instead of the mapped reason, so one status tells a missing object from a missing
@@ -285,7 +300,8 @@ lists each read with an issue key in its own block, with the path parameter, and
 its own block, with the last flag, the cut parameter, and the truncated pointers. The review text lists each read
 with a key echo in its own block, with the parameter and the pointer, and each read with built IDs in its own block,
 with each field, the ID it builds, and the pointer it builds it from, joining the built fields of every list under
-the same operation. Dual pointers,
+the same operation. The review text lists each read with a document layout in its own block, with the title field,
+the line count, and the body field with its heading. Dual pointers,
 the body-matched 404 rule, and converters add no review block: the review names rules, never reply shapes.
 
 There are no expressions. A pointer reads, and nothing computes.
@@ -374,4 +390,7 @@ converter, described above with the response converters. The Jira port then need
 built the first two, the `IssueKey` parameter kind and the page-end rule, described above with the parameters, the
 pagination, and the response. Pull request 34 built the next one, the `jira-time`, `jira-date`, and `jira-title`
 text converters, described above with the response converters. Pull request 35 built the next two, the key echo and
-the built IDs, described above with the response and its review blocks. The document layout stays planned.
+the built IDs, described above with the response and its review blocks. Pull request 36 built the last one, the
+document layout with its title, closed line kinds, and description body, described above with the response and its
+review block. All six Jira extensions are built: the issue key, the page end, the text converters, the key echo,
+the built IDs, and the document layout.
