@@ -44,7 +44,7 @@ func treeRoot() map[string]any {
 // 79, so the failure proves the cap is shared across the computed copies too.
 func TestTreeOutputSharesBudget(t *testing.T) {
 	budget := 80
-	items, err := treeRecords(treeOp(), domain.NewArgs(nil), treeRoot(), &budget)
+	items, err := treeRecords(treeOp(), domain.NewArgs(nil), treeRoot(), &budget, "https://docs.example.test")
 	if err != nil {
 		t.Fatalf("a tree within the shared cap was refused: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestTreeOutputSharesBudget(t *testing.T) {
 		t.Fatalf("budget = %d, want 0 after the shared charge of 80", budget)
 	}
 	budget = 79
-	if _, err := treeRecords(treeOp(), domain.NewArgs(nil), treeRoot(), &budget); !errors.Is(err, domain.ErrReplyTooLarge) {
+	if _, err := treeRecords(treeOp(), domain.NewArgs(nil), treeRoot(), &budget, "https://docs.example.test"); !errors.Is(err, domain.ErrReplyTooLarge) {
 		t.Fatalf("a tree past the shared cap = %v, want ErrReplyTooLarge", err)
 	}
 }
@@ -81,7 +81,7 @@ func TestTreeRefusesBadShapes(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			budget := 10000
-			items, err := treeRecords(op, domain.NewArgs(nil), c.root, &budget)
+			items, err := treeRecords(op, domain.NewArgs(nil), c.root, &budget, "https://docs.example.test")
 			if c.want < 0 {
 				if !errors.Is(err, domain.ErrUnexpectedResponse) {
 					t.Fatalf("a tree of %s = %v, want ErrUnexpectedResponse", c.name, err)

@@ -280,7 +280,7 @@ func (e *Engine) run(ctx context.Context, o spec.Operation, args domain.Args) (d
 	if err != nil {
 		return domain.Record{}, err
 	}
-	return mapReply(o, args, root, &budget)
+	return mapReply(o, args, root, &budget, e.base)
 }
 
 // fetch renders the request of one page and sends it. A refused argument or header fails here, before any request.
@@ -337,20 +337,21 @@ func converterUnsupported(o spec.Operation) error {
 
 // mapReply maps a reply to a list, to the first item of a list, to a merged list, to a flattened tree, or to one
 // object, by which shape the operation names. A response holds at most one of items, first, and merge, and a tree
-// rides on items.
-func mapReply(o spec.Operation, args domain.Args, root any, budget *int) (domain.Record, error) {
+// rides on items. A read of one object with the key echo checks the mapped reply after mapping: the text at the
+// pointer must equal the request argument exactly.
+func mapReply(o spec.Operation, args domain.Args, root any, budget *int, base string) (domain.Record, error) {
 	if o.Response.First != "" {
-		return firstRecord(o, root, budget)
+		return firstRecord(o, root, budget, base)
 	}
 	if o.Response.Merge != nil {
-		items, err := mergeRecords(o, root, budget)
+		items, err := mergeRecords(o, root, budget, base)
 		if err != nil {
 			return domain.Record{}, err
 		}
 		return domain.NewList(items), nil
 	}
 	if o.Response.Items != "" {
-		items, err := pageItems(o, args, root, budget)
+		items, err := pageItems(o, args, root, budget, base)
 		if err != nil {
 			return domain.Record{}, err
 		}
@@ -360,7 +361,14 @@ func mapReply(o spec.Operation, args domain.Args, root any, budget *int) (domain
 	if !ok {
 		return domain.Record{}, domain.ErrUnexpectedResponse
 	}
-	return mapRecord(o.Response.Fields, obj, budget)
+	rec, err := mapRecord(o.Response.Fields, obj, budget, base)
+	if err != nil {
+		return domain.Record{}, err
+	}
+	if err := checkEchoValue(o, args, root); err != nil {
+		return domain.Record{}, err
+	}
+	return rec, nil
 }
 
 // pagingStyle returns the paging style of an operation, and "none" when it has no paging.
@@ -427,6 +435,8 @@ func checkSpecShape(model *spec.Spec) error {
 	fs = append(fs, spec.CheckTree(model)...)
 	fs = append(fs, spec.CheckFallback(model)...)
 	fs = append(fs, spec.CheckPageEnd(model)...)
+	fs = append(fs, spec.CheckEcho(model)...)
+	fs = append(fs, spec.CheckBuiltFields(model)...)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {
@@ -473,23 +483,21 @@ func pathOK(path string) bool {
 
 // pointersOf returns every JSON pointer that a read of the operation names: the items list, the first list, the
 // lists of a merge with the pointers of each of their fields, the fields with the pointers of each nested sub-field,
-// and the cursor. The label field of a merge is a constant, never a pointer.
+// the key echo pointer, the built ID pointers, and the cursor. The label field of a merge is a constant, never a
+// pointer.
 func pointersOf(o spec.Operation) []string {
 	out := []string{o.Response.Items, o.Response.First}
+	if o.Response.Echo != nil {
+		out = append(out, o.Response.Echo.Pointer)
+	}
 	for _, f := range o.Response.Fields {
-		out = append(out, f.Pointer, f.FallbackPointer)
-		for _, name := range sortedKeys(f.Object) {
-			out = append(out, f.Object[name].Pointer, f.Object[name].FallbackPointer)
-		}
+		out = append(out, fieldPointers(f)...)
 	}
 	if o.Response.Merge != nil {
 		for _, l := range o.Response.Merge.Lists {
 			out = append(out, l.Items)
 			for _, f := range l.Fields {
-				out = append(out, f.Pointer, f.FallbackPointer)
-				for _, name := range sortedKeys(f.Object) {
-					out = append(out, f.Object[name].Pointer, f.Object[name].FallbackPointer)
-				}
+				out = append(out, fieldPointers(f)...)
 			}
 		}
 	}
@@ -502,6 +510,17 @@ func pointersOf(o spec.Operation) []string {
 	}
 	if o.Response.Truncated != nil {
 		out = append(out, o.Response.Truncated.Token, o.Response.Truncated.Last)
+	}
+	return out
+}
+
+// fieldPointers returns every JSON pointer that one response field names: its pointer, its fallback pointer, its
+// built ID pointer, and the pointers of each nested sub-field.
+func fieldPointers(f spec.Field) []string {
+	out := []string{f.Pointer, f.FallbackPointer, f.ProjectKey, f.IssueID, f.CollectionID, f.BrowseURL}
+	for _, name := range sortedKeys(f.Object) {
+		sub := f.Object[name]
+		out = append(out, sub.Pointer, sub.FallbackPointer, sub.ProjectKey, sub.IssueID, sub.CollectionID, sub.BrowseURL)
 	}
 	return out
 }

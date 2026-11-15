@@ -144,16 +144,16 @@ func TestListItemsNeedsAListOfObjects(t *testing.T) {
 		Fields: map[string]spec.Field{"id": {Pointer: "/id"}},
 	}}
 	budget := 1000
-	if _, err := listItems(o, map[string]any{"items": "text"}, &budget); !errors.Is(err, domain.ErrUnexpectedResponse) {
+	if _, err := listItems(o, map[string]any{"items": "text"}, &budget, "https://docs.example.test"); !errors.Is(err, domain.ErrUnexpectedResponse) {
 		t.Fatalf("items that is text = %v, want ErrUnexpectedResponse", err)
 	}
-	if _, err := listItems(o, map[string]any{"items": []any{"x"}}, &budget); !errors.Is(err, domain.ErrUnexpectedResponse) {
+	if _, err := listItems(o, map[string]any{"items": []any{"x"}}, &budget, "https://docs.example.test"); !errors.Is(err, domain.ErrUnexpectedResponse) {
 		t.Fatalf("an item that is text = %v, want ErrUnexpectedResponse", err)
 	}
-	if _, err := listItems(o, map[string]any{}, &budget); !errors.Is(err, domain.ErrUnexpectedResponse) {
+	if _, err := listItems(o, map[string]any{}, &budget, "https://docs.example.test"); !errors.Is(err, domain.ErrUnexpectedResponse) {
 		t.Fatalf("a missing list = %v, want ErrUnexpectedResponse", err)
 	}
-	items, err := listItems(o, map[string]any{"items": []any{map[string]any{"id": "doc-1"}}}, &budget)
+	items, err := listItems(o, map[string]any{"items": []any{map[string]any{"id": "doc-1"}}}, &budget, "https://docs.example.test")
 	if err != nil || len(items) != 1 || items[0].Str("id") != "doc-1" {
 		t.Fatalf("listItems = %v, %v; want one document", items, err)
 	}

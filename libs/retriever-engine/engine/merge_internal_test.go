@@ -33,7 +33,7 @@ func mergeRoot() map[string]any {
 // per list would pass either list alone at 43, so the failure proves the cap is shared.
 func TestMergeOutputCap(t *testing.T) {
 	budget := 44
-	items, err := mergeRecords(mergeOp(), mergeRoot(), &budget)
+	items, err := mergeRecords(mergeOp(), mergeRoot(), &budget, "https://docs.example.test")
 	if err != nil {
 		t.Fatalf("a merge within the shared cap was refused: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestMergeOutputCap(t *testing.T) {
 		t.Fatalf("budget = %d, want 0 after the shared charge of 44", budget)
 	}
 	budget = 43
-	if _, err := mergeRecords(mergeOp(), mergeRoot(), &budget); !errors.Is(err, domain.ErrReplyTooLarge) {
+	if _, err := mergeRecords(mergeOp(), mergeRoot(), &budget, "https://docs.example.test"); !errors.Is(err, domain.ErrReplyTooLarge) {
 		t.Fatalf("a merge past the shared cap = %v, want ErrReplyTooLarge", err)
 	}
 }
@@ -65,7 +65,7 @@ func TestMergeRefusesAMissingRequiredField(t *testing.T) {
 		"docs":  []any{map[string]any{"bio": "0123456789abcdef"}},
 	}
 	budget := 1000
-	if _, err := mergeRecords(op, root, &budget); !errors.Is(err, domain.ErrUnexpectedResponse) {
+	if _, err := mergeRecords(op, root, &budget, "https://docs.example.test"); !errors.Is(err, domain.ErrUnexpectedResponse) {
 		t.Fatalf("a merge with a missing required field = %v, want ErrUnexpectedResponse", err)
 	}
 }
