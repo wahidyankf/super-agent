@@ -40,17 +40,20 @@ func intPtr(v int) *int {
 }
 
 // TestUnsupportedRefusesAResolveAndAConverter checks each part of a read that a later pull request serves: a name that is
-// resolved, and a Markdown converter. An operation with neither is served.
+// resolved, and the HTML converter. The ADF converter is served, so an operation naming it passes the gate. An operation
+// with neither is served.
 func TestUnsupportedRefusesAResolveAndAConverter(t *testing.T) {
 	resolve := spec.Operation{Params: []spec.Param{{Name: "name", Resolve: &spec.Resolve{Operation: "x.y.z", Field: "id"}}}}
 	if err := unsupported(resolve); !errors.Is(err, domain.ErrUnsupportedOperation) {
 		t.Fatalf("a resolve = %v, want ErrUnsupportedOperation", err)
 	}
-	for _, convert := range []string{"markdown-from-html", "markdown-from-adf"} {
-		conv := spec.Operation{Response: spec.Response{Fields: map[string]spec.Field{"body": {Pointer: "/body", Convert: convert}}}}
-		if err := unsupported(conv); !errors.Is(err, domain.ErrUnsupportedOperation) {
-			t.Fatalf("a %s converter = %v, want ErrUnsupportedOperation", convert, err)
-		}
+	html := spec.Operation{Response: spec.Response{Fields: map[string]spec.Field{"body": {Pointer: "/body", Convert: "markdown-from-html"}}}}
+	if err := unsupported(html); !errors.Is(err, domain.ErrUnsupportedOperation) {
+		t.Fatalf("an HTML converter = %v, want ErrUnsupportedOperation", err)
+	}
+	adf := spec.Operation{Response: spec.Response{Fields: map[string]spec.Field{"body": {Pointer: "/body", Convert: "markdown-from-adf"}}}}
+	if err := unsupported(adf); err != nil {
+		t.Fatalf("an ADF converter = %v, want nil", err)
 	}
 	if err := unsupported(spec.Operation{}); err != nil {
 		t.Fatalf("a plain operation = %v, want nil", err)

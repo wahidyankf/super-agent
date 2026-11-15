@@ -11,7 +11,7 @@ import (
 )
 
 // TestEditorConverterIsServed checks that the converter gate lets the editor-data converter through for reads,
-// unlike the two Markdown converters it refuses before any request.
+// unlike the HTML converter it refuses before any request.
 func TestEditorConverterIsServed(t *testing.T) {
 	op := spec.Operation{Response: spec.Response{Fields: map[string]spec.Field{
 		"text": {Pointer: "/text", Convert: "text-from-editor-data"},
