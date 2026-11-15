@@ -385,6 +385,11 @@ func checkSpecShape(model *spec.Spec) error {
 				fs = append(fs, specFinding(base+"/response", "has a pointer that does not start with a slash"))
 			}
 		}
+		for name, f := range o.Response.Fields {
+			if f.Format != "" && f.Format != "id" && f.Format != "uuid" && f.Format != "share-id" {
+				fs = append(fs, specFinding(base+"/response/fields/"+name+"/format", "is not id, uuid, or share-id"))
+			}
+		}
 	}
 	if len(fs) > 0 {
 		return &spec.InvalidError{Findings: fs}
