@@ -166,6 +166,45 @@ func TestReviewListsTheBundledMapping(t *testing.T) {
 	}
 }
 
+// TestReviewListsIssueKeysAndPageEnds checks the blocks of the issue key and the page end: the read with the IssueKey
+// path parameter, the offset read with the last flag and the cut, and the cursor read with the truncated pointers. A
+// spec with neither writes no block, so the golden review keeps its text.
+func TestReviewListsIssueKeysAndPageEnds(t *testing.T) {
+	keyReview := Review(requireValid(t, issueKeyDoc).Spec)
+	for _, line := range []string{
+		"Issue keys: 1",
+		"1. example-wiki.issues.get: path parameter issueKey",
+	} {
+		if !strings.Contains(keyReview, line) {
+			t.Fatalf("the review has no line %q:\n%s", line, keyReview)
+		}
+	}
+	pageReview := Review(requireValid(t, pageEndDoc).Spec)
+	for _, line := range []string{
+		"Page ends: 1",
+		"1. example-wiki.projects.list: last of /isLast; cut to limit",
+	} {
+		if !strings.Contains(pageReview, line) {
+			t.Fatalf("the review has no line %q:\n%s", line, pageReview)
+		}
+	}
+	truncatedReview := Review(requireValid(t, truncatedDoc).Spec)
+	for _, line := range []string{
+		"Page ends: 1",
+		"1. example-wiki.issues.search: last of /isLast; truncated of /nextPageToken and /isLast",
+	} {
+		if !strings.Contains(truncatedReview, line) {
+			t.Fatalf("the review has no line %q:\n%s", line, truncatedReview)
+		}
+	}
+	if strings.Contains(Review(requireValid(t, exampleWiki).Spec), "Issue keys") {
+		t.Fatal("the review of a spec with no issue key names issue keys")
+	}
+	if strings.Contains(Review(requireValid(t, exampleWiki).Spec), "Page ends") {
+		t.Fatal("the review of a spec with no page end names page ends")
+	}
+}
+
 // authLine returns the authentication line of a review.
 func authLine(review string) string {
 	for _, l := range strings.Split(review, "\n") {

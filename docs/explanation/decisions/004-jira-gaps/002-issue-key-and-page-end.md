@@ -11,7 +11,9 @@ tags:
 
 # E19 and E20: the issue key and the page end
 
-This page belongs to [ADR 004](../004-jira-gaps.md). E19 and E20 are built by pull request 33. They cover J0,
+This page belongs to [ADR 004](../004-jira-gaps.md). Pull request 33 built E19 and E20 as described here: the
+`IssueKey` parameter kind with its shared strict check, the `last_pointer` stop rule, the `cut_to_limit` cut, and
+the computed `truncated` flag. E21 to E24 stay planned on their own pages. E19 and E20 cover J0,
 the `IssueKey` path parameters of `issues.get` and `comments.list`; J1, the `isLast` flag of `projects.list`
 and `issues.search`; and J2, the cut of a page that holds more items than the limit.
 

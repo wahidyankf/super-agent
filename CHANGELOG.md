@@ -24,6 +24,13 @@ upgrade.
 
 ### Added
 
+- The spec language admits the `IssueKey` path parameter kind with the shared strict check of the catalog: a value
+  outside the shape fails before any request with `invalid_document_id`, and never echoes the value. An offset read
+  may declare the page-end rule: `last_pointer` names the reply flag that decides last, beating the short-page rule,
+  and `cut_to_limit` names the `Limit` or `Int` parameter whose value cuts an over-limit page to its first items. A
+  cursor rule declaring `last_pointer` may declare the computed `truncated` block, so each item tells whether a
+  next-page token is present while the reply is not last. The schema stays at version 1; `retriever-spec` and
+  `retriever-engine` are at `v0.6.0`.
 - The engine serves the `markdown-from-adf` converter as a pure function of the reply, so an operation that names it
   no longer fails. The Jira converter tests pass unchanged against the moved engine function, and a document tree
   nested past the depth cap ends with the truncation marker. The Jira module keeps its copy of the function until it
@@ -175,7 +182,7 @@ upgrade.
   build cannot require the libraries until one is.
 - The split changes no behaviour of the `retriever` command-line tool: no command, flag, exit status, or JSON output
   changes.
-- `retriever-spec` and `retriever-engine` are at `v0.5.0`, and the other libraries stay at `v0.4.0`. The connector spec
+- `retriever-spec` and `retriever-engine` are at `v0.6.0`, and the other libraries stay at `v0.4.0`. The connector spec
   language gains POST reads, and the engine gains the `body_limit` code.
 - Each Go module has its own coverage gate, held to a 99 percent floor. The app and each library are measured
   separately, and no profile merges them.
