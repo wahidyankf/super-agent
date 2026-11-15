@@ -145,6 +145,15 @@ The review text lists each body-paged read in its own block, with its style, its
   including `required`, `format`, and one level of `object`). The output keeps the declared list order, then the reply
   order, and it shares the output cap of any list. The label beats a reply field of the same name. A pointer that
   names no list, and an item that is not an object, end with `unexpected_response`.
+- `tree`: a tree read that flattens the nested nodes of the `items` list depth first, in place of `first` and of
+  `merge`. It names `children` (a JSON pointer to the child nodes of one node, read relative to the node),
+  `parent_field` and `depth_field` (the output fields that carry the parent and the depth of each node), an optional
+  `root_parent_param` (the read parameter whose value is the parent of the top nodes, null when it names none), and
+  an optional `max_depth` (the deepest node the read keeps, 64 when unset, and never above 64). The parent of a node
+  is the id of its parent node, so the response holds a required `id` field; the depth counts from 0. A node deeper
+  than the cap, and its subtree, is left out. The computed fields beat a mapped reply field of the same name. A
+  reply with `tree` decodes to a fixed higher cap of 146 levels, which covers a tree of 70 levels; no spec field sets
+  it, and no other reply changes.
 - `fields`: a map from output field to an object with `pointer`, a JSON pointer into the reply, an optional `required`,
   an optional closed `format`, and an optional `convert`. The converter is `plain`, `markdown-from-html`, or
   `markdown-from-adf`. The engine does not serve the two Markdown converters yet. A spec that names one still loads,
@@ -167,7 +176,9 @@ each checked field with its closed format name. The review text lists each opera
 its own block, with the object field and each sub-field. The review text lists each first-item read in its own
 block, with the operation and the list pointer as `first of /data`. The review text lists each merge read in its own
 block, with the label field and each list as `<label> of <pointer>`, and it joins the required, checked, and nested
-fields of every list under the same operation.
+fields of every list under the same operation. The review text lists each tree read in its own block, with the items
+pointer, the children pointer, the computed fields, the root parent parameter when the read names one, and the depth
+cap.
 
 There are no expressions. A pointer reads, and nothing computes.
 
@@ -190,8 +201,8 @@ The language cannot yet express the Outline reads, so they still run on the Go g
 - A field is never required. A field takes `required` and a closed `format` now, which is described in
   [Response](#response), so this limit no longer blocks a read. A missing optional field still maps to null.
 - A field holds one scalar or one nested record, which is described in [Response](#response). The first item of a
-  list and a list merged from several lists are described in [Response](#response); a tree with a computed depth and
-  a fallback read have no form in the language.
+  list, a list merged from several lists, and a tree with a computed depth are described in [Response](#response); a
+  fallback read has no form in the language.
 
 A spec named `outline` is also refused, because the kind is a built-in source. A bundled Outline spec would need an
 exception for bundled files only.
@@ -210,9 +221,10 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 ## Planned extensions
 
 [ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
-that the Outline, Kiwi, and Jira connectors can run as specs. The first six of them, POST reads (E1), body paging
+that the Outline, Kiwi, and Jira connectors can run as specs. The first seven of them, POST reads (E1), body paging
 (E2), required and validated fields (E3), nested records with an allow-list (E4), the first item or not found
-(E5), and merged lists with constant labels (E6), are built and described above. The other three are not built. The
+(E5), merged lists with constant labels (E6), and computed tree fields (E7), are built and described above. The
+other two are not built. The
 limits of the Outline reads, above, describe
 the language before ADR 002 for the
 shapes that the remaining extensions cover. This page documents only what the module accepts today, and each extension
