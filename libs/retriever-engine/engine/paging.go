@@ -34,6 +34,7 @@ func (e *Engine) readOffset(ctx context.Context, o spec.Operation, args domain.A
 	bodyMode := pag.In == "body"
 	var records []domain.Record
 	var last domain.Page
+	cut := cutOf(o, args)
 	for i := 0; i < e.pageCap(o); i++ {
 		if offset >= maxOffsetValue {
 			return domain.Record{}, domain.ErrInvalidOffset
@@ -59,7 +60,21 @@ func (e *Engine) readOffset(ctx context.Context, o spec.Operation, args domain.A
 		if err != nil {
 			return domain.Record{}, err
 		}
+		items, cutMore := cutPage(items, cut)
 		records = append(records, items...)
+		if pag.LastPointer != "" {
+			lastFlag, err := lastOf(root, pag.LastPointer)
+			if err != nil {
+				return domain.Record{}, err
+			}
+			last = domain.Page{Paged: true, Offset: offset, HasMore: !lastFlag || cutMore,
+				NextOffset: offset + len(items)}
+			if lastFlag && !cutMore {
+				break
+			}
+			offset += len(items)
+			continue
+		}
 		last = domain.NewPage(offset, limit, len(items))
 		if len(items) < limit {
 			break
@@ -105,6 +120,20 @@ func (e *Engine) readCursor(ctx context.Context, o spec.Operation, args domain.A
 		items, err := pageItems(o, args, root, budget)
 		if err != nil {
 			return domain.Record{}, err
+		}
+		var cutMore bool
+		items, cutMore = cutPage(items, cutOf(o, args))
+		if o.Response.Truncated != nil {
+			flag, err := truncatedOf(root, *o.Response.Truncated, cutMore)
+			if err != nil {
+				return domain.Record{}, err
+			}
+			for i := range items {
+				items[i], err = withComputedField(items[i], truncatedField, flag, budget)
+				if err != nil {
+					return domain.Record{}, err
+				}
+			}
 		}
 		records = append(records, items...)
 		next, found := pointerValue(root, pag.NextPointer)

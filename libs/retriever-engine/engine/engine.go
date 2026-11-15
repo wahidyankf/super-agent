@@ -425,6 +425,7 @@ func checkSpecShape(model *spec.Spec) error {
 	fs = append(fs, spec.CheckMerge(model)...)
 	fs = append(fs, spec.CheckTree(model)...)
 	fs = append(fs, spec.CheckFallback(model)...)
+	fs = append(fs, spec.CheckPageEnd(model)...)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {
@@ -496,6 +497,10 @@ func pointersOf(o spec.Operation) []string {
 	}
 	if o.Pagination != nil {
 		out = append(out, o.Pagination.NextPointer)
+		out = append(out, o.Pagination.LastPointer)
+	}
+	if o.Response.Truncated != nil {
+		out = append(out, o.Response.Truncated.Token, o.Response.Truncated.Last)
 	}
 	return out
 }

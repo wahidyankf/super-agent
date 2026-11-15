@@ -183,6 +183,9 @@ type Response struct {
 	Fields map[string]Field `json:"fields,omitempty"`
 	// Markdown names the output field that holds the Markdown body of a document read.
 	Markdown string `json:"markdown,omitempty"`
+	// Truncated is the computed per-item flag of a cursor read with the page-end rule. It is nil unless the read
+	// marks each item truncated when a next-page token is present and the reply is not last.
+	Truncated *Truncated `json:"truncated,omitempty"`
 	// Errors maps an HTTP status to the closed reason that the status means.
 	Errors map[string]string `json:"errors,omitempty"`
 	// UnavailableMessage is the exact body message that proves the method is missing: a 404 carrying exactly this
@@ -199,6 +202,16 @@ type Merge struct {
 	LabelField string `json:"label_field"`
 	// Lists holds two to eight lists to merge, in the order their items join the output.
 	Lists []MergeList `json:"lists"`
+}
+
+// Truncated is the computed per-item flag of a cursor read with the page-end rule: it names the reply pointer of the
+// next-page token and the reply pointer of the last flag. Each item gains truncated, which is true exactly when the
+// token is present and non-empty and last is false.
+type Truncated struct {
+	// Token is the JSON pointer of the next-page token in the reply. A missing token counts as empty.
+	Token string `json:"token"`
+	// Last is the JSON pointer of the last flag in the reply. A missing last counts as false.
+	Last string `json:"last"`
 }
 
 // MergeList is one list of a merge: the pointer to the list in the reply, the constant label of its items, and the
@@ -287,6 +300,12 @@ type Pagination struct {
 	CursorParam string `json:"cursor_param,omitempty"`
 	// NextPointer is the JSON pointer to the next cursor in the reply of a cursor read.
 	NextPointer string `json:"next_pointer,omitempty"`
+	// LastPointer is the JSON pointer to the reply flag that decides last: when the flag is true the read claims no
+	// further page, beating the short-page rule. Empty means the short-page rule decides.
+	LastPointer string `json:"last_pointer,omitempty"`
+	// CutToLimit names the Limit or Int parameter whose value cuts the page: a page holding more items than that
+	// value keeps the first items and claims more. Empty means no cut.
+	CutToLimit string `json:"cut_to_limit,omitempty"`
 }
 
 // Surface says whether the command-line tool or the MCP server offers an operation. A document sets it to a boolean,

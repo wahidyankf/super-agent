@@ -92,16 +92,21 @@ The review text lists each POST read in its own block, with its path and the slo
 ## Parameters
 
 Each parameter has `name`, `type`, `in` (`path`, `query`, or `body`), and `required`. It may have `default`, `min`,
-`max`, `values`, `help`, and `resolve`. The `type` is one of the 27 parameter kinds of the operation catalog, such as
+`max`, `values`, `help`, and `resolve`. The `type` is one of the 28 parameter kinds of the operation catalog, such as
 `ID`, `Query`, `Limit`, `Enum`, `Time`, and `URL`, so every adapter validates a value the same way. A bundled port
-also uses `CollectionID`, `CollectionUUID`, and `DocumentID`, which validate as an opaque ID or UUID, and `Icon`,
-`URLList`, and `EventList`, which validate exactly as the catalog does: an icon is one emoji, a named icon, or an
-attachment UUID, but never blank; a URL list holds 1 to 10 HTTPS addresses of at most 1024 characters each; an event
-list holds at most 50 event names, each `*` or a dotted name such as `documents.create`. Names start
-lower-case and may hold upper-case letters, so a bundled operation names the catalog parameters exactly
+also uses `CollectionID`, `CollectionUUID`, and `DocumentID`, which validate as an opaque ID or UUID, `IssueKey`,
+which validates as the strict upper-case issue key with no lowercase, missing hyphen, leading zero, or traversal
+text, and `Icon`, `URLList`, and `EventList`, which validate exactly as the catalog does: an icon is one emoji, a
+named icon, or an attachment UUID, but never blank; a URL list holds 1 to 10 HTTPS addresses of at most 1024
+characters each; an event list holds at most 50 event names, each `*` or a dotted name such as `documents.create`.
+Names start lower-case and may hold upper-case letters, so a bundled operation names the catalog parameters exactly
 (`collectionId`, `searchSource`). Two rules narrow the type:
 
-- A path parameter has type `ID`, `UUID`, or `ShareID`, and it is always required. The path must use it.
+- A path parameter has type `ID`, `UUID`, `ShareID`, or `IssueKey`, and it is always required. The path must use it.
+  The engine binds `IssueKey` through the existing `KindIssueKey` validator, so a value outside the shape fails
+  before any request with `invalid_document_id` for the path parameter, and the failure never echoes the value. Proof:
+  `TestIssueKeyLowercaseIsInvalid`, `TestIssueKeyTraversalIsInvalid`, `TestIssueKeyRefusalNamesPath`, and
+  `TestIssueKeyCanonicalAccepted`.
 - A query parameter may not have a credential-shaped name, such as `api_key`, `token`, `secret`, or `password`.
 
 Each name is unique within its operation. An `Enum` or `EnumList` parameter lists its `values`.
@@ -132,11 +137,18 @@ alone sets them. The header parameter location of the draft is not in the spec: 
 - `offset`: needs `limit_param` and `offset_param`. With `in: query` both name query parameters of the operation; with
   `in: body` both name body parameters, and the values travel in the JSON body instead of the query. The offset is a
   non-negative integer below 2^31. The engine advances it by the number of items in the page, and stops at the first
-  short page. At the cap it returns the pages it has, with a continuation that names the next offset.
+  short page. At the cap it returns the pages it has, with a continuation that names the next offset. An offset read
+  may declare the page-end rule instead: `last_pointer` (a JSON pointer in the reply to the flag that decides last)
+  and `cut_to_limit` (a `Limit` or `Int` parameter whose value cuts the page). The reply must hold a bool at the last
+  pointer or the read fails with `unexpected_response` naming the pointer path; more is the negation of that flag,
+  beating the short-page rule, so a full page with `isLast` true claims no further page. A page holding more items
+  than the cut keeps the first items and claims more, so no item is lost from the next page. Proof:
+  `TestLastPointerFullPageIsLast`, `TestLastPointerMissingIsUnexpected`, and `TestCutToLimitKeepsFirstN`.
 - `cursor`: needs `cursor_param` and `next_pointer`, a JSON pointer in the reply. The location rule is the same: with
   `in: body` the cursor parameter is a body parameter, and the value travels in the JSON body. A next cursor that
   repeats one already sent ends the read, so a reply that never advances cannot run to the cap. At the cap the engine
-  returns the pages it has, with no continuation.
+  returns the pages it has, with no continuation. A cursor rule that declares `last_pointer` may also declare the
+  computed `truncated` flag; see the `truncated` entry under `Response`.
 - `page-all`: reads every page of an operation that declares no page parameters, until a short page, with no
   continuation. The engine spaces the requests 100 ms apart, mirroring the pacing of the Go reader it replaces. At
   the cap it fails with the page-cap error instead of returning the pages it has. A `page-all` rule on a write is
@@ -169,6 +181,14 @@ The review text lists each body-paged read in its own block, with its style, its
   than the cap, and its subtree, is left out. The computed fields beat a mapped reply field of the same name. A
   reply with `tree` decodes to a fixed higher cap of 146 levels, which covers a tree of 70 levels; no spec field sets
   it, and no other reply changes.
+- `truncated`: the computed per-item flag of a cursor read with the page-end rule. It names `token` (the JSON pointer
+  of the next-page token) and `last` (the JSON pointer of the last flag). Each item gains `truncated`, which is true
+  exactly when the token is present and non-empty and last is false, or when the cut kept only the first items. A
+  missing token counts as empty and a missing last counts as false, as the Go code reads them. A non-bool last or a
+  non-string token fails with `unexpected_response` naming the path. The block is allowed only with a cursor rule that
+  declares `last_pointer`; an example may expect `truncated` exactly then, like the computed parent and depth fields
+  of a tree read. The flag beats a mapped reply field of the same name. Proof: `TestTruncatedNeedsTokenAndNotLast` and
+  `TestTruncatedMissingTokenIsFalse`.
 - `fallback`: a declared second read of one object, run when the first reply triggers it. It names `operation` (the
   ID of a read of the same spec, picked in the document and never from reply data), `when` (the one closed trigger:
   `empty` with a mapped output field that is empty, or `status` with a list of HTTP statuses), and `fill` (the
@@ -241,7 +261,9 @@ block, with the label field and each list as `<label> of <pointer>`, and it join
 fields of every list under the same operation. The bool-map block covers the map fields of every list too. The review text lists each tree read in its own block, with the items
 pointer, the children pointer, the computed fields, the root parent parameter when the read names one, and the depth
 cap. The review text lists each fallback read in its own block, with the target operation, the trigger, and the fill
-fields. The review text lists each `page-all` read with its fixed page size in place of parameters. Dual pointers,
+fields. The review text lists each `page-all` read with its fixed page size in place of parameters. The review text
+lists each read with an issue key in its own block, with the path parameter, and each read with the page-end rule in
+its own block, with the last flag, the cut parameter, and the truncated pointers. Dual pointers,
 the body-matched 404 rule, and converters add no review block: the review names rules, never reply shapes.
 
 There are no expressions. A pointer reads, and nothing computes.
@@ -326,4 +348,6 @@ request 17 and described above with it: the `Icon`, `URLList`, and `EventList` p
 dual reply pointers with the body-matched 404 rule, the `text-from-editor-data` converter, and the open-key map with
 closed bool values that serves the notification subscription replies. This page documents only what the module accepts
 today, and each extension moves here when its pull request lands. Pull request 18 then served the `markdown-from-adf`
-converter, described above with the response converters.
+converter, described above with the response converters. The Jira port then needed six more still: pull request 33
+built the first two, the `IssueKey` parameter kind and the page-end rule, described above with the parameters, the
+pagination, and the response. The text converters, the document layout, the key echo, and the built IDs stay planned.

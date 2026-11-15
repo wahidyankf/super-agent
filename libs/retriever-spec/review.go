@@ -39,6 +39,8 @@ func Review(s *Spec) string {
 	writeMergedLists(&b, s)
 	writeTreeReads(&b, s)
 	writeFallbackReads(&b, s)
+	writeIssueKeys(&b, s)
+	writePageEnds(&b, s)
 	writeBundledMapping(&b, s)
 	return b.String()
 }
@@ -378,6 +380,65 @@ func writeFallbackReads(b *strings.Builder, s *Spec) {
 	fmt.Fprintf(b, "Fallback reads: %d\n", len(entries))
 	for i, e := range entries {
 		fmt.Fprintf(b, "%d. %s: fallback to %s when %s, filling %s\n", i+1, e.id, e.target, e.when, e.fill)
+	}
+}
+
+// writeIssueKeys writes the block of the reads with an IssueKey path parameter, one line each, with the parameter
+// that carries the key. A spec with no issue key writes nothing, so the review keeps its text.
+func writeIssueKeys(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id    string
+		param string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		for _, p := range op.Params {
+			if p.Type == "IssueKey" && p.In == "path" {
+				entries = append(entries, entry{id: op.ID, param: p.Name})
+			}
+		}
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Issue keys: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: path parameter %s\n", i+1, e.id, e.param)
+	}
+}
+
+// writePageEnds writes the block of the reads with the page-end rule, one line each, with the last flag, the cut
+// parameter, and the truncated pointers. A spec with no page end writes nothing, so the review keeps its text.
+func writePageEnds(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id   string
+		rule string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		var parts []string
+		if op.Pagination != nil {
+			if op.Pagination.LastPointer != "" {
+				parts = append(parts, "last of "+op.Pagination.LastPointer)
+			}
+			if op.Pagination.CutToLimit != "" {
+				parts = append(parts, "cut to "+op.Pagination.CutToLimit)
+			}
+		}
+		if op.Response.Truncated != nil {
+			parts = append(parts, "truncated of "+op.Response.Truncated.Token+" and "+op.Response.Truncated.Last)
+		}
+		if len(parts) == 0 {
+			continue
+		}
+		entries = append(entries, entry{id: op.ID, rule: strings.Join(parts, "; ")})
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Page ends: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: %s\n", i+1, e.id, e.rule)
 	}
 }
 

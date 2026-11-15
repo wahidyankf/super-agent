@@ -98,6 +98,7 @@
         "ID",
         "UUID",
         "ShareID",
+        "IssueKey",
         "CollectionID",
         "CollectionUUID",
         "DocumentID",
@@ -265,7 +266,7 @@
           "if": { "properties": { "in": { "const": "path" } }, "required": ["in"] },
           "then": {
             "properties": {
-              "type": { "enum": ["ID", "UUID", "ShareID"] },
+              "type": { "enum": ["ID", "UUID", "ShareID", "IssueKey"] },
               "required": { "const": true }
             }
           }
@@ -387,6 +388,15 @@
         "max_depth": { "type": "integer", "minimum": 0, "maximum": 64 }
       }
     },
+    "truncated": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token", "last"],
+      "properties": {
+        "token": { "$ref": "#/$defs/pointer" },
+        "last": { "$ref": "#/$defs/pointer" }
+      }
+    },
     "fallback_when": {
       "type": "object",
       "additionalProperties": false,
@@ -428,13 +438,15 @@
         { "not": { "required": ["items", "merge"] } },
         { "not": { "required": ["first", "merge"] } },
         { "not": { "required": ["fields", "merge"] } },
-        { "if": { "required": ["tree"] }, "then": { "required": ["items"] } }
+        { "if": { "required": ["tree"] }, "then": { "required": ["items"] } },
+        { "if": { "required": ["truncated"] }, "then": { "required": ["items"] } }
       ],
       "properties": {
         "items": { "$ref": "#/$defs/pointer" },
         "first": { "$ref": "#/$defs/pointer" },
         "merge": { "$ref": "#/$defs/merge" },
         "tree": { "$ref": "#/$defs/tree" },
+        "truncated": { "$ref": "#/$defs/truncated" },
         "fields": {
           "type": "object",
           "maxProperties": 100,
@@ -479,7 +491,9 @@
         "limit_param": { "$ref": "#/$defs/param_name" },
         "offset_param": { "$ref": "#/$defs/param_name" },
         "cursor_param": { "$ref": "#/$defs/param_name" },
-        "next_pointer": { "$ref": "#/$defs/pointer" }
+        "next_pointer": { "$ref": "#/$defs/pointer" },
+        "last_pointer": { "$ref": "#/$defs/pointer" },
+        "cut_to_limit": { "$ref": "#/$defs/param_name" }
       },
       "allOf": [
         {

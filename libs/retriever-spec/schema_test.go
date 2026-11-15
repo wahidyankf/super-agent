@@ -55,12 +55,13 @@ func TestSchemaReturnsACopy(t *testing.T) {
 
 // specParamKinds is the list of parameter kinds that a spec may name. A kind that would take a secret stays out. The
 // collection and document ID kinds are admitted because the bundled ports claim catalog rows with them: they validate
-// as an opaque ID or UUID, so they grant no power that ID and UUID do not. Icon, URLList, and EventList are admitted
+// as an opaque ID or UUID, so they grant no power that ID and UUID do not. The IssueKey kind is admitted for the same
+// reason: a path parameter that the catalog binds through its strict upper-case check. Icon, URLList, and EventList are admitted
 // with exactly the catalog validation: a non-blank icon, 1 to 10 HTTPS addresses of at most 1024 characters, and at
 // most 50 event names of the dotted shape, so they grant no power that a validated value does not. The list must
 // match the enum of the schema, and every name must be a catalog kind.
 var specParamKinds = []operations.Kind{
-	operations.KindID, operations.KindUUID, operations.KindShareID, operations.KindCollectionID,
+	operations.KindID, operations.KindUUID, operations.KindShareID, operations.KindIssueKey, operations.KindCollectionID,
 	operations.KindCollectionUUID, operations.KindDocumentID, operations.KindQuery, operations.KindLimit,
 	operations.KindOffset, operations.KindInt, operations.KindBool, operations.KindName, operations.KindText,
 	operations.KindEnum, operations.KindEnumList, operations.KindIDList, operations.KindUUIDList, operations.KindTime,

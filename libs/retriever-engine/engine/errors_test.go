@@ -23,6 +23,7 @@ func TestCodeNamesTheAreaAndTheReason(t *testing.T) {
 		{"a redirect", domain.ErrRedirected, "retriever.example-wiki.redirected"},
 		{"a reply over the cap", domain.ErrReplyTooLarge, "retriever.example-wiki.reply_too_large"},
 		{"a shape that is refused", domain.ErrUnexpectedResponse, "retriever.example-wiki.unexpected_response"},
+		{"an invalid document ID", domain.ErrInvalidDocumentID, "retriever.example-wiki.invalid_document_id"},
 		{"a refused network", engine.ErrNetworkRefused, "retriever.connector.network_refused"},
 		{"a refused header", engine.ErrInvalidHeader, "retriever.example-wiki.invalid_header"},
 		{"a wrapped reason", fmt.Errorf("wrapped: %w", domain.ErrNotFound), "retriever.example-wiki.not_found"},
