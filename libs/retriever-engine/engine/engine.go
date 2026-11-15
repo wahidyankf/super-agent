@@ -338,7 +338,8 @@ func converterUnsupported(o spec.Operation) error {
 // mapReply maps a reply to a list, to the first item of a list, to a merged list, to a flattened tree, or to one
 // object, by which shape the operation names. A response holds at most one of items, first, and merge, and a tree
 // rides on items. A read of one object with the key echo checks the mapped reply after mapping: the text at the
-// pointer must equal the request argument exactly.
+// pointer must equal the request argument exactly. A read of one object with a document renders the layout from the
+// mapped record into the markdown output field.
 func mapReply(o spec.Operation, args domain.Args, root any, budget *int, base string) (domain.Record, error) {
 	if o.Response.First != "" {
 		return firstRecord(o, root, budget, base)
@@ -367,6 +368,9 @@ func mapReply(o spec.Operation, args domain.Args, root any, budget *int, base st
 	}
 	if err := checkEchoValue(o, args, root); err != nil {
 		return domain.Record{}, err
+	}
+	if o.Response.Document != nil {
+		return renderDocument(o, rec, budget)
 	}
 	return rec, nil
 }
@@ -437,6 +441,7 @@ func checkSpecShape(model *spec.Spec) error {
 	fs = append(fs, spec.CheckPageEnd(model)...)
 	fs = append(fs, spec.CheckEcho(model)...)
 	fs = append(fs, spec.CheckBuiltFields(model)...)
+	fs = append(fs, spec.CheckDocument(model)...)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {
