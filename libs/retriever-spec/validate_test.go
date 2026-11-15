@@ -86,3 +86,24 @@ func TestAFixtureWithOneFaultFailsOnlyAtItsField(t *testing.T) {
 		t.Fatalf("findings = %v; want one finding at /auth/header_name", r.Findings)
 	}
 }
+
+// TestACanonicalUUIDInAnExampleIsNotATokenRun proves the R2 exemption PR21
+// needs: a canonical UUID in an example is an ID, not a token-shaped run, so
+// a UUID operation can carry a replayable example. A 32-character run that is
+// not a UUID, and a UUID with text around it, stay refused.
+func TestACanonicalUUIDInAnExampleIsNotATokenRun(t *testing.T) {
+	const uuid = "123e4567-e89b-12d3-a456-426614174000"
+	withIDs := mutateAll(minimalSpec, "- id: doc-1", "- id: "+uuid, "id: doc-1", "id: "+uuid)
+	if r := Validate([]byte(withIDs)); !r.Valid() {
+		t.Fatalf("findings = %v; want none for a canonical UUID", r.Findings)
+	}
+	const run = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+	withRun := mutateAll(minimalSpec, "- id: doc-1", "- id: "+run, "id: doc-1", "id: "+run)
+	if r := Validate([]byte(withRun)); r.Valid() || !hasFinding(r, "/operations/0/examples/0/response/body/items/0/id") {
+		t.Fatalf("findings = %v; want a refusal of the token-shaped run", r.Findings)
+	}
+	withAffix := mutateAll(minimalSpec, "- id: doc-1", "- id: id-"+uuid, "id: doc-1", "id: id-"+uuid)
+	if r := Validate([]byte(withAffix)); r.Valid() {
+		t.Fatalf("a UUID with text around it must stay refused")
+	}
+}
