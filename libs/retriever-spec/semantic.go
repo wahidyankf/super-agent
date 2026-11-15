@@ -31,6 +31,7 @@ func semanticFindings(s *Spec) []Finding {
 	fs = append(fs, CheckResponseShape(s)...)
 	fs = append(fs, CheckMerge(s)...)
 	fs = append(fs, CheckTree(s)...)
+	fs = append(fs, CheckFallback(s)...)
 	index := make(map[string]int, len(s.Operations))
 	for i, op := range s.Operations {
 		at := "/operations/" + strconv.Itoa(i) + "/id"
@@ -430,6 +431,125 @@ func treeOutputFields(op Operation) map[string]bool {
 		out[op.Response.Tree.DepthField] = true
 	}
 	return out
+}
+
+// The fixed rules of a fallback block. Each names the broken rule, never a value.
+const (
+	ruleFallbackRead       = "needs a read operation"
+	ruleFallbackShape      = "needs a read of one object without pages"
+	ruleFallbackTarget     = "names no read operation of the spec"
+	ruleFallbackChain      = "names an operation with a fallback of its own"
+	ruleFallbackParams     = "names an operation with a parameter the first operation does not declare"
+	ruleFallbackWhen       = "needs exactly one closed trigger"
+	ruleFallbackField      = "names no field of the operation"
+	ruleFallbackObject     = "names an object field"
+	ruleFallbackStatus     = "is not an HTTP status"
+	ruleFallbackFill       = "names no field of the operation"
+	ruleFallbackFillTarget = "names no field of the fallback operation"
+	ruleFallbackFillEmpty  = "names no output field"
+)
+
+// CheckFallback returns the findings of the fallback blocks of a spec model: the source and the target are reads of
+// one object without pages, the target has no fallback of its own so a chain of two fallbacks is refused, the
+// target declares only parameters the first operation also declares, when is exactly one closed trigger, and every
+// fill field is a field of both operations. The schema states the document shape for documents. The validation and
+// the engine constructor both call it, so a model built by hand meets the same refusals as a document. Each finding
+// names the field path and a fixed rule. The triggers empty and status are owner proposals that the owner can still
+// veto at review.
+func CheckFallback(s *Spec) []Finding {
+	index := make(map[string]int, len(s.Operations))
+	for i, op := range s.Operations {
+		if _, repeated := index[op.ID]; !repeated {
+			index[op.ID] = i
+		}
+	}
+	var fs []Finding
+	for i, op := range s.Operations {
+		if op.Fallback == nil {
+			continue
+		}
+		fs = append(fs, checkFallbackOp(s, index, i, op)...)
+	}
+	return fs
+}
+
+// checkFallbackOp checks the fallback block of one operation against its own fields and the target operation.
+func checkFallbackOp(s *Spec, index map[string]int, i int, op Operation) []Finding {
+	var fs []Finding
+	fb := op.Fallback
+	base := "/operations/" + strconv.Itoa(i)
+	if op.Access != "read" {
+		fs = append(fs, finding(base+"/fallback", ruleFallbackRead))
+	}
+	if !isObjectRead(op) {
+		fs = append(fs, finding(base+"/fallback", ruleFallbackShape))
+	}
+	k, ok := index[fb.Operation]
+	if !ok || s.Operations[k].Access != "read" {
+		return append(fs, finding(base+"/fallback/operation", ruleFallbackTarget))
+	}
+	target := s.Operations[k]
+	if target.Fallback != nil {
+		fs = append(fs, finding(base+"/fallback/operation", ruleFallbackChain))
+	}
+	if !isObjectRead(target) {
+		fs = append(fs, finding(base+"/fallback/operation", ruleFallbackShape))
+	}
+	names := make(map[string]bool, len(op.Params))
+	for _, p := range op.Params {
+		names[p.Name] = true
+	}
+	for _, p := range target.Params {
+		if !names[p.Name] {
+			fs = append(fs, finding(base+"/fallback/operation", ruleFallbackParams))
+			break
+		}
+	}
+	fs = append(fs, checkFallbackWhen(op, base, fb)...)
+	if len(fb.Fill) == 0 {
+		fs = append(fs, finding(base+"/fallback/fill", ruleFallbackFillEmpty))
+	}
+	for _, name := range fb.Fill {
+		if _, ok := op.Response.Fields[name]; !ok {
+			fs = append(fs, finding(base+"/fallback/fill", ruleFallbackFill))
+		} else if _, ok := target.Response.Fields[name]; !ok {
+			fs = append(fs, finding(base+"/fallback/fill", ruleFallbackFillTarget))
+		}
+	}
+	return fs
+}
+
+// checkFallbackWhen checks the trigger of a fallback: exactly one of the closed triggers empty and status is set,
+// the empty field is a scalar field of the read, and every status is an HTTP status.
+func checkFallbackWhen(op Operation, base string, fb *Fallback) []Finding {
+	if (fb.When.Empty == "") == (len(fb.When.Status) == 0) {
+		return []Finding{finding(base+"/fallback/when", ruleFallbackWhen)}
+	}
+	if fb.When.Empty != "" {
+		f, ok := op.Response.Fields[fb.When.Empty]
+		if !ok {
+			return []Finding{finding(base+"/fallback/when/empty", ruleFallbackField)}
+		}
+		if f.Object != nil {
+			return []Finding{finding(base+"/fallback/when/empty", ruleFallbackObject)}
+		}
+		return nil
+	}
+	var fs []Finding
+	for j, status := range fb.When.Status {
+		if status < 100 || status > 599 {
+			fs = append(fs, finding(base+"/fallback/when/status/"+strconv.Itoa(j), ruleFallbackStatus))
+		}
+	}
+	return fs
+}
+
+// isObjectRead reports whether the operation is an unpaged read of one object: no items list, no first item, no
+// merge, no tree, and no pages. Only such a read takes or serves a fallback, so the fill fields of the target map
+// onto the fields of the first record one by one.
+func isObjectRead(op Operation) bool {
+	return op.Pagination == nil && op.Response.Items == "" && op.Response.First == "" &&
+		op.Response.Merge == nil && op.Response.Tree == nil
 }
 
 // reservedRule is the rule of a header that the engine sets itself, so no spec may name it.

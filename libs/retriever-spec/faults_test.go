@@ -314,6 +314,32 @@ var faults = []fault{
 		path: "/operations/4/response/tree",
 		doc:  tfx("          required: true\n", "")},
 
+	// E8: the fallback read. The first operation of these rows is the metadata read at index 4, and its target is
+	// the body read at index 5. A fallback fires on one closed trigger and fills fields of both operations, and a
+	// chain of two fallbacks is refused so at most one extra request runs per call.
+	{name: "a fallback with both triggers is refused", layer: layerSchema, threats: []string{"L8"},
+		path: "/operations/4/fallback/when",
+		doc:  fbx("      when:\n        empty: markdown\n", "      when:\n        empty: markdown\n        status: [404]\n")},
+	{name: "a fallback with no fill field is refused", layer: layerSchema, threats: []string{"L8"},
+		path: "/operations/4/fallback/fill",
+		doc:  fbx("    fill: [markdown]\n", "    fill: []\n")},
+	{name: "a fallback with a status outside the HTTP range is refused", layer: layerSchema, threats: []string{"L8"},
+		path: "/operations/4/fallback/when/status/0",
+		doc:  fbx("      when:\n        empty: markdown\n", "      when:\n        status: [99]\n")},
+	{name: "a chained fallback is refused", layer: layerSemantic, threats: []string{"L8"},
+		path: "/operations/5/fallback/operation",
+		doc: fbx("        expect:\n          markdown: Full text\n",
+			"        expect:\n          markdown: Full text\n    fallback:\n      operation: example-wiki.docs.meta\n      when:\n        empty: markdown\n      fill: [markdown]\n")},
+	{name: "a fallback to a write is refused", layer: layerSemantic, threats: []string{"L8"},
+		path: "/operations/4/fallback/operation",
+		doc:  fbx("      operation: example-wiki.docs.export\n", "      operation: example-wiki.docs.create\n")},
+	{name: "a fallback to a missing operation is refused", layer: layerSemantic, threats: []string{"L8"},
+		path: "/operations/4/fallback/operation",
+		doc:  fbx("      operation: example-wiki.docs.export\n", "      operation: example-wiki.docs.gone\n")},
+	{name: "a fallback to an operation with an undeclared parameter is refused", layer: layerSemantic,
+		threats: []string{"L8"}, path: "/operations/4/fallback/operation",
+		doc: fbx("    path: /docs/{id}/export\n    params:\n", "    path: /docs/{id}/export\n    params:\n      - name: rev\n        type: ID\n        in: query\n        required: true\n")},
+
 	// Rules that only the Go validation states, because a JSON Schema cannot compare two fields of one document.
 	{name: "a built-in kind is refused", layer: layerSemantic, threats: []string{"S10"}, path: "/kind",
 		doc: fx("kind: example-wiki", "kind: outline")},
