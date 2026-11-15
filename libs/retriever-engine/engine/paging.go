@@ -48,8 +48,8 @@ func (e *Engine) readOffset(ctx context.Context, o spec.Operation, args domain.A
 			}), nil)
 		} else {
 			extra := url.Values{
-				pag.LimitParam:  {strconv.Itoa(limit)},
-				pag.OffsetParam: {strconv.Itoa(offset)},
+				pageWireKey(o, pag.LimitParam):  {strconv.Itoa(limit)},
+				pageWireKey(o, pag.OffsetParam): {strconv.Itoa(offset)},
 			}
 			root, err = e.fetch(ctx, o, args, extra)
 		}
@@ -110,7 +110,7 @@ func (e *Engine) readCursor(ctx context.Context, o spec.Operation, args domain.A
 		} else {
 			var extra url.Values
 			if cursor != "" {
-				extra = url.Values{pag.CursorParam: {cursor}}
+				extra = url.Values{pageWireKey(o, pag.CursorParam): {cursor}}
 			}
 			root, err = e.fetch(ctx, o, args, extra)
 		}

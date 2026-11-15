@@ -55,7 +55,7 @@ func renderRequest(basePath string, o spec.Operation, args domain.Args, extra ur
 			continue
 		}
 		if v, ok := vals[p.Name]; ok {
-			q.Set(p.Name, textOf(v))
+			q.Set(queryWireKey(p), textOf(v))
 		}
 	}
 	for name, values := range extra {
@@ -213,6 +213,26 @@ func renderValue(v any, vals map[string]any) (any, bool) {
 	default:
 		return x, true
 	}
+}
+
+// queryWireKey returns the key a query parameter travels under: its alias when it names one, and its name
+// otherwise. The stub replay and the examples bind by parameter name, so only the wire changes.
+func queryWireKey(p spec.Param) string {
+	if p.QueryKey != "" {
+		return p.QueryKey
+	}
+	return p.Name
+}
+
+// pageWireKey returns the wire key of the named query parameter of an operation: its alias when it names one, and
+// its name otherwise. A pagination rule names parameters by catalog name, while the wire carries the alias.
+func pageWireKey(o spec.Operation, name string) string {
+	for _, p := range o.Params {
+		if p.Name == name && p.QueryKey != "" {
+			return p.QueryKey
+		}
+	}
+	return name
 }
 
 // textOf returns the text of an argument value, as it travels in a query or a header.

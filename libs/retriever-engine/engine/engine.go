@@ -442,6 +442,7 @@ func checkSpecShape(model *spec.Spec) error {
 	fs = append(fs, spec.CheckEcho(model)...)
 	fs = append(fs, spec.CheckBuiltFields(model)...)
 	fs = append(fs, spec.CheckDocument(model)...)
+	fs = append(fs, spec.CheckQueryKeys(model)...)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {
