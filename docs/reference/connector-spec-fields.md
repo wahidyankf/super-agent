@@ -187,8 +187,10 @@ The review text lists each body-paged read in its own block, with its style, its
   of the reply address, without the path, the query, the port, or the user name, or the empty text when the address
   has no host. The engine serves `text-from-editor-data`: the plain text of editor data, with a line break after each
   text block, or the raw text unchanged when the field falls back to it; a missing value maps to null, and any other
-  scalar is an unexpected response. The converter is a pure function of the reply: it sends no request and reaches no
-  other host. The engine does not serve the two Markdown converters yet. A spec that names one still loads, and each
+  scalar is an unexpected response. The engine serves `markdown-from-adf`: the Markdown of the ADF document, rendered
+  as a pure function of the reply, ending with the truncation marker past the depth cap. The converter is a pure
+  function of the reply: it sends no request and reaches no other host. The engine does not serve the
+  `markdown-from-html` converter yet. A spec that names it still loads, and each
   run of that operation fails with `retriever.<kind>.unsupported_operation` before any request is sent.
 - `required`: `true` on a reply field fails the read with `unexpected_response` when the reply holds a missing, null,
   or empty value for it, and no partial record is returned. A missing optional field still maps to null.
@@ -323,4 +325,5 @@ kinds with the ID mapping (E9), are built and described above. The Outline port 
 request 17 and described above with it: the `Icon`, `URLList`, and `EventList` parameter kinds, the `page-all` rule,
 dual reply pointers with the body-matched 404 rule, the `text-from-editor-data` converter, and the open-key map with
 closed bool values that serves the notification subscription replies. This page documents only what the module accepts
-today, and each extension moves here when its pull request lands.
+today, and each extension moves here when its pull request lands. Pull request 18 then served the `markdown-from-adf`
+converter, described above with the response converters.

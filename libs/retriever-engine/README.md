@@ -2,8 +2,9 @@
 
 The generic engine of ADR 001. It takes one validated connector spec and one source, and it runs the read and write
 operations of that spec against the source. It renders each request from the spec, sets the key in the one header that
-the auth type names, sends the request over HTTPS, and maps the reply to the declared fields. Markdown converters are
-not served yet, and an operation that needs one fails before any request is sent.
+the auth type names, sends the request over HTTPS, and maps the reply to the declared fields. The `markdown-from-adf`
+converter is served as a pure function of the reply; the `markdown-from-html` converter is not served yet, and an
+operation that needs it fails before any request is sent.
 
 - Module path: `github.com/wahidyankf/super-agent/libs/retriever-engine`.
 - Nx project `retriever-engine`, with the tags `type:engine`, `lang:go`, and `domain:retriever`.

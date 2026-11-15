@@ -24,6 +24,10 @@ upgrade.
 
 ### Added
 
+- The engine serves the `markdown-from-adf` converter as a pure function of the reply, so an operation that names it
+  no longer fails. The Jira converter tests pass unchanged against the moved engine function, and a document tree
+  nested past the depth cap ends with the truncation marker. The Jira module keeps its copy of the function until it
+  retires.
 - The spec language admits the `Icon`, `URLList`, and `EventList` parameter kinds with exactly the catalog
   validation, and the bundled `outline.yml` claims the last 7 unclaimed write rows: the template, group, OAuth
   client, and webhook subscription creates and updates. Every catalog row is claimed and the unclaimed set is empty.
