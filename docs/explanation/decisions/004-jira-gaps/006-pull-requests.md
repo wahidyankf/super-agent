@@ -1,5 +1,5 @@
 ---
-title: "Pull requests 33 to 38: the Jira extensions, the port, and the retirement"
+title: "Pull requests 33 to 39: the Jira extensions, the port, and the retirement"
 description: The language pull requests for J0 to J8, then the Jira port and the module retirement.
 category: explanation
 tags:
@@ -8,7 +8,7 @@ tags:
   - planned
 ---
 
-# Pull requests 33 to 38: the Jira extensions, the port, and the retirement
+# Pull requests 33 to 39: the Jira extensions, the port, and the retirement
 
 This page is the migration order of [ADR 004](../004-jira-gaps.md). The shared gates of
 [ADR 002](../002-spec-language-extensions/007-pull-requests-language.md) apply to every pull request here: the
@@ -28,8 +28,9 @@ converters beside E21, and E17 pacing for the tree walk.
 | 34  | E21 Jira text converters          | J4, J5              | nothing    |
 | 35  | E23 key echo and E24 built IDs    | J7, J3, J8          | nothing    |
 | 36  | E22 issue document layout         | J6                  | nothing    |
-| 37  | Port Jira onto a bundled spec     | the five operations | nothing    |
-| 38  | Retire `retriever-connector-jira` | the no-import test  | the module |
+| 37  | E25 query key                     | the Jira wire names | nothing    |
+| 38  | Port Jira onto a bundled spec     | the five operations | nothing    |
+| 39  | Retire `retriever-connector-jira` | the no-import test  | the module |
 
 ## 33. E19 issue key and E20 page end
 
@@ -55,7 +56,14 @@ Scope: the title, the closed line kinds with defaults and skips, the moved escap
 description body with its fixed heading and empty text. Gate: planted markup stays literal text; empty
 resolution, labels, parent, and due lines are absent; the defaults are byte-identical.
 
-## 37. Port Jira
+## 37. E25 query key
+
+Scope: the closed optional `query_key` string on `in: query` params only, so the Jira port names CLI params `limit`
+and `offset` while the wire carries `maxResults` and `startAt`. Gate: an alias on a non-query parameter is refused
+naming the alias; an alias repeating the parameter name is refused; two query keys sharing one wire key are refused;
+and the offset walk sends the alias while binding the catalog name.
+
+## 38. Port Jira
 
 A bundled `jira.yml` serves the five catalog operations with `catalog_id` mapping per E9, reusing E1, E2, and
 `resolve` where the probe found them covered. `whoami` ports with no new feature. The collection walk rides
@@ -63,9 +71,9 @@ page-all, and the tree walk rides a second cursor read with E20 and E17. The unc
 and transport scenarios run on the engine and pass without an edit. Gate: `TestBundledSpecCoversEveryCatalogRow`
 for Jira, and no scenario edited.
 
-## 38. Retire the module
+## 39. Retire the module
 
 `retriever-connector-jira` leaves the dependency graph. An architecture test fails on any new import of it. The
 CHANGELOG records each breaking change of this ADR at port time: the removed module and any refined error
 mapping. Exit gate for the ADR: the shared gates, every named test passing, `TestExistingSpecsStillValidate`,
-`TestSchemaKeywordLock` extended to E19-E24 and the three converters, and no Go connector serving Jira.
+`TestSchemaKeywordLock` extended to E19-E25 and the three converters, and no Go connector serving Jira.

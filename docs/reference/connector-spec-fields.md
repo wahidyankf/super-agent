@@ -91,8 +91,8 @@ The review text lists each POST read in its own block, with its path and the slo
 
 ## Parameters
 
-Each parameter has `name`, `type`, `in` (`path`, `query`, or `body`), and `required`. It may have `default`, `min`,
-`max`, `values`, `help`, and `resolve`. The `type` is one of the 28 parameter kinds of the operation catalog, such as
+Each parameter has `name`, `type`, `in` (`path`, `query`, or `body`), and `required`. It may have `query_key`,
+`default`, `min`, `max`, `values`, `help`, and `resolve`. The `type` is one of the 28 parameter kinds of the operation catalog, such as
 `ID`, `Query`, `Limit`, `Enum`, `Time`, and `URL`, so every adapter validates a value the same way. A bundled port
 also uses `CollectionID`, `CollectionUUID`, and `DocumentID`, which validate as an opaque ID or UUID, `IssueKey`,
 which validates as the strict upper-case issue key with no lowercase, missing hyphen, leading zero, or traversal
@@ -110,6 +110,13 @@ Names start lower-case and may hold upper-case letters, so a bundled operation n
 - A query parameter may not have a credential-shaped name, such as `api_key`, `token`, `secret`, or `password`.
 
 Each name is unique within its operation. An `Enum` or `EnumList` parameter lists its `values`.
+
+A query parameter may name the wire key it travels under with `query_key`, such as `limit` riding as `maxResults` and
+`offset` as `startAt` for Jira. The catalog name stays the parameter name everywhere else: the CLI flag, the examples,
+and the stub binding. The alias starts with a letter and holds letters, digits, and underscores only. An alias on a
+parameter outside the query, one repeating the parameter name, and one repeating another query key of the same
+operation are refused at load. The engine sends the query pair under the alias, including the offset, cursor, and
+page-all query keys.
 
 `resolve` turns a name into an ID before a write. It names a read operation of the same spec and one of its response
 fields. The spec module checks those names. The engine, in `libs/retriever-engine`, runs the read once, with the name
@@ -301,7 +308,8 @@ its own block, with the last flag, the cut parameter, and the truncated pointers
 with a key echo in its own block, with the parameter and the pointer, and each read with built IDs in its own block,
 with each field, the ID it builds, and the pointer it builds it from, joining the built fields of every list under
 the same operation. The review text lists each read with a document layout in its own block, with the title field,
-the line count, and the body field with its heading. Dual pointers,
+the line count, and the body field with its heading. The review text lists each operation with wire aliases in its own
+block, with each parameter and the wire key it travels under. Dual pointers,
 the body-matched 404 rule, and converters add no review block: the review names rules, never reply shapes.
 
 There are no expressions. A pointer reads, and nothing computes.
@@ -392,5 +400,7 @@ pagination, and the response. Pull request 34 built the next one, the `jira-time
 text converters, described above with the response converters. Pull request 35 built the next two, the key echo and
 the built IDs, described above with the response and its review blocks. Pull request 36 built the last one, the
 document layout with its title, closed line kinds, and description body, described above with the response and its
-review block. All six Jira extensions are built: the issue key, the page end, the text converters, the key echo,
-the built IDs, and the document layout.
+review block. Pull request 37 built one more still, the query key: an `in: query` parameter may ride under a wire
+alias such as `maxResults` and `startAt`, described above with the parameters and its review block. All seven Jira
+extensions are built: the issue key, the page end, the text converters, the key echo,
+the built IDs, the document layout, and the query key.
