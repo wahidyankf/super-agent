@@ -134,6 +134,10 @@ The review text lists each body-paged read in its own block, with its style, its
 ## Response
 
 - `items`: a JSON pointer to the list, for a list operation.
+- `first`: a JSON pointer to the list whose first item a read maps, for a first-item read such as `shares.get`.
+  The engine takes item 0 and maps its fields with pointers relative to the item; only index 0 exists. An empty
+  list ends with `retriever.<kind>.not_found` and no partial record, and a value that is not a list ends with
+  `unexpected_response`. A response holds at most one of `items`, `first`, and `merge`.
 - `fields`: a map from output field to an object with `pointer`, a JSON pointer into the reply, an optional `required`,
   an optional closed `format`, and an optional `convert`. The converter is `plain`, `markdown-from-html`, or
   `markdown-from-adf`. The engine does not serve the two Markdown converters yet. A spec that names one still loads,
@@ -153,7 +157,8 @@ The review text lists each body-paged read in its own block, with its style, its
 
 The review text lists each operation with required or checked fields in its own block, with each required field and
 each checked field with its closed format name. The review text lists each operation with a nested record field in
-its own block, with the object field and each sub-field.
+its own block, with the object field and each sub-field. The review text lists each first-item read in its own
+block, with the operation and the list pointer as `first of /data`.
 
 There are no expressions. A pointer reads, and nothing computes.
 
@@ -176,8 +181,8 @@ The language cannot yet express the Outline reads, so they still run on the Go g
 - A field is never required. A field takes `required` and a closed `format` now, which is described in
   [Response](#response), so this limit no longer blocks a read. A missing optional field still maps to null.
 - A field holds one scalar or one nested record, which is described in [Response](#response). The first item of a
-  list, a list merged from several lists, a tree with a computed depth, and a fallback read have no form in the
-  language.
+  list is described in [Response](#response); a list merged from several lists, a tree with a computed depth, and a
+  fallback read have no form in the language.
 
 A spec named `outline` is also refused, because the kind is a built-in source. A bundled Outline spec would need an
 exception for bundled files only.
@@ -196,8 +201,9 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 ## Planned extensions
 
 [ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
-that the Outline, Kiwi, and Jira connectors can run as specs. The first four of them, POST reads (E1), body paging
-(E2), required and validated fields (E3), and nested records with an allow-list (E4), are built and described above.
-The other five are not built. The limits of the Outline reads, above, describe the language before ADR 002 for the
+that the Outline, Kiwi, and Jira connectors can run as specs. The first five of them, POST reads (E1), body paging
+(E2), required and validated fields (E3), nested records with an allow-list (E4), and the first item or not found
+(E5), are built and described above. The other four are not built. The limits of the Outline reads, above, describe
+the language before ADR 002 for the
 shapes that the remaining extensions cover. This page documents only what the module accepts today, and each extension
 moves here when its pull request lands.

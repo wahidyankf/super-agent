@@ -82,6 +82,12 @@ upgrade.
   never the value. The review text lists each operation with a nested record field, with the object field and each
   sub-field. Renderers, the MCP adapter, and the JSON output already read a nested record, so the contract is
   unchanged.
+- A response of a connector spec takes `first` with a JSON pointer to a list, to map the first item of the list
+  (ADR 002, E5). The engine takes item 0 and maps its fields with pointers relative to the item; only index 0
+  exists, and the review text says `first of /data`. An empty list ends with `retriever.<kind>.not_found` and no
+  partial record, and a value that is not a list ends with `unexpected_response`. A response holds at most one of
+  `items`, `first`, and `merge`. A first-item read returns one record, as a whole-reply read does, so the renderers,
+  the MCP adapter, and the JSON output are unchanged.
 
 ### Changed
 
