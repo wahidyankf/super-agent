@@ -9,6 +9,20 @@ upgrade.
 
 ## Unreleased
 
+### Added
+
+- The bundled `jira.yml` serves the five Jira catalog reads, each with a `catalog_id` and an example. The Jira
+  gateway runs every operation on the bundled-spec engine, with the document-not-found translation the Go
+  gateway maps. `whoami` ports with no new feature; the collection walk is a second offset read of the project
+  search with the page-end rule, and the tree walk is a second cursor read of the search endpoint with the page-end
+  rule, reusing the `IssueKey` check, the text converters, the key echo, and the built IDs. The unchanged Jira
+  read, redaction, and transport scenarios run on the engine: retries and pages wait the 100 ms pacing of the Go
+  gateway, and the project list and the comment list send the Jira wire names through the `query_key` alias, `limit`
+  as `maxResults` and `offset` as `startAt`. The document layout names flat output-field names only, and the
+  intermediate fields stay in the record beside the five catalog fields of `issues.get`. The spec measures
+  7 operations in 14,946 bytes, 6 percent of the 256 KiB cap, and `TestBundledSpecCoversEveryCatalogRow` covers the
+  Jira kind with no scenario edited.
+
 ### Breaking
 
 - **Breaking**: the source kinds are no longer a closed list in the contract. `retriever-contract` is at `0.4.0`, and
