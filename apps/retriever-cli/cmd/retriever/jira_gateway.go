@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/jiraseam"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 	"github.com/wahidyankf/super-agent/libs/retriever-engine/engine"
@@ -16,7 +16,7 @@ import (
 )
 
 // jiraDocumentNotFoundReads are the engine-served reads whose 404 names a missing issue: the single-issue and
-// comment reads whose path holds the issue key, as the Go gateway maps. Every other engine failure passes
+// comment reads whose path holds the issue key, as the retired Go gateway maps. Every other engine failure passes
 // through. The search read keeps its own page-cap refusal, which is never a not found.
 var jiraDocumentNotFoundReads = map[domain.OperationID]bool{
 	domain.OpJiraIssuesGet:    true,
@@ -44,7 +44,7 @@ const (
 )
 
 // jiraGateway is the Jira gateway: the engine of the bundled jira.yml, with the document-not-found translation the
-// Go gateway maps and the search page the engine leaves to the caller. Every Jira operation runs on the
+// retired Go gateway maps and the search page the engine leaves to the caller. Every Jira operation runs on the
 // engine: reads through the spec operations they name, the legacy collection, tree, and document reads through the
 // walk and get operations, with nothing dropped.
 type jiraGateway struct {
@@ -80,7 +80,7 @@ func buildJiraEngine(model *spec.Spec, src domain.Source, creds *envfile.Credent
 	if err != nil {
 		return nil, err
 	}
-	if err := jira.CheckBaseURL(seam.base); err != nil {
+	if err := jiraseam.CheckBaseURL(seam.base); err != nil {
 		return nil, err
 	}
 	opts := eseam.options
@@ -97,7 +97,7 @@ func buildJiraEngine(model *spec.Spec, src domain.Source, creds *envfile.Credent
 }
 
 // hardenSeamTransport returns a copy of the seam transport that sends the endpoint host as the TLS server name, as
-// the Go gateway did: the seam client trusts the stub CA but names no server, so the stub would record an empty
+// the retired Go gateway did: the seam client trusts the stub CA but names no server, so the stub would record an empty
 // name. A transport that is not an *http.Transport carries no TLS settings of its own, so it is returned as it is.
 func hardenSeamTransport(rt http.RoundTripper, host string) http.RoundTripper {
 	tr, ok := rt.(*http.Transport)
@@ -114,7 +114,7 @@ func hardenSeamTransport(rt http.RoundTripper, host string) http.RoundTripper {
 	return clone
 }
 
-// restoreJiraError restores the bare sentinel of an unreachable source, as the Go gateway mapped it: the engine
+// restoreJiraError restores the bare sentinel of an unreachable source, as the retired Go gateway mapped it: the engine
 // carries the dial text, which may name the loopback address, and the presenter must never show it. Every other
 // error keeps the document translation of the operation.
 func restoreJiraError(op domain.OperationID, err error) error {
@@ -125,7 +125,7 @@ func restoreJiraError(op domain.OperationID, err error) error {
 }
 
 // Read runs one catalog operation of the Jira source against the stub on the engine, restoring the document
-// sentinel the Go gateway maps and setting the search page the engine leaves to the caller.
+// sentinel the retired Go gateway maps and setting the search page the engine leaves to the caller.
 func (g *jiraGateway) Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
 	specOp, ok := jiraSpecOperations[op]
 	if !ok {
@@ -156,7 +156,7 @@ func translateJiraNotFound(op domain.OperationID, err error) error {
 	return err
 }
 
-// withSearchPage sets the page of an issue search from the truncated flag of its items, as the Go gateway
+// withSearchPage sets the page of an issue search from the truncated flag of its items, as the retired Go gateway
 // mapped it: the flag is on exactly when more issues match than the page holds, and the next offset is the number
 // of issues shown. The engine marks each item but sets no page, so the gateway restores it here.
 func withSearchPage(rec domain.Record) domain.Record {
@@ -180,7 +180,7 @@ func (g *jiraGateway) ListCollections(ctx context.Context) ([]domain.Collection,
 	}
 	out := make([]domain.Collection, 0, len(rec.Items()))
 	for _, item := range rec.Items() {
-		id, err := jira.ProjectCollectionID(item.Str("id"))
+		id, err := jiraseam.ProjectCollectionID(item.Str("id"))
 		if err != nil {
 			return nil, domain.ErrUnexpectedResponse
 		}
@@ -193,7 +193,7 @@ func (g *jiraGateway) ListCollections(ctx context.Context) ([]domain.Collection,
 // bundled spec: the JQL of the project key in key order, walked at most five pages. A project the server refuses
 // keeps the collection-not-found sentinel of the tree walk.
 func (g *jiraGateway) CollectionTree(ctx context.Context, id domain.CollectionID) ([]domain.TreeNode, error) {
-	key, err := jira.ProjectKey(id)
+	key, err := jiraseam.ProjectKey(id)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func (g *jiraGateway) CollectionTree(ctx context.Context, id domain.CollectionID
 
 // jiraTreeNodes maps the issues of the tree walk to flat nodes. A parent ID is set only when the parent is in the
 // list. The depth is the length of the parent chain inside the list, and a chain that does not end is an unexpected
-// reply, as the Go gateway maps it.
+// reply, as the retired Go gateway maps it.
 func jiraTreeNodes(rec domain.Record) ([]domain.TreeNode, error) {
 	items := rec.Items()
 	index := make(map[string]int, len(items))
@@ -230,7 +230,7 @@ func jiraTreeNodes(rec domain.Record) ([]domain.TreeNode, error) {
 		parentOf[i] = -1
 		if parent, ok := item.Get("parent"); ok {
 			if text, isText := parent.(string); isText && text != "" {
-				if _, err := jira.ParseIssueKey(text); err == nil {
+				if _, err := jiraseam.ParseIssueKey(text); err == nil {
 					if j, ok := index[text]; ok {
 						parentOf[i] = j
 						issue := "issue-" + text
@@ -258,7 +258,7 @@ func jiraTreeNodes(rec domain.Record) ([]domain.TreeNode, error) {
 // the id, title, URL, Markdown, and collection ID the spec maps. The ID must be issue-<KEY-123>. A missing issue
 // keeps the document-not-found sentinel of the get read.
 func (g *jiraGateway) Document(ctx context.Context, id domain.DocumentID) (domain.SourceDocument, error) {
-	key, err := jira.IssueKey(id)
+	key, err := jiraseam.IssueKey(id)
 	if err != nil {
 		return domain.SourceDocument{}, err
 	}

@@ -14,8 +14,8 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 	mcpadapter "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/mcp"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/connectorspec"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/jiraseam"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/outlineseam"
-	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
@@ -59,8 +59,8 @@ type sourceWiring struct {
 }
 
 // readSeam reads the test seam of one kind through getenv. An invalid seam is an error, never a fallback to a real
-// host. Each kind reads only its own variables. The Outline seam feeds the bundled-spec engine, now that no Go
-// gateway reads it.
+// host. Each kind reads only its own variables. The Outline and Jira seams feed the bundled-spec engine, now that no
+// Go gateway reads them.
 func readSeam(kind domain.SourceKind, getenv func(string) string) (seamConfig, error) {
 	switch kind {
 	case domain.KindOutline:
@@ -76,7 +76,7 @@ func readSeam(kind domain.SourceKind, getenv func(string) string) (seamConfig, e
 		}
 		return seamConfig{base: seam.BaseURL, client: seam.Client, on: seam.Enabled, timeout: seam.Timeout}, nil
 	case domain.KindJira:
-		seam, err := jira.TestSeamFromEnvWithFiles(getenv, os.ReadFile)
+		seam, err := jiraseam.TestSeamFromEnvWithFiles(getenv, os.ReadFile)
 		if err != nil {
 			return seamConfig{}, err
 		}
@@ -111,7 +111,7 @@ func checkSeams(seams seamSet) error {
 		}
 	}
 	if seam := seams[domain.KindJira]; seam.on {
-		if err := jira.CheckBaseURL(seam.base); err != nil {
+		if err := jiraseam.CheckBaseURL(seam.base); err != nil {
 			return err
 		}
 	}
@@ -176,7 +176,7 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 		}
 	}
 	// The bundled Jira spec runs on its engine gateway: every Jira operation runs on the bundled-spec engine,
-	// with the document-not-found translation the Go gateway maps.
+	// with the document-not-found translation the retired Go gateway mapped.
 	if model := bundledJira(set); model != nil {
 		builders[domain.KindJira] = func(src domain.Source) (ports.SourceGateway, error) {
 			return buildJiraGateway(model, src, creds, seams[domain.KindJira], h.engine)

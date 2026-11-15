@@ -25,5 +25,5 @@ These pages hold the detail of [ADR 004](../004-jira-gaps.md). Everything on the
   (J6).
 - [E23 and E24: the key echo and the built IDs](./005-echo-and-built-ids.md) covers the reply key check
   (J7), the project key (J3), and the built document and collection IDs with browse URLs (J8).
-- [Pull requests 33 to 38](./006-pull-requests.md) gives the language pull requests, the Jira port, and the
+- [Pull requests 33 to 39](./006-pull-requests.md) gives the language pull requests, the Jira port, and the
   retirement of `retriever-connector-jira`.

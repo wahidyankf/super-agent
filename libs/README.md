@@ -12,7 +12,6 @@ too. Each library is its own Go module, with its own `go.mod`, its own Nx projec
 - [retriever-testkit/](./retriever-testkit/) holds the stub servers, the in-memory file tree, the shared source
   contract suite, and the synthetic replies. Tests import it, and production code does not.
 - [retriever-connector-kiwi/](./retriever-connector-kiwi/) is the Kiwi test-management source.
-- [retriever-connector-jira/](./retriever-connector-jira/) is the Jira Cloud source.
 - [retriever-spec/](./retriever-spec/) holds the model of a declarative connector spec, its JSON Schema, the validation
   that refuses a bad spec, and the review of a valid one. It imports the contract.
 - [retriever-engine/](./retriever-engine/) runs the read operations of a valid spec against one source. It imports the

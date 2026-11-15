@@ -978,10 +978,6 @@ extensions:
         path: libs/retriever-connector-kiwi
         kind: connector
         stacks: [golang]
-      retriever-connector-jira:
-        path: libs/retriever-connector-jira
-        kind: connector
-        stacks: [golang]
       retriever-spec:
         path: libs/retriever-spec
         kind: spec

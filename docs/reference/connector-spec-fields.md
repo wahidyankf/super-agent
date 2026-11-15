@@ -379,7 +379,7 @@ spec takes the exception for embedded files only, as described in
 
 The bundled `jira.yml` serves the five catalog reads with a `catalog_id` and an example each: `jira.whoami`,
 `jira.projects.list`, `jira.issues.search`, `jira.issues.get`, and `jira.comments.list`. The Jira gateway runs
-each operation on the engine, with the document-not-found translation the Go gateway maps: the engine
+each operation on the engine, with the document-not-found translation the retired Go gateway mapped: the engine
 reports every 404 as a plain not found, and the gateway restores the document sentinel for the two reads whose path
 holds the issue key. The spec measures 7 operations in 14,946 bytes, 6 percent of the 256 KiB cap. A spec named
 `jira` is refused in the user folder, because the kind is a built-in source, as with `outline`.
@@ -396,7 +396,7 @@ declare the `truncated` block, and the page token never travels on its one page.
 parameter; the engine never sends a cursor on one page, so the name is validation ballast only. The project list
 and the comment
 list send the Jira wire names through the `query_key` alias: `limit` rides as `maxResults` and `offset` rides as
-`startAt`, as the Go gateway sends, so the two read scenarios that pin the Jira names pass unchanged. The document
+`startAt`, as the retired Go gateway sent, so the two read scenarios that pin the Jira names pass unchanged. The document
 layout of `issues.get` names flat output-field names only, as the
 [response](#response) rule requires, and the intermediate fields stay in the record beside the five catalog fields.
 

@@ -185,7 +185,6 @@
     "retriever-runtime",
     "retriever-testkit",
     "retriever-connector-kiwi",
-    "retriever-connector-jira",
     "retriever-spec",
     "retriever-engine"
   ]

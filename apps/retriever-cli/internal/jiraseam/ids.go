@@ -1,4 +1,7 @@
-package jira
+// Issue and project IDs of a Jira source. They moved here from libs/retriever-connector-jira when
+// pull request 39 retired that module's gateway: the engine gateway still maps the collection and
+// document IDs of the tree and document reads, so it needs the same strict key checks the gateway took.
+package jiraseam
 
 import (
 	"regexp"
