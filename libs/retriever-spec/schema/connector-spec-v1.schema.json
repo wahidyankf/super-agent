@@ -315,8 +315,10 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["fields"],
+      "not": { "required": ["items", "first"] },
       "properties": {
         "items": { "$ref": "#/$defs/pointer" },
+        "first": { "$ref": "#/$defs/pointer" },
         "fields": {
           "type": "object",
           "maxProperties": 100,

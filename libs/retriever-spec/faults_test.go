@@ -268,6 +268,12 @@ var faults = []fault{
 		path: "/operations/4/response/fields/user/pointer",
 		doc:  nfx("        user:\n          object:", "        user:\n          pointer: /data/user\n          object:")},
 
+	// E5: the first item or not found. A response holds at most one of items, first, and merge, so a response that
+	// names both is refused at the response. The first-item read is operation 4 of this row.
+	{name: "a response with both items and first is refused", layer: layerSchema, threats: []string{"L6"},
+		path: "/operations/4/response",
+		doc:  ffx("      first: /data\n", "      first: /data\n      items: /data\n")},
+
 	// Rules that only the Go validation states, because a JSON Schema cannot compare two fields of one document.
 	{name: "a built-in kind is refused", layer: layerSemantic, threats: []string{"S10"}, path: "/kind",
 		doc: fx("kind: example-wiki", "kind: outline")},

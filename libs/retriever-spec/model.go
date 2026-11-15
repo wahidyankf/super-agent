@@ -138,6 +138,9 @@ type Resolve struct {
 type Response struct {
 	// Items is the JSON pointer to the list of a list operation. It is empty for a whole reply.
 	Items string `json:"items,omitempty"`
+	// First is the JSON pointer to the list whose first item a first-item read maps. It is empty unless the read
+	// maps item 0, and a response holds at most one of items, first, and merge.
+	First string `json:"first,omitempty"`
 	// Fields maps each output field to the JSON pointer that reads it.
 	Fields map[string]Field `json:"fields"`
 	// Markdown names the output field that holds the Markdown body of a document read.

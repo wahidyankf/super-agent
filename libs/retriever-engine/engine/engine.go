@@ -296,8 +296,12 @@ func converterUnsupported(o spec.Operation) error {
 	return nil
 }
 
-// mapReply maps a reply to a list or to one object, by whether the operation names an items pointer.
+// mapReply maps a reply to a list, to the first item of a list, or to one object, by which shape the operation
+// names. A response holds at most one of items, first, and merge.
 func mapReply(o spec.Operation, root any, budget *int) (domain.Record, error) {
+	if o.Response.First != "" {
+		return firstRecord(o, root, budget)
+	}
 	if o.Response.Items != "" {
 		items, err := listItems(o, root, budget)
 		if err != nil {
@@ -371,6 +375,7 @@ func reservedHeader(name string) bool {
 func checkSpecShape(model *spec.Spec) error {
 	fs := spec.CheckAccessMatrix(model)
 	fs = append(fs, spec.CheckObjectFields(model)...)
+	fs = append(fs, spec.CheckResponseShape(model)...)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {
@@ -414,10 +419,10 @@ func pathOK(path string) bool {
 	return true
 }
 
-// pointersOf returns every JSON pointer that a read of the operation names: the items list, the fields with the
-// pointers of each nested sub-field, and the cursor.
+// pointersOf returns every JSON pointer that a read of the operation names: the items list, the first list, the
+// fields with the pointers of each nested sub-field, and the cursor.
 func pointersOf(o spec.Operation) []string {
-	out := []string{o.Response.Items}
+	out := []string{o.Response.Items, o.Response.First}
 	for _, f := range o.Response.Fields {
 		out = append(out, f.Pointer)
 		for _, name := range sortedKeys(f.Object) {

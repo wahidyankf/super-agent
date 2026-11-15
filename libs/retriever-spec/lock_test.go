@@ -24,6 +24,8 @@ var specFieldNames = []string{
 	"format",
 	// ADR 002, E4: nested records with an allow-list.
 	"object",
+	// ADR 002, E5: the first item or not found.
+	"first",
 }
 
 // collectPropertyNames gathers the keys of every "properties" object of a decoded schema, at any depth.

@@ -277,6 +277,25 @@ func listItems(o spec.Operation, root any, budget *int) ([]domain.Record, error)
 	return out, nil
 }
 
+// firstRecord maps the first item of the list at the first pointer to one record, with the field pointers read
+// relative to the item. An empty list ends with domain.ErrNotFound, and no partial record is returned. A value that
+// is not a list, or an item that is not an object, is an unexpected response.
+func firstRecord(o spec.Operation, root any, budget *int) (domain.Record, error) {
+	list, found := pointerValue(root, o.Response.First)
+	arr, isList := list.([]any)
+	if !found || !isList {
+		return domain.Record{}, domain.ErrUnexpectedResponse
+	}
+	if len(arr) == 0 {
+		return domain.Record{}, domain.ErrNotFound
+	}
+	obj, isObject := arr[0].(map[string]any)
+	if !isObject {
+		return domain.Record{}, domain.ErrUnexpectedResponse
+	}
+	return mapRecord(o.Response.Fields, obj, budget)
+}
+
 // plainValue returns the Go value of a spec default or example value: a whole number as an int, and any other number as
 // its text. Other values pass through.
 func plainValue(v any) any {
