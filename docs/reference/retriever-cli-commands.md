@@ -51,11 +51,27 @@ retriever --version
 - `kiwi`: Kiwi test-management commands: `export`, `products`, `documents`, `test-cases`, and `plans`.
 - `jira`: Jira Cloud commands: `export`, `whoami`, `projects`, `issues`, and `comments`.
 - `serve`: serves the read-only GraphQL API on the loopback address.
+- `connector`: checks one connector spec file. `connector validate` runs the static checks, and `connector test`
+  replays every example and prints the conformance report.
 - `mcp`: serves the source catalog to a Model Context Protocol client over standard input and output.
 - `help`: prints the help page of a command, such as `retriever help sources list`.
 
 For the full list of `outline` groups and their subcommands, run `retriever outline --help` and then
 `retriever outline <group> --help`. The list is generated from the operation catalog, so this page does not copy it.
+
+## Connector conformance
+
+`retriever connector validate <spec>` checks that the spec is valid and every operation carries an example. It prints
+the validation report with the review a person reads before the engine runs the spec. `retriever connector test
+<spec>` also replays every example through the engine, checks each mapped field against the expected fields, and
+prints the full report with the CLI, MCP, and README texts derived from the spec. Secrets the spec declares never
+reach the report: every occurrence reads `[REDACTED]`.
+
+A passing run exits `0` with the report on standard output. A failing run exits `2` with the diagnostics on standard
+error and nothing on standard output: a missing example names the operation, and an unproduced expected field names
+the operation, the example, and the field. In JSON mode the passing run prints one versioned document, and a failure
+prints the standard failure body. The suite also runs over every bundled spec, where the derived texts must equal the
+stored texts byte for byte.
 
 ## Changes and API tokens
 

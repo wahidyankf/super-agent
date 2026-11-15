@@ -91,6 +91,30 @@ help of the command's catalog row, and the exact set is the one the source retur
 `location` is the path of the file the export wrote. It is the only field. The file is named by the document ID, so the
 name holds no title.
 
+### connector validate
+
+A passing run prints the validation report inside one versioned document:
+
+```json
+{
+  "schemaVersion": 1,
+  "spec": "wiki.yml",
+  "kind": "example-wiki",
+  "operations": 1,
+  "examples": 1,
+  "status": "pass",
+  "report": "conformance wiki.yml, kind example-wiki\n..."
+}
+```
+
+`spec` is the base file name, never a path. `operations` and `examples` count the spec. `status` is `pass`.
+`report` is the text report the text mode prints, with every secret redacted.
+
+### connector test
+
+A passing run prints the same shape, with the full report: the validation, the replayed values of every example, and
+the CLI, MCP, and README texts derived from the spec.
+
 ## The failure body
 
 When a command fails in JSON mode, standard output stays empty and standard error gets one JSON line:
@@ -149,6 +173,11 @@ Reasons that the CLI can emit:
   nothing.
 - `write_outcome_unknown`: a write's request may have reached the source, but its reply is missing or unusable. The
   change may or may not have happened, so the write is never retried. The command exits 2.
+- `spec_invalid`: a connector spec the static checks refuse. The message names the file, the field, and the fixed rule,
+  never a value.
+- `spec_unreadable`: a connector spec file that cannot be read, or that is larger than the size limit.
+- `test_failed`: a connector spec whose examples do not replay. The message names the operation, the example, and the
+  field at fault.
 - `panic`: an internal failure. See [exit codes](./retriever-cli-exit-codes.md#panics).
 
 The list is a summary. The `invalid_*`, `*_required`, and `*_mismatch` entries stand for groups of reasons, and the

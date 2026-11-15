@@ -51,6 +51,10 @@ file that is refused stops the sources commands with `retriever.connector.spec_i
 field, never a value. A catalog pin that does not match its spec file fails with
 `retriever.connector.spec_pin_mismatch`, and no request goes out. An explicit `--connectors-dir` that does not exist or
 cannot be read fails with `retriever.connector.folder_unavailable`. A missing default connectors folder is not an error.
+`connector validate <spec>` and `connector test <spec>` check one spec file: an unreadable or oversized file fails
+with `retriever.connector.spec_unreadable`, a refused spec with `retriever.connector.spec_invalid`, and a failed
+replay with `retriever.connector.test_failed`. Every connector failure exits `2` with its diagnostics on standard
+error and nothing on standard output.
 See [add a spec connector](../how-to/add-a-spec-connector.md). This includes an unknown option, a missing argument, a bad `--output` or `--color` value,
 an unknown source kind, a port outside `0` to `65535`, and a catalog that does not load. The message goes to standard
 error, and standard output stays empty. A missing catalog is the same case. It exits `2` and names the three ways to
