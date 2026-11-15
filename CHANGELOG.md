@@ -24,10 +24,19 @@ upgrade.
 
 ### Added
 
+- The bundled `outline.yml` serves the 66 catalog reads, each with a `catalog_id` and an example, and the fallback
+  target `documents.export` with both surfaces off. A composite builder routes each read to the bundled-spec engine or
+  to the Go gateway until pull request 17, and `retriever-connector-outline` stays in the graph. Fifty-three reads run
+  on the engine; `collections.list`, `documents.get`, the comment reads, and the key, client, authentication, webhook,
+  integration, and sign-in provider reads stay on the gateway, as the
+  [connector spec fields](docs/reference/connector-spec-fields.md) page lists. The MCP surface of the 65 read tools
+  stays byte-identical to its golden, and the unchanged read, redaction, and transport scenarios run against the
+  composite.
+- The connector spec names catalog parameters exactly: names start lower-case and may hold upper-case letters, and the
+  `CollectionID`, `CollectionUUID`, and `DocumentID` parameter kinds join the 21 existing kinds. They validate as an
+  opaque ID or UUID. The bundled Outline port needs both, and every previously valid spec still validates.
 - The Outline read tools have a golden of their MCP surface, which pins each tool's name, description, input schema, and
-  hints. The reads still run on the Go gateway. The connector spec language cannot yet express them, because Outline
-  sends every call as a POST, and the [connector spec fields](docs/reference/connector-spec-fields.md) page lists the
-  limits.
+  hints.
 - `libs/retriever-spec` is a Go library for the declarative connector spec of ADR 001. It reads one YAML document of at
   most 256 KiB, checks it against a JSON Schema, and refuses it with the stable code `retriever.connector.spec_invalid`
   and the path of each broken field. A valid spec gives a plain-text review of what it can do. The `retriever` command

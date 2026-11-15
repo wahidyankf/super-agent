@@ -12,9 +12,9 @@ import (
 // The slot patterns of a spec. A path slot sits inside a path, a header slot is the whole value of a header, and a body
 // slot is the whole string of a body value.
 var (
-	pathSlotPattern   = regexp.MustCompile(`\{([a-z][a-z0-9_]{0,63})\}`)
-	headerSlotPattern = regexp.MustCompile(`^\{([a-z][a-z0-9_]{0,63})\}$`)
-	bodySlotPattern   = regexp.MustCompile(`^\{\{([a-z][a-z0-9_]{0,63})\}\}$`)
+	pathSlotPattern   = regexp.MustCompile(`\{([a-z][a-zA-Z0-9_]{0,63})\}`)
+	headerSlotPattern = regexp.MustCompile(`^\{([a-z][a-zA-Z0-9_]{0,63})\}$`)
+	bodySlotPattern   = regexp.MustCompile(`^\{\{([a-z][a-zA-Z0-9_]{0,63})\}\}$`)
 )
 
 // semanticFindings checks the rules that a JSON Schema cannot state, because each one compares two fields of one
@@ -326,7 +326,7 @@ const (
 // The patterns of a merge block: a label of lowercase letters and hyphens, and a label field of the field-name form.
 var (
 	mergeLabelPattern = regexp.MustCompile(`^[a-z]+(-[a-z]+)*$`)
-	mergeFieldPattern = regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`)
+	mergeFieldPattern = regexp.MustCompile(`^[a-z][a-zA-Z0-9_]{0,63}$`)
 )
 
 // CheckMerge returns the findings of the merge blocks of a spec model: two to eight lists, a label of lowercase

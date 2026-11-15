@@ -53,10 +53,13 @@ func TestSchemaReturnsACopy(t *testing.T) {
 	}
 }
 
-// specParamKinds is the list of parameter kinds that a spec may name. A kind that would take a secret, a collection, or
-// an event name stays out. The list must match the enum of the schema, and every name must be a catalog kind.
+// specParamKinds is the list of parameter kinds that a spec may name. A kind that would take a secret or an event name
+// stays out. The collection and document ID kinds are admitted because the bundled ports claim catalog rows with them:
+// they validate as an opaque ID or UUID, so they grant no power that ID and UUID do not. The list must match the enum
+// of the schema, and every name must be a catalog kind.
 var specParamKinds = []operations.Kind{
-	operations.KindID, operations.KindUUID, operations.KindShareID, operations.KindQuery, operations.KindLimit,
+	operations.KindID, operations.KindUUID, operations.KindShareID, operations.KindCollectionID,
+	operations.KindCollectionUUID, operations.KindDocumentID, operations.KindQuery, operations.KindLimit,
 	operations.KindOffset, operations.KindInt, operations.KindBool, operations.KindName, operations.KindText,
 	operations.KindEnum, operations.KindEnumList, operations.KindIDList, operations.KindUUIDList, operations.KindTime,
 	operations.KindURL, operations.KindIndex, operations.KindColor, operations.KindScore, operations.KindReason,

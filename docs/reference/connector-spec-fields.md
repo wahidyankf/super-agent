@@ -92,8 +92,11 @@ The review text lists each POST read in its own block, with its path and the slo
 ## Parameters
 
 Each parameter has `name`, `type`, `in` (`path`, `query`, or `body`), and `required`. It may have `default`, `min`,
-`max`, `values`, `help`, and `resolve`. The `type` is one of the 21 parameter kinds of the operation catalog, such as
-`ID`, `Query`, `Limit`, `Enum`, `Time`, and `URL`, so every adapter validates a value the same way. Two rules narrow it:
+`max`, `values`, `help`, and `resolve`. The `type` is one of the 24 parameter kinds of the operation catalog, such as
+`ID`, `Query`, `Limit`, `Enum`, `Time`, and `URL`, so every adapter validates a value the same way. A bundled port
+also uses `CollectionID`, `CollectionUUID`, and `DocumentID`, which validate as an opaque ID or UUID. Names start
+lower-case and may hold upper-case letters, so a bundled operation names the catalog parameters exactly
+(`collectionId`, `searchSource`). Two rules narrow the type:
 
 - A path parameter has type `ID`, `UUID`, or `ShareID`, and it is always required. The path must use it.
 - A query parameter may not have a credential-shaped name, such as `api_key`, `token`, `secret`, or `password`.
@@ -208,7 +211,9 @@ reply rules. A table in the app was rejected, because it would be a second place
 Each `catalog_id` names one existing row of the same built-in kind, once. An operation that no row names, such as a
 fallback target, has no `catalog_id` and sets `cli: false` and `mcp: false`. A spec may not claim a row that another
 spec of the kind already claims: one file holds each bundled kind, and a repeated claim inside one file never leaves
-the validation. The parameters of a claimed operation match the row in names, types, and required flags.
+the validation. The parameters of a claimed operation match the row in names, types, and required flags. The claimed
+operations of each kind cover every read row of the kind; a change row may stay unclaimed until its port, because the
+composite builder routes it to the Go gateway meanwhile.
 
 The review text lists each bundled operation in its own block, with the catalog row it claims, or with no catalog row
 and its surfaces off.
@@ -223,17 +228,22 @@ none. The bundled fixture uses `example.test` names only.
 
 ## Limits for the Outline reads
 
-The language cannot yet express the Outline reads, so they still run on the Go gateway. Four limits block them:
+The bundled `outline.yml` serves the 66 catalog reads with a `catalog_id` and an example each, and the fallback
+target `documents.export` with both surfaces off. A composite builder routes each operation to the engine or to the
+Go gateway until pull request 17, and the Go connector module stays in the graph. The earlier language limits no
+longer block a read: `POST` with `read_over_post` ([POST reads](#post-reads)), paging in the body (`in: body`,
+[Pagination](#pagination)), required and format-checked fields, nested records, the first item, merged lists, trees,
+and the fallback ([Response](#response)).
 
-- Outline sends every call as a `POST` with a JSON body. A read may now use `POST` with `read_over_post`, which is
-  described in [POST reads](#post-reads), so this limit no longer blocks a read.
-- Outline paging puts `offset` and `limit` in the body. A paging rule may now travel in the body with `in: body`,
-  which is described in [Pagination](#pagination), so this limit no longer blocks a read.
-- A field is never required. A field takes `required` and a closed `format` now, which is described in
-  [Response](#response), so this limit no longer blocks a read. A missing optional field still maps to null.
-- A field holds one scalar or one nested record, which is described in [Response](#response). The first item of a
-  list, a list merged from several lists, a tree with a computed depth, and a fallback read are described in
-  [Response](#response).
+Thirteen reads stay on the Go gateway until the language can express them:
+
+- `collections.list` declares no page parameters, so no spec operation can page it, and the page-cap failure belongs
+  to the Go reader.
+- `documents.get` shares one status for a missing document and a missing method, which no error mapping can tell
+  apart, and its wrapped and unwrapped reply shapes need two pointers.
+- The comment reads map editor data the spec cannot compute. The key, client, authentication, webhook, and
+  integration lists map reply lists the spec cannot read, the integration reads compute address hosts the spec cannot
+  compute, and the sign-in provider settings hold a list the spec cannot read either.
 
 A spec named `outline` is also refused in the user folder, because the kind is a built-in source. A bundled Outline
 spec takes the exception for embedded files only, as described in

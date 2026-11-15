@@ -68,7 +68,7 @@
     },
     "body_value": {
       "anyOf": [
-        { "type": "string", "pattern": "^\\{\\{[a-z][a-z0-9_]{0,63}\\}\\}$" },
+        { "type": "string", "pattern": "^\\{\\{[a-z][a-zA-Z0-9_]{0,63}\\}\\}$" },
         { "$ref": "#/$defs/constant_string" },
         { "type": "number" },
         { "type": "boolean" },
@@ -90,7 +90,7 @@
     },
     "param_name": {
       "type": "string",
-      "pattern": "^[a-z][a-z0-9_]{0,63}$"
+      "pattern": "^[a-z][a-zA-Z0-9_]{0,63}$"
     },
     "param_type": {
       "type": "string",
@@ -98,6 +98,9 @@
         "ID",
         "UUID",
         "ShareID",
+        "CollectionID",
+        "CollectionUUID",
+        "DocumentID",
         "Query",
         "Limit",
         "Offset",
@@ -132,7 +135,7 @@
       "type": "string",
       "minLength": 2,
       "maxLength": 512,
-      "pattern": "^/([A-Za-z0-9_~-][A-Za-z0-9._~-]{0,127}|\\{[a-z][a-z0-9_]{0,63}\\})(/([A-Za-z0-9_~-][A-Za-z0-9._~-]{0,127}|\\{[a-z][a-z0-9_]{0,63}\\}))*$"
+      "pattern": "^/([A-Za-z0-9_~-][A-Za-z0-9._~-]{0,127}|\\{[a-z][a-zA-Z0-9_]{0,63}\\})(/([A-Za-z0-9_~-][A-Za-z0-9._~-]{0,127}|\\{[a-z][a-zA-Z0-9_]{0,63}\\}))*$"
     },
     "base_path": {
       "type": "string",
@@ -156,7 +159,7 @@
     },
     "header_value": {
       "anyOf": [
-        { "type": "string", "pattern": "^\\{[a-z][a-z0-9_]{0,63}\\}$" },
+        { "type": "string", "pattern": "^\\{[a-z][a-zA-Z0-9_]{0,63}\\}$" },
         {
           "allOf": [
             { "$ref": "#/$defs/constant_string" },
@@ -306,7 +309,7 @@
           "minProperties": 1,
           "maxProperties": 32,
           "patternProperties": {
-            "^[a-z][a-z0-9_]{0,63}$": { "$ref": "#/$defs/scalar_field" }
+            "^[a-z][a-zA-Z0-9_]{0,63}$": { "$ref": "#/$defs/scalar_field" }
           },
           "additionalProperties": false
         }
@@ -333,7 +336,7 @@
           "type": "object",
           "maxProperties": 100,
           "patternProperties": {
-            "^[a-z][a-z0-9_]{0,63}$": { "$ref": "#/$defs/field" }
+            "^[a-z][a-zA-Z0-9_]{0,63}$": { "$ref": "#/$defs/field" }
           },
           "additionalProperties": false
         }
@@ -417,7 +420,7 @@
           "type": "object",
           "maxProperties": 100,
           "patternProperties": {
-            "^[a-z][a-z0-9_]{0,63}$": { "$ref": "#/$defs/field" }
+            "^[a-z][a-zA-Z0-9_]{0,63}$": { "$ref": "#/$defs/field" }
           },
           "additionalProperties": false
         },
@@ -491,7 +494,7 @@
           "type": "object",
           "maxProperties": 50,
           "patternProperties": {
-            "^[a-z][a-z0-9_]{0,63}$": { "$ref": "#/$defs/json_constant" }
+            "^[a-z][a-zA-Z0-9_]{0,63}$": { "$ref": "#/$defs/json_constant" }
           },
           "additionalProperties": false
         },
@@ -516,7 +519,7 @@
           "type": "object",
           "maxProperties": 100,
           "patternProperties": {
-            "^[a-z][a-z0-9_]{0,63}$": { "$ref": "#/$defs/json_constant" }
+            "^[a-z][a-zA-Z0-9_]{0,63}$": { "$ref": "#/$defs/json_constant" }
           },
           "additionalProperties": false
         }

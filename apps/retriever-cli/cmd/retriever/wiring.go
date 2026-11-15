@@ -23,6 +23,7 @@ import (
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/registry"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
+	"github.com/wahidyankf/super-agent/libs/retriever-spec"
 )
 
 // seamConfig is the loopback test seam for the connection base of one source kind. When it is off, each source's own
@@ -179,6 +180,13 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 		},
 	}
 	maps.Copy(builders, specBuilders(set, h.engine, creds))
+	// The bundled Outline spec rides with the Go gateway until pull request 17: the composite routes each operation
+	// to the engine or to the gateway, and nothing retires yet.
+	if model := bundledOutline(set); model != nil {
+		builders[domain.KindOutline] = func(src domain.Source) (ports.SourceGateway, error) {
+			return buildOutlineComposite(model, src, creds, seams[domain.KindOutline], h.engine)
+		}
+	}
 	resolver := registry.New(builders)
 	ops := set.Operations
 	svc := sources.Service{Catalog: cat, Gateways: resolver, Operations: &ops}
@@ -190,9 +198,22 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 	}, nil
 }
 
+// bundledOutline returns the bundled outline.yml model of the set, or nil when the set holds none. The merged set
+// always holds it, because a user spec that shadows a bundled kind stops start-up; a set built without the bundled
+// specs keeps the pure Go gateway.
+func bundledOutline(set connectorspec.Set) *spec.Spec {
+	for _, s := range set.Specs {
+		if s.Model.Kind == domain.KindOutline.String() {
+			return s.Model
+		}
+	}
+	return nil
+}
+
 // buildOutline returns the gateway of one Outline source. The source's endpoint names the host that receives its key:
-// the catalog is the reviewed control. The seam, when it is on, replaces only the connection base.
-func buildOutline(src domain.Source, creds ports.Credentials, seam seamConfig) (ports.SourceGateway, error) {
+// the catalog is the reviewed control. The seam, when it is on, replaces only the connection base. It returns the
+// concrete gateway, so the composite uses it as a reader and a writer with no assertion.
+func buildOutline(src domain.Source, creds ports.Credentials, seam seamConfig) (*outline.Gateway, error) {
 	if !seam.on {
 		return outline.New(src, creds), nil
 	}

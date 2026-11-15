@@ -66,7 +66,7 @@ func isBundledSpecName(name string) bool {
 // ParseBundled, so a bundled kind keeps every rule of a user spec except the built-in kind. One file holds each
 // bundled kind, so a spec may not claim a row another spec of the kind already claims: a second file of the kind is
 // refused, and a repeated claim inside one file never leaves ParseBundled. The claimed operations of each kind cover
-// every row of that kind in the built-in catalog, so the catalog row stays the single source of each surface. A
+// every read row of that kind in the built-in catalog, so the catalog row stays the single source of each surface. A
 // bundled kind is a built-in kind, which every user set registers, so the set needs no row of its own.
 func loadBundled(files []specfolder.File) (Set, error) {
 	set := Set{Digests: map[string]string{}}
@@ -102,9 +102,10 @@ func loadBundled(files []specfolder.File) (Set, error) {
 	return set, nil
 }
 
-// checkBundledCoverage refuses a bundled kind that leaves a catalog row of the kind without an operation. The rows
-// come from the built-in catalog in catalog order, and the first file of the kind answers for the gap, so the text
-// names no value and stays put while rows move.
+// checkBundledCoverage refuses a bundled kind that leaves a catalog read row of the kind without an operation. The
+// rows come from the built-in catalog in catalog order, and the first file of the kind answers for the gap, so the
+// text names no value and stays put while rows move. A change operation may stay with the Go gateway until its port:
+// the composite builder routes it there, so only reads must be claimed. Pull request 17 claims the Outline writes.
 func checkBundledCoverage(names []string, models []*spec.Spec, kinds domain.KindSet) *Error {
 	claimed := map[string]map[string]bool{}
 	first := map[string]string{}
@@ -121,6 +122,9 @@ func checkBundledCoverage(names []string, models []*spec.Spec, kinds domain.Kind
 	}
 	for _, kind := range slices.Sorted(maps.Keys(claimed)) {
 		for _, row := range operations.RowsOf(mustKind(kinds, kind)) {
+			if row.Effect != domain.EffectRead {
+				continue
+			}
 			if !claimed[kind][string(row.ID)] {
 				return &Error{File: first[kind], Rule: ruleBundledMissing}
 			}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
@@ -19,7 +20,9 @@ import (
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-engine/engine"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
+	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/registry"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/specfolder"
@@ -139,9 +142,10 @@ func (w *world) loadConnectors(dir string, named bool) (connectorspec.Set, error
 }
 
 // wireSources loads the catalog, builds the gateway registry, and returns the source service, as wireSources does in
-// the composition root. The spec sources of the set are built from its one engine builder each. A catalog error is
-// returned, so only the source commands report it.
-func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connectorspec.Set) (sources.Service, error) {
+// the composition root. The spec sources of the set are built from its one engine builder each, and the bundled
+// Outline spec rides with the Go gateway in the composite, as the root wires it. A catalog error is returned, so only
+// the source commands report it.
+func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connectorspec.Set, userSpecs bool) (sources.Service, error) {
 	if err := checkSeams(seams); err != nil {
 		return sources.Service{}, err
 	}
@@ -153,8 +157,10 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connecto
 	if err != nil {
 		return sources.Service{}, err
 	}
+	// The bundled specs of the merged set never change the registered kinds: only a user spec does, as the set held
+	// before the merge.
 	kinds := w.kinds
-	if len(set.Specs) > 0 {
+	if userSpecs {
 		kinds = set.Kinds
 	}
 	cat, err := w.be.loadCatalog(paths.Catalog, kinds, set.Digests)
@@ -175,8 +181,188 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connecto
 	for _, s := range set.Specs {
 		builders[s.Kind] = w.specBuilder(rt, s.Model, creds)
 	}
+	// The bundled Outline spec rides with the Go gateway until pull request 17, as the root wires it: the composite
+	// routes each operation to the engine or to the gateway, and nothing retires yet.
+	if model := bundledOutlineModel(set); model != nil {
+		seam := seams[domain.KindOutline]
+		builders[domain.KindOutline] = func(src domain.Source) (ports.SourceGateway, error) {
+			return w.buildOutlineComposite(model, src, creds, seam, rt)
+		}
+	}
 	ops := set.Operations
 	return sources.Service{Catalog: cat, Gateways: registry.New(builders), Operations: &ops}, nil
+}
+
+// bundledOutlineModel returns the bundled outline.yml model of the set, or nil when the set holds none. It mirrors
+// bundledOutline in the composition root, which package main holds and this package cannot import.
+func bundledOutlineModel(set connectorspec.Set) *spec.Spec {
+	for _, s := range set.Specs {
+		if s.Model.Kind == domain.KindOutline.String() {
+			return s.Model
+		}
+	}
+	return nil
+}
+
+// goServedOutlineReads are the Outline reads the harness composite keeps on the Go gateway, mirroring goServedReads
+// in the composition root. Reads not named here run on the bundled-spec engine, and nothing retires.
+var goServedOutlineReads = map[domain.OperationID]bool{
+	domain.OpCollectionsList: true,
+	domain.OpDocumentsGet:    true,
+
+	domain.OpCommentsGet:  true,
+	domain.OpCommentsList: true,
+
+	domain.OpAPIKeysList:                 true,
+	domain.OpAuthenticationProvidersGet:  true,
+	domain.OpAuthenticationProvidersList: true,
+	domain.OpIntegrationsGet:             true,
+	domain.OpIntegrationsList:            true,
+	domain.OpOAuthAuthenticationsList:    true,
+	domain.OpOAuthClientsGet:             true,
+	domain.OpOAuthClientsList:            true,
+	domain.OpWebhookSubscriptionsList:    true,
+}
+
+// outlineNotFoundMaps mirrors the translation tables of the composition root: the engine reports every 404 as a plain
+// not found, and the composite restores the collection and document sentinels the Go gateway maps.
+var (
+	outlineCollectionNotFoundReads = map[domain.OperationID]bool{
+		domain.OpCollectionsInfo:         true,
+		domain.OpCollectionsDocuments:    true,
+		domain.OpCollectionsMemberships:  true,
+		domain.OpCollectionsGroupMembers: true,
+	}
+	outlineDocumentNotFoundReads = map[domain.OperationID]bool{
+		domain.OpDocumentsChildren:         true,
+		domain.OpDocumentsInsights:         true,
+		domain.OpDocumentsMemberships:      true,
+		domain.OpDocumentsGroupMemberships: true,
+		domain.OpDocumentsUsers:            true,
+	}
+)
+
+// harnessOutlineComposite is the Outline gateway of a scenario: the Go gateway of the seam and the engine of the
+// bundled outline.yml together, mirroring outlineComposite in the composition root. Reads the spec serves run on the
+// engine over the seam transport, and every other operation runs on the Go gateway.
+type harnessOutlineComposite struct {
+	goGateway ports.SourceGateway
+	goReader  ports.SourceReader
+	goWriter  ports.SourceWriter
+	engine    *engine.Engine
+}
+
+// buildOutlineComposite returns the gateway of one Outline source of a scenario, mirroring buildOutlineComposite in
+// the composition root. The engine reaches the stub Outline server through the seam: the transport rewrites the
+// request to the seam base and round-trips with the seam client, so the unit and integration levels need no socket of
+// their own. A source whose Go gateway or engine cannot be built stops the scenario.
+func (w *world) buildOutlineComposite(model *spec.Spec, src domain.Source, creds *envfile.Credentials, seam seamConfig,
+	rt specRuntime) (ports.SourceGateway, error) {
+	goGateway, err := wireOutline(src, creds, seam, w.clock)
+	if err != nil {
+		return nil, err
+	}
+	goReader, ok := goGateway.(ports.SourceReader)
+	if !ok {
+		return nil, domain.ErrUnsupportedOperation
+	}
+	goWriter, ok := goGateway.(ports.SourceWriter)
+	if !ok {
+		return nil, domain.ErrUnsupportedOperation
+	}
+	eng, err := engine.New(model, src, engine.Ports{
+		Credentials: creds,
+		Identities:  creds,
+		Clock:       engineClock{clk: w.clock},
+		Transport:   harnessEngineTransport(seam, rt),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &harnessOutlineComposite{goGateway: goGateway, goReader: goReader, goWriter: goWriter, engine: eng}, nil
+}
+
+// harnessEngineTransport returns the transport of the scenario's Outline engine: the seam transport when the seam is
+// on, which reaches the stub, or the spec runtime's transport otherwise, which serves no Outline exchange.
+func harnessEngineTransport(seam seamConfig, rt specRuntime) http.RoundTripper {
+	if !seam.on || seam.client == nil {
+		return rt.transport
+	}
+	base, err := url.Parse(seam.base)
+	if err != nil {
+		return rt.transport
+	}
+	return seamTransport{base: base, rt: seam.client.Transport}
+}
+
+// seamTransport sends to the seam base: it rewrites the request URL to the seam's base URL and round-trips with the
+// seam client. The engine keeps its own base for signing nothing, and the stub answers by path, as it does for the
+// Go gateway.
+type seamTransport struct {
+	base *url.URL
+	rt   http.RoundTripper
+}
+
+// RoundTrip rewrites the request to the seam base and sends it with the seam client.
+func (t seamTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	c := r.Clone(r.Context())
+	c.URL.Scheme = t.base.Scheme
+	c.URL.Host = t.base.Host
+	return t.rt.RoundTrip(c)
+}
+
+// outlineSpecOperationID returns the engine operation of a catalog operation, mirroring specOperationID in the
+// composition root.
+func outlineSpecOperationID(op domain.OperationID) domain.OperationID {
+	return domain.OperationID(domain.KindOutline.String() + "." + string(op))
+}
+
+// Read runs one catalog operation of a scenario against the stub. A read the bundled spec serves runs on the engine,
+// and any other operation runs on the Go gateway.
+func (g *harnessOutlineComposite) Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
+	if goServedOutlineReads[op] {
+		return g.goReader.Read(ctx, op, args)
+	}
+	rec, err := g.engine.Read(ctx, outlineSpecOperationID(op), args)
+	return rec, translateOutlineNotFound(op, err)
+}
+
+// translateOutlineNotFound restores the not-found sentinel of an engine-served read, mirroring the composition root.
+func translateOutlineNotFound(op domain.OperationID, err error) error {
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, domain.ErrNotFound) ||
+		errors.Is(err, domain.ErrCollectionNotFound) || errors.Is(err, domain.ErrDocumentNotFound) {
+		return err
+	}
+	if outlineCollectionNotFoundReads[op] {
+		return domain.ErrCollectionNotFound
+	}
+	if outlineDocumentNotFoundReads[op] {
+		return domain.ErrDocumentNotFound
+	}
+	return err
+}
+
+// Write runs one change operation of a scenario on the Go gateway, until pull request 17 ports the writes.
+func (g *harnessOutlineComposite) Write(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
+	return g.goWriter.Write(ctx, op, args)
+}
+
+// ListCollections returns the collections of the source from the Go gateway, until pull request 17 retires it.
+func (g *harnessOutlineComposite) ListCollections(ctx context.Context) ([]domain.Collection, error) {
+	return g.goGateway.ListCollections(ctx)
+}
+
+// CollectionTree returns the documents of one collection from the Go gateway, until pull request 17 retires it.
+func (g *harnessOutlineComposite) CollectionTree(ctx context.Context, id domain.CollectionID) ([]domain.TreeNode, error) {
+	return g.goGateway.CollectionTree(ctx, id)
+}
+
+// Document returns one document from the Go gateway, until pull request 17 retires it.
+func (g *harnessOutlineComposite) Document(ctx context.Context, id domain.DocumentID) (domain.SourceDocument, error) {
+	return g.goGateway.Document(ctx, id)
 }
 
 // wireOutline returns the gateway of one Outline source. The seam, when it is on, replaces only the connection base.
@@ -243,14 +429,24 @@ func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) erro
 	if err != nil {
 		return err
 	}
-	set, err := w.loadConnectors(paths.Connectors, g.ConnectorsDir != "")
+	userSet, err := w.loadConnectors(paths.Connectors, g.ConnectorsDir != "")
+	if err != nil {
+		return err
+	}
+	// The bundled specs merge with the user-folder set, as withBundled merges them in the composition root. A user
+	// spec that shadows a bundled kind stops the run here, before any source is built.
+	bundled, err := connectorspec.LoadBundled()
+	if err != nil {
+		return err
+	}
+	set, err := connectorspec.Merge(userSet, bundled)
 	if err != nil {
 		return err
 	}
 	// The spec commands are registered before the wiring, as the composition root registers them, so a refused catalog
 	// still reports its failure through the command that names the spec kind.
 	deps.Specs = cli.Specs{Catalog: set.Operations, Rows: set.CLIRows}
-	svc, err := w.wireSources(paths, seams, set)
+	svc, err := w.wireSources(paths, seams, set, len(userSet.Specs) > 0)
 	if err != nil {
 		return err
 	}

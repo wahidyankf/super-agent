@@ -18,10 +18,10 @@ import (
 )
 
 // slotPattern matches a whole path segment or a whole header value that names a parameter, such as {id}.
-var slotPattern = regexp.MustCompile(`^\{([a-z][a-z0-9_]*)\}$`)
+var slotPattern = regexp.MustCompile(`^\{([a-z][a-zA-Z0-9_]*)\}$`)
 
 // bodySlotPattern matches a whole string of a body that names a parameter, such as {{title}}.
-var bodySlotPattern = regexp.MustCompile(`^\{\{([a-z][a-z0-9_]*)\}\}$`)
+var bodySlotPattern = regexp.MustCompile(`^\{\{([a-z][a-zA-Z0-9_]*)\}\}$`)
 
 // request is one request ready to send: the method, the target path with its query, the headers that the spec sets,
 // and the JSON body when the operation has one. The engine adds the authorization and accept headers when it sends.
