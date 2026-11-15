@@ -39,6 +39,7 @@ func sharedSemanticFindings(s *Spec) []Finding {
 	fs = append(fs, CheckMerge(s)...)
 	fs = append(fs, CheckTree(s)...)
 	fs = append(fs, CheckFallback(s)...)
+	fs = append(fs, CheckPageEnd(s)...)
 	index := make(map[string]int, len(s.Operations))
 	for i, op := range s.Operations {
 		at := "/operations/" + strconv.Itoa(i) + "/id"
@@ -230,6 +231,9 @@ func checkExamples(op Operation, base string, params map[string]Param) []Finding
 			}
 		}
 		for key := range ex.Expect {
+			if key == truncatedField && op.Response.Truncated != nil {
+				continue
+			}
 			if mergeFields != nil {
 				if !mergeFields[key] {
 					fs = append(fs, finding(at+"/expect/"+safeName(key), "names no field of the operation"))

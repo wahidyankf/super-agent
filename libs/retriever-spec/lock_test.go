@@ -36,6 +36,9 @@ var specFieldNames = []string{
 	"fallback", "when", "empty", "fill",
 	// ADR 002, E9: bundled kinds and the ID mapping.
 	"catalog_id",
+	// ADR 004, E20: the page end: the last flag, the cut to the limit, and the computed truncated flag. The E19
+	// IssueKey parameter kind is an enum value, not a field, so the catalog-kinds test pins it instead.
+	"last_pointer", "cut_to_limit", "truncated", "token", "last",
 }
 
 // collectPropertyNames gathers the keys of every "properties" object of a decoded schema, at any depth.

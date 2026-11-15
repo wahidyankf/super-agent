@@ -364,6 +364,18 @@ var faults = []fault{
 		doc: fx("      - name: limit\n", "      - name: cursor\n")},
 	{name: "a pagination name that is no query parameter is refused", layer: layerSemantic, path: "/operations/0/pagination/cursor_param",
 		doc: fx("      cursor_param: cursor", "      cursor_param: nope")},
+	// E20: the page end. A truncated block rides a cursor rule that declares the last flag, and the cut names a
+	// Limit or Int parameter of the operation, so an over-limit reply is cut and a last page stops the walk.
+	{name: "a truncated block on an offset rule is refused", layer: layerSemantic, threats: []string{"L23"},
+		path: "/operations/0/response/truncated",
+		doc: fx("      style: cursor\n      max_pages: 5\n      cursor_param: cursor\n      next_pointer: /next_cursor",
+			"      style: offset\n      max_pages: 5\n      limit_param: limit\n      offset_param: cursor",
+			"      fields:\n        id:\n          pointer: /id\n        title:\n          pointer: /title\n    examples:\n      - request:\n          limit: 20",
+			"      truncated:\n        token: /next_cursor\n        last: /is_last\n      fields:\n        id:\n          pointer: /id\n        title:\n          pointer: /title\n    examples:\n      - request:\n          limit: 20")},
+	{name: "a cut that names no parameter is refused", layer: layerSemantic, threats: []string{"L23"},
+		path: "/operations/0/pagination/cut_to_limit",
+		doc: fx("      style: cursor\n      max_pages: 5\n      cursor_param: cursor\n      next_pointer: /next_cursor",
+			"      style: offset\n      max_pages: 5\n      limit_param: limit\n      offset_param: cursor\n      cut_to_limit: nope")},
 	{name: "a resolve that names no operation is refused", layer: layerSemantic, path: "/operations/1/params/0/resolve/operation",
 		doc: fx("    params:\n      - name: id\n        type: ID\n        in: path",
 			"    params:\n      - name: id\n        type: ID\n        in: path\n        resolve:\n          operation: example-wiki.docs.missing\n          field: title")},

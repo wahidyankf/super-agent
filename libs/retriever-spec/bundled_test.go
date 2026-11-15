@@ -7,8 +7,8 @@ import (
 
 // bundledJiraStub is a bundled stub of three Jira operations. Each operation claims one catalog row of the jira kind
 // with its catalog_id, and its parameters match the row exactly: the same names, the same types, and the same
-// required flags. The IssueKey rows of the kind are not claimed, because the IssueKey parameter kind is not in the
-// spec language yet; the ports extend the language, and the loader test records that gap.
+// required flags. The IssueKey rows of the kind are not claimed yet: pull request 33 admitted the IssueKey
+// parameter kind to the language, and the Jira port claims those rows.
 const bundledJiraStub = `version: 1
 kind: jira
 summary: Reads issues of an example Jira source.
