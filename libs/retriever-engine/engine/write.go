@@ -55,7 +55,7 @@ func (e *Engine) Write(ctx context.Context, op domain.OperationID, args domain.A
 }
 
 // unsupportedWrite refuses a write that the engine does not serve. A write takes one request, so a paging rule on it would
-// do nothing and is refused. A reply that needs a Markdown converter is refused too.
+// do nothing and is refused. A reply that needs the unserved HTML converter is refused too.
 func unsupportedWrite(o spec.Operation) error {
 	if pagingStyle(o) != "none" {
 		return domain.ErrUnsupportedOperation

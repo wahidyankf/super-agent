@@ -67,8 +67,9 @@ through the `Ports` that the caller passes.
 
 ## Not in this module yet
 
-- The Markdown converters, `markdown-from-html` and `markdown-from-adf`, belong to later pull requests of ADR 001. An
-  operation that needs one returns `unsupported_operation` before any request is sent.
+- The `markdown-from-html` converter belongs to a later pull request of ADR 001. An operation that needs it returns
+  `unsupported_operation` before any request is sent. The `markdown-from-adf` converter is served as a pure function of
+  the reply.
 - Dry runs, previews, and confirmation flags are not part of the engine, because `v0.2.0` removed them on purpose. A
   write simply runs.
 - No production code wires a real clock or a real dialer. The composition root supplies them through `Ports`.

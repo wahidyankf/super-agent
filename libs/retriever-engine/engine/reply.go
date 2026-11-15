@@ -225,15 +225,19 @@ func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (d
 
 // fieldValue maps one reply value to a field value: a strings field reads a
 // list of strings, an editor-data converter reads the plain text of editor JSON,
-// any other field reads one scalar, and a hostname converter keeps the host of
-// an address. A value the reply holds as another shape is an unexpected
-// response, which names the field and never the value.
+// an ADF converter renders the document to Markdown, any other field reads one
+// scalar, and a hostname converter keeps the host of an address. A value the
+// reply holds as another shape is an unexpected response, which names the field
+// and never the value.
 func fieldValue(f spec.Field, raw any, budget *int) (any, error) {
 	if f.Format == "strings" {
 		return stringsValue(raw, budget)
 	}
 	if f.Convert == "text-from-editor-data" {
 		return editorText(raw, budget)
+	}
+	if f.Convert == "markdown-from-adf" {
+		return adfConvert(raw, budget)
 	}
 	v, err := scalarOf(raw, budget)
 	if err != nil {

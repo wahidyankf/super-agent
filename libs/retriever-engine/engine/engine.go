@@ -2,8 +2,8 @@
 // spec, authenticates it with a key that the caller supplies through a port, sends it over HTTPS with the safeguards of
 // ADR 001, and maps the reply to the declared fields. Reads and writes share those safeguards. A write is sent once, and
 // a name that a write declares is resolved by one read first. It reads no environment variable, no file, and no process:
-// the caller passes the key, the identity, the clock, and the dialer through Ports. The Markdown converters are not served
-// yet, and an operation that needs one fails with a stable unsupported error before any request is sent.
+// the caller passes the key, the identity, the clock, and the dialer through Ports. The HTML converter is not served
+// yet, and an operation that needs it fails with a stable unsupported error before any request is sent.
 package engine
 
 import (
@@ -173,7 +173,7 @@ func refuseRedirects(*http.Request, []*http.Request) error {
 	return http.ErrUseLastResponse
 }
 
-// Read runs one read operation of the spec with its validated arguments. A write is refused, and a lookup or a Markdown
+// Read runs one read operation of the spec with its validated arguments. A write is refused, and a lookup or the HTML
 // converter fails before any request is sent. An argument the spec does not declare, or one of the wrong kind, fails the
 // same way.
 func (e *Engine) Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
@@ -299,7 +299,7 @@ func (e *Engine) fetchFull(ctx context.Context, o spec.Operation, args domain.Ar
 	return e.sendFull(ctx, o, req)
 }
 
-// unsupported refuses a read that needs a part the engine does not serve: a Markdown converter, or a lookup, which only a
+// unsupported refuses a read that needs a part the engine does not serve: the HTML converter, or a lookup, which only a
 // write may declare. It returns nil for a read that the engine serves.
 func unsupported(o spec.Operation) error {
 	if err := converterUnsupported(o); err != nil {
@@ -313,19 +313,19 @@ func unsupported(o spec.Operation) error {
 	return nil
 }
 
-// converterUnsupported refuses an operation whose reply needs a Markdown converter. The Markdown converters are not
-// served yet, so the operation fails closed before any request is sent. The hostname converter is served, so it never
-// refuses. The fields of each list of a merge meet the same refusal.
+// converterUnsupported refuses an operation whose reply needs a Markdown converter the engine does not serve. Only the
+// HTML converter is unserved, so an operation naming it fails closed before any request is sent. The ADF, hostname, and
+// editor-data converters are served, so they never refuse. The fields of each list of a merge meet the same refusal.
 func converterUnsupported(o spec.Operation) error {
 	for _, f := range o.Response.Fields {
-		if f.Convert == "markdown-from-html" || f.Convert == "markdown-from-adf" {
+		if f.Convert == "markdown-from-html" {
 			return domain.ErrUnsupportedOperation
 		}
 	}
 	if o.Response.Merge != nil {
 		for _, l := range o.Response.Merge.Lists {
 			for _, f := range l.Fields {
-				if f.Convert == "markdown-from-html" || f.Convert == "markdown-from-adf" {
+				if f.Convert == "markdown-from-html" {
 					return domain.ErrUnsupportedOperation
 				}
 			}
