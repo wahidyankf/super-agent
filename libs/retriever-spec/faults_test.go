@@ -274,6 +274,30 @@ var faults = []fault{
 		path: "/operations/4/response",
 		doc:  ffx("      first: /data\n", "      first: /data\n      items: /data\n")},
 
+	// E6: merged lists with constant labels. A merge response names merge instead of fields and instead of items or
+	// first, with two to eight lists and a closed label form. The merge read is operation 4 of these rows.
+	{name: "a merge with items is refused", layer: layerSchema, threats: []string{"L6"},
+		path: "/operations/4/response",
+		doc:  mfx("    response:\n      merge:", "    response:\n      items: /data\n      merge:")},
+	{name: "a merge with first is refused", layer: layerSchema, threats: []string{"L6"},
+		path: "/operations/4/response",
+		doc:  mfx("    response:\n      merge:", "    response:\n      first: /data\n      merge:")},
+	{name: "a merge with top-level fields is refused", layer: layerSchema, threats: []string{"L6"},
+		path: "/operations/4/response",
+		doc:  mfx("    response:\n      merge:", "    response:\n      fields:\n        id:\n          pointer: /id\n      merge:")},
+	{name: "a merge of one list is refused", layer: layerSchema, threats: []string{"L6"},
+		path: "/operations/4/response/merge/lists",
+		doc:  func() string { return mergeWithLists(1) }},
+	{name: "a merge of nine lists is refused", layer: layerSchema, threats: []string{"L6"},
+		path: "/operations/4/response/merge/lists",
+		doc:  func() string { return mergeWithLists(9) }},
+	{name: "a merge with an upper-case label is refused", layer: layerSchema, threats: []string{"L6"},
+		path: "/operations/4/response/merge/lists/0/label",
+		doc:  mfx("            label: user\n", "            label: User\n")},
+	{name: "a merge with an upper-case label field is refused", layer: layerSchema, threats: []string{"L6"},
+		path: "/operations/4/response/merge/label_field",
+		doc:  mfx("        label_field: kind\n", "        label_field: Kind\n")},
+
 	// Rules that only the Go validation states, because a JSON Schema cannot compare two fields of one document.
 	{name: "a built-in kind is refused", layer: layerSemantic, threats: []string{"S10"}, path: "/kind",
 		doc: fx("kind: example-wiki", "kind: outline")},

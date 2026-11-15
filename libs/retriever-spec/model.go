@@ -134,19 +134,45 @@ type Resolve struct {
 	Field string `json:"field"`
 }
 
-// Response says how the reply of an operation maps to output fields, or to the Markdown of a document.
+// Response says how the reply of an operation maps to output fields, or to the Markdown of a document. A merge
+// response names merge instead of fields: each list of the merge names its own fields.
 type Response struct {
 	// Items is the JSON pointer to the list of a list operation. It is empty for a whole reply.
 	Items string `json:"items,omitempty"`
 	// First is the JSON pointer to the list whose first item a first-item read maps. It is empty unless the read
 	// maps item 0, and a response holds at most one of items, first, and merge.
 	First string `json:"first,omitempty"`
-	// Fields maps each output field to the JSON pointer that reads it.
-	Fields map[string]Field `json:"fields"`
+	// Merge merges two to eight lists with constant labels. It is nil unless the read merges lists, and a response
+	// holds at most one of items, first, and merge.
+	Merge *Merge `json:"merge,omitempty"`
+	// Fields maps each output field to the JSON pointer that reads it. A merge response names no top-level field:
+	// each list of the merge names its own fields.
+	Fields map[string]Field `json:"fields,omitempty"`
 	// Markdown names the output field that holds the Markdown body of a document read.
 	Markdown string `json:"markdown,omitempty"`
 	// Errors maps an HTTP status to the closed reason that the status means.
 	Errors map[string]string `json:"errors,omitempty"`
+}
+
+// Merge merges two to eight lists of one reply into one list, in the declared list order and then in the reply
+// order. Each list is tagged with its constant label under the label field, which beats a reply field of the same
+// name. The merged output shares the output cap of any list.
+type Merge struct {
+	// LabelField is the output field that carries the constant label of each list.
+	LabelField string `json:"label_field"`
+	// Lists holds two to eight lists to merge, in the order their items join the output.
+	Lists []MergeList `json:"lists"`
+}
+
+// MergeList is one list of a merge: the pointer to the list in the reply, the constant label of its items, and the
+// fields that each of its items maps.
+type MergeList struct {
+	// Items is the JSON pointer to the list in the reply.
+	Items string `json:"items"`
+	// Label is the constant label of the items, of lowercase letters and hyphens, at most 32 characters.
+	Label string `json:"label"`
+	// Fields maps each output field of the list to the JSON pointer that reads it.
+	Fields map[string]Field `json:"fields"`
 }
 
 // Field is one output field: either the JSON pointer that reads a scalar, with whether the reply must hold it, the

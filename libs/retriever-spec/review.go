@@ -34,6 +34,7 @@ func Review(s *Spec) string {
 	writeRequiredFields(&b, s)
 	writeNestedObjects(&b, s)
 	writeFirstReads(&b, s)
+	writeMergedLists(&b, s)
 	return b.String()
 }
 
@@ -76,8 +77,9 @@ func writeBodyPaging(b *strings.Builder, s *Spec) {
 }
 
 // writeRequiredFields writes the block of the operations with required or format-checked reply fields, one line each,
-// with the required fields and each checked field with its closed format name. A spec with no required or checked
-// field writes nothing, so its review keeps its text.
+// with the required fields and each checked field with its closed format name. The fields of each list of a merge
+// join the fields of their operation. A spec with no required or checked field writes nothing, so its review keeps
+// its text.
 func writeRequiredFields(b *strings.Builder, s *Spec) {
 	type entry struct {
 		id       string
@@ -87,20 +89,38 @@ func writeRequiredFields(b *strings.Builder, s *Spec) {
 	var entries []entry
 	for _, op := range s.Operations {
 		e := entry{id: op.ID}
-		var names []string
-		for name := range op.Response.Fields {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		for _, name := range names {
-			f := op.Response.Fields[name]
-			if f.Required {
-				e.required = append(e.required, name)
+		required := map[string]bool{}
+		formats := map[string]bool{}
+		add := func(fields map[string]Field) {
+			var names []string
+			for name := range fields {
+				names = append(names, name)
 			}
-			if f.Format != "" {
-				e.formats = append(e.formats, name+"="+f.Format)
+			sort.Strings(names)
+			for _, name := range names {
+				f := fields[name]
+				if f.Required {
+					required[name] = true
+				}
+				if f.Format != "" {
+					formats[name+"="+f.Format] = true
+				}
 			}
 		}
+		add(op.Response.Fields)
+		if op.Response.Merge != nil {
+			for _, l := range op.Response.Merge.Lists {
+				add(l.Fields)
+			}
+		}
+		for name := range required {
+			e.required = append(e.required, name)
+		}
+		for f := range formats {
+			e.formats = append(e.formats, f)
+		}
+		sort.Strings(e.required)
+		sort.Strings(e.formats)
 		if len(e.required) > 0 || len(e.formats) > 0 {
 			entries = append(entries, e)
 		}
@@ -122,38 +142,68 @@ func writeRequiredFields(b *strings.Builder, s *Spec) {
 }
 
 // writeNestedObjects writes the block of the operations with nested record fields, one line each, with the object
-// field and each sub-field. A spec with no object field writes nothing, so its review keeps its text.
+// field and each sub-field. The object fields of each list of a merge join the fields of their operation, with the
+// sub-fields of every list that names the field. A spec with no object field writes nothing, so its review keeps its
+// text.
 func writeNestedObjects(b *strings.Builder, s *Spec) {
 	type entry struct {
 		id    string
 		field string
 		subs  []string
 	}
-	var entries []entry
-	for _, op := range s.Operations {
+	byKey := map[string]*entry{}
+	var order []string
+	add := func(id, field string, object map[string]Field) {
+		key := id + "\x00" + field
+		e, ok := byKey[key]
+		if !ok {
+			e = &entry{id: id, field: field}
+			byKey[key] = e
+			order = append(order, key)
+		}
+		have := map[string]bool{}
+		for _, sub := range e.subs {
+			have[sub] = true
+		}
 		var names []string
-		for name := range op.Response.Fields {
+		for sub := range object {
+			names = append(names, sub)
+		}
+		sort.Strings(names)
+		for _, sub := range names {
+			if !have[sub] {
+				e.subs = append(e.subs, sub)
+				have[sub] = true
+			}
+		}
+	}
+	addFields := func(id string, fields map[string]Field) {
+		var names []string
+		for name := range fields {
 			names = append(names, name)
 		}
 		sort.Strings(names)
 		for _, name := range names {
-			f := op.Response.Fields[name]
-			if f.Object == nil {
+			if fields[name].Object == nil {
 				continue
 			}
-			var subs []string
-			for sub := range f.Object {
-				subs = append(subs, sub)
-			}
-			sort.Strings(subs)
-			entries = append(entries, entry{id: op.ID, field: name, subs: subs})
+			add(id, name, fields[name].Object)
 		}
 	}
-	if len(entries) == 0 {
+	for _, op := range s.Operations {
+		addFields(op.ID, op.Response.Fields)
+		if op.Response.Merge != nil {
+			for _, l := range op.Response.Merge.Lists {
+				addFields(op.ID, l.Fields)
+			}
+		}
+	}
+	if len(order) == 0 {
 		return
 	}
-	fmt.Fprintf(b, "Nested objects: %d\n", len(entries))
-	for i, e := range entries {
+	fmt.Fprintf(b, "Nested objects: %d\n", len(order))
+	for i, key := range order {
+		e := byKey[key]
 		fmt.Fprintf(b, "%d. %s: %s with %s\n", i+1, e.id, e.field, strings.Join(e.subs, ", "))
 	}
 }
@@ -178,6 +228,35 @@ func writeFirstReads(b *strings.Builder, s *Spec) {
 	fmt.Fprintf(b, "First reads: %d\n", len(entries))
 	for i, e := range entries {
 		fmt.Fprintf(b, "%d. %s: first of %s\n", i+1, e.id, e.pointer)
+	}
+}
+
+// writeMergedLists writes the block of the reads that merge lists, one line each, with the label field, the number
+// of lists, and each list with its constant label and its items pointer. A spec with no merge read writes nothing,
+// so its review keeps its text.
+func writeMergedLists(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id         string
+		labelField string
+		lists      []string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		if op.Response.Merge == nil {
+			continue
+		}
+		e := entry{id: op.ID, labelField: op.Response.Merge.LabelField}
+		for _, l := range op.Response.Merge.Lists {
+			e.lists = append(e.lists, l.Label+" of "+l.Items)
+		}
+		entries = append(entries, e)
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Merged lists: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: merge %s from %d lists (%s)\n", i+1, e.id, e.labelField, len(e.lists), strings.Join(e.lists, ", "))
 	}
 }
 

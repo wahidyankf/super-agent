@@ -311,14 +311,57 @@
       "type": "string",
       "enum": ["id", "uuid", "share-id"]
     },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[a-z]+(-[a-z]+)*$"
+    },
+    "merge_list": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "label", "fields"],
+      "properties": {
+        "items": { "$ref": "#/$defs/pointer" },
+        "label": { "$ref": "#/$defs/label" },
+        "fields": {
+          "type": "object",
+          "maxProperties": 100,
+          "patternProperties": {
+            "^[a-z][a-z0-9_]{0,63}$": { "$ref": "#/$defs/field" }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "merge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label_field", "lists"],
+      "properties": {
+        "label_field": { "$ref": "#/$defs/param_name" },
+        "lists": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/merge_list" }
+        }
+      }
+    },
     "response": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["fields"],
-      "not": { "required": ["items", "first"] },
+      "anyOf": [{ "required": ["fields"] }, { "required": ["merge"] }],
+      "allOf": [
+        { "not": { "required": ["items", "first"] } },
+        { "not": { "required": ["items", "merge"] } },
+        { "not": { "required": ["first", "merge"] } },
+        { "not": { "required": ["fields", "merge"] } }
+      ],
       "properties": {
         "items": { "$ref": "#/$defs/pointer" },
         "first": { "$ref": "#/$defs/pointer" },
+        "merge": { "$ref": "#/$defs/merge" },
         "fields": {
           "type": "object",
           "maxProperties": 100,
