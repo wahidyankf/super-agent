@@ -314,8 +314,9 @@ func unsupported(o spec.Operation) error {
 }
 
 // converterUnsupported refuses an operation whose reply needs a Markdown converter the engine does not serve. Only the
-// HTML converter is unserved, so an operation naming it fails closed before any request is sent. The ADF, hostname, and
-// editor-data converters are served, so they never refuse. The fields of each list of a merge meet the same refusal.
+// HTML converter is unserved, so an operation naming it fails closed before any request is sent. The ADF, hostname,
+// editor-data, and Jira converters are served, so they never refuse. The fields of each list of a merge meet the same
+// refusal.
 func converterUnsupported(o spec.Operation) error {
 	for _, f := range o.Response.Fields {
 		if f.Convert == "markdown-from-html" {

@@ -24,6 +24,12 @@ upgrade.
 
 ### Added
 
+- The spec language admits the `jira-time`, `jira-date`, and `jira-title` converters as pure functions of the reply:
+  a Jira timestamp answers as RFC 3339 in UTC, a calendar day passes unchanged, and a title keeps one line of at
+  most 255 runes with no hidden character. Any other value, including a missing one, maps to the empty text with
+  the field present, so the row is kept with a visible gap, exactly as the Go code answers today. The moved Go
+  parity tests pass unchanged against the engine functions. The schema stays at version 1; `retriever-spec` and
+  `retriever-engine` stay at `v0.6.0`.
 - The spec language admits the `IssueKey` path parameter kind with the shared strict check of the catalog: a value
   outside the shape fails before any request with `invalid_document_id`, and never echoes the value. An offset read
   may declare the page-end rule: `last_pointer` names the reply flag that decides last, beating the short-page rule,

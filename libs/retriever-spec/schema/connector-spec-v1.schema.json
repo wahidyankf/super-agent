@@ -305,7 +305,18 @@
         "fallback_pointer": { "$ref": "#/$defs/pointer" },
         "required": { "type": "boolean" },
         "format": { "$ref": "#/$defs/field_format" },
-        "convert": { "enum": ["plain", "markdown-from-html", "markdown-from-adf", "hostname", "text-from-editor-data"] }
+        "convert": {
+          "enum": [
+            "plain",
+            "markdown-from-html",
+            "markdown-from-adf",
+            "hostname",
+            "text-from-editor-data",
+            "jira-time",
+            "jira-date",
+            "jira-title"
+          ]
+        }
       }
     },
     "object_field": {
