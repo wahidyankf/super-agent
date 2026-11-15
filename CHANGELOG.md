@@ -107,6 +107,15 @@ upgrade.
   its pointers, its computed fields, and its depth cap. A tree returns a list record, as an items read does, and each
   page of a paged tree read flattens on its own. The collection-tree gateway role reads the computed `parent_id` and
   `depth` fields. The higher decode cap is an owner proposal that the owner can still veto at review.
+- A read of one object of a connector spec takes `fallback` with the target `operation`, the one closed trigger
+  `when`, and the `fill` fields (ADR 002, E8). The trigger is `empty` with a mapped output field that is empty, or
+  `status` with a list of HTTP statuses. The target is a read of the same spec: it declares only parameters the
+  first operation also declares and receives their values, and it has no fallback of its own, so a chain of two
+  fallbacks is refused at load. At most one fallback request runs per call, and both requests share the 30 second
+  limit and run under every safeguard of the engine: the same host, the same key, no redirect, and the same caps.
+  When the fallback fails, the read fails with the error of the fallback. The review text lists each fallback read
+  with its target, its trigger, and its fill fields. The triggers `empty` and `status` are owner proposals that the
+  owner can still veto at review.
 
 ### Changed
 

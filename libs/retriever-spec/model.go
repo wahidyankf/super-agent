@@ -79,6 +79,9 @@ type Operation struct {
 	Response Response `json:"response"`
 	// Pagination says how a read walks the pages, and always names a stop rule.
 	Pagination *Pagination `json:"pagination,omitempty"`
+	// Fallback is the declared second read of the operation, run when the first reply triggers it. Only a read of
+	// one object takes one, and the target is a read of the same spec with no fallback of its own.
+	Fallback *Fallback `json:"fallback,omitempty"`
 	// Role names one of the gateway reads that the operation serves, when it serves one.
 	Role string `json:"role,omitempty"`
 	// CLI says whether the command-line tool offers the operation, and under which name when it is not the default.
@@ -132,6 +135,28 @@ type Resolve struct {
 	Operation string `json:"operation"`
 	// Field is the output field of that operation that the name must match.
 	Field string `json:"field"`
+}
+
+// Fallback is a declared second read of one operation. When the first reply triggers it, the engine runs the target
+// read once with the values of the first call and fills the named output fields with the target's values. At most
+// one fallback request runs per call, and the target has no fallback of its own.
+type Fallback struct {
+	// Operation is the ID of a read operation of the same spec. It is picked in the document, never from reply data.
+	Operation string `json:"operation"`
+	// When is the one closed trigger of the fallback: a mapped output field that is empty, or a list of HTTP
+	// statuses. The triggers empty and status are owner proposals that the owner can still veto at review.
+	When FallbackWhen `json:"when"`
+	// Fill names the output fields that take the target's values.
+	Fill []string `json:"fill"`
+}
+
+// FallbackWhen is the one closed trigger of a fallback: Empty names a mapped output field that is empty, and Status
+// lists the HTTP statuses that run the fallback. Exactly one of them is set.
+type FallbackWhen struct {
+	// Empty is the mapped output field whose empty value runs the fallback. Empty means missing, null, or empty text.
+	Empty string `json:"empty,omitempty"`
+	// Status lists the HTTP statuses of the first reply that run the fallback.
+	Status []int `json:"status,omitempty"`
 }
 
 // Response says how the reply of an operation maps to output fields, or to the Markdown of a document. A merge

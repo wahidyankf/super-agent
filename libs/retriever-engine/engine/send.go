@@ -31,33 +31,42 @@ type reply struct {
 // it acted. Every other failure stops at once. For a write, a failure after the request left is an unknown outcome, and
 // the write is not sent again.
 func (e *Engine) send(ctx context.Context, o spec.Operation, r request) (any, error) {
+	root, _, err := e.sendFull(ctx, o, r)
+	return root, err
+}
+
+// sendFull runs one request of an operation until it gets a reply it can use, and returns the decoded reply with the
+// status of the last reply it received, or zero when no reply arrived. A fallback reads the status to decide whether
+// its trigger fired; every other caller reads only the reply. The retries, the waits, and the closed errors are the
+// same as send, because it is send: every request of a fallback runs under every safeguard of the engine.
+func (e *Engine) sendFull(ctx context.Context, o spec.Operation, r request) (any, int, error) {
 	write := o.Access != "read"
 	for attempt := 0; ; attempt++ {
 		rep, err := e.exchange(ctx, r, write)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		wait, retry, err := classify(o, rep.status, rep.retryAfter)
 		if retry {
 			if attempt >= maxRetries {
-				return nil, domain.ErrSourceRateLimited
+				return nil, rep.status, domain.ErrSourceRateLimited
 			}
 			if err := e.ports.Clock.Sleep(ctx, wait); err != nil {
-				return nil, err
+				return nil, rep.status, err
 			}
 			continue
 		}
 		if err != nil {
 			if write && unusableWriteReply(rep.status) {
-				return nil, domain.ErrWriteOutcomeUnknown
+				return nil, rep.status, domain.ErrWriteOutcomeUnknown
 			}
-			return nil, err
+			return nil, rep.status, err
 		}
 		root, err := decodeReplyFor(o, rep.body)
 		if err != nil && write {
-			return nil, domain.ErrWriteOutcomeUnknown
+			return nil, rep.status, domain.ErrWriteOutcomeUnknown
 		}
-		return root, err
+		return root, rep.status, err
 	}
 }
 

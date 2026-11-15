@@ -3,6 +3,7 @@ package spec
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -36,6 +37,7 @@ func Review(s *Spec) string {
 	writeFirstReads(&b, s)
 	writeMergedLists(&b, s)
 	writeTreeReads(&b, s)
+	writeFallbackReads(&b, s)
 	return b.String()
 }
 
@@ -295,6 +297,41 @@ func writeTreeReads(b *strings.Builder, s *Spec) {
 		}
 		fmt.Fprintf(b, "%d. %s: tree of %s with children %s, parent %s, depth %s%s, at most depth %d\n",
 			i+1, e.id, e.items, e.children, e.parent, e.depth, roots, e.maxDepth)
+	}
+}
+
+// writeFallbackReads writes the block of the reads with a declared fallback, one line each, with the target
+// operation, the closed trigger, and the fill fields. A spec with no fallback read writes nothing, so its review
+// keeps its text.
+func writeFallbackReads(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id     string
+		target string
+		when   string
+		fill   string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		if op.Fallback == nil {
+			continue
+		}
+		cond := op.Fallback.When.Empty + " is empty"
+		if len(op.Fallback.When.Status) > 0 {
+			var statuses []string
+			for _, status := range op.Fallback.When.Status {
+				statuses = append(statuses, strconv.Itoa(status))
+			}
+			cond = "status [" + strings.Join(statuses, ", ") + "]"
+		}
+		entries = append(entries, entry{id: op.ID, target: op.Fallback.Operation, when: cond,
+			fill: strings.Join(op.Fallback.Fill, ", ")})
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Fallback reads: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: fallback to %s when %s, filling %s\n", i+1, e.id, e.target, e.when, e.fill)
 	}
 }
 

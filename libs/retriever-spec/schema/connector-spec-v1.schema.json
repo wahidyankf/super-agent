@@ -360,6 +360,38 @@
         "max_depth": { "type": "integer", "minimum": 0, "maximum": 64 }
       }
     },
+    "fallback_when": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [{ "required": ["empty"] }, { "required": ["status"] }],
+      "not": { "required": ["empty", "status"] },
+      "properties": {
+        "empty": { "$ref": "#/$defs/param_name" },
+        "status": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 100, "maximum": 599 }
+        }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation", "when", "fill"],
+      "properties": {
+        "operation": { "$ref": "#/$defs/operation_id" },
+        "when": { "$ref": "#/$defs/fallback_when" },
+        "fill": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/param_name" }
+        }
+      }
+    },
     "response": {
       "type": "object",
       "additionalProperties": false,
@@ -519,6 +551,7 @@
         },
         "response": { "$ref": "#/$defs/response" },
         "pagination": { "$ref": "#/$defs/pagination" },
+        "fallback": { "$ref": "#/$defs/fallback" },
         "role": { "enum": ["list-collections", "collection-tree", "get-document"] },
         "cli": { "$ref": "#/$defs/surface" },
         "mcp": { "$ref": "#/$defs/surface" },
