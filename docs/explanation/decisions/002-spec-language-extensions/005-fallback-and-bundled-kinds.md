@@ -11,8 +11,8 @@ tags:
 
 # E8 and E9: the fallback read and bundled kinds
 
-This page belongs to [ADR 002](../002-spec-language-extensions.md). E8 is built by pull request 14; E9 is still
-planned.
+This page belongs to [ADR 002](../002-spec-language-extensions.md). E8 is built by pull request 14, and E9 is built
+by pull request 15.
 
 ## E8: the fallback read
 

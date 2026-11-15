@@ -116,6 +116,13 @@ upgrade.
   When the fallback fails, the read fails with the error of the fallback. The review text lists each fallback read
   with its target, its trigger, and its fill fields. The triggers `empty` and `status` are owner proposals that the
   owner can still veto at review.
+- A bundled operation of a connector spec takes `catalog_id` with the operation row of the built-in catalog that it
+  serves, such as `documents.get` (ADR 002, E9). The spec module has two entry points: `Parse` serves every file of
+  the user folder and refuses a built-in kind and the `catalog_id` field, and `ParseBundled` accepts both for the
+  loader of the embedded specs only. Each `catalog_id` names one existing row of the same built-in kind, once, and an
+  operation that no row names sets `cli: false` and `mcp: false`. The catalog row stays the source of the CLI name,
+  the MCP tool name, the flags, the descriptions, the input schema, and the hints. The review text lists each bundled
+  operation with its catalog row. E9 carries no spec yet.
 
 ### Changed
 
