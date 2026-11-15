@@ -23,6 +23,10 @@ folder existed, the repository kept no decision records, so the first one starts
   with nine closed features and to port Outline, Kiwi, and Jira onto it. It replaces the migration order of ADR 001.
 - [Companion pages of ADR 002](./002-spec-language-extensions/) hold its threat model delta, its nine extensions, its
   version impact, and its pull-request sequence.
+- [ADR 003: Kiwi gaps K1 to K10](./003-kiwi-gaps.md) records the closed extensions that let the Kiwi connector run on
+  the spec engine, and the port that retires its Go module. It overrules the Kiwi stop rule of ADR 002.
+- [Companion pages of ADR 003](./003-kiwi-gaps/) hold its threat model delta, its ten gap decisions, and its
+  pull-request sequence.
 
 ## Form of a record
 

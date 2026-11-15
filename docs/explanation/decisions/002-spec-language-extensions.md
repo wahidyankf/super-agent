@@ -14,6 +14,9 @@ tags:
 [ADR 001](./001-user-defined-connectors-and-profiles.md). Pull requests 1 to 5 of ADR 001 and the Outline golden (#25)
 are built. The rest is planned, and the owner can still veto its design details at review.
 
+**Forward:** [ADR 003](./003-kiwi-gaps.md) overrules the Kiwi stop rule of D9 on 2026-11-15; Jira still waits for its
+own ADR.
+
 ## Context
 
 ADR 001 planned to port the Outline, Kiwi, and Jira connectors onto the spec engine. A probe of Outline found that the
