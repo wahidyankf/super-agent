@@ -16,8 +16,13 @@ func (e *Engine) pageCap(o spec.Operation) int {
 	return capInt(capInt(maxPages, e.model.Limits.MaxPages), o.Pagination.MaxPages)
 }
 
+// maxOffsetValue is one past the largest page offset: the offset is a non-negative integer below 2^31. The binder
+// refuses a negative offset for an Offset parameter, and the loop below refuses an offset at or past this cap.
+const maxOffsetValue = 1 << 31
+
 // readOffset walks an offset read. It asks for pages of the limit argument, moves the offset on by each page, and stops
 // at the first short page. At the page cap it returns the pages it has, with a continuation that names the next offset.
+// With in: body the paging values travel in the JSON body instead of the query.
 func (e *Engine) readOffset(ctx context.Context, o spec.Operation, args domain.Args, budget *int) (domain.Record, error) {
 	pag := o.Pagination
 	limit := args.Int(pag.LimitParam)
@@ -25,14 +30,27 @@ func (e *Engine) readOffset(ctx context.Context, o spec.Operation, args domain.A
 		return domain.Record{}, domain.ErrInvalidLimit
 	}
 	offset := args.Int(pag.OffsetParam)
+	bodyMode := pag.In == "body"
 	var records []domain.Record
 	var last domain.Page
 	for i := 0; i < e.pageCap(o); i++ {
-		extra := url.Values{
-			pag.LimitParam:  {strconv.Itoa(limit)},
-			pag.OffsetParam: {strconv.Itoa(offset)},
+		if offset >= maxOffsetValue {
+			return domain.Record{}, domain.ErrInvalidOffset
 		}
-		root, err := e.fetch(ctx, o, args, extra)
+		var root any
+		var err error
+		if bodyMode {
+			root, err = e.fetch(ctx, o, argsWith(args, map[string]any{
+				pag.LimitParam:  limit,
+				pag.OffsetParam: offset,
+			}), nil)
+		} else {
+			extra := url.Values{
+				pag.LimitParam:  {strconv.Itoa(limit)},
+				pag.OffsetParam: {strconv.Itoa(offset)},
+			}
+			root, err = e.fetch(ctx, o, args, extra)
+		}
 		if err != nil {
 			return domain.Record{}, err
 		}
@@ -51,17 +69,35 @@ func (e *Engine) readOffset(ctx context.Context, o spec.Operation, args domain.A
 }
 
 // readCursor walks a cursor read. It sends the cursor of each page after the first, and it follows the next cursor of
-// the reply until that cursor is null or empty. At the page cap it returns the pages it has, with no continuation.
+// the reply until that cursor is null or empty. A next cursor that repeats one already sent ends the read too, so a
+// reply that never advances cannot run to the cap. At the page cap it returns the pages it has, with no continuation.
+// With in: body the cursor travels in the JSON body instead of the query.
 func (e *Engine) readCursor(ctx context.Context, o spec.Operation, args domain.Args, budget *int) (domain.Record, error) {
 	pag := o.Pagination
+	bodyMode := pag.In == "body"
 	var records []domain.Record
 	cursor := ""
+	sent := map[string]bool{}
 	for i := 0; i < e.pageCap(o); i++ {
-		var extra url.Values
-		if cursor != "" {
-			extra = url.Values{pag.CursorParam: {cursor}}
+		if sent[cursor] {
+			break
 		}
-		root, err := e.fetch(ctx, o, args, extra)
+		sent[cursor] = true
+		var root any
+		var err error
+		if bodyMode {
+			vals := args.Values()
+			if cursor != "" {
+				vals[pag.CursorParam] = cursor
+			}
+			root, err = e.fetch(ctx, o, domain.NewArgs(vals), nil)
+		} else {
+			var extra url.Values
+			if cursor != "" {
+				extra = url.Values{pag.CursorParam: {cursor}}
+			}
+			root, err = e.fetch(ctx, o, args, extra)
+		}
 		if err != nil {
 			return domain.Record{}, err
 		}
@@ -80,6 +116,16 @@ func (e *Engine) readCursor(ctx context.Context, o spec.Operation, args domain.A
 		}
 	}
 	return domain.NewList(records), nil
+}
+
+// argsWith returns the args with the given values set, so one page of a body-paged read renders its paging values
+// into the JSON body. The query keeps only the declared query parameters, so the values travel in the body alone.
+func argsWith(args domain.Args, set map[string]any) domain.Args {
+	vals := args.Values()
+	for k, v := range set {
+		vals[k] = v
+	}
+	return domain.NewArgs(vals)
 }
 
 // cursorText returns the text of a next cursor. A missing or null cursor is the empty text, which ends the read. A cursor

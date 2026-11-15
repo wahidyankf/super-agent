@@ -218,6 +218,30 @@ var faults = []fault{
 		doc: pfx("      - name: collection_id\n        type: ID\n        in: body\n        required: false\n",
 			"      - name: collection_id\n        type: ID\n        in: body\n        required: false\n        resolve:\n          operation: example-wiki.docs.list\n          field: id\n")},
 
+	// E2: a body-paged read. The paging location is a schema keyword, and the rule that every named parameter shares
+	// that location is a Go rule. A body offset read and a body cursor read are appended to the example, so the
+	// indexes above stay.
+	{name: "a paging location outside query and body is refused", layer: layerSchema, threats: []string{"L3"},
+		path: "/operations/4/pagination/in",
+		doc: bfx("      in: body\n      max_pages: 20\n      limit_param: limit",
+			"      in: header\n      max_pages: 20\n      limit_param: limit")},
+	{name: "a body-paged offset that names a query parameter is refused", layer: layerSemantic, threats: []string{"L3"},
+		path: "/operations/4/pagination/offset_param",
+		doc: bfx("      - name: offset\n        type: Offset\n        in: body\n",
+			"      - name: offset\n        type: Offset\n        in: query\n")},
+	{name: "a body-paged limit that names a query parameter is refused", layer: layerSemantic, threats: []string{"L3"},
+		path: "/operations/4/pagination/limit_param",
+		doc: bfx("    path: /docs/page\n    params:\n      - name: limit\n        type: Limit\n        in: body\n",
+			"    path: /docs/page\n    params:\n      - name: limit\n        type: Limit\n        in: query\n")},
+	{name: "a body-paged cursor that names a query parameter is refused", layer: layerSemantic, threats: []string{"L3"},
+		path: "/operations/5/pagination/cursor_param",
+		doc: bfx("        type: ID\n        in: body\n        required: false\n        help: The body cursor of the next page.",
+			"        type: ID\n        in: query\n        required: false\n        help: The body cursor of the next page.")},
+	{name: "a query-paged cursor that names a body parameter is refused", layer: layerSemantic, threats: []string{"L3"},
+		path: "/operations/0/pagination/cursor_param",
+		doc: fx("        type: ID\n        in: query\n        required: false\n        help: The cursor of the next page.",
+			"        type: ID\n        in: body\n        required: false\n        help: The cursor of the next page.")},
+
 	// Rules that only the Go validation states, because a JSON Schema cannot compare two fields of one document.
 	{name: "a built-in kind is refused", layer: layerSemantic, threats: []string{"S10"}, path: "/kind",
 		doc: fx("kind: example-wiki", "kind: outline")},

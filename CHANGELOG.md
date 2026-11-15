@@ -62,6 +62,12 @@ upgrade.
   kind pins the spec with `spec_sha256`. Then it reports read hints. The command line and the routing do not change.
 - `retriever-contract` adds the field `Row.WriteHints`, and `retriever-runtime` adds `Loader.PinnedKinds()`, which the
   `retriever` command uses for the hint rule.
+- A connector spec read may page in the JSON body, with `pagination.in: body` (ADR 002, E2). With `in: body`, every
+  parameter the paging rule names must be a declared body parameter of the same operation, and a rule cannot mix
+  locations. The offset is a non-negative integer below 2^31. The engine advances it by the number of items in the
+  page, stops at the first short page, and at the cap returns the pages it has with a continuation; a next cursor that
+  repeats one already sent ends the read the same way. The Go `collections.list` keeps failing at the cap with a
+  page-cap error, while the engine returns pages plus a continuation. The review text lists each body-paged read.
 
 ### Changed
 

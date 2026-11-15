@@ -329,6 +329,7 @@
       "required": ["style"],
       "properties": {
         "style": { "enum": ["offset", "cursor", "none"] },
+        "in": { "enum": ["query", "body"] },
         "max_pages": { "type": "integer", "minimum": 1, "maximum": 20 },
         "limit_param": { "$ref": "#/$defs/param_name" },
         "offset_param": { "$ref": "#/$defs/param_name" },
