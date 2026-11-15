@@ -242,6 +242,19 @@ var faults = []fault{
 		doc: fx("        type: ID\n        in: query\n        required: false\n        help: The cursor of the next page.",
 			"        type: ID\n        in: body\n        required: false\n        help: The cursor of the next page.")},
 
+	// E3: required and validated reply fields. The keywords are schema keywords, and a name outside the closed
+	// list is refused at its format field. The required-fields read is appended to the example, so the indexes above
+	// stay.
+	{name: "a format name outside the closed list is refused", layer: layerSchema, threats: []string{"L4"},
+		path: "/operations/4/response/fields/id/format", echo: "pattern",
+		doc: efx("          format: id", "          format: pattern")},
+	{name: "an upper-case format name is refused", layer: layerSchema, threats: []string{"L4"},
+		path: "/operations/4/response/fields/id/format", echo: "ID",
+		doc: efx("          format: id", "          format: ID")},
+	{name: "a share-ID format with an underscore is refused", layer: layerSchema, threats: []string{"L4"},
+		path: "/operations/4/response/fields/slug/format", echo: "share_id",
+		doc: efx("          format: share-id", "          format: share_id")},
+
 	// Rules that only the Go validation states, because a JSON Schema cannot compare two fields of one document.
 	{name: "a built-in kind is refused", layer: layerSemantic, threats: []string{"S10"}, path: "/kind",
 		doc: fx("kind: example-wiki", "kind: outline")},

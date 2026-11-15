@@ -146,10 +146,15 @@ type Response struct {
 	Errors map[string]string `json:"errors,omitempty"`
 }
 
-// Field is one output field: the JSON pointer that reads it and the converter that cleans it, when a converter is set.
+// Field is one output field: the JSON pointer that reads it, whether the reply must hold it, the closed format that
+// checks it, and the converter that cleans it, when a converter is set.
 type Field struct {
 	// Pointer is the JSON pointer of the value in the reply.
 	Pointer string `json:"pointer"`
+	// Required says whether a missing, null, or empty value fails the read. A missing optional field maps to null.
+	Required bool `json:"required,omitempty"`
+	// Format is the closed name that checks the value: id, uuid, or share-id. Empty means no check.
+	Format string `json:"format,omitempty"`
 	// Convert is plain, markdown-from-html, or markdown-from-adf. Empty means plain.
 	Convert string `json:"convert,omitempty"`
 }
