@@ -28,6 +28,7 @@ func semanticFindings(s *Spec) []Finding {
 	}
 	fs = append(fs, CheckAccessMatrix(s)...)
 	fs = append(fs, CheckObjectFields(s)...)
+	fs = append(fs, CheckResponseShape(s)...)
 	index := make(map[string]int, len(s.Operations))
 	for i, op := range s.Operations {
 		at := "/operations/" + strconv.Itoa(i) + "/id"
@@ -254,6 +255,24 @@ func checkObjectField(at string, f Field) []Finding {
 	for _, name := range names {
 		if f.Object[name].Object != nil {
 			fs = append(fs, finding(at+"/object/"+safeName(name)+"/object", ruleObjectDepth))
+		}
+	}
+	return fs
+}
+
+// ruleResponseShape is the rule of a response that names more than one reply shape. A response holds at most one of
+// items, first, and merge, so naming two is refused.
+const ruleResponseShape = "names more than one of items and first"
+
+// CheckResponseShape returns the findings of the responses of a spec model that name more than one reply shape: both
+// an items list and a first pointer. The schema states the same rule for documents. The validation and the engine
+// constructor both call it, so a model built by hand meets the same refusal as a document. Each finding names the
+// response path and a fixed rule.
+func CheckResponseShape(s *Spec) []Finding {
+	var fs []Finding
+	for i, op := range s.Operations {
+		if op.Response.Items != "" && op.Response.First != "" {
+			fs = append(fs, finding("/operations/"+strconv.Itoa(i)+"/response", ruleResponseShape))
 		}
 	}
 	return fs

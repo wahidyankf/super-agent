@@ -33,6 +33,7 @@ func Review(s *Spec) string {
 	writeBodyPaging(&b, s)
 	writeRequiredFields(&b, s)
 	writeNestedObjects(&b, s)
+	writeFirstReads(&b, s)
 	return b.String()
 }
 
@@ -154,6 +155,29 @@ func writeNestedObjects(b *strings.Builder, s *Spec) {
 	fmt.Fprintf(b, "Nested objects: %d\n", len(entries))
 	for i, e := range entries {
 		fmt.Fprintf(b, "%d. %s: %s with %s\n", i+1, e.id, e.field, strings.Join(e.subs, ", "))
+	}
+}
+
+// writeFirstReads writes the block of the reads that map the first item of a list, one line each, with the pointer
+// of the list. A spec with no first read writes nothing, so its review keeps its text.
+func writeFirstReads(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id      string
+		pointer string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		if op.Response.First == "" {
+			continue
+		}
+		entries = append(entries, entry{id: op.ID, pointer: op.Response.First})
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "First reads: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: first of %s\n", i+1, e.id, e.pointer)
 	}
 }
 
