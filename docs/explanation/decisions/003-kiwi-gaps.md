@@ -11,7 +11,7 @@ tags:
 # ADR 003: Kiwi gaps K1 to K10
 
 **Status:** decided on 2026-11-15, by the owner. It overrules the Kiwi stop rule of D9 in
-[ADR 002](./002-spec-language-extensions.md) for Kiwi only; Jira still waits for its own ADR.
+[ADR 002](./002-spec-language-extensions.md) for Kiwi only; [ADR 004](./004-jira-gaps.md) decides Jira.
 
 ## Context
 
