@@ -98,7 +98,7 @@ func Load(files []specfolder.File) (Set, error) {
 	cliPaths := map[string]bool{}
 	toolNames := map[string]bool{}
 	for _, file := range files {
-		res := spec.Validate(file.Data)
+		res := spec.Parse(file.Data)
 		if !res.Valid() {
 			first := res.Findings[0]
 			return Set{}, &Error{File: file.Name, Path: first.Path, Rule: first.Rule}
