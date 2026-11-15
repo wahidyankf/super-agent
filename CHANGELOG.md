@@ -88,6 +88,14 @@ upgrade.
   partial record, and a value that is not a list ends with `unexpected_response`. A response holds at most one of
   `items`, `first`, and `merge`. A first-item read returns one record, as a whole-reply read does, so the renderers,
   the MCP adapter, and the JSON output are unchanged.
+- A response of a connector spec takes `merge` with a label field and two to eight lists, to merge the lists into
+  one output (ADR 002, E6). Each list names `items`, a constant `label` of lowercase letters and hyphens of at most
+  32 characters, and its own `fields`; a merge response names no top-level `fields` entry. The output keeps the
+  declared list order, then the reply order, and it shares the output cap of any list. The label beats a reply field
+  of the same name. A response holds at most one of `items`, `first`, and `merge`. The review text lists each merge
+  read with its label field and its lists, and it joins the required, checked, and nested fields of every list under
+  the same operation. A merge returns a list record, as an items read does. The command-line list rendering for a
+  merge read is left to a later pull request.
 
 ### Changed
 

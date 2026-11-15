@@ -11,9 +11,9 @@ tags:
 
 # E4 to E7: nested records, first items, merged lists, and trees
 
-This page belongs to [ADR 002](../002-spec-language-extensions.md). E4 is built by pull request 10, and E5 by pull
-request 11; E6 and E7 are still planned. A response holds at most one of `items`, `first`, and `merge`. `tree` needs
-`items`. All four keep the caps of S9: 64 levels and 1,048,576 tokens.
+This page belongs to [ADR 002](../002-spec-language-extensions.md). E4 is built by pull request 10, E5 by pull
+request 11, and E6 by pull request 12; E7 is still planned. A response holds at most one of `items`, `first`, and
+`merge`. `tree` needs `items`. All four keep the caps of S9: 64 levels and 1,048,576 tokens.
 
 ## E4: nested record with an allow-list
 
