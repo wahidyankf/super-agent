@@ -13,11 +13,13 @@ import (
 var specFieldNames = []string{
 	// ADR 001: the document and its parts.
 	"access", "auth", "body", "cli", "convert", "credential_env", "cursor_param", "default", "endpoint", "errors", "examples",
-	"expect", "field", "fields", "format", "header_name", "headers", "help", "identity_env", "in", "items", "kind",
+	"expect", "fallback_pointer", "field", "fields", "format", "header_name", "headers", "help", "identity_env", "in", "items", "kind",
 	"limit_param", "limits", "markdown", "max", "max_pages", "max_reply_bytes", "mcp", "method", "min", "name",
-	"next_pointer", "offset_param", "operation", "operations", "params", "pagination", "path", "pointer", "request",
+	"next_pointer", "offset_param", "operation", "operations", "page_size", "params", "pagination", "path", "pointer", "request",
 	"required", "resolve", "response", "role", "status", "style", "summary", "timeout_seconds", "type", "values", "version",
-	"base_path", "host_suffix", "id",
+	"base_path", "host_suffix", "id", "unavailable_message",
+	// PR 17: the open-key map with closed bool values.
+	"bool_map",
 	// ADR 002, E1: POST reads.
 	"read_over_post",
 	// ADR 002, E3: required and validated reply fields.

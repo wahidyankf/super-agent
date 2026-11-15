@@ -185,6 +185,10 @@ type Response struct {
 	Markdown string `json:"markdown,omitempty"`
 	// Errors maps an HTTP status to the closed reason that the status means.
 	Errors map[string]string `json:"errors,omitempty"`
+	// UnavailableMessage is the exact body message that proves the method is missing: a 404 carrying exactly this
+	// message fails as operation_unavailable instead of the mapped reason. Empty means no body rule, and the 404 body
+	// is never read. The match is equality with this constant only.
+	UnavailableMessage string `json:"unavailable_message,omitempty"`
 }
 
 // Merge merges two to eight lists of one reply into one list, in the declared list order and then in the reply
@@ -238,30 +242,43 @@ func (t *Tree) EffectiveMaxDepth() int {
 }
 
 // Field is one output field: either the JSON pointer that reads a scalar, with whether the reply must hold it, the
-// closed format that checks it, and the converter that cleans it, when a converter is set; or one level of object with
-// the sub-fields that each read their own pointer. An object field takes no scalar keyword of its own.
+// closed format that checks it, the converter that cleans it, when a converter is set, and the fallback pointer that
+// is read when the pointer finds nothing, so one field maps two reply shapes; one level of object with the
+// sub-fields that each read their own pointer; or one open-key map with closed bool values, which keeps every key
+// the reply holds, sorted, with each value checked as a flag. An object field takes no scalar keyword of its own,
+// and a bool map takes no format, converter, or object of its own. A strings field
+// reads a list of strings instead of one scalar.
 type Field struct {
 	// Pointer is the JSON pointer of the value in the reply.
 	Pointer string `json:"pointer"`
+	// FallbackPointer is the second JSON pointer of the value, read when the pointer finds nothing. Empty means the
+	// field has one shape only.
+	FallbackPointer string `json:"fallback_pointer,omitempty"`
 	// Required says whether a missing, null, or empty value fails the read. A missing optional field maps to null.
 	Required bool `json:"required,omitempty"`
-	// Format is the closed name that checks the value: id, uuid, or share-id. Empty means no check.
+	// Format is the closed name that checks the value: id, uuid, share-id, or strings. Empty means no check.
 	Format string `json:"format,omitempty"`
-	// Convert is plain, markdown-from-html, or markdown-from-adf. Empty means plain.
+	// Convert is plain, markdown-from-html, markdown-from-adf, or hostname. Empty means plain. Hostname keeps the
+	// host of an address, so a reply never shows a secret path.
 	Convert string `json:"convert,omitempty"`
 	// Object holds the sub-fields of a nested record field, each a scalar field of its own pointer. A sub-field holds
 	// no object of its own, so a record nests one level only.
 	Object map[string]Field `json:"object,omitempty"`
+	// BoolMap marks an open-key map with closed bool values: the reply object at the pointer is kept whole, every
+	// key sorted, and each value must be a flag. Empty means the field is a scalar or a nested record.
+	BoolMap bool `json:"bool_map,omitempty"`
 }
 
 // Pagination says how a read walks the pages. It always names a stop rule: the page cap, which is at most 20.
 type Pagination struct {
-	// Style is offset, cursor, or none.
+	// Style is offset, cursor, page-all, or none.
 	Style string `json:"style"`
 	// In is where the paging parameters travel: query, or body. Empty means query.
 	In string `json:"in,omitempty"`
 	// MaxPages is the page cap of the read, between 1 and 20. It is the stop rule of every paged read.
 	MaxPages int `json:"max_pages,omitempty"`
+	// PageSize is the fixed page size of a page-all read, between 1 and 100. Only a page-all rule names it.
+	PageSize int `json:"page_size,omitempty"`
 	// LimitParam is the query parameter that sets the page size of an offset read.
 	LimitParam string `json:"limit_param,omitempty"`
 	// OffsetParam is the query parameter that sets the offset of an offset read.
