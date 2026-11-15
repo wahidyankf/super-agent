@@ -188,6 +188,10 @@ type Response struct {
 	Truncated *Truncated `json:"truncated,omitempty"`
 	// Errors maps an HTTP status to the closed reason that the status means.
 	Errors map[string]string `json:"errors,omitempty"`
+	// Echo is the key check of a read of one object: after mapping, the text at the pointer must equal the
+	// request argument exactly, or the read fails. It is nil unless the read echoes the key of its request. Only a
+	// single-object read declares one.
+	Echo *Echo `json:"echo,omitempty"`
 	// UnavailableMessage is the exact body message that proves the method is missing: a 404 carrying exactly this
 	// message fails as operation_unavailable instead of the mapped reason. Empty means no body rule, and the 404 body
 	// is never read. The match is equality with this constant only.
@@ -202,6 +206,15 @@ type Merge struct {
 	LabelField string `json:"label_field"`
 	// Lists holds two to eight lists to merge, in the order their items join the output.
 	Lists []MergeList `json:"lists"`
+}
+
+// Echo is the key check of a read of one object: the reply value at the pointer must equal the request argument
+// named by the parameter, exactly, or the read fails. Only a single-object read declares one.
+type Echo struct {
+	// Param is the request parameter whose value the reply must echo.
+	Param string `json:"param"`
+	// Pointer is the JSON pointer of the echoed value in the reply.
+	Pointer string `json:"pointer"`
 }
 
 // Truncated is the computed per-item flag of a cursor read with the page-end rule: it names the reply pointer of the
@@ -276,6 +289,19 @@ type Field struct {
 	// secret path. The Jira converters map a reply value to text: a timestamp to UTC, a date to itself, and a title
 	// to one line, with any other value mapping to the empty text.
 	Convert string `json:"convert,omitempty"`
+	// ProjectKey builds the project part of an issue key: the text before the last hyphen. It names the JSON
+	// pointer of the key in the reply, and it takes no other scalar keyword. Empty means the field is not built.
+	ProjectKey string `json:"project_key,omitempty"`
+	// IssueID builds the document ID of an issue key: the key prefixed with issue-. It names the JSON pointer of
+	// the key in the reply, and it takes no other scalar keyword. Empty means the field is not built.
+	IssueID string `json:"issue_id,omitempty"`
+	// CollectionID builds the collection ID of an issue key: the project part prefixed with project-. It names the
+	// JSON pointer of the key in the reply, and it takes no other scalar keyword. Empty means the field is not built.
+	CollectionID string `json:"collection_id,omitempty"`
+	// BrowseURL builds the browse URL of an issue key: the endpoint origin joined with /browse/ and the key, never
+	// a URL the reply carries. It names the JSON pointer of the key in the reply, and it takes no other scalar
+	// keyword. Empty means the field is not built.
+	BrowseURL string `json:"browse_url,omitempty"`
 	// Object holds the sub-fields of a nested record field, each a scalar field of its own pointer. A sub-field holds
 	// no object of its own, so a record nests one level only.
 	Object map[string]Field `json:"object,omitempty"`

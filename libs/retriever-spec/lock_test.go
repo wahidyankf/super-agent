@@ -39,6 +39,10 @@ var specFieldNames = []string{
 	// ADR 004, E20: the page end: the last flag, the cut to the limit, and the computed truncated flag. The E19
 	// IssueKey parameter kind is an enum value, not a field, so the catalog-kinds test pins it instead.
 	"last_pointer", "cut_to_limit", "truncated", "token", "last",
+	// ADR 004, E23: the key echo on a read of one object.
+	"echo", "param",
+	// ADR 004, E24: the built IDs that share one issue-key check.
+	"project_key", "issue_id", "collection_id", "browse_url",
 }
 
 // collectPropertyNames gathers the keys of every "properties" object of a decoded schema, at any depth.
