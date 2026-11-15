@@ -251,9 +251,13 @@ func (e *Engine) roleRead(ctx context.Context, role, param, value string) (domai
 }
 
 // run sends the request of a bound read, follows its pages, and maps the reply. The output budget is shared by every
-// page of one read, so a read cannot build more output than one reply may hold.
+// page of one read, so a read cannot build more output than one reply may hold. A read with a declared fallback runs
+// under runWithFallback instead, so both requests share the time limit.
 func (e *Engine) run(ctx context.Context, o spec.Operation, args domain.Args) (domain.Record, error) {
 	budget := e.maxReply
+	if o.Fallback != nil {
+		return e.runWithFallback(ctx, o, args, &budget)
+	}
 	switch pagingStyle(o) {
 	case "offset":
 		return e.readOffset(ctx, o, args, &budget)
@@ -269,11 +273,18 @@ func (e *Engine) run(ctx context.Context, o spec.Operation, args domain.Args) (d
 
 // fetch renders the request of one page and sends it. A refused argument or header fails here, before any request.
 func (e *Engine) fetch(ctx context.Context, o spec.Operation, args domain.Args, extra url.Values) (any, error) {
+	root, _, err := e.fetchFull(ctx, o, args, extra)
+	return root, err
+}
+
+// fetchFull renders the request of one page, sends it, and returns the decoded reply with the status of the last
+// reply it received, or zero when no reply arrived. A refused argument or header fails here, before any request.
+func (e *Engine) fetchFull(ctx context.Context, o spec.Operation, args domain.Args, extra url.Values) (any, int, error) {
 	req, err := renderRequest(e.model.Endpoint.BasePath, o, args, extra)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return e.send(ctx, o, req)
+	return e.sendFull(ctx, o, req)
 }
 
 // unsupported refuses a read that needs a part the engine does not serve: a Markdown converter, or a lookup, which only a
@@ -400,6 +411,7 @@ func checkSpecShape(model *spec.Spec) error {
 	fs = append(fs, spec.CheckResponseShape(model)...)
 	fs = append(fs, spec.CheckMerge(model)...)
 	fs = append(fs, spec.CheckTree(model)...)
+	fs = append(fs, spec.CheckFallback(model)...)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {
