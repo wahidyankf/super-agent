@@ -42,8 +42,9 @@ const requiredFieldOp = `  - id: example-wiki.docs.entry
           id: doc-1
 `
 
-// The example body carries no UUID: a 36-character UUID always holds a token-shaped run of 32 characters, which the
-// R2 example guard refuses. The engine tests serve UUID replies through scripts instead.
+// The example body carries no UUID: the R2 example guard used to refuse every 36-character UUID as a token-shaped
+// run, so the engine tests serve UUID replies through scripts instead. PR21 exempts canonical UUIDs, and the bundled
+// specs carry UUID examples for the conformance replay.
 
 // efx returns the example with the required-fields read appended as operation 4, with the given (old, repl) pairs
 // applied, for a fault row.

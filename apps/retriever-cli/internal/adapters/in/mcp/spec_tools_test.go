@@ -1,6 +1,8 @@
 package mcp
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
@@ -45,5 +47,31 @@ func TestTheToolsComeFromTheComposedCatalog(t *testing.T) {
 	}
 	if len(names) != len(operationTools(sources.Service{}))+1 {
 		t.Fatalf("tools = %d, want the built-in tools and one spec tool", len(names))
+	}
+}
+
+// TestToolsJSONRendersTheNamedToolsInOrder checks the canonical JSON of the
+// conformance report: one object per row in order, with the name, and exactly
+// one trailing newline.
+func TestToolsJSONRendersTheNamedToolsInOrder(t *testing.T) {
+	rows := []operations.Row{
+		{ID: "example-wiki.docs.list", CLI: "example-wiki docs list", Tool: "example_wiki_docs_list", Summary: "List documents.", Effect: domain.EffectRead, ListKey: "items", Fields: []string{"id"}},
+		{ID: "example-wiki.docs.get", CLI: "example-wiki docs get", Tool: "example_wiki_docs_get", Summary: "Get one document.", Effect: domain.EffectRead, Fields: []string{"id", "title"}},
+	}
+	text := string(ToolsJSON(rows))
+	if !strings.HasSuffix(text, "]\n") || strings.HasSuffix(text, "\n\n") {
+		t.Fatalf("ToolsJSON does not end with exactly one newline: %q", text)
+	}
+	first := strings.Index(text, "example_wiki_docs_list")
+	second := strings.Index(text, "example_wiki_docs_get")
+	if first < 0 || second < 0 || first > second {
+		t.Fatalf("ToolsJSON = %q, want both tools in order", text)
+	}
+	var decoded []map[string]any
+	if err := json.Unmarshal([]byte(text), &decoded); err != nil {
+		t.Fatalf("ToolsJSON is not JSON: %v", err)
+	}
+	if len(decoded) != 2 {
+		t.Fatalf("ToolsJSON holds %d tools, want 2", len(decoded))
 	}
 }

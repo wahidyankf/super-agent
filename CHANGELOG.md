@@ -11,6 +11,16 @@ upgrade.
 
 ### Added
 
+- `retriever-conformance` checks any connector spec: the schema is valid, every operation carries examples, each
+  example replays through the engine and matches its expected fields, and the CLI, MCP, and README texts derived from
+  the spec equal the stored texts. `retriever connector validate <spec>` runs the static half and prints the review,
+  and `retriever connector test <spec>` runs the whole suite and prints the report. A passing run exits `0` with the
+  report on standard output; a failing run exits `2` with redacted diagnostics on standard error and nothing on
+  standard output. The suite runs over every bundled spec present (`outline.yml` and `jira.yml`; the Kiwi scenarios
+  stay Go-served and out of scope), checks every `catalog_id`, and refuses a bundled host outside `example.test`,
+  `example.invalid`, and `example.com`. A canonical UUID in an example is an ID, not a token-shaped run: the R2
+  example guard exempts it, so UUID operations carry replayable examples, and the bundled `outline.yml` examples use
+  UUIDs where a UUID is required. The bundled specs gain no new operations.
 - The bundled `jira.yml` serves the five Jira catalog reads, each with a `catalog_id` and an example. The Jira
   gateway runs every operation on the bundled-spec engine, with the document-not-found translation the Go
   gateway maps. `whoami` ports with no new feature; the collection walk is a second offset read of the project
@@ -144,8 +154,8 @@ upgrade.
   and the [add a spec connector](docs/how-to/add-a-spec-connector.md) guide explains the steps. A spec operation that
   names a Markdown converter loads, and each run of it fails with `retriever.<kind>.unsupported_operation` before any
   request. In this release the `--kind` filter of `sources list` and GraphQL accept the built-in kinds only, and a spec
-  kind's sources appear in an unfiltered `sources list`. The `connector validate` and `connector test` commands are not
-  built yet.
+  kind's sources appear in an unfiltered `sources list`. The `connector validate` and `connector test` commands are built
+  below.
 - A connector spec read may be sent as `POST`, with `access: read`, `method: POST`, and `read_over_post: true` (ADR 002,
   E1). Its body is a JSON object of constants and declared body parameters, sent with `Content-Type: application/json`.
   A spec may not set `Content-Type` or `resolve` on such a read. The body is capped at 64 KiB and at 8 levels of

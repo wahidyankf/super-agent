@@ -344,7 +344,7 @@ and its surfaces off.
 Each example holds `request` (parameter values), `response` (status, optional constant headers, and body), and `expect`
 (the output fields that the reply must map to). The `request` keys must name parameters of the operation, and the
 `expect` keys must name its output fields. A reply may not carry an `Authorization` header, and no string of an example
-may hold a bearer or basic credential or a token-shaped run of 32 characters. A spec holds no host, so an example names
+may hold a bearer or basic credential or a token-shaped run of 32 characters. A canonical UUID (hyphens at 8-4-4-4-12) is not a token-shaped run: ID fields need it, and the conformance suite replays it. A spec holds no host, so an example names
 none. The bundled fixture uses `example.test` names only.
 
 ## Limits for the Outline port

@@ -78,6 +78,7 @@ func baseCommandTree() *command {
 					run:     serveGraphQL,
 				},
 			},
+			connectorGroup(),
 			{
 				name:    "mcp",
 				summary: "serve the source catalog to an MCP client over stdio",

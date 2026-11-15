@@ -1,0 +1,104 @@
+USAGE: retriever jira <subcommand> [options]
+
+Jira Cloud commands
+
+SUBCOMMANDS:
+  export    export one Jira document as a Markdown file in the --out folder
+  whoami    show the Jira account that the source's credentials sign in as
+  projects  Jira projects commands
+  issues    Jira issues commands
+  comments  Jira comments commands
+
+OPTIONS:
+  -h, --help  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever jira whoami [--source <id>]
+
+show the Jira account that the source's credentials sign in as
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one jira source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever jira projects list [--query <value>] [--limit <n>] [--offset <n>] [--source <id>]
+
+list one page of the Jira projects of a Jira source, which Retriever shows as collections
+
+OPTIONS:
+  --query <value>  a text to match against the project names, 1 to 1000 characters
+  --limit <n>      the number of projects in the page, from 1 to 50
+  --offset <n>     the number of projects to skip
+  --source <id>    configured source ID; required when more than one jira source exists
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever jira issues search <jql> [--limit <n>] [--source <id>]
+
+search the Jira issues that match a JQL query, one page of at most 100 issues
+
+ARGUMENTS:
+  <jql>
+
+OPTIONS:
+  --limit <n>    the number of issues to show, from 1 to 100
+  --source <id>  configured source ID; required when more than one jira source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever jira issues get <issueKey> [--source <id>]
+
+print the Markdown of one Jira issue
+
+ARGUMENTS:
+  <issueKey>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one jira source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever jira comments list <issueKey> [--limit <n>] [--offset <n>] [--source <id>]
+
+list one page of the comments of one Jira issue, as Markdown
+
+ARGUMENTS:
+  <issueKey>
+
+OPTIONS:
+  --limit <n>    the number of comments in the page, from 1 to 100
+  --offset <n>   the number of comments to skip
+  --source <id>  configured source ID; required when more than one jira source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use

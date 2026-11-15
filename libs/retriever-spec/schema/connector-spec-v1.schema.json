@@ -41,7 +41,14 @@
       "maxLength": 4096,
       "allOf": [
         { "not": { "pattern": "[{}\\x00-\\x1f\\x7f]" } },
-        { "not": { "pattern": "[A-Za-z0-9_-]{32}" } },
+        {
+          "not": {
+            "allOf": [
+              { "pattern": "[A-Za-z0-9_-]{32}" },
+              { "not": { "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" } }
+            ]
+          }
+        },
         { "not": { "pattern": "(?i)(bearer|basic)[ \\t]" } }
       ]
     },

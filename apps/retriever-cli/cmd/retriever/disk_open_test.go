@@ -15,3 +15,14 @@ func TestReadSeamRefusesAJiraSeamWithoutItsCAFile(t *testing.T) {
 		t.Fatal("readSeam accepted a Jira seam without its CA file")
 	}
 }
+
+// TestRegularFileExistsReportsOnlyRegularFiles checks the path test: a missing
+// path is not a regular file, and neither is a folder.
+func TestRegularFileExistsReportsOnlyRegularFiles(t *testing.T) {
+	if regularFileExists("definitely-not-a-retriever-file") {
+		t.Fatal("regularFileExists() of a missing path is true")
+	}
+	if regularFileExists(".") {
+		t.Fatal("regularFileExists() of a folder is true")
+	}
+}

@@ -1,0 +1,3057 @@
+USAGE: retriever outline <subcommand> [options]
+
+Outline wiki commands
+
+SUBCOMMANDS:
+  export                    export one Outline document as a Markdown file in the --out folder
+  collections               list the collections of the Outline wiki
+  documents                 Outline documents commands
+  auth                      Outline auth commands
+  comments                  Outline comments commands
+  revisions                 Outline revisions commands
+  shares                    Outline shares commands
+  users                     Outline users commands
+  groups                    Outline groups commands
+  templates                 Outline templates commands
+  pins                      Outline pins commands
+  stars                     Outline stars commands
+  subscriptions             Outline subscriptions commands
+  access-requests           Outline access-requests commands
+  attachments               Outline attachments commands
+  emojis                    Outline emojis commands
+  events                    Outline events commands
+  file-operations           Outline file-operations commands
+  group-memberships         Outline group-memberships commands
+  installation              Outline installation commands
+  notifications             Outline notifications commands
+  oauth-authentications     Outline oauth-authentications commands
+  reactions                 Outline reactions commands
+  relationships             Outline relationships commands
+  searches                  Outline searches commands
+  suggestions               Outline suggestions commands
+  user-memberships          Outline user-memberships commands
+  views                     Outline views commands
+  api-keys                  Outline api-keys commands
+  authentication-providers  Outline authentication-providers commands
+  imports                   Outline imports commands
+  integrations              Outline integrations commands
+  oauth-clients             Outline oauth-clients commands
+  webhook-subscriptions     Outline webhook-subscriptions commands
+  teams                     Outline teams commands
+  tree                      show the document tree of one Outline collection
+
+OPTIONS:
+  -h, --help  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections list [--source <id>]
+
+list the collections of the Outline wiki
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections info <collectionId> [--source <id>]
+
+show the ID and name of one Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections documents <collectionId> [--source <id>]
+
+show the document tree of one Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents get <documentId> [--source <id>]
+
+print the Markdown of one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents list [--collection-id <id>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline documents
+
+OPTIONS:
+  --collection-id <id>  only documents of this collection, by its UUID
+  --offset <n>          the first document to return; 0 when omitted
+  --limit <n>           documents per page, from 1 to 100; 25 when omitted
+  --source <id>         configured source ID; required when more than one outline source exists
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents search <query> [--offset <n>] [--limit <n>] [--source <id>]
+
+search Outline documents by title and text, one page at a time
+
+ARGUMENTS:
+  <query>
+
+OPTIONS:
+  --offset <n>   the first match to return; 0 when omitted
+  --limit <n>    matches per page, from 1 to 100; 25 when omitted
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  1    the search matched no item; an empty result is still printed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline auth whoami [--source <id>]
+
+show the user and team that the Outline API key belongs to
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents archived [--collection-id <id>] [--sort <createdAt|updatedAt|publishedAt|index|title|popularityScore>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of archived Outline documents
+
+OPTIONS:
+  --collection-id <id>                                                  only documents of this collection, by its UUID
+  --sort <createdAt|updatedAt|publishedAt|index|title|popularityScore>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                                                ASC or DESC; DESC when omitted
+  --offset <n>                                                          the first item to return; 0 when omitted
+  --limit <n>                                                           items per page, from 1 to 100; 25 when omitted
+  --source <id>                                                         configured source ID; required when more than one outline source exists
+  -h, --help                                                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents children <documentId> [--source <id>]
+
+show the documents below one Outline document, as a tree
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents deleted [--sort <createdAt|updatedAt|publishedAt|index|title|popularityScore>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of deleted Outline documents
+
+OPTIONS:
+  --sort <createdAt|updatedAt|publishedAt|index|title|popularityScore>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                                                ASC or DESC; DESC when omitted
+  --offset <n>                                                          the first item to return; 0 when omitted
+  --limit <n>                                                           items per page, from 1 to 100; 25 when omitted
+  --source <id>                                                         configured source ID; required when more than one outline source exists
+  -h, --help                                                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents drafts [--collection-id <id>] [--sort <createdAt|updatedAt|publishedAt|index|title|popularityScore>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline draft documents
+
+OPTIONS:
+  --collection-id <id>                                                  only documents of this collection, by its UUID
+  --sort <createdAt|updatedAt|publishedAt|index|title|popularityScore>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                                                ASC or DESC; DESC when omitted
+  --offset <n>                                                          the first item to return; 0 when omitted
+  --limit <n>                                                           items per page, from 1 to 100; 25 when omitted
+  --source <id>                                                         configured source ID; required when more than one outline source exists
+  -h, --help                                                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents group-memberships <documentId> [--query <value>] [--permission <read|read_write|admin>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the groups that have access to one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --query <value>                       the group name to search for
+  --permission <read|read_write|admin>  only items with this permission
+  --offset <n>                          the first item to return; 0 when omitted
+  --limit <n>                           items per page, from 1 to 100; 25 when omitted
+  --source <id>                         configured source ID; required when more than one outline source exists
+  -h, --help                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents insights <documentId> [--start-date <value>] [--end-date <value>] [--source <id>]
+
+show the daily view and edit counts of one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --start-date <value>  the first day of the window, RFC 3339 with a zone
+  --end-date <value>    the last day of the window, RFC 3339 with a zone
+  --source <id>         configured source ID; required when more than one outline source exists
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents memberships <documentId> [--query <value>] [--permission <read|read_write|admin>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the users who have direct access to one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --query <value>                       the user name to search for
+  --permission <read|read_write|admin>  only items with this permission
+  --offset <n>                          the first item to return; 0 when omitted
+  --limit <n>                           items per page, from 1 to 100; 25 when omitted
+  --source <id>                         configured source ID; required when more than one outline source exists
+  -h, --help                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents search-titles <query> [--collection-id <id>] [--document-id <uuid>] [--user-id <uuid>] [--status-filter <published|archived|draft,...>] [--sort <createdAt|updatedAt|title>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+search Outline document titles, one page at a time
+
+ARGUMENTS:
+  <query>
+
+OPTIONS:
+  --collection-id <id>                            only documents of this collection, by its UUID
+  --document-id <uuid>                            only documents below this document, by its UUID
+  --user-id <uuid>                                only documents of this user, by the user's UUID
+  --status-filter <published|archived|draft,...>  only published, archived, or draft documents; comma-separated
+  --sort <createdAt|updatedAt|title>              the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                          ASC or DESC; DESC when omitted
+  --offset <n>                                    the first item to return; 0 when omitted
+  --limit <n>                                     items per page, from 1 to 100; 25 when omitted
+  --source <id>                                   configured source ID; required when more than one outline source exists
+  -h, --help                                      show help
+
+EXIT STATUS:
+  0    the command completed
+  1    the search matched no item; an empty result is still printed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents users <documentId> [--query <value>] [--user-id <uuid>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the users who can see one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --query <value>   the user name to search for
+  --user-id <uuid>  only this user, by the user's UUID
+  --offset <n>      the first item to return; 0 when omitted
+  --limit <n>       items per page, from 1 to 100; 25 when omitted
+  --source <id>     configured source ID; required when more than one outline source exists
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents viewed [--sort <updatedAt|createdAt>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the Outline documents the API key's user has viewed
+
+OPTIONS:
+  --sort <updatedAt|createdAt>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>        ASC or DESC; DESC when omitted
+  --offset <n>                  the first item to return; 0 when omitted
+  --limit <n>                   items per page, from 1 to 100; 25 when omitted
+  --source <id>                 configured source ID; required when more than one outline source exists
+  -h, --help                    show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections memberships <collectionId> [--query <value>] [--permission <read|read_write|admin>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the users who have direct access to one Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --query <value>                       the user name to search for
+  --permission <read|read_write|admin>  only items with this permission
+  --offset <n>                          the first item to return; 0 when omitted
+  --limit <n>                           items per page, from 1 to 100; 25 when omitted
+  --source <id>                         configured source ID; required when more than one outline source exists
+  -h, --help                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections group-memberships <collectionId> [--query <value>] [--permission <read|read_write|admin>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the groups that have access to one Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --query <value>                       the group name to search for
+  --permission <read|read_write|admin>  only items with this permission
+  --offset <n>                          the first item to return; 0 when omitted
+  --limit <n>                           items per page, from 1 to 100; 25 when omitted
+  --source <id>                         configured source ID; required when more than one outline source exists
+  -h, --help                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline comments get <commentId> [--include-anchor-text <value>] [--source <id>]
+
+show one Outline comment as plain text
+
+ARGUMENTS:
+  <commentId>
+
+OPTIONS:
+  --include-anchor-text <value>  true to include the text the comment is anchored to
+  --source <id>                  configured source ID; required when more than one outline source exists
+  -h, --help                     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline comments list [--document-id <id>] [--collection-id <id>] [--parent-comment-id <uuid>] [--status-filter <resolved|unresolved,...>] [--include-anchor-text <value>] [--sort <createdAt|updatedAt>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline comments as plain text
+
+OPTIONS:
+  --document-id <id>                         only comments of this document, by its ID
+  --collection-id <id>                       only comments of this collection, by its ID
+  --parent-comment-id <uuid>                 only replies to this comment, by its UUID
+  --status-filter <resolved|unresolved,...>  only resolved, or only unresolved, comments; comma-separated
+  --include-anchor-text <value>              true to include the text the comments are anchored to
+  --sort <createdAt|updatedAt>               the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                     ASC or DESC; DESC when omitted
+  --offset <n>                               the first item to return; 0 when omitted
+  --limit <n>                                items per page, from 1 to 100; 25 when omitted
+  --source <id>                              configured source ID; required when more than one outline source exists
+  -h, --help                                 show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline revisions export <revisionId> [--source <id>]
+
+print the Markdown of one revision of an Outline document
+
+ARGUMENTS:
+  <revisionId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline revisions get <revisionId> [--source <id>]
+
+print the Markdown of one revision of an Outline document
+
+ARGUMENTS:
+  <revisionId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline revisions list <documentId> [--sort <createdAt|updatedAt>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the revisions of one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --sort <createdAt|updatedAt>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>        ASC or DESC; DESC when omitted
+  --offset <n>                  the first item to return; 0 when omitted
+  --limit <n>                   items per page, from 1 to 100; 25 when omitted
+  --source <id>                 configured source ID; required when more than one outline source exists
+  -h, --help                    show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline shares get <shareId> [--source <id>]
+
+show one Outline share, without its link
+
+ARGUMENTS:
+  <shareId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline shares list [--query <value>] [--sort <createdAt|updatedAt|lastAccessedAt|views>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline shares, without their links
+
+OPTIONS:
+  --query <value>                                    the text to find in the share titles and documents
+  --sort <createdAt|updatedAt|lastAccessedAt|views>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                             ASC or DESC; DESC when omitted
+  --offset <n>                                       the first item to return; 0 when omitted
+  --limit <n>                                        items per page, from 1 to 100; 25 when omitted
+  --source <id>                                      configured source ID; required when more than one outline source exists
+  -h, --help                                         show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users get [--user-id <uuid>] [--source <id>]
+
+show one Outline user, without the e-mail address
+
+OPTIONS:
+  --user-id <uuid>  the user ID; omitted means the user of the API key
+  --source <id>     configured source ID; required when more than one outline source exists
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users list [--query <value>] [--role <admin|member|viewer|guest>] [--filter <invited|viewers|admins|members|active|all|suspended>] [--ids <uuid,...>] [--sort <createdAt|updatedAt|name|lastActiveAt>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline users, without e-mail addresses
+
+OPTIONS:
+  --query <value>                                                 the user name to search for
+  --role <admin|member|viewer|guest>                              only users with this role
+  --filter <invited|viewers|admins|members|active|all|suspended>  only users with this status
+  --ids <uuid,...>                                                only these users, by their UUIDs; comma-separated
+  --sort <createdAt|updatedAt|name|lastActiveAt>                  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                                          ASC or DESC; DESC when omitted
+  --offset <n>                                                    the first item to return; 0 when omitted
+  --limit <n>                                                     items per page, from 1 to 100; 25 when omitted
+  --source <id>                                                   configured source ID; required when more than one outline source exists
+  -h, --help                                                      show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups get <groupId> [--source <id>]
+
+show one Outline group
+
+ARGUMENTS:
+  <groupId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups list [--user-id <uuid>] [--group-source <value>] [--query <value>] [--sort <createdAt|updatedAt|name>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline groups
+
+OPTIONS:
+  --user-id <uuid>                   only groups of this user, by the user's UUID
+  --group-source <value>             only groups of this source: manual, or the name of an identity provider
+  --query <value>                    the group name to search for
+  --sort <createdAt|updatedAt|name>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>             ASC or DESC; DESC when omitted
+  --offset <n>                       the first item to return; 0 when omitted
+  --limit <n>                        items per page, from 1 to 100; 25 when omitted
+  --source <id>                      configured source ID; required when more than one outline source exists
+  -h, --help                         show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups members <groupId> [--query <value>] [--permission <member|admin>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the members of one Outline group
+
+ARGUMENTS:
+  <groupId>
+
+OPTIONS:
+  --query <value>              the group member name to search for
+  --permission <member|admin>  only members with this permission
+  --offset <n>                 the first item to return; 0 when omitted
+  --limit <n>                  items per page, from 1 to 100; 25 when omitted
+  --source <id>                configured source ID; required when more than one outline source exists
+  -h, --help                   show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline templates get <templateId> [--source <id>]
+
+show one Outline template, without its body
+
+ARGUMENTS:
+  <templateId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline templates list [--collection-id <id>] [--query <value>] [--sort <createdAt|updatedAt|publishedAt|title|collectionId>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline templates, without their bodies
+
+OPTIONS:
+  --collection-id <id>                                         only documents of this collection, by its UUID
+  --query <value>                                              the template title to search for
+  --sort <createdAt|updatedAt|publishedAt|title|collectionId>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                                       ASC or DESC; DESC when omitted
+  --offset <n>                                                 the first item to return; 0 when omitted
+  --limit <n>                                                  items per page, from 1 to 100; 25 when omitted
+  --source <id>                                                configured source ID; required when more than one outline source exists
+  -h, --help                                                   show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline pins get <documentId> [--collection-id <id>] [--source <id>]
+
+show the pin of one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --collection-id <id>  the collection of the pin, by its UUID; Home when omitted
+  --source <id>         configured source ID; required when more than one outline source exists
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline pins list [--collection-id <id>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the Outline pins of a collection or of Home
+
+OPTIONS:
+  --collection-id <id>  the collection of the pins, by its UUID; Home when omitted
+  --offset <n>          the first item to return; 0 when omitted
+  --limit <n>           items per page, from 1 to 100; 25 when omitted
+  --source <id>         configured source ID; required when more than one outline source exists
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline stars list [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the Outline stars of the API key's user
+
+OPTIONS:
+  --offset <n>   the first item to return; 0 when omitted
+  --limit <n>    items per page, from 1 to 100; 25 when omitted
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline subscriptions get [--event <documents.update>] [--document-id <id>] [--collection-id <id>] [--source <id>]
+
+show the subscription of the API key's user to one Outline document or collection
+
+OPTIONS:
+  --event <documents.update>  the event to follow; documents.update is the only one
+  --document-id <id>          the document to follow, by its ID
+  --collection-id <id>        the collection to follow, by its UUID
+  --source <id>               configured source ID; required when more than one outline source exists
+  -h, --help                  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline subscriptions list [--event <documents.update>] [--document-id <id>] [--collection-id <id>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the Outline subscriptions to one document or collection
+
+OPTIONS:
+  --event <documents.update>  the event to follow; documents.update is the only one
+  --document-id <id>          the document to follow, by its ID
+  --collection-id <id>        the collection to follow, by its UUID
+  --offset <n>                the first item to return; 0 when omitted
+  --limit <n>                 items per page, from 1 to 100; 25 when omitted
+  --source <id>               configured source ID; required when more than one outline source exists
+  -h, --help                  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline access-requests get <accessRequestId> [--source <id>]
+
+show one Outline access request to a document
+
+ARGUMENTS:
+  <accessRequestId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline attachments list [--document-id <uuid>] [--user-id <uuid>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline attachments
+
+OPTIONS:
+  --document-id <uuid>  only attachments of this document, by its UUID
+  --user-id <uuid>      only attachments of this user, by the user's UUID
+  --offset <n>          the first item to return; 0 when omitted
+  --limit <n>           items per page, from 1 to 100; 25 when omitted
+  --source <id>         configured source ID; required when more than one outline source exists
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline emojis get <emojiId> [--source <id>]
+
+show one Outline custom emoji
+
+ARGUMENTS:
+  <emojiId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline emojis list [--query <value>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline custom emojis
+
+OPTIONS:
+  --query <value>  the emoji name to search for
+  --offset <n>     the first item to return; 0 when omitted
+  --limit <n>      items per page, from 1 to 100; 25 when omitted
+  --source <id>    configured source ID; required when more than one outline source exists
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline events list [--actor-id <uuid>] [--document-id <uuid>] [--collection-id <uuid>] [--audit-log <value>] [--sort <name|createdAt>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline activity or audit events
+
+OPTIONS:
+  --actor-id <uuid>        only events of this actor, by the actor's UUID
+  --document-id <uuid>     only events of this document, by its UUID
+  --collection-id <uuid>   only events of this collection, by its UUID
+  --audit-log <value>      true to read the audit log; it needs the audit policy
+  --sort <name|createdAt>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>   ASC or DESC; DESC when omitted
+  --offset <n>             the first item to return; 0 when omitted
+  --limit <n>              items per page, from 1 to 100; 25 when omitted
+  --source <id>            configured source ID; required when more than one outline source exists
+  -h, --help               show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline file-operations get <fileOperationId> [--source <id>]
+
+show one Outline import or export file operation
+
+ARGUMENTS:
+  <fileOperationId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline file-operations list <type> [--sort <createdAt|updatedAt|state|size>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline file operations of one type
+
+ARGUMENTS:
+  <type>
+
+OPTIONS:
+  --sort <createdAt|updatedAt|state|size>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                   ASC or DESC; DESC when omitted
+  --offset <n>                             the first item to return; 0 when omitted
+  --limit <n>                              items per page, from 1 to 100; 25 when omitted
+  --source <id>                            configured source ID; required when more than one outline source exists
+  -h, --help                               show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline group-memberships list [--group-id <uuid>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the group memberships of the wiki
+
+OPTIONS:
+  --group-id <uuid>  only the memberships of this group, by the group's UUID
+  --offset <n>       the first item to return; 0 when omitted
+  --limit <n>        items per page, from 1 to 100; 25 when omitted
+  --source <id>      configured source ID; required when more than one outline source exists
+  -h, --help         show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline installation get [--source <id>]
+
+show the version of the Outline server
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline notifications list [--event-type <documents.publish|documents.update|documents.add_user|collections.add_user|groups.add_user|groups.remove_user|revisions.create|collections.create|comments.create|comments.resolve|reactions.create|documents.mentioned|comments.mentioned|documents.group_mentioned|comments.group_mentioned|emails.invite_accepted|emails.onboarding|emails.features|emails.export_completed|access_requests.create>] [--archived <value>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the Outline notifications of the API key's user
+
+OPTIONS:
+  --event-type <documents.publish|documents.update|documents.add_user|collections.add_user|groups.add_user|groups.remove_user|revisions.create|collections.create|comments.create|comments.resolve|reactions.create|documents.mentioned|comments.mentioned|documents.group_mentioned|comments.group_mentioned|emails.invite_accepted|emails.onboarding|emails.features|emails.export_completed|access_requests.create>  only notifications of this event type
+  --archived <value>                                                                                                                                                                                                                                                                                                                                                                                                    true for archived notifications, false for the others
+  --offset <n>                                                                                                                                                                                                                                                                                                                                                                                                          the first item to return; 0 when omitted
+  --limit <n>                                                                                                                                                                                                                                                                                                                                                                                                           items per page, from 1 to 100; 25 when omitted
+  --source <id>                                                                                                                                                                                                                                                                                                                                                                                                         configured source ID; required when more than one outline source exists
+  -h, --help                                                                                                                                                                                                                                                                                                                                                                                                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline oauth-authentications list [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the OAuth sign-ins of the API key's user
+
+OPTIONS:
+  --offset <n>   the first item to return; 0 when omitted
+  --limit <n>    items per page, from 1 to 100; 25 when omitted
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline reactions list <commentId> [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the emoji reactions of one Outline comment
+
+ARGUMENTS:
+  <commentId>
+
+OPTIONS:
+  --offset <n>   the first item to return; 0 when omitted
+  --limit <n>    items per page, from 1 to 100; 25 when omitted
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline relationships get <relationshipId> [--source <id>]
+
+show one Outline relationship between two documents
+
+ARGUMENTS:
+  <relationshipId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline relationships list [--type <backlink|similar>] [--document-id <id>] [--reverse-document-id <id>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the Outline relationships of one document
+
+OPTIONS:
+  --type <backlink|similar>   backlink or similar
+  --document-id <id>          the document the relationships start from, by its ID
+  --reverse-document-id <id>  the document the relationships point to, by its ID
+  --offset <n>                the first item to return; 0 when omitted
+  --limit <n>                 items per page, from 1 to 100; 25 when omitted
+  --source <id>               configured source ID; required when more than one outline source exists
+  -h, --help                  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline searches list [--search-source <value>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the Outline searches of the API key's user
+
+OPTIONS:
+  --search-source <value>  only searches of this source, as the server names it
+  --offset <n>             the first item to return; 0 when omitted
+  --limit <n>              items per page, from 1 to 100; 25 when omitted
+  --source <id>            configured source ID; required when more than one outline source exists
+  -h, --help               show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline suggestions mention [--query <value>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the documents, users, and groups to mention
+
+OPTIONS:
+  --query <value>  the text to find the mention suggestions for
+  --offset <n>     the first item to return; 0 when omitted
+  --limit <n>      items per page, from 1 to 100; 25 when omitted
+  --source <id>    configured source ID; required when more than one outline source exists
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline user-memberships list [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of the Outline memberships of the API key's user
+
+OPTIONS:
+  --offset <n>   the first item to return; 0 when omitted
+  --limit <n>    items per page, from 1 to 100; 25 when omitted
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline views list <documentId> [--include-suspended <value>] [--source <id>]
+
+list the Outline views of one document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --include-suspended <value>  true to include the views of suspended users
+  --source <id>                configured source ID; required when more than one outline source exists
+  -h, --help                   show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline api-keys list [--user-id <uuid>] [--query <value>] [--sort <createdAt|updatedAt|name|expiresAt|lastActiveAt>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline API keys (admin source only)
+
+OPTIONS:
+  --user-id <uuid>                                          only keys of this user, by the user's UUID
+  --query <value>                                           the key name to search for
+  --sort <createdAt|updatedAt|name|expiresAt|lastActiveAt>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                                    ASC or DESC; DESC when omitted
+  --offset <n>                                              the first item to return; 0 when omitted
+  --limit <n>                                               items per page, from 1 to 100; 25 when omitted
+  --source <id>                                             configured source ID; required when more than one outline source exists
+  -h, --help                                                show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline authentication-providers get <authenticationProviderId> [--source <id>]
+
+show one Outline sign-in provider (admin source only)
+
+ARGUMENTS:
+  <authenticationProviderId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline authentication-providers list [--source <id>]
+
+list the Outline sign-in providers (admin source only)
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline imports get <importId> [--source <id>]
+
+show one Outline import (admin source only)
+
+ARGUMENTS:
+  <importId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline imports list [--service <notion|markdown|slab|okf|json>] [--sort <createdAt|updatedAt|service>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline imports (admin source only)
+
+OPTIONS:
+  --service <notion|markdown|slab|okf|json>  only imports from this service
+  --sort <createdAt|updatedAt|service>       the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                     ASC or DESC; DESC when omitted
+  --offset <n>                               the first item to return; 0 when omitted
+  --limit <n>                                items per page, from 1 to 100; 25 when omitted
+  --source <id>                              configured source ID; required when more than one outline source exists
+  -h, --help                                 show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline integrations get <integrationId> [--source <id>]
+
+show one Outline integration (admin source only)
+
+ARGUMENTS:
+  <integrationId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline integrations list [--type <post|command|embed|analytics|linkedAccount|import>] [--service <diagrams|grist|slack|google-analytics|matomo|umami|github|gitlab|linear|figma|notion|markdown|slab|okf|json>] [--sort <createdAt|updatedAt>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline integrations (admin source only)
+
+OPTIONS:
+  --type <post|command|embed|analytics|linkedAccount|import>                                                               only integrations of this type
+  --service <diagrams|grist|slack|google-analytics|matomo|umami|github|gitlab|linear|figma|notion|markdown|slab|okf|json>  only integrations of this service
+  --sort <createdAt|updatedAt>                                                                                             the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>                                                                                                   ASC or DESC; DESC when omitted
+  --offset <n>                                                                                                             the first item to return; 0 when omitted
+  --limit <n>                                                                                                              items per page, from 1 to 100; 25 when omitted
+  --source <id>                                                                                                            configured source ID; required when more than one outline source exists
+  -h, --help                                                                                                               show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline oauth-clients get <oauthClientId> [--source <id>]
+
+show one Outline OAuth client (admin source only)
+
+ARGUMENTS:
+  <oauthClientId>
+
+OPTIONS:
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline oauth-clients list [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline OAuth clients (admin source only)
+
+OPTIONS:
+  --offset <n>   the first item to return; 0 when omitted
+  --limit <n>    items per page, from 1 to 100; 25 when omitted
+  --source <id>  configured source ID; required when more than one outline source exists
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline webhook-subscriptions list [--query <value>] [--sort <createdAt|updatedAt|name>] [--direction <ASC|DESC>] [--offset <n>] [--limit <n>] [--source <id>]
+
+list one page of Outline webhook subscriptions (admin source only)
+
+OPTIONS:
+  --query <value>                    the webhook name to search for
+  --sort <createdAt|updatedAt|name>  the field to sort by; the server's default when omitted
+  --direction <ASC|DESC>             ASC or DESC; DESC when omitted
+  --offset <n>                       the first item to return; 0 when omitted
+  --limit <n>                        items per page, from 1 to 100; 25 when omitted
+  --source <id>                      configured source ID; required when more than one outline source exists
+  -h, --help                         show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents create [--title <value>] [--text <value>] [--collection-id <id>] [--parent-document-id <uuid>] [--template-id <uuid>] [--publish <value>] [--source <id>]
+
+create one Outline document, as a draft unless --publish is true
+
+OPTIONS:
+  --title <value>              the title, 1 to 255 characters
+  --text <value>               the Markdown body, at most 1 MiB
+  --collection-id <id>         the collection the document goes in, by its UUID
+  --parent-document-id <uuid>  the parent document, by its UUID
+  --template-id <uuid>         a template to create the document from, by its UUID
+  --publish <value>            true to publish at once; false or omitted keeps a draft
+  --source <id>                configured source ID; required, a change names its source
+  -h, --help                   show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents duplicate <documentId> [--title <value>] [--recursive <value>] [--publish <value>] [--collection-id <id>] [--parent-document-id <uuid>] [--source <id>]
+
+copy one Outline document, and its children when recursive is true
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --title <value>              the title of the copy, 1 to 255 characters
+  --recursive <value>          true to copy the child documents too
+  --publish <value>            true to publish the copies at once
+  --collection-id <id>         the collection of the copy, by its UUID
+  --parent-document-id <uuid>  the parent document of the copy, by its UUID
+  --source <id>                configured source ID; required, a change names its source
+  -h, --help                   show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents move <documentId> [--collection-id <id>] [--parent-document-id <uuid>] [--index <n>] [--source <id>]
+
+move one Outline document to another collection or parent
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --collection-id <id>         the collection to move it to, by its UUID
+  --parent-document-id <uuid>  the new parent document, by its UUID; it must not be the document itself
+  --index <n>                  the position among its siblings, from 0
+  --source <id>                configured source ID; required, a change names its source
+  -h, --help                   show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents restore <documentId> [--collection-id <id>] [--revision-id <uuid>] [--source <id>]
+
+restore one archived or deleted Outline document, or one of its revisions
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --collection-id <id>  the collection to restore it into, by its UUID
+  --revision-id <uuid>  a revision to restore the text from, by its UUID
+  --source <id>         configured source ID; required, a change names its source
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents templatize <documentId> --publish <value> [--collection-id <id>] [--source <id>]
+
+make a template from one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --publish <value>     true to publish the template at once; the server requires the choice
+  --collection-id <id>  the collection of the template, by its UUID
+  --source <id>         configured source ID; required, a change names its source
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents unpublish <documentId> [--detach <value>] [--source <id>]
+
+take one Outline document back to a draft
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --detach <value>  true to leave the collection as well
+  --source <id>     configured source ID; required, a change names its source
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents update <documentId> [--title <value>] [--text <value>] [--edit-mode <replace|append|prepend|patch>] [--find-text <value>] [--last-revision <n>] [--publish <value>] [--collection-id <id>] [--source <id>]
+
+change the title or the text of one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --title <value>                             the new title, 1 to 255 characters
+  --text <value>                              the Markdown text, at most 1 MiB
+  --edit-mode <replace|append|prepend|patch>  how text applies: replace (the default), append, prepend, or patch
+  --find-text <value>                         for patch: the text to find and replace in the document
+  --last-revision <n>                         the revision you read, from get_document; the wiki refuses the change if it moved on
+  --publish <value>                           true to publish the document
+  --collection-id <id>                        the collection to move it into, by its UUID
+  --source <id>                               configured source ID; required, a change names its source
+  -h, --help                                  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections create <name> [--description <value>] [--permission <read|read_write|admin>] [--sharing <value>] [--commenting <value>] [--template-management <admin|read_write>] [--source <id>]
+
+create one Outline collection, private unless permission is set
+
+ARGUMENTS:
+  <name>
+
+OPTIONS:
+  --description <value>                     the Markdown description, at most 1 MiB
+  --permission <read|read_write|admin>      the default access of its members: read, read_write, or admin; omitted makes it private
+  --sharing <value>                         true to allow the collection to be shared publicly
+  --commenting <value>                      true to allow comments in the collection
+  --template-management <admin|read_write>  who may manage its templates: admin or read_write
+  --source <id>                             configured source ID; required, a change names its source
+  -h, --help                                show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections duplicate <collectionId> [--name <value>] [--source <id>]
+
+copy one Outline collection, under a new name when one is given
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --name <value>  the name of the copy, 1 to 255 characters
+  --source <id>   configured source ID; required, a change names its source
+  -h, --help      show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections export <collectionId> [--format <json|outline-markdown|okf|html|textbundle|pdf|notion>] [--include-attachments <value>] [--source <id>]
+
+start a file export of one Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --format <json|outline-markdown|okf|html|textbundle|pdf|notion>  the file format; outline-markdown when omitted
+  --include-attachments <value>                                    true to include the attachments of the documents
+  --source <id>                                                    configured source ID; required, a change names its source
+  -h, --help                                                       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections move <collectionId> --index <value> [--source <id>]
+
+move one Outline collection to a new position
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --index <value>  the new position, a fractional index of 1 to 256 printable characters
+  --source <id>    configured source ID; required, a change names its source
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections restore <collectionId> [--source <id>]
+
+restore one archived Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections update <collectionId> [--name <value>] [--description <value>] [--permission <read|read_write|admin>] [--sharing <value>] [--commenting <value>] [--template-management <admin|read_write>] [--source <id>]
+
+change the name, the description, or the access of one Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --name <value>                            the new name, 1 to 255 characters
+  --description <value>                     the new Markdown description, at most 1 MiB
+  --permission <read|read_write|admin>      the default access of its members: read, read_write, or admin
+  --sharing <value>                         true to allow the collection to be shared publicly
+  --commenting <value>                      true to allow comments in the collection
+  --template-management <admin|read_write>  who may manage its templates: admin or read_write
+  --source <id>                             configured source ID; required, a change names its source
+  -h, --help                                show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline comments create <documentId> --text <value> [--parent-comment-id <uuid>] [--source <id>]
+
+add one comment to an Outline document, or a reply to a comment
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --text <value>              the Markdown text of the comment
+  --parent-comment-id <uuid>  the comment this one replies to, by its UUID
+  --source <id>               configured source ID; required, a change names its source
+  -h, --help                  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline comments update <commentId> --text <value> [--source <id>]
+
+change the text of one Outline comment
+
+ARGUMENTS:
+  <commentId>
+
+OPTIONS:
+  --text <value>  the new Markdown text of the comment
+  --source <id>   configured source ID; required, a change names its source
+  -h, --help      show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline comments resolve <commentId> [--source <id>]
+
+mark one Outline comment as resolved
+
+ARGUMENTS:
+  <commentId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline comments unresolve <commentId> [--source <id>]
+
+reopen one resolved Outline comment
+
+ARGUMENTS:
+  <commentId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline comments add-reaction <commentId> --emoji <value> [--source <id>]
+
+add one emoji reaction to an Outline comment
+
+ARGUMENTS:
+  <commentId>
+
+OPTIONS:
+  --emoji <value>  one emoji, or the UUID of a custom emoji
+  --source <id>    configured source ID; required, a change names its source
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline comments remove-reaction <commentId> --emoji <value> [--source <id>]
+
+remove one emoji reaction from an Outline comment
+
+ARGUMENTS:
+  <commentId>
+
+OPTIONS:
+  --emoji <value>  the emoji of the reaction to remove, or the UUID of a custom emoji
+  --source <id>    configured source ID; required, a change names its source
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline access-requests create <documentId> [--source <id>]
+
+ask for access to one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline revisions update <revisionId> --name <value> [--source <id>]
+
+rename one revision of an Outline document
+
+ARGUMENTS:
+  <revisionId>
+
+OPTIONS:
+  --name <value>  the new name of the revision
+  --source <id>   configured source ID; required, a change names its source
+  -h, --help      show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline notifications update <notificationId> [--viewed-at <value>] [--archived-at <value>] [--source <id>]
+
+mark one Outline notification as viewed or archived
+
+ARGUMENTS:
+  <notificationId>
+
+OPTIONS:
+  --viewed-at <value>    the time it was viewed, in RFC 3339 with a zone
+  --archived-at <value>  the time it was archived, in RFC 3339 with a zone
+  --source <id>          configured source ID; required, a change names its source
+  -h, --help             show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline notifications update-all [--viewed-at <value>] [--archived-at <value>] [--source <id>]
+
+mark all Outline notifications of the user as viewed or archived
+
+OPTIONS:
+  --viewed-at <value>    the time to mark every notification as viewed, in RFC 3339 with a zone
+  --archived-at <value>  the time to mark every notification as archived, in RFC 3339 with a zone
+  --source <id>          configured source ID; required, a change names its source
+  -h, --help             show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline pins create <documentId> [--collection-id <id>] [--index <value>] [--source <id>]
+
+pin one Outline document to a collection or to Home
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --collection-id <id>  the collection to pin it in, by its UUID; Home when omitted
+  --index <value>       the position of the pin, a fractional index of 1 to 256 printable characters
+  --source <id>         configured source ID; required, a change names its source
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline pins delete <pinId> [--source <id>]
+
+unpin one Outline pin
+
+ARGUMENTS:
+  <pinId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline pins update <pinId> --index <value> [--source <id>]
+
+move one Outline pin to a new position
+
+ARGUMENTS:
+  <pinId>
+
+OPTIONS:
+  --index <value>  the new position, a fractional index of 1 to 256 printable characters
+  --source <id>    configured source ID; required, a change names its source
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline searches delete [--search-id <uuid>] [--query <value>] [--source <id>]
+
+remove one saved search of the user, by its ID or by its query
+
+OPTIONS:
+  --search-id <uuid>  the saved search to remove, from list_searches
+  --query <value>     the query of the saved search to remove, 1 to 1000 characters
+  --source <id>       configured source ID; required, a change names its source
+  -h, --help          show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline searches update <searchId> --score <-1..1> [--source <id>]
+
+change the score of one saved search of the user
+
+ARGUMENTS:
+  <searchId>
+
+OPTIONS:
+  --score <-1..1>  the score of the search, a number from -1 to 1
+  --source <id>    configured source ID; required, a change names its source
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline stars create [--document-id <id>] [--collection-id <id>] [--index <value>] [--source <id>]
+
+star one Outline document or collection for the user
+
+OPTIONS:
+  --document-id <id>    the document to star, from collection_tree
+  --collection-id <id>  the collection to star, by its UUID
+  --index <value>       the position of the star, a fractional index of 1 to 256 printable characters
+  --source <id>         configured source ID; required, a change names its source
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline stars delete <starId> [--source <id>]
+
+unstar one Outline star
+
+ARGUMENTS:
+  <starId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline stars update <starId> --index <value> [--source <id>]
+
+move one Outline star to a new position
+
+ARGUMENTS:
+  <starId>
+
+OPTIONS:
+  --index <value>  the new position, a fractional index of 1 to 256 printable characters
+  --source <id>    configured source ID; required, a change names its source
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline subscriptions create [--event <documents.update>] [--document-id <id>] [--collection-id <id>] [--source <id>]
+
+follow the updates of one Outline document or collection
+
+OPTIONS:
+  --event <documents.update>  the event to follow; documents.update is the only one
+  --document-id <id>          the document to follow, from collection_tree
+  --collection-id <id>        the collection to follow, by its UUID
+  --source <id>               configured source ID; required, a change names its source
+  -h, --help                  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline subscriptions delete <subscriptionId> [--source <id>]
+
+unfollow the updates of one Outline subscription
+
+ARGUMENTS:
+  <subscriptionId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline templates create [--title <value>] [--collection-id <id>] [--icon <value>] [--color <value>] [--publish <value>] [--source <id>]
+
+create one Outline template with a title, an icon, and a colour
+
+OPTIONS:
+  --title <value>       the title of the template, 1 to 255 characters
+  --collection-id <id>  the collection of the template, by its UUID
+  --icon <value>        the icon: one emoji, a named icon, or the UUID of an attachment
+  --color <value>       the colour as hex, such as #3a7bd5 or #3ad
+  --publish <value>     true to publish the template at once
+  --source <id>         configured source ID; required, a change names its source
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline templates duplicate <templateId> [--title <value>] [--collection-id <id>] [--source <id>]
+
+copy one Outline template, under a new title when one is given
+
+ARGUMENTS:
+  <templateId>
+
+OPTIONS:
+  --title <value>       the title of the copy, 1 to 255 characters
+  --collection-id <id>  the collection of the copy, by its UUID
+  --source <id>         configured source ID; required, a change names its source
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline templates restore <templateId> [--source <id>]
+
+restore one deleted Outline template
+
+ARGUMENTS:
+  <templateId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline templates update <templateId> [--title <value>] [--icon <value>] [--color <value>] [--full-width <value>] [--collection-id <id>] [--publish <value>] [--source <id>]
+
+change the title, the icon, the colour, or the collection of one Outline template
+
+ARGUMENTS:
+  <templateId>
+
+OPTIONS:
+  --title <value>       the new title, 1 to 255 characters
+  --icon <value>        the new icon: one emoji, a named icon, or the UUID of an attachment
+  --color <value>       the new colour as hex, such as #3a7bd5 or #3ad
+  --full-width <value>  true to show the template at full width
+  --collection-id <id>  the collection to move the template into, by its UUID
+  --publish <value>     true to publish the template
+  --source <id>         configured source ID; required, a change names its source
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline user-memberships update <membershipId> --index <value> [--source <id>]
+
+change the position of one membership of the API key's user
+
+ARGUMENTS:
+  <membershipId>
+
+OPTIONS:
+  --index <value>  the new position, a fractional index of 1 to 256 printable characters
+  --source <id>    configured source ID; required, a change names its source
+  -h, --help       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users notifications-subscribe [--event-type <documents.publish|documents.update|documents.add_user|collections.add_user|groups.add_user|groups.remove_user|revisions.create|collections.create|comments.create|comments.resolve|reactions.create|documents.mentioned|comments.mentioned|documents.group_mentioned|comments.group_mentioned|emails.invite_accepted|emails.onboarding|emails.features|emails.export_completed|access_requests.create>] [--source <id>]
+
+turn on the notification settings of the API key's user, for one event type
+
+OPTIONS:
+  --event-type <documents.publish|documents.update|documents.add_user|collections.add_user|groups.add_user|groups.remove_user|revisions.create|collections.create|comments.create|comments.resolve|reactions.create|documents.mentioned|comments.mentioned|documents.group_mentioned|comments.group_mentioned|emails.invite_accepted|emails.onboarding|emails.features|emails.export_completed|access_requests.create>  the event type to turn on; the wiki's own default when omitted
+  --source <id>                                                                                                                                                                                                                                                                                                                                                                                                         configured source ID; required, a change names its source
+  -h, --help                                                                                                                                                                                                                                                                                                                                                                                                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users notifications-unsubscribe [--event-type <documents.publish|documents.update|documents.add_user|collections.add_user|groups.add_user|groups.remove_user|revisions.create|collections.create|comments.create|comments.resolve|reactions.create|documents.mentioned|comments.mentioned|documents.group_mentioned|comments.group_mentioned|emails.invite_accepted|emails.onboarding|emails.features|emails.export_completed|access_requests.create>] [--source <id>]
+
+turn off the notification settings of the API key's user, for one event type
+
+OPTIONS:
+  --event-type <documents.publish|documents.update|documents.add_user|collections.add_user|groups.add_user|groups.remove_user|revisions.create|collections.create|comments.create|comments.resolve|reactions.create|documents.mentioned|comments.mentioned|documents.group_mentioned|comments.group_mentioned|emails.invite_accepted|emails.onboarding|emails.features|emails.export_completed|access_requests.create>  the event type to turn off; the wiki's own default when omitted
+  --source <id>                                                                                                                                                                                                                                                                                                                                                                                                         configured source ID; required, a change names its source
+  -h, --help                                                                                                                                                                                                                                                                                                                                                                                                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents add-group <documentId> --group-id <uuid> [--permission <read|read_write|admin>] [--source <id>]
+
+give one group access to one Outline document, at a permission
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --group-id <uuid>                     the group, by its UUID
+  --permission <read|read_write|admin>  only items with this permission
+  --source <id>                         configured source ID; required, a change names its source
+  -h, --help                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents add-user <documentId> --user-id <uuid> [--permission <read|read_write|admin>] [--source <id>]
+
+give one user access to one Outline document, at a permission
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --user-id <uuid>                      the user, by its UUID
+  --permission <read|read_write|admin>  only items with this permission
+  --source <id>                         configured source ID; required, a change names its source
+  -h, --help                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents archive <documentId> [--reason <value>] [--source <id>]
+
+archive one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --reason <value>  why it is archived, at most 2000 characters
+  --source <id>     configured source ID; required, a change names its source
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents delete <documentId> [--permanent <value>] [--reason <value>] [--source <id>]
+
+move one Outline document to the trash; --permanent deletes it for good
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --permanent <value>  true to delete the document for good, without a trash step
+  --reason <value>     why it is deleted, at most 2000 characters
+  --source <id>        configured source ID; required, a change names its source
+  -h, --help           show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents empty-trash [--source <id>]
+
+delete every document in the trash of the source for good
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents remove-group <documentId> --group-id <uuid> [--source <id>]
+
+remove one group's access to one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --group-id <uuid>  the group, by its UUID
+  --source <id>      configured source ID; required, a change names its source
+  -h, --help         show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline documents remove-user <documentId> --user-id <uuid> [--source <id>]
+
+remove one user's access to one Outline document
+
+ARGUMENTS:
+  <documentId>
+
+OPTIONS:
+  --user-id <uuid>  the user, by its UUID
+  --source <id>     configured source ID; required, a change names its source
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections add-group <collectionId> --group-id <uuid> [--permission <read|read_write|admin>] [--source <id>]
+
+give one group access to one Outline collection, at a permission
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --group-id <uuid>                     the group, by its UUID
+  --permission <read|read_write|admin>  only items with this permission
+  --source <id>                         configured source ID; required, a change names its source
+  -h, --help                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections add-user <collectionId> --user-id <uuid> [--permission <read|read_write|admin>] [--source <id>]
+
+give one user access to one Outline collection, at a permission
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --user-id <uuid>                      the user, by its UUID
+  --permission <read|read_write|admin>  only items with this permission
+  --source <id>                         configured source ID; required, a change names its source
+  -h, --help                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections archive <collectionId> [--reason <value>] [--source <id>]
+
+archive one Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --reason <value>  why it is archived, at most 2000 characters
+  --source <id>     configured source ID; required, a change names its source
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections delete <collectionId> [--reason <value>] [--source <id>]
+
+delete one Outline collection and its documents
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --reason <value>  why it is deleted, at most 2000 characters
+  --source <id>     configured source ID; required, a change names its source
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections export-all [--format <json|outline-markdown|okf|html|textbundle|pdf|notion>] [--include-attachments <value>] [--include-private <value>] [--source <id>]
+
+start an export of every collection of the wiki, as a file operation
+
+OPTIONS:
+  --format <json|outline-markdown|okf|html|textbundle|pdf|notion>  the export format; outline-markdown when omitted
+  --include-attachments <value>                                    true to include the attachments; true when omitted
+  --include-private <value>                                        true to include the private collections; true when omitted
+  --source <id>                                                    configured source ID; required, a change names its source
+  -h, --help                                                       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections remove-group <collectionId> --group-id <uuid> [--source <id>]
+
+remove one group's access to one Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --group-id <uuid>  the group, by its UUID
+  --source <id>      configured source ID; required, a change names its source
+  -h, --help         show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline collections remove-user <collectionId> --user-id <uuid> [--source <id>]
+
+remove one user's access to one Outline collection
+
+ARGUMENTS:
+  <collectionId>
+
+OPTIONS:
+  --user-id <uuid>  the user, by its UUID
+  --source <id>     configured source ID; required, a change names its source
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users activate <userId> [--source <id>]
+
+reactivate one suspended Outline user
+
+ARGUMENTS:
+  <userId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users delete <userId> [--source <id>]
+
+delete one Outline user for good
+
+ARGUMENTS:
+  <userId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users invite <email> --name <value> --role <admin|member|viewer|guest> [--suppress-email <value>] [--source <id>]
+
+invite one person to the wiki by e-mail, with a role
+
+ARGUMENTS:
+  <email>
+
+OPTIONS:
+  --name <value>                      the name of the person, 1 to 255 characters
+  --role <admin|member|viewer|guest>  the role: admin, member, viewer, or guest
+  --suppress-email <value>            true to send no invitation e-mail; false when omitted
+  --source <id>                       configured source ID; required, a change names its source
+  -h, --help                          show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users request-delete [--source <id>]
+
+request the e-mail code that deletes the user of the API key
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users resend-invite <userId> [--source <id>]
+
+send the invitation e-mail to one invited user again
+
+ARGUMENTS:
+  <userId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users suspend <userId> [--source <id>]
+
+suspend one Outline user, so the user cannot sign in
+
+ARGUMENTS:
+  <userId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users update [--user-id <uuid>] [--name <value>] [--language <value>] [--timezone <value>] [--source <id>]
+
+change the name, language, or time zone of one Outline user
+
+OPTIONS:
+  --user-id <uuid>    the user ID; the user of the API key when omitted
+  --name <value>      the new name, 1 to 255 characters
+  --language <value>  the locale of the user, such as en_US
+  --timezone <value>  an IANA time zone name, such as Asia/Jakarta
+  --source <id>       configured source ID; required, a change names its source
+  -h, --help          show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline users update-role <userId> --role <admin|member|viewer|guest> [--source <id>]
+
+change the role of one Outline user
+
+ARGUMENTS:
+  <userId>
+
+OPTIONS:
+  --role <admin|member|viewer|guest>  the new role: admin, member, viewer, or guest
+  --source <id>                       configured source ID; required, a change names its source
+  -h, --help                          show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups add-user <groupId> --user-id <uuid> [--permission <member|admin>] [--source <id>]
+
+add one user to one Outline group, as a member or an admin
+
+ARGUMENTS:
+  <groupId>
+
+OPTIONS:
+  --user-id <uuid>             the user ID, from list_users
+  --permission <member|admin>  member or admin of the group; member when omitted
+  --source <id>                configured source ID; required, a change names its source
+  -h, --help                   show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups create <name> [--description <value>] [--color <value>] [--icon <value>] [--disable-mentions <value>] [--source <id>]
+
+create one Outline group
+
+ARGUMENTS:
+  <name>
+
+OPTIONS:
+  --description <value>       the description of the group, in Markdown
+  --color <value>             the colour as a hex value, such as #3a7bd5
+  --icon <value>              an emoji, a named icon, or an icon attachment
+  --disable-mentions <value>  true to stop the members being mentioned
+  --source <id>               configured source ID; required, a change names its source
+  -h, --help                  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups delete <groupId> [--source <id>]
+
+delete one Outline group
+
+ARGUMENTS:
+  <groupId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups delete-all <authenticationProviderId> [--source <id>]
+
+delete every group synced from one sign-in provider
+
+ARGUMENTS:
+  <authenticationProviderId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups remove-user <groupId> --user-id <uuid> [--source <id>]
+
+remove one user from one Outline group
+
+ARGUMENTS:
+  <groupId>
+
+OPTIONS:
+  --user-id <uuid>  the user ID, from list_users
+  --source <id>     configured source ID; required, a change names its source
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups update <groupId> [--name <value>] [--description <value>] [--color <value>] [--icon <value>] [--disable-mentions <value>] [--source <id>]
+
+change the name, description, colour, icon, or mention setting of one Outline group
+
+ARGUMENTS:
+  <groupId>
+
+OPTIONS:
+  --name <value>              the new name, 1 to 255 characters
+  --description <value>       the new description, in Markdown
+  --color <value>             the colour as a hex value, such as #3a7bd5
+  --icon <value>              an emoji, a named icon, or an icon attachment
+  --disable-mentions <value>  true to stop the members being mentioned
+  --source <id>               configured source ID; required, a change names its source
+  -h, --help                  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline groups update-user <groupId> --user-id <uuid> --permission <member|admin> [--source <id>]
+
+change the permission of one user in one Outline group
+
+ARGUMENTS:
+  <groupId>
+
+OPTIONS:
+  --user-id <uuid>             the user ID, from list_users
+  --permission <member|admin>  member or admin of the group
+  --source <id>                configured source ID; required, a change names its source
+  -h, --help                   show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline teams delete <code> [--source <id>]
+
+delete the whole Outline team of the API key
+
+ARGUMENTS:
+  <code>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline teams request-delete [--source <id>]
+
+request the e-mail code that deletes the team of the API key
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline teams update [--name <value>] [--description <value>] [--sharing <value>] [--document-embeds <value>] [--member-collection-create <value>] [--default-user-role <admin|member|viewer|guest>] [--source <id>]
+
+change the settings of the Outline team of the API key
+
+OPTIONS:
+  --name <value>                                   the new name of the team, 1 to 255 characters
+  --description <value>                            the new description of the team, in Markdown
+  --sharing <value>                                true to allow public sharing
+  --document-embeds <value>                        true to allow embeds in documents
+  --member-collection-create <value>               true to let members create collections
+  --default-user-role <admin|member|viewer|guest>  the role of a new user: admin, member, viewer, or guest
+  --source <id>                                    configured source ID; required, a change names its source
+  -h, --help                                       show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline access-requests approve <accessRequestId> [--permission <read|read_write|admin>] [--source <id>]
+
+approve one access request to an Outline document
+
+ARGUMENTS:
+  <accessRequestId>
+
+OPTIONS:
+  --permission <read|read_write|admin>  read, read_write, or admin; read when omitted
+  --source <id>                         configured source ID; required, a change names its source
+  -h, --help                            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline access-requests dismiss <accessRequestId> [--source <id>]
+
+dismiss one access request to an Outline document
+
+ARGUMENTS:
+  <accessRequestId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline attachments delete <attachmentId> [--source <id>]
+
+delete one attachment of the Outline wiki
+
+ARGUMENTS:
+  <attachmentId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline authentication-providers delete <authenticationProviderId> [--source <id>]
+
+delete one sign-in provider of the Outline wiki
+
+ARGUMENTS:
+  <authenticationProviderId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline authentication-providers start-group-sync <authenticationProviderId> [--source <id>]
+
+start a group sync with one sign-in provider of the Outline wiki
+
+ARGUMENTS:
+  <authenticationProviderId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline authentication-providers update <authenticationProviderId> [--is-enabled <value>] [--group-sync-enabled <value>] [--group-claim <value>] [--source <id>]
+
+enable or disable one sign-in provider, or change its group sync settings
+
+ARGUMENTS:
+  <authenticationProviderId>
+
+OPTIONS:
+  --is-enabled <value>          true to enable the provider, false to disable it
+  --group-sync-enabled <value>  true to sync the groups of the identity provider
+  --group-claim <value>         the claim of the identity provider that names the groups
+  --source <id>                 configured source ID; required, a change names its source
+  -h, --help                    show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline comments delete <commentId> [--source <id>]
+
+delete one comment on an Outline document
+
+ARGUMENTS:
+  <commentId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline emojis delete <emojiId> [--source <id>]
+
+delete one custom emoji of the Outline wiki
+
+ARGUMENTS:
+  <emojiId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline file-operations delete <fileOperationId> [--source <id>]
+
+delete one import or export file operation of the Outline wiki
+
+ARGUMENTS:
+  <fileOperationId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline imports cancel <importId> [--source <id>]
+
+cancel one Outline import that has not finished
+
+ARGUMENTS:
+  <importId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline imports delete <importId> [--source <id>]
+
+delete one Outline import record
+
+ARGUMENTS:
+  <importId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline integrations create <url> --type <post|command|embed|analytics|linkedAccount|import> --service <matomo|umami> [--channel <value>] [--channel-id <value>] [--source <id>]
+
+create one Outline integration that sends data to an address
+
+ARGUMENTS:
+  <url>
+
+OPTIONS:
+  --type <post|command|embed|analytics|linkedAccount|import>  the type: post, command, embed, analytics, linkedAccount, or import
+  --service <matomo|umami>                                    the service: matomo or umami
+  --channel <value>                                           the channel the integration posts to, when the service takes one
+  --channel-id <value>                                        the ID of the channel, when the service takes one
+  --source <id>                                               configured source ID; required, a change names its source
+  -h, --help                                                  show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline integrations delete <integrationId> [--source <id>]
+
+delete one Outline integration
+
+ARGUMENTS:
+  <integrationId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline integrations update <integrationId> --url <value> [--channel <value>] [--channel-id <value>] [--source <id>]
+
+change the address or the channel of one Outline integration
+
+ARGUMENTS:
+  <integrationId>
+
+OPTIONS:
+  --url <value>         the new HTTPS address; only its host is shown
+  --channel <value>     the channel the integration posts to, when the service takes one
+  --channel-id <value>  the ID of the channel, when the service takes one
+  --source <id>         configured source ID; required, a change names its source
+  -h, --help            show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline oauth-authentications delete <oauthClientId> [--source <id>]
+
+revoke the authorization of one OAuth client for the Outline user of the key
+
+ARGUMENTS:
+  <oauthClientId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline oauth-clients create <name> --redirect-uris <value> [--client-type <confidential|public>] [--description <value>] [--published <value>] [--source <id>]
+
+create one OAuth client of the Outline wiki
+
+ARGUMENTS:
+  <name>
+
+OPTIONS:
+  --redirect-uris <value>              1 to 10 HTTPS redirect addresses, separated by commas
+  --client-type <confidential|public>  confidential or public; the wiki's default is confidential
+  --description <value>                what the client is for
+  --published <value>                  true to list the client to other users; the wiki's default is false
+  --source <id>                        configured source ID; required, a change names its source
+  -h, --help                           show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline oauth-clients delete <oauthClientId> [--source <id>]
+
+delete one OAuth client of the Outline wiki
+
+ARGUMENTS:
+  <oauthClientId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline oauth-clients rotate-secret <oauthClientId> [--source <id>]
+
+replace the client secret of one OAuth client of the Outline wiki
+
+ARGUMENTS:
+  <oauthClientId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline oauth-clients update <oauthClientId> [--name <value>] [--description <value>] [--published <value>] [--client-type <confidential|public>] [--source <id>]
+
+change the name, the description, the listing, or the client type of one OAuth client
+
+ARGUMENTS:
+  <oauthClientId>
+
+OPTIONS:
+  --name <value>                       the new name of the client
+  --description <value>                the new description of the client
+  --published <value>                  true to list the client to other users, false to unlist it
+  --client-type <confidential|public>  confidential or public
+  --source <id>                        configured source ID; required, a change names its source
+  -h, --help                           show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline revisions delete <revisionId> [--source <id>]
+
+delete one revision of an Outline document
+
+ARGUMENTS:
+  <revisionId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline shares create [--document-id <id>] [--collection-id <id>] [--published <value>] [--include-child-documents <value>] [--allow-indexing <value>] [--allow-subscriptions <value>] [--show-last-updated <value>] [--show-t-o-c <value>] [--source <id>]
+
+share one Outline document or collection, by a public link
+
+OPTIONS:
+  --document-id <id>                 the document to share, by its ID; give it or --collection-id, not both
+  --collection-id <id>               the collection to share, by its UUID; give it or --document-id, not both
+  --published <value>                true to publish the share; the wiki's default is false
+  --include-child-documents <value>  true to share the documents below the document or collection
+  --allow-indexing <value>           true to let search engines index the share
+  --allow-subscriptions <value>      true to let readers subscribe to the share
+  --show-last-updated <value>        true to show when the share was last updated
+  --show-t-o-c <value>               true to show the table of contents
+  --source <id>                      configured source ID; required, a change names its source
+  -h, --help                         show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline shares revoke <shareId> [--source <id>]
+
+revoke one Outline share, so its public link stops working
+
+ARGUMENTS:
+  <shareId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline shares update <shareId> [--published <value>] [--include-child-documents <value>] [--allow-indexing <value>] [--allow-subscriptions <value>] [--show-last-updated <value>] [--show-t-o-c <value>] [--title <value>] [--source <id>]
+
+change the settings of one Outline share, without its link
+
+ARGUMENTS:
+  <shareId>
+
+OPTIONS:
+  --published <value>                true to publish the share, false to unpublish it
+  --include-child-documents <value>  true to share the documents below the document or collection
+  --allow-indexing <value>           true to let search engines index the share
+  --allow-subscriptions <value>      true to let readers subscribe to the share
+  --show-last-updated <value>        true to show when the share was last updated
+  --show-t-o-c <value>               true to show the table of contents
+  --title <value>                    the title shown for the share
+  --source <id>                      configured source ID; required, a change names its source
+  -h, --help                         show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline templates delete <templateId> [--source <id>]
+
+delete one Outline template
+
+ARGUMENTS:
+  <templateId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline webhook-subscriptions create <url> --name <value> --events <value> [--source <id>]
+
+create one Outline webhook subscription that sends events to an address
+
+ARGUMENTS:
+  <url>
+
+OPTIONS:
+  --name <value>    the name of the subscription
+  --events <value>  the event names to send, such as documents.create, or * for every event; separated by commas
+  --source <id>     configured source ID; required, a change names its source
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline webhook-subscriptions delete <webhookSubscriptionId> [--source <id>]
+
+delete one Outline webhook subscription
+
+ARGUMENTS:
+  <webhookSubscriptionId>
+
+OPTIONS:
+  --source <id>  configured source ID; required, a change names its source
+  -h, --help     show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use
+
+USAGE: retriever outline webhook-subscriptions update <webhookSubscriptionId> --url <value> --name <value> --events <value> [--source <id>]
+
+change the address, the name, or the events of one Outline webhook subscription
+
+ARGUMENTS:
+  <webhookSubscriptionId>
+
+OPTIONS:
+  --url <value>     the new HTTPS address; only its host is shown
+  --name <value>    the new name of the subscription
+  --events <value>  the event names to send, or * for every event; separated by commas
+  --source <id>     configured source ID; required, a change names its source
+  -h, --help        show help
+
+EXIT STATUS:
+  0    the command completed
+  2    the command did not complete: a usage mistake, a configuration error, or a failed request
+  124  a bounded wait elapsed before the command finished; the failure is retryable
+  125  the environment refused before the command started, such as a port already in use

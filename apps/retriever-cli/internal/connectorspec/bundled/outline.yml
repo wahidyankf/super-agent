@@ -695,13 +695,13 @@ operations:
           body:
             data:
               groupMemberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   groupId: g1
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.documents.insights
     summary: show the daily view and edit counts of one Outline document
     access: read
@@ -830,14 +830,14 @@ operations:
           body:
             data:
               memberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   userId: u1
                   permission: read
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.documents.search-titles
     summary: "search Outline document titles, one page at a time"
     access: read
@@ -1011,14 +1011,14 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 name: Ada
                 role: member
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: Ada
   - id: outline.documents.viewed
     summary: "list one page of the Outline documents the API key's user has viewed"
@@ -1162,14 +1162,14 @@ operations:
           body:
             data:
               memberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   userId: u1
                   permission: read
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.collections.group-memberships
     summary: list one page of the groups that have access to one Outline collection
     access: read
@@ -1239,13 +1239,13 @@ operations:
           body:
             data:
               groupMemberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   groupId: g1
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.comments.get
     summary: show one Outline comment as plain text
     access: read
@@ -1288,26 +1288,26 @@ operations:
           convert: text-from-editor-data
         anchorText: { pointer: /data/anchorText }
     examples:
-      - request: { commentId: ex-0001 }
+      - request: { commentId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               documentId: d1
               createdById: u1
               createdAt: "2026-01-01T00:00:00.000Z"
               updatedAt: "2026-01-01T00:00:00.000Z"
               text: Nice
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           text: Nice
-      - request: { commentId: ex-0001 }
+      - request: { commentId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               documentId: d1
               createdById: u1
               createdAt: "2026-01-01T00:00:00.000Z"
@@ -1320,7 +1320,7 @@ operations:
                       - type: text
                         text: Hello
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           text: Hello
   - id: outline.comments.list
     summary: list one page of Outline comments as plain text
@@ -1423,7 +1423,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 documentId: d1
                 createdById: u1
                 createdAt: "2026-01-01T00:00:00.000Z"
@@ -1433,7 +1433,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.revisions.export
     summary: print the Markdown of one revision of an Outline document
     access: read
@@ -1456,7 +1456,7 @@ operations:
         markdown: { pointer: /data }
     mcp: false
     examples:
-      - request: { revisionId: ex-0001 }
+      - request: { revisionId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -1497,18 +1497,18 @@ operations:
         createdById: { pointer: /data/createdById }
         deletedAt: { pointer: /data/deletedAt }
     examples:
-      - request: { revisionId: ex-0001 }
+      - request: { revisionId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               documentId: d1
               title: Setup
               text: Hello
               createdAt: "2026-01-01T00:00:00.000Z"
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           text: Hello
   - id: outline.revisions.list
     summary: list one page of the revisions of one Outline document
@@ -1579,20 +1579,20 @@ operations:
         createdById: { pointer: /createdById }
         deletedAt: { pointer: /deletedAt }
     examples:
-      - request: { documentId: d1, limit: 25 }
+      - request: { documentId: 11111111-1111-4111-8111-111111111111, limit: 25 }
         response:
           status: 200
           body:
             data:
-              - id: ex-0001
-                documentId: d1
+              - id: 11111111-1111-4111-8111-111111111111
+                documentId: 11111111-1111-4111-8111-111111111111
                 title: Setup
                 createdAt: "2026-01-01T00:00:00.000Z"
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.shares.get
     summary: "show one Outline share, without its link"
     access: read
@@ -1635,17 +1635,17 @@ operations:
         createdAt: { pointer: /createdAt }
         updatedAt: { pointer: /updatedAt }
     examples:
-      - request: { shareId: ex-0001 }
+      - request: { shareId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
               shares:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   documentId: d1
                   published: true
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.shares.list
     summary: "list one page of Outline shares, without their links"
     access: read
@@ -1727,14 +1727,14 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 documentId: d1
                 published: true
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.users.get
     summary: "show one Outline user, without the e-mail address"
     access: read
@@ -1771,13 +1771,13 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: Ada
               role: member
               createdAt: "2026-01-01T00:00:00.000Z"
               updatedAt: "2026-01-01T00:00:00.000Z"
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: Ada
   - id: outline.users.list
     summary: "list one page of Outline users, without e-mail addresses"
@@ -1870,7 +1870,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 name: Ada
                 role: member
                 createdAt: "2026-01-01T00:00:00.000Z"
@@ -1879,7 +1879,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.groups.get
     summary: show one Outline group
     access: read
@@ -1912,16 +1912,16 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { groupId: ex-0001 }
+      - request: { groupId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: Editors
               memberCount: 2
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: Editors
   - id: outline.groups.list
     summary: list one page of Outline groups
@@ -2008,14 +2008,14 @@ operations:
           body:
             data:
               groups:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   name: Editors
                   memberCount: 2
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.groups.members
     summary: list one page of the members of one Outline group
     access: read
@@ -2074,20 +2074,20 @@ operations:
         permission: { pointer: /permission }
         createdAt: { pointer: /createdAt }
     examples:
-      - request: { groupId: ex-0001, limit: 25 }
+      - request: { groupId: 11111111-1111-4111-8111-111111111111, limit: 25 }
         response:
           status: 200
           body:
             data:
               groupMemberships:
-                - groupId: ex-0001
-                  userId: ex-0002
+                - groupId: 11111111-1111-4111-8111-111111111111
+                  userId: 22222222-2222-4222-8222-222222222222
                   permission: member
             pagination:
               offset: 0
               limit: 25
         expect:
-          userId: ex-0002
+          userId: 22222222-2222-4222-8222-222222222222
   - id: outline.templates.get
     summary: "show one Outline template, without its body"
     access: read
@@ -2124,15 +2124,15 @@ operations:
         createdById: { pointer: /data/createdBy/id }
         updatedById: { pointer: /data/updatedBy/id }
     examples:
-      - request: { templateId: ex-0001 }
+      - request: { templateId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               title: Weekly
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           title: Weekly
   - id: outline.templates.list
     summary: "list one page of Outline templates, without their bodies"
@@ -2216,13 +2216,13 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 title: Weekly
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.pins.get
     summary: show the pin of one Outline document
     access: read
@@ -2263,11 +2263,11 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               documentId: d1
               index: a0
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.pins.list
     summary: list one page of the Outline pins of a collection or of Home
     access: read
@@ -2324,14 +2324,14 @@ operations:
           body:
             data:
               pins:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   documentId: d1
                   index: a0
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.stars.list
     summary: "list one page of the Outline stars of the API key's user"
     access: read
@@ -2382,14 +2382,14 @@ operations:
           body:
             data:
               stars:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   documentId: d1
                   index: a0
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.subscriptions.get
     summary: "show the subscription of the API key's user to one Outline document or collection"
     access: read
@@ -2439,12 +2439,12 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               userId: u1
               documentId: d1
               event: documents.update
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.subscriptions.list
     summary: list one page of the Outline subscriptions to one document or collection
     access: read
@@ -2515,7 +2515,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 userId: u1
                 documentId: d1
                 event: documents.update
@@ -2523,7 +2523,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.access-requests.get
     summary: show one Outline access request to a document
     access: read
@@ -2555,16 +2555,16 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { accessRequestId: ex-0001 }
+      - request: { accessRequestId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               documentId: d1
               status: pending
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.attachments.list
     summary: list one page of Outline attachments
     access: read
@@ -2626,14 +2626,14 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 name: pic.png
                 size: 10
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.emojis.get
     summary: show one Outline custom emoji
     access: read
@@ -2662,15 +2662,15 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { emojiId: ex-0001 }
+      - request: { emojiId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: party
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: party
   - id: outline.emojis.list
     summary: list one page of Outline custom emojis
@@ -2726,13 +2726,13 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 name: party
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.events.list
     summary: list one page of Outline activity or audit events
     access: read
@@ -2823,13 +2823,13 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 name: documents.create
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.file-operations.get
     summary: show one Outline import or export file operation
     access: read
@@ -2865,16 +2865,16 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { fileOperationId: ex-0001 }
+      - request: { fileOperationId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               type: export
               state: complete
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.file-operations.list
     summary: list one page of Outline file operations of one type
     access: read
@@ -2951,14 +2951,14 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 type: export
                 state: complete
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.group-memberships.list
     summary: list one page of the group memberships of the wiki
     access: read
@@ -3015,13 +3015,13 @@ operations:
           body:
             data:
               groupMemberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   groupId: g1
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.installation.get
     summary: show the version of the Outline server
     access: read
@@ -3141,14 +3141,14 @@ operations:
           body:
             data:
               notifications:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   event: comments.create
                   createdAt: "2026-01-01T00:00:00.000Z"
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.oauth-authentications.list
     summary: "list one page of the OAuth sign-ins of the API key's user"
     access: read
@@ -3201,7 +3201,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 scope:
                   - read
                 createdAt: "2026-01-01T00:00:00.000Z"
@@ -3211,7 +3211,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.reactions.list
     summary: list one page of the emoji reactions of one Outline comment
     access: read
@@ -3261,19 +3261,19 @@ operations:
         userId: { pointer: /userId }
         createdAt: { pointer: /createdAt }
     examples:
-      - request: { commentId: ex-0001, limit: 25 }
+      - request: { commentId: 11111111-1111-4111-8111-111111111111, limit: 25 }
         response:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 emoji: ":tada:"
-                commentId: ex-0001
+                commentId: 11111111-1111-4111-8111-111111111111
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           emoji: ":tada:"
   - id: outline.relationships.get
     summary: show one Outline relationship between two documents
@@ -3305,16 +3305,16 @@ operations:
         createdAt: { pointer: /data/relationship/createdAt }
         updatedAt: { pointer: /data/relationship/updatedAt }
     examples:
-      - request: { relationshipId: ex-0001 }
+      - request: { relationshipId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
               relationship:
-                id: ex-0001
+                id: 11111111-1111-4111-8111-111111111111
                 type: backlink
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           type: backlink
   - id: outline.relationships.list
     summary: list one page of the Outline relationships of one document
@@ -3386,14 +3386,14 @@ operations:
           body:
             data:
               relationships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   type: backlink
                   documentId: d1
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.searches.list
     summary: "list one page of the Outline searches of the API key's user"
     access: read
@@ -3448,7 +3448,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 query: setup
                 source: app
                 score: 1
@@ -3457,7 +3457,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           query: setup
   - id: outline.suggestions.mention
     summary: "list one page of the documents, users, and groups to mention"
@@ -3588,14 +3588,14 @@ operations:
           body:
             data:
               memberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
                   userId: u1
                   permission: read
             pagination:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.views.list
     summary: list the Outline views of one document
     access: read
@@ -3632,7 +3632,7 @@ operations:
         firstViewedAt: { pointer: /firstViewedAt }
         lastViewedAt: { pointer: /lastViewedAt }
     examples:
-      - request: { documentId: ex-0001 }
+      - request: { documentId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -3724,7 +3724,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 name: CI
                 scope:
                   - read
@@ -3735,7 +3735,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           last4: wxyz
   - id: outline.authentication-providers.get
     summary: show one Outline sign-in provider (admin source only)
@@ -3771,12 +3771,12 @@ operations:
             groupClaim: { pointer: /data/settings/groupClaim }
             groupSyncScopes: { pointer: /data/settings/groupSyncScopes, format: strings }
     examples:
-      - request: { authenticationProviderId: ex-0001 }
+      - request: { authenticationProviderId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: Google
               providerId: google
               isEnabled: true
@@ -3784,7 +3784,7 @@ operations:
               settings:
                 groupSyncEnabled: false
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: Google
   - id: outline.authentication-providers.list
     summary: list the Outline sign-in providers (admin source only)
@@ -3819,7 +3819,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 name: Google
                 providerId: google
                 isEnabled: true
@@ -3827,7 +3827,7 @@ operations:
                 settings:
                   groupSyncEnabled: false
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.imports.get
     summary: show one Outline import (admin source only)
     access: read
@@ -3860,17 +3860,17 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { importId: ex-0001 }
+      - request: { importId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               service: notion
               state: complete
               documentCount: 4
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.imports.list
     summary: list one page of Outline imports (admin source only)
     access: read
@@ -3944,7 +3944,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 service: notion
                 state: complete
                 documentCount: 4
@@ -3952,7 +3952,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.integrations.get
     summary: show one Outline integration (admin source only)
     access: read
@@ -3997,12 +3997,12 @@ operations:
               convert: hostname
             scriptName: { pointer: /data/settings/scriptName }
     examples:
-      - request: { integrationId: ex-0001 }
+      - request: { integrationId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               type: post
               service: slack
               events:
@@ -4011,7 +4011,7 @@ operations:
                 url: "https://hooks.example.test/x"
                 channel: "#gen"
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.integrations.list
     summary: list one page of Outline integrations (admin source only)
     access: read
@@ -4121,7 +4121,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 type: post
                 service: slack
                 events:
@@ -4133,7 +4133,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.oauth-clients.get
     summary: show one Outline OAuth client (admin source only)
     access: read
@@ -4169,19 +4169,19 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { oauthClientId: ex-0001 }
+      - request: { oauthClientId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: App
               clientId: cid
               clientType: confidential
               published: false
               redirectUris:
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: App
   - id: outline.oauth-clients.list
     summary: list one page of Outline OAuth clients (admin source only)
@@ -4238,7 +4238,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 name: App
                 clientId: cid
                 clientType: confidential
@@ -4248,7 +4248,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.webhook-subscriptions.list
     summary: list one page of Outline webhook subscriptions (admin source only)
     access: read
@@ -4326,7 +4326,7 @@ operations:
           status: 200
           body:
             data:
-              - id: ex-0001
+              - id: 11111111-1111-4111-8111-111111111111
                 name: Hook
                 url: "https://hooks.example.test/synthetic/path"
                 events:
@@ -4337,7 +4337,7 @@ operations:
               offset: 0
               limit: 25
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: Hook
           urlHost: hooks.example.test
   - id: outline.documents.export
@@ -4915,9 +4915,9 @@ operations:
             success: true
             data:
               fileOperation:
-                id: ex-0001
+                id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.collections.move
     summary: move one Outline collection to a new position
     access: write
@@ -5091,14 +5091,14 @@ operations:
         text: { pointer: /data/text }
         anchorText: { pointer: /data/anchorText }
     examples:
-      - request: { documentId: ex-0001, text: Synthetic body }
+      - request: { documentId: 11111111-1111-4111-8111-111111111111, text: Synthetic body }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.comments.update
     summary: change the text of one Outline comment
     access: write
@@ -5134,14 +5134,14 @@ operations:
         text: { pointer: /data/text }
         anchorText: { pointer: /data/anchorText }
     examples:
-      - request: { commentId: ex-0001, text: Synthetic body }
+      - request: { commentId: 11111111-1111-4111-8111-111111111111, text: Synthetic body }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.comments.resolve
     summary: mark one Outline comment as resolved
     access: write
@@ -5171,14 +5171,14 @@ operations:
         text: { pointer: /data/text }
         anchorText: { pointer: /data/anchorText }
     examples:
-      - request: { commentId: ex-0001 }
+      - request: { commentId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.comments.unresolve
     summary: reopen one resolved Outline comment
     access: write
@@ -5208,14 +5208,14 @@ operations:
         text: { pointer: /data/text }
         anchorText: { pointer: /data/anchorText }
     examples:
-      - request: { commentId: ex-0001 }
+      - request: { commentId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.comments.add-reaction
     summary: add one emoji reaction to an Outline comment
     access: write
@@ -5242,7 +5242,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { commentId: ex-0001, emoji: Synthetic }
+      - request: { commentId: 11111111-1111-4111-8111-111111111111, emoji: Synthetic }
         response:
           status: 200
           body:
@@ -5275,7 +5275,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { commentId: ex-0001, emoji: Synthetic }
+      - request: { commentId: 11111111-1111-4111-8111-111111111111, emoji: Synthetic }
         response:
           status: 200
           body:
@@ -5314,9 +5314,9 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.revisions.update
     summary: rename one revision of an Outline document
     access: write
@@ -5351,14 +5351,14 @@ operations:
         createdById: { pointer: /data/createdById }
         deletedAt: { pointer: /data/deletedAt }
     examples:
-      - request: { revisionId: ex-0001, name: Synthetic }
+      - request: { revisionId: 11111111-1111-4111-8111-111111111111, name: Synthetic }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.notifications.update
     summary: mark one Outline notification as viewed or archived
     access: write
@@ -5403,14 +5403,14 @@ operations:
         accessRequestId: { pointer: /data/accessRequestId }
         accessRequestStatus: { pointer: /data/accessRequestStatus }
     examples:
-      - request: { notificationId: ex-0001 }
+      - request: { notificationId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.notifications.update-all
     summary: mark all Outline notifications of the user as viewed or archived
     access: write
@@ -5489,9 +5489,9 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.pins.delete
     summary: unpin one Outline pin
     access: write
@@ -5512,7 +5512,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { pinId: ex-0001 }
+      - request: { pinId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -5550,14 +5550,14 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { pinId: ex-0001, index: a0 }
+      - request: { pinId: 11111111-1111-4111-8111-111111111111, index: a0 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.searches.delete
     summary: remove one saved search of the user, by its ID or by its query
     access: write
@@ -5584,7 +5584,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { searchId: ex-0001 }
+      - request: { searchId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -5621,14 +5621,14 @@ operations:
         score: { pointer: /data/score }
         createdAt: { pointer: /data/createdAt }
     examples:
-      - request: { searchId: ex-0001, score: 1 }
+      - request: { searchId: 11111111-1111-4111-8111-111111111111, score: 1 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.stars.create
     summary: star one Outline document or collection for the user
     access: write
@@ -5671,9 +5671,9 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.stars.delete
     summary: unstar one Outline star
     access: write
@@ -5694,7 +5694,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { starId: ex-0001 }
+      - request: { starId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -5732,14 +5732,14 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { starId: ex-0001, index: a0 }
+      - request: { starId: 11111111-1111-4111-8111-111111111111, index: a0 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.subscriptions.create
     summary: follow the updates of one Outline document or collection
     access: write
@@ -5785,9 +5785,9 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.subscriptions.delete
     summary: unfollow the updates of one Outline subscription
     access: write
@@ -5808,7 +5808,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { subscriptionId: ex-0001 }
+      - request: { subscriptionId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -5942,14 +5942,14 @@ operations:
         sourceId: { pointer: /data/sourceId }
         index: { pointer: /data/index }
     examples:
-      - request: { membershipId: ex-0001, index: a0 }
+      - request: { membershipId: 11111111-1111-4111-8111-111111111111, index: a0 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.users.notifications-subscribe
     summary: "turn on the notification settings of the API key's user, for one event type"
     access: write
@@ -6004,12 +6004,12 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               notificationSettings:
                 documents.publish: true
                 comments.create: false
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           notificationSettings:
             documents.publish: true
             comments.create: false
@@ -6067,12 +6067,12 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               notificationSettings:
                 documents.publish: false
                 comments.create: true
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           notificationSettings:
             documents.publish: false
             comments.create: true
@@ -6115,15 +6115,15 @@ operations:
         permission: { pointer: /permission }
         sourceId: { pointer: /sourceId }
     examples:
-      - request: { documentId: d1, groupId: ex-0001 }
+      - request: { documentId: d1, groupId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
               groupMemberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.documents.add-user
     summary: give one user access to one Outline document, at a permission
     access: admin
@@ -6165,15 +6165,15 @@ operations:
         sourceId: { pointer: /sourceId }
         index: { pointer: /index }
     examples:
-      - request: { documentId: d1, userId: ex-0001 }
+      - request: { documentId: d1, userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
               memberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.documents.archive
     summary: archive one Outline document
     access: admin
@@ -6296,7 +6296,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { documentId: d1, groupId: ex-0001 }
+      - request: { documentId: d1, groupId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -6329,7 +6329,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { documentId: d1, userId: ex-0001 }
+      - request: { documentId: d1, userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -6375,15 +6375,15 @@ operations:
         permission: { pointer: /permission }
         sourceId: { pointer: /sourceId }
     examples:
-      - request: { collectionId: c1, groupId: ex-0001 }
+      - request: { collectionId: c1, groupId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
               groupMemberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.collections.add-user
     summary: give one user access to one Outline collection, at a permission
     access: admin
@@ -6425,15 +6425,15 @@ operations:
         sourceId: { pointer: /sourceId }
         index: { pointer: /index }
     examples:
-      - request: { collectionId: c1, userId: ex-0001 }
+      - request: { collectionId: c1, userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
               memberships:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.collections.archive
     summary: archive one Outline collection
     access: admin
@@ -6560,9 +6560,9 @@ operations:
             success: true
             data:
               fileOperation:
-                id: ex-0001
+                id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.collections.remove-group
     summary: "remove one group's access to one Outline collection"
     access: admin
@@ -6589,7 +6589,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { collectionId: c1, groupId: ex-0001 }
+      - request: { collectionId: c1, groupId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -6622,7 +6622,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { collectionId: c1, userId: ex-0001 }
+      - request: { collectionId: c1, userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -6656,14 +6656,14 @@ operations:
         updatedAt: { pointer: /data/updatedAt }
         deletedAt: { pointer: /data/deletedAt }
     examples:
-      - request: { userId: ex-0001 }
+      - request: { userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.users.delete
     summary: delete one Outline user for good
     access: admin
@@ -6684,7 +6684,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { userId: ex-0001 }
+      - request: { userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -6745,9 +6745,9 @@ operations:
           body:
             data:
               users:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.users.request-delete
     summary: request the e-mail code that deletes the user of the API key
     access: admin
@@ -6788,7 +6788,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { userId: ex-0001 }
+      - request: { userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -6822,14 +6822,14 @@ operations:
         updatedAt: { pointer: /data/updatedAt }
         deletedAt: { pointer: /data/deletedAt }
     examples:
-      - request: { userId: ex-0001 }
+      - request: { userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.users.update
     summary: change the name, language, or time zone of one Outline user
     access: admin
@@ -6875,14 +6875,14 @@ operations:
         updatedAt: { pointer: /data/updatedAt }
         deletedAt: { pointer: /data/deletedAt }
     examples:
-      - request: { userId: ex-0001 }
+      - request: { userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.users.update-role
     summary: change the role of one Outline user
     access: admin
@@ -6917,14 +6917,14 @@ operations:
         updatedAt: { pointer: /data/updatedAt }
         deletedAt: { pointer: /data/deletedAt }
     examples:
-      - request: { userId: ex-0001, role: admin }
+      - request: { userId: 11111111-1111-4111-8111-111111111111, role: admin }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.groups.add-user
     summary: add one user to one Outline group, as a member or an admin
     access: admin
@@ -6962,7 +6962,7 @@ operations:
         permission: { pointer: /permission }
         createdAt: { pointer: /createdAt }
     examples:
-      - request: { groupId: ex-0001, userId: ex-0001 }
+      - request: { groupId: 11111111-1111-4111-8111-111111111111, userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7031,11 +7031,11 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: Editors
               memberCount: 0
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: Editors
   - id: outline.groups.update
     summary: change the name, description, colour, icon, or mention setting of one Outline group
@@ -7098,16 +7098,16 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { groupId: ex-0001, name: Editors }
+      - request: { groupId: 11111111-1111-4111-8111-111111111111, name: Editors }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: Editors
               memberCount: 2
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: Editors
   - id: outline.groups.delete
     summary: delete one Outline group
@@ -7129,7 +7129,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { groupId: ex-0001 }
+      - request: { groupId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7156,7 +7156,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { authenticationProviderId: ex-0001 }
+      - request: { authenticationProviderId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7198,15 +7198,15 @@ operations:
         createdAt: { pointer: /createdAt }
         updatedAt: { pointer: /updatedAt }
     examples:
-      - request: { groupId: ex-0001, userId: ex-0001 }
+      - request: { groupId: 11111111-1111-4111-8111-111111111111, userId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
               groups:
-                - id: ex-0001
+                - id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.groups.update-user
     summary: change the permission of one user in one Outline group
     access: admin
@@ -7244,7 +7244,12 @@ operations:
         permission: { pointer: /permission }
         createdAt: { pointer: /createdAt }
     examples:
-      - request: { groupId: ex-0001, userId: ex-0001, permission: member }
+      - request:
+          {
+            groupId: 11111111-1111-4111-8111-111111111111,
+            userId: 11111111-1111-4111-8111-111111111111,
+            permission: member,
+          }
         response:
           status: 200
           body:
@@ -7369,9 +7374,9 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.access-requests.approve
     summary: approve one access request to an Outline document
     access: admin
@@ -7406,14 +7411,14 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { accessRequestId: ex-0001 }
+      - request: { accessRequestId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.access-requests.dismiss
     summary: dismiss one access request to an Outline document
     access: admin
@@ -7441,14 +7446,14 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { accessRequestId: ex-0001 }
+      - request: { accessRequestId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.attachments.delete
     summary: delete one attachment of the Outline wiki
     access: admin
@@ -7469,7 +7474,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { attachmentId: ex-0001 }
+      - request: { attachmentId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7496,7 +7501,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { authenticationProviderId: ex-0001 }
+      - request: { authenticationProviderId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7523,7 +7528,7 @@ operations:
       fields:
         started: { pointer: /data/url, required: true }
     examples:
-      - request: { authenticationProviderId: ex-0001 }
+      - request: { authenticationProviderId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7580,14 +7585,14 @@ operations:
             groupClaim: { pointer: /data/settings/groupClaim }
             groupSyncScopes: { pointer: /data/settings/groupSyncScopes, format: strings }
     examples:
-      - request: { authenticationProviderId: ex-0001 }
+      - request: { authenticationProviderId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.comments.delete
     summary: delete one comment on an Outline document
     access: admin
@@ -7608,7 +7613,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { commentId: ex-0001 }
+      - request: { commentId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7635,7 +7640,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { emojiId: ex-0001 }
+      - request: { emojiId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7662,7 +7667,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { fileOperationId: ex-0001 }
+      - request: { fileOperationId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7697,14 +7702,14 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { importId: ex-0001 }
+      - request: { importId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.imports.delete
     summary: delete one Outline import record
     access: admin
@@ -7725,7 +7730,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { importId: ex-0001 }
+      - request: { importId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7804,9 +7809,9 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.integrations.delete
     summary: delete one Outline integration
     access: admin
@@ -7827,7 +7832,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { integrationId: ex-0001 }
+      - request: { integrationId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7887,14 +7892,14 @@ operations:
             instanceUrl: { pointer: /data/settings/instanceUrl, convert: hostname }
             scriptName: { pointer: /data/settings/scriptName }
     examples:
-      - request: { integrationId: ex-0001, url: "https://hooks.example.test/synthetic" }
+      - request: { integrationId: 11111111-1111-4111-8111-111111111111, url: "https://hooks.example.test/synthetic" }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.oauth-authentications.delete
     summary: revoke the authorization of one OAuth client for the Outline user of the key
     access: admin
@@ -7915,7 +7920,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { oauthClientId: ex-0001 }
+      - request: { oauthClientId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -7985,14 +7990,14 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: App
               clientType: confidential
               published: false
               redirectUris:
                 - https://app.example.test/callback
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: App
   - id: outline.oauth-clients.delete
     summary: delete one OAuth client of the Outline wiki
@@ -8014,7 +8019,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { oauthClientId: ex-0001 }
+      - request: { oauthClientId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -8052,14 +8057,14 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { oauthClientId: ex-0001 }
+      - request: { oauthClientId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.oauth-clients.update
     summary: change the name, the description, the listing, or the client type of one OAuth client
     access: admin
@@ -8116,14 +8121,14 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { oauthClientId: ex-0001 }
+      - request: { oauthClientId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.revisions.delete
     summary: delete one revision of an Outline document
     access: admin
@@ -8144,7 +8149,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { revisionId: ex-0001 }
+      - request: { revisionId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -8235,9 +8240,9 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.shares.revoke
     summary: revoke one Outline share, so its public link stops working
     access: admin
@@ -8258,7 +8263,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { shareId: ex-0001 }
+      - request: { shareId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
@@ -8344,14 +8349,14 @@ operations:
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
     examples:
-      - request: { shareId: ex-0001 }
+      - request: { shareId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
   - id: outline.templates.create
     summary: create one Outline template with a title, an icon, and a colour
     access: write
@@ -8416,10 +8421,10 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               title: Weekly
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           title: Weekly
   - id: outline.templates.update
     summary: change the title, the icon, the colour, or the collection of one Outline template
@@ -8583,14 +8588,14 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: Hook
               url: https://hooks.example.test/synthetic/path
               events:
                 - documents.create
               enabled: true
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: Hook
           urlHost: hooks.example.test
   - id: outline.webhook-subscriptions.update
@@ -8646,7 +8651,7 @@ operations:
         updatedAt: { pointer: /data/updatedAt }
     examples:
       - request:
-          webhookSubscriptionId: ex-0001
+          webhookSubscriptionId: 11111111-1111-4111-8111-111111111111
           name: Hook
           url: https://hooks.example.test/synthetic/path
           events: [documents.create]
@@ -8654,14 +8659,14 @@ operations:
           status: 200
           body:
             data:
-              id: ex-0001
+              id: 11111111-1111-4111-8111-111111111111
               name: Hook
               url: https://hooks.example.test/synthetic/path
               events:
                 - documents.create
               enabled: true
         expect:
-          id: ex-0001
+          id: 11111111-1111-4111-8111-111111111111
           name: Hook
           urlHost: hooks.example.test
   - id: outline.webhook-subscriptions.delete
@@ -8684,7 +8689,7 @@ operations:
       fields:
         ok: { pointer: /success, required: true }
     examples:
-      - request: { webhookSubscriptionId: ex-0001 }
+      - request: { webhookSubscriptionId: 11111111-1111-4111-8111-111111111111 }
         response:
           status: 200
           body:

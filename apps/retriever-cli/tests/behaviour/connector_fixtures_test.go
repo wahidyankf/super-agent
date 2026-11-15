@@ -137,3 +137,70 @@ const wikiPostReadOperation = `  - id: example-wiki.docs.search
 func specWithPostRead() string {
 	return wikiSpec + wikiPostReadOperation
 }
+
+// checkSpec is the wiki spec the conformance scenarios check: one list
+// operation with one example. Its endpoint suffix and names are synthetic, and
+// its key is named by a variable only.
+const checkSpec = `version: 1
+kind: example-wiki
+summary: Reads documents of an example wiki.
+endpoint:
+  host_suffix:
+    - .example.test
+auth:
+  type: bearer
+  credential_env: EXAMPLE_WIKI_API_KEY
+operations:
+  - id: example-wiki.docs.list
+    summary: List documents.
+    access: read
+    method: GET
+    path: /docs
+    response:
+      items: /items
+      fields:
+        id:
+          pointer: /id
+        title:
+          pointer: /title
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            items:
+              - id: doc-1
+                title: First document
+        expect:
+          id: doc-1
+          title: First document
+`
+
+// specWithNoExamples is the check spec with the examples of its operation
+// removed, so validate refuses it naming the operation.
+func specWithNoExamples() string {
+	end := strings.Index(checkSpec, "    examples:\n")
+	if end < 0 {
+		panic("the check spec has no examples block to remove")
+	}
+	return checkSpec[:end]
+}
+
+// specWithUnproducedField is the check spec whose example expects a declared
+// field the canned reply does not produce, so test refuses it naming the
+// operation, the example, and the field.
+func specWithUnproducedField() string {
+	return strings.Replace(checkSpec,
+		"            items:\n              - id: doc-1\n                title: First document\n",
+		"            items:\n              - id: doc-1\n", 1)
+}
+
+// specWithOutlineKeyAndPlantedCredential is the check spec with the Outline
+// key variable and the secret planted in the canned reply and the expectation.
+// The built binary reads only the built-in credential variables, so the
+// end-to-end level needs the Outline variable to see the secret at all.
+func specWithOutlineKeyAndPlantedCredential(secret string) string {
+	doc := strings.Replace(checkSpec, "  credential_env: EXAMPLE_WIKI_API_KEY",
+		"  credential_env: EXAMPLE_OUTLINE_API_KEY", 1)
+	return strings.ReplaceAll(doc, "First document", secret)
+}

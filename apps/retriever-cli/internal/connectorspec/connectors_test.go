@@ -149,9 +149,11 @@ func TestASpecKindThatCollidesWithABuiltInKindIsRefused(t *testing.T) {
 }
 
 func TestASpecKindThatCollidesWithACommandWordIsRefused(t *testing.T) {
-	data := strings.Replace(wikiHeader+docsGet, "kind: example-wiki", "kind: serve", 1)
-	data = strings.ReplaceAll(data, "example-wiki.", "serve.")
-	mustFail(t, "connector spec file bad.yml: /kind: collides with a built-in kind or a command word", specFile("bad.yml", data))
+	for _, kind := range []string{"serve", "connector"} {
+		data := strings.Replace(wikiHeader+docsGet, "kind: example-wiki", "kind: "+kind, 1)
+		data = strings.ReplaceAll(data, "example-wiki.", kind+".")
+		mustFail(t, "connector spec file bad.yml: /kind: collides with a built-in kind or a command word", specFile("bad.yml", data))
+	}
 }
 
 func TestTwoSpecsOfOneKindCollide(t *testing.T) {

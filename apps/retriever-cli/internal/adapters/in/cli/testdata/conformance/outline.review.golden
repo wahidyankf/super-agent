@@ -1,0 +1,796 @@
+connector spec outline, version 1
+summary: Reads, writes, and admin operations of an Outline wiki.
+endpoint: base path none, hosts: any host of the catalog
+auth: bearer, key variable OUTLINE_API_KEY
+limits: timeout 30s (cap), reply 10485760 bytes (cap), at most 20 pages (cap)
+operations: 166
+1. outline.collections.list: read, POST /api/collections.list, writes no, cli on, mcp on
+   list the collections of the Outline wiki
+2. outline.collections.info: read, POST /api/collections.info, writes no, cli on, mcp on
+   show the ID and name of one Outline collection
+3. outline.collections.documents: read, POST /api/collections.documents, writes no, cli on, mcp on
+   show the document tree of one Outline collection
+4. outline.documents.get: read, POST /api/documents.info, writes no, cli on, mcp on
+   print the Markdown of one Outline document
+5. outline.documents.list: read, POST /api/documents.list, writes no, cli on, mcp on
+   list one page of Outline documents
+6. outline.documents.search: read, POST /api/documents.search, writes no, cli on, mcp on
+   search Outline documents by title and text, one page at a time
+7. outline.auth.whoami: read, POST /api/auth.info, writes no, cli on, mcp on
+   show the user and team that the Outline API key belongs to
+8. outline.documents.archived: read, POST /api/documents.archived, writes no, cli on, mcp on
+   list one page of archived Outline documents
+9. outline.documents.children: read, POST /api/documents.documents, writes no, cli on, mcp on
+   show the documents below one Outline document, as a tree
+10. outline.documents.deleted: read, POST /api/documents.deleted, writes no, cli on, mcp on
+   list one page of deleted Outline documents
+11. outline.documents.drafts: read, POST /api/documents.drafts, writes no, cli on, mcp on
+   list one page of Outline draft documents
+12. outline.documents.group-memberships: read, POST /api/documents.group_memberships, writes no, cli on, mcp on
+   list one page of the groups that have access to one Outline document
+13. outline.documents.insights: read, POST /api/documents.insights, writes no, cli on, mcp on
+   show the daily view and edit counts of one Outline document
+14. outline.documents.memberships: read, POST /api/documents.memberships, writes no, cli on, mcp on
+   list one page of the users who have direct access to one Outline document
+15. outline.documents.search-titles: read, POST /api/documents.search_titles, writes no, cli on, mcp on
+   search Outline document titles, one page at a time
+16. outline.documents.users: read, POST /api/documents.users, writes no, cli on, mcp on
+   list one page of the users who can see one Outline document
+17. outline.documents.viewed: read, POST /api/documents.viewed, writes no, cli on, mcp on
+   list one page of the Outline documents the API key's user has viewed
+18. outline.collections.memberships: read, POST /api/collections.memberships, writes no, cli on, mcp on
+   list one page of the users who have direct access to one Outline collection
+19. outline.collections.group-memberships: read, POST /api/collections.group_memberships, writes no, cli on, mcp on
+   list one page of the groups that have access to one Outline collection
+20. outline.comments.get: read, POST /api/comments.info, writes no, cli on, mcp on
+   show one Outline comment as plain text
+21. outline.comments.list: read, POST /api/comments.list, writes no, cli on, mcp on
+   list one page of Outline comments as plain text
+22. outline.revisions.export: read, POST /api/revisions.export, writes no, cli on, mcp off
+   print the Markdown of one revision of an Outline document
+23. outline.revisions.get: read, POST /api/revisions.info, writes no, cli on, mcp on
+   print the Markdown of one revision of an Outline document
+24. outline.revisions.list: read, POST /api/revisions.list, writes no, cli on, mcp on
+   list one page of the revisions of one Outline document
+25. outline.shares.get: read, POST /api/shares.info, writes no, cli on, mcp on
+   show one Outline share, without its link
+26. outline.shares.list: read, POST /api/shares.list, writes no, cli on, mcp on
+   list one page of Outline shares, without their links
+27. outline.users.get: read, POST /api/users.info, writes no, cli on, mcp on
+   show one Outline user, without the e-mail address
+28. outline.users.list: read, POST /api/users.list, writes no, cli on, mcp on
+   list one page of Outline users, without e-mail addresses
+29. outline.groups.get: read, POST /api/groups.info, writes no, cli on, mcp on
+   show one Outline group
+30. outline.groups.list: read, POST /api/groups.list, writes no, cli on, mcp on
+   list one page of Outline groups
+31. outline.groups.members: read, POST /api/groups.memberships, writes no, cli on, mcp on
+   list one page of the members of one Outline group
+32. outline.templates.get: read, POST /api/templates.info, writes no, cli on, mcp on
+   show one Outline template, without its body
+33. outline.templates.list: read, POST /api/templates.list, writes no, cli on, mcp on
+   list one page of Outline templates, without their bodies
+34. outline.pins.get: read, POST /api/pins.info, writes no, cli on, mcp on
+   show the pin of one Outline document
+35. outline.pins.list: read, POST /api/pins.list, writes no, cli on, mcp on
+   list one page of the Outline pins of a collection or of Home
+36. outline.stars.list: read, POST /api/stars.list, writes no, cli on, mcp on
+   list one page of the Outline stars of the API key's user
+37. outline.subscriptions.get: read, POST /api/subscriptions.info, writes no, cli on, mcp on
+   show the subscription of the API key's user to one Outline document or collection
+38. outline.subscriptions.list: read, POST /api/subscriptions.list, writes no, cli on, mcp on
+   list one page of the Outline subscriptions to one document or collection
+39. outline.access-requests.get: read, POST /api/accessRequests.info, writes no, cli on, mcp on
+   show one Outline access request to a document
+40. outline.attachments.list: read, POST /api/attachments.list, writes no, cli on, mcp on
+   list one page of Outline attachments
+41. outline.emojis.get: read, POST /api/emojis.info, writes no, cli on, mcp on
+   show one Outline custom emoji
+42. outline.emojis.list: read, POST /api/emojis.list, writes no, cli on, mcp on
+   list one page of Outline custom emojis
+43. outline.events.list: read, POST /api/events.list, writes no, cli on, mcp on
+   list one page of Outline activity or audit events
+44. outline.file-operations.get: read, POST /api/fileOperations.info, writes no, cli on, mcp on
+   show one Outline import or export file operation
+45. outline.file-operations.list: read, POST /api/file-operations.list, writes no, cli on, mcp on
+   list one page of Outline file operations of one type
+46. outline.group-memberships.list: read, POST /api/group-memberships.list, writes no, cli on, mcp on
+   list one page of the group memberships of the wiki
+47. outline.installation.get: read, POST /api/installation.info, writes no, cli on, mcp on
+   show the version of the Outline server
+48. outline.notifications.list: read, POST /api/notifications.list, writes no, cli on, mcp on
+   list one page of the Outline notifications of the API key's user
+49. outline.oauth-authentications.list: read, POST /api/oauthAuthentications.list, writes no, cli on, mcp on
+   list one page of the OAuth sign-ins of the API key's user
+50. outline.reactions.list: read, POST /api/reactions.list, writes no, cli on, mcp on
+   list one page of the emoji reactions of one Outline comment
+51. outline.relationships.get: read, POST /api/relationships.info, writes no, cli on, mcp on
+   show one Outline relationship between two documents
+52. outline.relationships.list: read, POST /api/relationships.list, writes no, cli on, mcp on
+   list one page of the Outline relationships of one document
+53. outline.searches.list: read, POST /api/searches.list, writes no, cli on, mcp on
+   list one page of the Outline searches of the API key's user
+54. outline.suggestions.mention: read, POST /api/suggestions.mention, writes no, cli on, mcp on
+   list one page of the documents, users, and groups to mention
+55. outline.user-memberships.list: read, POST /api/user-memberships.list, writes no, cli on, mcp on
+   list one page of the Outline memberships of the API key's user
+56. outline.views.list: read, POST /api/views.list, writes no, cli on, mcp on
+   list the Outline views of one document
+57. outline.api-keys.list: read, POST /api/apiKeys.list, writes no, cli on, mcp on
+   list one page of Outline API keys (admin source only)
+58. outline.authentication-providers.get: read, POST /api/authenticationProviders.info, writes no, cli on, mcp on
+   show one Outline sign-in provider (admin source only)
+59. outline.authentication-providers.list: read, POST /api/authenticationProviders.list, writes no, cli on, mcp on
+   list the Outline sign-in providers (admin source only)
+60. outline.imports.get: read, POST /api/imports.info, writes no, cli on, mcp on
+   show one Outline import (admin source only)
+61. outline.imports.list: read, POST /api/imports.list, writes no, cli on, mcp on
+   list one page of Outline imports (admin source only)
+62. outline.integrations.get: read, POST /api/integrations.info, writes no, cli on, mcp on
+   show one Outline integration (admin source only)
+63. outline.integrations.list: read, POST /api/integrations.list, writes no, cli on, mcp on
+   list one page of Outline integrations (admin source only)
+64. outline.oauth-clients.get: read, POST /api/oauthClients.info, writes no, cli on, mcp on
+   show one Outline OAuth client (admin source only)
+65. outline.oauth-clients.list: read, POST /api/oauthClients.list, writes no, cli on, mcp on
+   list one page of Outline OAuth clients (admin source only)
+66. outline.webhook-subscriptions.list: read, POST /api/webhookSubscriptions.list, writes no, cli on, mcp on
+   list one page of Outline webhook subscriptions (admin source only)
+67. outline.documents.export: read, POST /api/documents.export, writes no, cli off, mcp off
+   read the Markdown of one Outline document through the vault export
+68. outline.documents.create: write, POST /api/documents.create, writes yes, cli on, mcp on
+   create one Outline document, as a draft unless --publish is true
+69. outline.documents.duplicate: write, POST /api/documents.duplicate, writes yes, cli on, mcp on
+   copy one Outline document, and its children when recursive is true
+70. outline.documents.move: write, POST /api/documents.move, writes yes, cli on, mcp on
+   move one Outline document to another collection or parent
+71. outline.documents.restore: write, POST /api/documents.restore, writes yes, cli on, mcp on
+   restore one archived or deleted Outline document, or one of its revisions
+72. outline.documents.templatize: write, POST /api/documents.templatize, writes yes, cli on, mcp on
+   make a template from one Outline document
+73. outline.documents.unpublish: write, POST /api/documents.unpublish, writes yes, cli on, mcp on
+   take one Outline document back to a draft
+74. outline.documents.update: write, POST /api/documents.update, writes yes, cli on, mcp on
+   change the title or the text of one Outline document
+75. outline.collections.create: write, POST /api/collections.create, writes yes, cli on, mcp on
+   create one Outline collection, private unless permission is set
+76. outline.collections.duplicate: write, POST /api/collections.duplicate, writes yes, cli on, mcp on
+   copy one Outline collection, under a new name when one is given
+77. outline.collections.export: write, POST /api/collections.export, writes yes, cli on, mcp on
+   start a file export of one Outline collection
+78. outline.collections.move: write, POST /api/collections.move, writes yes, cli on, mcp on
+   move one Outline collection to a new position
+79. outline.collections.restore: write, POST /api/collections.restore, writes yes, cli on, mcp on
+   restore one archived Outline collection
+80. outline.collections.update: write, POST /api/collections.update, writes yes, cli on, mcp on
+   change the name, the description, or the access of one Outline collection
+81. outline.comments.create: write, POST /api/comments.create, writes yes, cli on, mcp on
+   add one comment to an Outline document, or a reply to a comment
+82. outline.comments.update: write, POST /api/comments.update, writes yes, cli on, mcp on
+   change the text of one Outline comment
+83. outline.comments.resolve: write, POST /api/comments.resolve, writes yes, cli on, mcp on
+   mark one Outline comment as resolved
+84. outline.comments.unresolve: write, POST /api/comments.unresolve, writes yes, cli on, mcp on
+   reopen one resolved Outline comment
+85. outline.comments.add-reaction: write, POST /api/comments.add_reaction, writes yes, cli on, mcp on
+   add one emoji reaction to an Outline comment
+86. outline.comments.remove-reaction: write, POST /api/comments.remove_reaction, writes yes, cli on, mcp on
+   remove one emoji reaction from an Outline comment
+87. outline.access-requests.create: write, POST /api/accessRequests.create, writes yes, cli on, mcp on
+   ask for access to one Outline document
+88. outline.revisions.update: write, POST /api/revisions.update, writes yes, cli on, mcp on
+   rename one revision of an Outline document
+89. outline.notifications.update: write, POST /api/notifications.update, writes yes, cli on, mcp on
+   mark one Outline notification as viewed or archived
+90. outline.notifications.update-all: write, POST /api/notifications.update_all, writes yes, cli on, mcp on
+   mark all Outline notifications of the user as viewed or archived
+91. outline.pins.create: write, POST /api/pins.create, writes yes, cli on, mcp on
+   pin one Outline document to a collection or to Home
+92. outline.pins.delete: write, POST /api/pins.delete, writes yes, cli on, mcp on
+   unpin one Outline pin
+93. outline.pins.update: write, POST /api/pins.update, writes yes, cli on, mcp on
+   move one Outline pin to a new position
+94. outline.searches.delete: write, POST /api/searches.delete, writes yes, cli on, mcp on
+   remove one saved search of the user, by its ID or by its query
+95. outline.searches.update: write, POST /api/searches.update, writes yes, cli on, mcp on
+   change the score of one saved search of the user
+96. outline.stars.create: write, POST /api/stars.create, writes yes, cli on, mcp on
+   star one Outline document or collection for the user
+97. outline.stars.delete: write, POST /api/stars.delete, writes yes, cli on, mcp on
+   unstar one Outline star
+98. outline.stars.update: write, POST /api/stars.update, writes yes, cli on, mcp on
+   move one Outline star to a new position
+99. outline.subscriptions.create: write, POST /api/subscriptions.create, writes yes, cli on, mcp on
+   follow the updates of one Outline document or collection
+100. outline.subscriptions.delete: write, POST /api/subscriptions.delete, writes yes, cli on, mcp on
+   unfollow the updates of one Outline subscription
+101. outline.templates.duplicate: write, POST /api/templates.duplicate, writes yes, cli on, mcp on
+   copy one Outline template, under a new title when one is given
+102. outline.templates.restore: write, POST /api/templates.restore, writes yes, cli on, mcp on
+   restore one deleted Outline template
+103. outline.user-memberships.update: write, POST /api/userMemberships.update, writes yes, cli on, mcp on
+   change the position of one membership of the API key's user
+104. outline.users.notifications-subscribe: write, POST /api/users.notificationsSubscribe, writes yes, cli on, mcp on
+   turn on the notification settings of the API key's user, for one event type
+105. outline.users.notifications-unsubscribe: write, POST /api/users.notificationsUnsubscribe, writes yes, cli on, mcp on
+   turn off the notification settings of the API key's user, for one event type
+106. outline.documents.add-group: admin, POST /api/documents.add_group, writes yes, cli on, mcp on
+   give one group access to one Outline document, at a permission
+107. outline.documents.add-user: admin, POST /api/documents.add_user, writes yes, cli on, mcp on
+   give one user access to one Outline document, at a permission
+108. outline.documents.archive: admin, POST /api/documents.archive, writes yes, cli on, mcp on
+   archive one Outline document
+109. outline.documents.delete: admin, POST /api/documents.delete, writes yes, cli on, mcp on
+   move one Outline document to the trash; --permanent deletes it for good
+110. outline.documents.empty-trash: admin, POST /api/documents.empty_trash, writes yes, cli on, mcp on
+   delete every document in the trash of the source for good
+111. outline.documents.remove-group: admin, POST /api/documents.remove_group, writes yes, cli on, mcp on
+   remove one group's access to one Outline document
+112. outline.documents.remove-user: admin, POST /api/documents.remove_user, writes yes, cli on, mcp on
+   remove one user's access to one Outline document
+113. outline.collections.add-group: admin, POST /api/collections.add_group, writes yes, cli on, mcp on
+   give one group access to one Outline collection, at a permission
+114. outline.collections.add-user: admin, POST /api/collections.add_user, writes yes, cli on, mcp on
+   give one user access to one Outline collection, at a permission
+115. outline.collections.archive: admin, POST /api/collections.archive, writes yes, cli on, mcp on
+   archive one Outline collection
+116. outline.collections.delete: admin, POST /api/collections.delete, writes yes, cli on, mcp on
+   delete one Outline collection and its documents
+117. outline.collections.export-all: admin, POST /api/collections.export_all, writes yes, cli on, mcp on
+   start an export of every collection of the wiki, as a file operation
+118. outline.collections.remove-group: admin, POST /api/collections.remove_group, writes yes, cli on, mcp on
+   remove one group's access to one Outline collection
+119. outline.collections.remove-user: admin, POST /api/collections.remove_user, writes yes, cli on, mcp on
+   remove one user's access to one Outline collection
+120. outline.users.activate: admin, POST /api/users.activate, writes yes, cli on, mcp on
+   reactivate one suspended Outline user
+121. outline.users.delete: admin, POST /api/users.delete, writes yes, cli on, mcp on
+   delete one Outline user for good
+122. outline.users.invite: admin, POST /api/users.invite, writes yes, cli on, mcp on
+   invite one person to the wiki by e-mail, with a role
+123. outline.users.request-delete: admin, POST /api/users.requestDelete, writes yes, cli on, mcp on
+   request the e-mail code that deletes the user of the API key
+124. outline.users.resend-invite: admin, POST /api/users.resendInvite, writes yes, cli on, mcp on
+   send the invitation e-mail to one invited user again
+125. outline.users.suspend: admin, POST /api/users.suspend, writes yes, cli on, mcp on
+   suspend one Outline user, so the user cannot sign in
+126. outline.users.update: admin, POST /api/users.update, writes yes, cli on, mcp on
+   change the name, language, or time zone of one Outline user
+127. outline.users.update-role: admin, POST /api/users.update_role, writes yes, cli on, mcp on
+   change the role of one Outline user
+128. outline.groups.add-user: admin, POST /api/groups.add_user, writes yes, cli on, mcp on
+   add one user to one Outline group, as a member or an admin
+129. outline.groups.create: write, POST /api/groups.create, writes yes, cli on, mcp on
+   create one Outline group
+130. outline.groups.update: write, POST /api/groups.update, writes yes, cli on, mcp on
+   change the name, description, colour, icon, or mention setting of one Outline group
+131. outline.groups.delete: admin, POST /api/groups.delete, writes yes, cli on, mcp on
+   delete one Outline group
+132. outline.groups.delete-all: admin, POST /api/groups.deleteAll, writes yes, cli on, mcp on
+   delete every group synced from one sign-in provider
+133. outline.groups.remove-user: admin, POST /api/groups.remove_user, writes yes, cli on, mcp on
+   remove one user from one Outline group
+134. outline.groups.update-user: admin, POST /api/groups.update_user, writes yes, cli on, mcp on
+   change the permission of one user in one Outline group
+135. outline.teams.delete: admin, POST /api/teams.delete, writes yes, cli on, mcp on
+   delete the whole Outline team of the API key
+136. outline.teams.request-delete: admin, POST /api/teams.requestDelete, writes yes, cli on, mcp on
+   request the e-mail code that deletes the team of the API key
+137. outline.teams.update: admin, POST /api/teams.update, writes yes, cli on, mcp on
+   change the settings of the Outline team of the API key
+138. outline.access-requests.approve: admin, POST /api/accessRequests.approve, writes yes, cli on, mcp on
+   approve one access request to an Outline document
+139. outline.access-requests.dismiss: admin, POST /api/accessRequests.dismiss, writes yes, cli on, mcp on
+   dismiss one access request to an Outline document
+140. outline.attachments.delete: admin, POST /api/attachments.delete, writes yes, cli on, mcp on
+   delete one attachment of the Outline wiki
+141. outline.authentication-providers.delete: admin, POST /api/authenticationProviders.delete, writes yes, cli on, mcp on
+   delete one sign-in provider of the Outline wiki
+142. outline.authentication-providers.start-group-sync: admin, POST /api/authenticationProviders.startGroupSync, writes yes, cli on, mcp on
+   start a group sync with one sign-in provider of the Outline wiki
+143. outline.authentication-providers.update: admin, POST /api/authenticationProviders.update, writes yes, cli on, mcp on
+   enable or disable one sign-in provider, or change its group sync settings
+144. outline.comments.delete: admin, POST /api/comments.delete, writes yes, cli on, mcp on
+   delete one comment on an Outline document
+145. outline.emojis.delete: admin, POST /api/emojis.delete, writes yes, cli on, mcp on
+   delete one custom emoji of the Outline wiki
+146. outline.file-operations.delete: admin, POST /api/fileOperations.delete, writes yes, cli on, mcp on
+   delete one import or export file operation of the Outline wiki
+147. outline.imports.cancel: admin, POST /api/imports.cancel, writes yes, cli on, mcp on
+   cancel one Outline import that has not finished
+148. outline.imports.delete: admin, POST /api/imports.delete, writes yes, cli on, mcp on
+   delete one Outline import record
+149. outline.integrations.create: admin, POST /api/integrations.create, writes yes, cli on, mcp on
+   create one Outline integration that sends data to an address
+150. outline.integrations.delete: admin, POST /api/integrations.delete, writes yes, cli on, mcp on
+   delete one Outline integration
+151. outline.integrations.update: admin, POST /api/integrations.update, writes yes, cli on, mcp on
+   change the address or the channel of one Outline integration
+152. outline.oauth-authentications.delete: admin, POST /api/oauthAuthentications.delete, writes yes, cli on, mcp on
+   revoke the authorization of one OAuth client for the Outline user of the key
+153. outline.oauth-clients.create: write, POST /api/oauthClients.create, writes yes, cli on, mcp on
+   create one OAuth client of the Outline wiki
+154. outline.oauth-clients.delete: admin, POST /api/oauthClients.delete, writes yes, cli on, mcp on
+   delete one OAuth client of the Outline wiki
+155. outline.oauth-clients.rotate-secret: admin, POST /api/oauthClients.rotate_secret, writes yes, cli on, mcp on
+   replace the client secret of one OAuth client of the Outline wiki
+156. outline.oauth-clients.update: admin, POST /api/oauthClients.update, writes yes, cli on, mcp on
+   change the name, the description, the listing, or the client type of one OAuth client
+157. outline.revisions.delete: admin, POST /api/revisions.delete, writes yes, cli on, mcp on
+   delete one revision of an Outline document
+158. outline.shares.create: admin, POST /api/shares.create, writes yes, cli on, mcp on
+   share one Outline document or collection, by a public link
+159. outline.shares.revoke: admin, POST /api/shares.revoke, writes yes, cli on, mcp on
+   revoke one Outline share, so its public link stops working
+160. outline.shares.update: admin, POST /api/shares.update, writes yes, cli on, mcp on
+   change the settings of one Outline share, without its link
+161. outline.templates.create: write, POST /api/templates.create, writes yes, cli on, mcp on
+   create one Outline template with a title, an icon, and a colour
+162. outline.templates.update: write, POST /api/templates.update, writes yes, cli on, mcp on
+   change the title, the icon, the colour, or the collection of one Outline template
+163. outline.templates.delete: admin, POST /api/templates.delete, writes yes, cli on, mcp on
+   delete one Outline template
+164. outline.webhook-subscriptions.create: write, POST /api/webhookSubscriptions.create, writes yes, cli on, mcp on
+   create one Outline webhook subscription that sends events to an address
+165. outline.webhook-subscriptions.update: write, POST /api/webhookSubscriptions.update, writes yes, cli on, mcp on
+   change the address, the name, or the events of one Outline webhook subscription
+166. outline.webhook-subscriptions.delete: admin, POST /api/webhookSubscriptions.delete, writes yes, cli on, mcp on
+   delete one Outline webhook subscription
+POST reads: 67
+1. outline.collections.list: POST /api/collections.list, body from slots: none
+2. outline.collections.info: POST /api/collections.info, body from slots: collectionId
+3. outline.collections.documents: POST /api/collections.documents, body from slots: collectionId
+4. outline.documents.get: POST /api/documents.info, body from slots: documentId
+5. outline.documents.list: POST /api/documents.list, body from slots: collectionId, limit, offset
+6. outline.documents.search: POST /api/documents.search, body from slots: limit, offset, query
+7. outline.auth.whoami: POST /api/auth.info, body from slots: none
+8. outline.documents.archived: POST /api/documents.archived, body from slots: collectionId, direction, limit, offset, sort
+9. outline.documents.children: POST /api/documents.documents, body from slots: documentId
+10. outline.documents.deleted: POST /api/documents.deleted, body from slots: direction, limit, offset, sort
+11. outline.documents.drafts: POST /api/documents.drafts, body from slots: collectionId, direction, limit, offset, sort
+12. outline.documents.group-memberships: POST /api/documents.group_memberships, body from slots: documentId, limit, offset, permission, query
+13. outline.documents.insights: POST /api/documents.insights, body from slots: documentId, endDate, startDate
+14. outline.documents.memberships: POST /api/documents.memberships, body from slots: documentId, limit, offset, permission, query
+15. outline.documents.search-titles: POST /api/documents.search_titles, body from slots: collectionId, direction, documentId, limit, offset, query, sort, statusFilter, userId
+16. outline.documents.users: POST /api/documents.users, body from slots: documentId, limit, offset, query, userId
+17. outline.documents.viewed: POST /api/documents.viewed, body from slots: direction, limit, offset, sort
+18. outline.collections.memberships: POST /api/collections.memberships, body from slots: collectionId, limit, offset, permission, query
+19. outline.collections.group-memberships: POST /api/collections.group_memberships, body from slots: collectionId, limit, offset, permission, query
+20. outline.comments.get: POST /api/comments.info, body from slots: commentId, includeAnchorText
+21. outline.comments.list: POST /api/comments.list, body from slots: collectionId, direction, documentId, includeAnchorText, limit, offset, parentCommentId, sort, statusFilter
+22. outline.revisions.export: POST /api/revisions.export, body from slots: revisionId
+23. outline.revisions.get: POST /api/revisions.info, body from slots: revisionId
+24. outline.revisions.list: POST /api/revisions.list, body from slots: direction, documentId, limit, offset, sort
+25. outline.shares.get: POST /api/shares.info, body from slots: shareId
+26. outline.shares.list: POST /api/shares.list, body from slots: direction, limit, offset, query, sort
+27. outline.users.get: POST /api/users.info, body from slots: userId
+28. outline.users.list: POST /api/users.list, body from slots: direction, filter, ids, limit, offset, query, role, sort
+29. outline.groups.get: POST /api/groups.info, body from slots: groupId
+30. outline.groups.list: POST /api/groups.list, body from slots: direction, groupSource, limit, offset, query, sort, userId
+31. outline.groups.members: POST /api/groups.memberships, body from slots: groupId, limit, offset, permission, query
+32. outline.templates.get: POST /api/templates.info, body from slots: templateId
+33. outline.templates.list: POST /api/templates.list, body from slots: collectionId, direction, limit, offset, query, sort
+34. outline.pins.get: POST /api/pins.info, body from slots: collectionId, documentId
+35. outline.pins.list: POST /api/pins.list, body from slots: collectionId, limit, offset
+36. outline.stars.list: POST /api/stars.list, body from slots: limit, offset
+37. outline.subscriptions.get: POST /api/subscriptions.info, body from slots: collectionId, documentId, event
+38. outline.subscriptions.list: POST /api/subscriptions.list, body from slots: collectionId, documentId, event, limit, offset
+39. outline.access-requests.get: POST /api/accessRequests.info, body from slots: accessRequestId
+40. outline.attachments.list: POST /api/attachments.list, body from slots: documentId, limit, offset, userId
+41. outline.emojis.get: POST /api/emojis.info, body from slots: emojiId
+42. outline.emojis.list: POST /api/emojis.list, body from slots: limit, offset, query
+43. outline.events.list: POST /api/events.list, body from slots: actorId, auditLog, collectionId, direction, documentId, limit, offset, sort
+44. outline.file-operations.get: POST /api/fileOperations.info, body from slots: fileOperationId
+45. outline.file-operations.list: POST /api/file-operations.list, body from slots: direction, limit, offset, sort, type
+46. outline.group-memberships.list: POST /api/group-memberships.list, body from slots: groupId, limit, offset
+47. outline.installation.get: POST /api/installation.info, body from slots: none
+48. outline.notifications.list: POST /api/notifications.list, body from slots: archived, eventType, limit, offset
+49. outline.oauth-authentications.list: POST /api/oauthAuthentications.list, body from slots: limit, offset
+50. outline.reactions.list: POST /api/reactions.list, body from slots: commentId, limit, offset
+51. outline.relationships.get: POST /api/relationships.info, body from slots: relationshipId
+52. outline.relationships.list: POST /api/relationships.list, body from slots: documentId, limit, offset, reverseDocumentId, type
+53. outline.searches.list: POST /api/searches.list, body from slots: limit, offset, searchSource
+54. outline.suggestions.mention: POST /api/suggestions.mention, body from slots: limit, offset, query
+55. outline.user-memberships.list: POST /api/user-memberships.list, body from slots: limit, offset
+56. outline.views.list: POST /api/views.list, body from slots: documentId, includeSuspended
+57. outline.api-keys.list: POST /api/apiKeys.list, body from slots: direction, limit, offset, query, sort, userId
+58. outline.authentication-providers.get: POST /api/authenticationProviders.info, body from slots: authenticationProviderId
+59. outline.authentication-providers.list: POST /api/authenticationProviders.list, body from slots: none
+60. outline.imports.get: POST /api/imports.info, body from slots: importId
+61. outline.imports.list: POST /api/imports.list, body from slots: direction, limit, offset, service, sort
+62. outline.integrations.get: POST /api/integrations.info, body from slots: integrationId
+63. outline.integrations.list: POST /api/integrations.list, body from slots: direction, limit, offset, service, sort, type
+64. outline.oauth-clients.get: POST /api/oauthClients.info, body from slots: oauthClientId
+65. outline.oauth-clients.list: POST /api/oauthClients.list, body from slots: limit, offset
+66. outline.webhook-subscriptions.list: POST /api/webhookSubscriptions.list, body from slots: direction, limit, offset, query, sort
+67. outline.documents.export: POST /api/documents.export, body from slots: documentId
+Body paging: 40
+1. outline.collections.list: page-all in body (page size 25), at most 20 pages
+2. outline.documents.list: offset in body (limit, offset), at most 1 pages
+3. outline.documents.search: offset in body (limit, offset), at most 1 pages
+4. outline.documents.archived: offset in body (limit, offset), at most 1 pages
+5. outline.documents.deleted: offset in body (limit, offset), at most 1 pages
+6. outline.documents.drafts: offset in body (limit, offset), at most 1 pages
+7. outline.documents.group-memberships: offset in body (limit, offset), at most 1 pages
+8. outline.documents.memberships: offset in body (limit, offset), at most 1 pages
+9. outline.documents.search-titles: offset in body (limit, offset), at most 1 pages
+10. outline.documents.users: offset in body (limit, offset), at most 1 pages
+11. outline.documents.viewed: offset in body (limit, offset), at most 1 pages
+12. outline.collections.memberships: offset in body (limit, offset), at most 1 pages
+13. outline.collections.group-memberships: offset in body (limit, offset), at most 1 pages
+14. outline.comments.list: offset in body (limit, offset), at most 1 pages
+15. outline.revisions.list: offset in body (limit, offset), at most 1 pages
+16. outline.shares.list: offset in body (limit, offset), at most 1 pages
+17. outline.users.list: offset in body (limit, offset), at most 1 pages
+18. outline.groups.list: offset in body (limit, offset), at most 1 pages
+19. outline.groups.members: offset in body (limit, offset), at most 1 pages
+20. outline.templates.list: offset in body (limit, offset), at most 1 pages
+21. outline.pins.list: offset in body (limit, offset), at most 1 pages
+22. outline.stars.list: offset in body (limit, offset), at most 1 pages
+23. outline.subscriptions.list: offset in body (limit, offset), at most 1 pages
+24. outline.attachments.list: offset in body (limit, offset), at most 1 pages
+25. outline.emojis.list: offset in body (limit, offset), at most 1 pages
+26. outline.events.list: offset in body (limit, offset), at most 1 pages
+27. outline.file-operations.list: offset in body (limit, offset), at most 1 pages
+28. outline.group-memberships.list: offset in body (limit, offset), at most 1 pages
+29. outline.notifications.list: offset in body (limit, offset), at most 1 pages
+30. outline.oauth-authentications.list: offset in body (limit, offset), at most 1 pages
+31. outline.reactions.list: offset in body (limit, offset), at most 1 pages
+32. outline.relationships.list: offset in body (limit, offset), at most 1 pages
+33. outline.searches.list: offset in body (limit, offset), at most 1 pages
+34. outline.suggestions.mention: offset in body (limit, offset), at most 1 pages
+35. outline.user-memberships.list: offset in body (limit, offset), at most 1 pages
+36. outline.api-keys.list: offset in body (limit, offset), at most 1 pages
+37. outline.imports.list: offset in body (limit, offset), at most 1 pages
+38. outline.integrations.list: offset in body (limit, offset), at most 1 pages
+39. outline.oauth-clients.list: offset in body (limit, offset), at most 1 pages
+40. outline.webhook-subscriptions.list: offset in body (limit, offset), at most 1 pages
+Required fields: 157
+1. outline.collections.list: required id; formats id=id
+2. outline.collections.info: required id; formats id=id
+3. outline.collections.documents: required id; formats id=id
+4. outline.documents.get: required id; formats id=id
+5. outline.documents.list: required id; formats id=id
+6. outline.documents.search: required id; formats id=id
+7. outline.documents.archived: required id; formats id=id
+8. outline.documents.children: required id; formats id=id
+9. outline.documents.deleted: required id; formats id=id
+10. outline.documents.drafts: required id; formats id=id
+11. outline.documents.group-memberships: required id; formats id=uuid
+12. outline.documents.memberships: required id; formats id=uuid
+13. outline.documents.search-titles: required id; formats id=id
+14. outline.documents.users: required id; formats id=uuid
+15. outline.documents.viewed: required id; formats id=id
+16. outline.collections.memberships: required id; formats id=uuid
+17. outline.collections.group-memberships: required id; formats id=uuid
+18. outline.comments.get: required id; formats id=uuid
+19. outline.comments.list: required id; formats id=uuid
+20. outline.revisions.get: required id; formats id=uuid
+21. outline.revisions.list: required id; formats id=uuid
+22. outline.shares.get: required id; formats id=uuid
+23. outline.shares.list: required id; formats id=uuid
+24. outline.users.get: required id; formats id=uuid
+25. outline.users.list: required id; formats id=uuid
+26. outline.groups.get: required id; formats id=uuid
+27. outline.groups.list: required id; formats id=uuid
+28. outline.templates.get: required id
+29. outline.templates.list: required id
+30. outline.pins.get: required id; formats id=uuid
+31. outline.pins.list: required id; formats id=uuid
+32. outline.stars.list: required id; formats id=uuid
+33. outline.subscriptions.get: required id; formats id=uuid
+34. outline.subscriptions.list: required id; formats id=uuid
+35. outline.access-requests.get: required id; formats id=uuid
+36. outline.attachments.list: required id; formats id=uuid
+37. outline.emojis.get: required id; formats id=uuid
+38. outline.emojis.list: required id; formats id=uuid
+39. outline.events.list: required id; formats id=uuid
+40. outline.file-operations.get: required id; formats id=uuid
+41. outline.file-operations.list: required id; formats id=uuid
+42. outline.group-memberships.list: required id; formats id=uuid
+43. outline.notifications.list: required id; formats id=uuid
+44. outline.oauth-authentications.list: required id; formats id=uuid, scope=strings
+45. outline.reactions.list: required id; formats id=uuid
+46. outline.relationships.get: required id; formats id=uuid
+47. outline.relationships.list: required id; formats id=uuid
+48. outline.searches.list: required id; formats id=uuid
+49. outline.suggestions.mention: required id
+50. outline.user-memberships.list: required id; formats id=uuid
+51. outline.api-keys.list: required id; formats id=uuid, scope=strings
+52. outline.authentication-providers.get: required id; formats id=uuid
+53. outline.authentication-providers.list: required id; formats id=uuid
+54. outline.imports.get: required id; formats id=uuid
+55. outline.imports.list: required id; formats id=uuid
+56. outline.integrations.get: required id; formats events=strings, id=uuid
+57. outline.integrations.list: required id; formats events=strings, id=uuid
+58. outline.oauth-clients.get: required id; formats id=uuid, redirectUris=strings
+59. outline.oauth-clients.list: required id; formats id=uuid, redirectUris=strings
+60. outline.webhook-subscriptions.list: required id; formats events=strings, id=uuid
+61. outline.documents.create: required id; formats id=id
+62. outline.documents.duplicate: required id; formats id=id
+63. outline.documents.move: required id; formats id=id
+64. outline.documents.restore: required id; formats id=id
+65. outline.documents.templatize: required id
+66. outline.documents.unpublish: required id; formats id=id
+67. outline.documents.update: required id; formats id=id
+68. outline.collections.create: required id; formats id=id
+69. outline.collections.duplicate: required id; formats id=id
+70. outline.collections.export: required id; formats id=uuid
+71. outline.collections.move: required ok
+72. outline.collections.restore: required id; formats id=id
+73. outline.collections.update: required id; formats id=id
+74. outline.comments.create: required id; formats id=uuid
+75. outline.comments.update: required id; formats id=uuid
+76. outline.comments.resolve: required id; formats id=uuid
+77. outline.comments.unresolve: required id; formats id=uuid
+78. outline.comments.add-reaction: required ok
+79. outline.comments.remove-reaction: required ok
+80. outline.access-requests.create: required id; formats id=uuid
+81. outline.revisions.update: required id; formats id=uuid
+82. outline.notifications.update: required id; formats id=uuid
+83. outline.notifications.update-all: required ok
+84. outline.pins.create: required id; formats id=uuid
+85. outline.pins.delete: required ok
+86. outline.pins.update: required id; formats id=uuid
+87. outline.searches.delete: required ok
+88. outline.searches.update: required id; formats id=uuid
+89. outline.stars.create: required id; formats id=uuid
+90. outline.stars.delete: required ok
+91. outline.stars.update: required id; formats id=uuid
+92. outline.subscriptions.create: required id; formats id=uuid
+93. outline.subscriptions.delete: required ok
+94. outline.templates.duplicate: required id
+95. outline.templates.restore: required id
+96. outline.user-memberships.update: required id; formats id=uuid
+97. outline.users.notifications-subscribe: required id; formats id=uuid
+98. outline.users.notifications-unsubscribe: required id; formats id=uuid
+99. outline.documents.add-group: required id; formats id=uuid
+100. outline.documents.add-user: required id; formats id=uuid
+101. outline.documents.archive: required id; formats id=id
+102. outline.documents.delete: required ok
+103. outline.documents.empty-trash: required ok
+104. outline.documents.remove-group: required ok
+105. outline.documents.remove-user: required ok
+106. outline.collections.add-group: required id; formats id=uuid
+107. outline.collections.add-user: required id; formats id=uuid
+108. outline.collections.archive: required id; formats id=id
+109. outline.collections.delete: required ok
+110. outline.collections.export-all: required id; formats id=uuid
+111. outline.collections.remove-group: required ok
+112. outline.collections.remove-user: required ok
+113. outline.users.activate: required id; formats id=uuid
+114. outline.users.delete: required ok
+115. outline.users.invite: required id; formats id=uuid
+116. outline.users.request-delete: required ok
+117. outline.users.resend-invite: required ok
+118. outline.users.suspend: required id; formats id=uuid
+119. outline.users.update: required id; formats id=uuid
+120. outline.users.update-role: required id; formats id=uuid
+121. outline.groups.create: required id; formats id=uuid
+122. outline.groups.update: required id; formats id=uuid
+123. outline.groups.delete: required ok
+124. outline.groups.delete-all: required ok
+125. outline.groups.remove-user: required id; formats id=uuid
+126. outline.teams.delete: required ok
+127. outline.teams.request-delete: required ok
+128. outline.teams.update: required id; formats id=uuid
+129. outline.access-requests.approve: required id; formats id=uuid
+130. outline.access-requests.dismiss: required id; formats id=uuid
+131. outline.attachments.delete: required ok
+132. outline.authentication-providers.delete: required ok
+133. outline.authentication-providers.start-group-sync: required started
+134. outline.authentication-providers.update: required id; formats id=uuid
+135. outline.comments.delete: required ok
+136. outline.emojis.delete: required ok
+137. outline.file-operations.delete: required ok
+138. outline.imports.cancel: required id; formats id=uuid
+139. outline.imports.delete: required ok
+140. outline.integrations.create: required id; formats events=strings, id=uuid
+141. outline.integrations.delete: required ok
+142. outline.integrations.update: required id; formats events=strings, id=uuid
+143. outline.oauth-authentications.delete: required ok
+144. outline.oauth-clients.create: required id; formats id=uuid, redirectUris=strings
+145. outline.oauth-clients.delete: required ok
+146. outline.oauth-clients.rotate-secret: required id; formats id=uuid, redirectUris=strings
+147. outline.oauth-clients.update: required id; formats id=uuid, redirectUris=strings
+148. outline.revisions.delete: required ok
+149. outline.shares.create: required id; formats id=uuid
+150. outline.shares.revoke: required ok
+151. outline.shares.update: required id; formats id=uuid
+152. outline.templates.create: required id
+153. outline.templates.update: required id
+154. outline.templates.delete: required ok
+155. outline.webhook-subscriptions.create: required id; formats events=strings, id=uuid
+156. outline.webhook-subscriptions.update: required id; formats events=strings, id=uuid
+157. outline.webhook-subscriptions.delete: required ok
+Nested objects: 11
+1. outline.auth.whoami: team with name
+2. outline.auth.whoami: user with id, name
+3. outline.oauth-authentications.list: oauthClient with name
+4. outline.views.list: user with id, name
+5. outline.authentication-providers.get: settings with groupClaim, groupSyncEnabled, groupSyncScopes
+6. outline.authentication-providers.list: settings with groupClaim, groupSyncEnabled, groupSyncScopes
+7. outline.integrations.get: settings with channel, instanceUrl, measurementId, scriptName, urlHost
+8. outline.integrations.list: settings with channel, instanceUrl, measurementId, scriptName, urlHost
+9. outline.authentication-providers.update: settings with groupClaim, groupSyncEnabled, groupSyncScopes
+10. outline.integrations.create: settings with channel, instanceUrl, measurementId, scriptName, urlHost
+11. outline.integrations.update: settings with channel, instanceUrl, measurementId, scriptName, urlHost
+Open bool maps: 2
+1. outline.users.notifications-subscribe: notificationSettings keeps every bool at /data/notificationSettings, sorted
+2. outline.users.notifications-unsubscribe: notificationSettings keeps every bool at /data/notificationSettings, sorted
+First reads: 1
+1. outline.shares.get: first of /data/shares
+Merged lists: 1
+1. outline.suggestions.mention: merge kind from 3 lists (document of /data/documents, user of /data/users, group of /data/groups)
+Tree reads: 2
+1. outline.collections.documents: tree of /data with children /children, parent parentId, depth depth, at most depth 64
+2. outline.documents.children: tree of /data/children with children /children, parent parentId, depth depth, roots under documentId, at most depth 64
+Fallback reads: 1
+1. outline.documents.get: fallback to outline.documents.export when markdown is empty, filling markdown
+Bundled mapping: 166
+1. outline.collections.list: catalog collections.list
+2. outline.collections.info: catalog collections.info
+3. outline.collections.documents: catalog collections.documents
+4. outline.documents.get: catalog documents.get
+5. outline.documents.list: catalog documents.list
+6. outline.documents.search: catalog documents.search
+7. outline.auth.whoami: catalog auth.whoami
+8. outline.documents.archived: catalog documents.archived
+9. outline.documents.children: catalog documents.children
+10. outline.documents.deleted: catalog documents.deleted
+11. outline.documents.drafts: catalog documents.drafts
+12. outline.documents.group-memberships: catalog documents.group-memberships
+13. outline.documents.insights: catalog documents.insights
+14. outline.documents.memberships: catalog documents.memberships
+15. outline.documents.search-titles: catalog documents.search-titles
+16. outline.documents.users: catalog documents.users
+17. outline.documents.viewed: catalog documents.viewed
+18. outline.collections.memberships: catalog collections.memberships
+19. outline.collections.group-memberships: catalog collections.group-memberships
+20. outline.comments.get: catalog comments.get
+21. outline.comments.list: catalog comments.list
+22. outline.revisions.export: catalog revisions.export
+23. outline.revisions.get: catalog revisions.get
+24. outline.revisions.list: catalog revisions.list
+25. outline.shares.get: catalog shares.get
+26. outline.shares.list: catalog shares.list
+27. outline.users.get: catalog users.get
+28. outline.users.list: catalog users.list
+29. outline.groups.get: catalog groups.get
+30. outline.groups.list: catalog groups.list
+31. outline.groups.members: catalog groups.members
+32. outline.templates.get: catalog templates.get
+33. outline.templates.list: catalog templates.list
+34. outline.pins.get: catalog pins.get
+35. outline.pins.list: catalog pins.list
+36. outline.stars.list: catalog stars.list
+37. outline.subscriptions.get: catalog subscriptions.get
+38. outline.subscriptions.list: catalog subscriptions.list
+39. outline.access-requests.get: catalog access-requests.get
+40. outline.attachments.list: catalog attachments.list
+41. outline.emojis.get: catalog emojis.get
+42. outline.emojis.list: catalog emojis.list
+43. outline.events.list: catalog events.list
+44. outline.file-operations.get: catalog file-operations.get
+45. outline.file-operations.list: catalog file-operations.list
+46. outline.group-memberships.list: catalog group-memberships.list
+47. outline.installation.get: catalog installation.get
+48. outline.notifications.list: catalog notifications.list
+49. outline.oauth-authentications.list: catalog oauth-authentications.list
+50. outline.reactions.list: catalog reactions.list
+51. outline.relationships.get: catalog relationships.get
+52. outline.relationships.list: catalog relationships.list
+53. outline.searches.list: catalog searches.list
+54. outline.suggestions.mention: catalog suggestions.mention
+55. outline.user-memberships.list: catalog user-memberships.list
+56. outline.views.list: catalog views.list
+57. outline.api-keys.list: catalog api-keys.list
+58. outline.authentication-providers.get: catalog authentication-providers.get
+59. outline.authentication-providers.list: catalog authentication-providers.list
+60. outline.imports.get: catalog imports.get
+61. outline.imports.list: catalog imports.list
+62. outline.integrations.get: catalog integrations.get
+63. outline.integrations.list: catalog integrations.list
+64. outline.oauth-clients.get: catalog oauth-clients.get
+65. outline.oauth-clients.list: catalog oauth-clients.list
+66. outline.webhook-subscriptions.list: catalog webhook-subscriptions.list
+67. outline.documents.export: no catalog row, cli off, mcp off
+68. outline.documents.create: catalog documents.create
+69. outline.documents.duplicate: catalog documents.duplicate
+70. outline.documents.move: catalog documents.move
+71. outline.documents.restore: catalog documents.restore
+72. outline.documents.templatize: catalog documents.templatize
+73. outline.documents.unpublish: catalog documents.unpublish
+74. outline.documents.update: catalog documents.update
+75. outline.collections.create: catalog collections.create
+76. outline.collections.duplicate: catalog collections.duplicate
+77. outline.collections.export: catalog collections.export
+78. outline.collections.move: catalog collections.move
+79. outline.collections.restore: catalog collections.restore
+80. outline.collections.update: catalog collections.update
+81. outline.comments.create: catalog comments.create
+82. outline.comments.update: catalog comments.update
+83. outline.comments.resolve: catalog comments.resolve
+84. outline.comments.unresolve: catalog comments.unresolve
+85. outline.comments.add-reaction: catalog comments.add-reaction
+86. outline.comments.remove-reaction: catalog comments.remove-reaction
+87. outline.access-requests.create: catalog access-requests.create
+88. outline.revisions.update: catalog revisions.update
+89. outline.notifications.update: catalog notifications.update
+90. outline.notifications.update-all: catalog notifications.update-all
+91. outline.pins.create: catalog pins.create
+92. outline.pins.delete: catalog pins.delete
+93. outline.pins.update: catalog pins.update
+94. outline.searches.delete: catalog searches.delete
+95. outline.searches.update: catalog searches.update
+96. outline.stars.create: catalog stars.create
+97. outline.stars.delete: catalog stars.delete
+98. outline.stars.update: catalog stars.update
+99. outline.subscriptions.create: catalog subscriptions.create
+100. outline.subscriptions.delete: catalog subscriptions.delete
+101. outline.templates.duplicate: catalog templates.duplicate
+102. outline.templates.restore: catalog templates.restore
+103. outline.user-memberships.update: catalog user-memberships.update
+104. outline.users.notifications-subscribe: catalog users.notifications-subscribe
+105. outline.users.notifications-unsubscribe: catalog users.notifications-unsubscribe
+106. outline.documents.add-group: catalog documents.add-group
+107. outline.documents.add-user: catalog documents.add-user
+108. outline.documents.archive: catalog documents.archive
+109. outline.documents.delete: catalog documents.delete
+110. outline.documents.empty-trash: catalog documents.empty-trash
+111. outline.documents.remove-group: catalog documents.remove-group
+112. outline.documents.remove-user: catalog documents.remove-user
+113. outline.collections.add-group: catalog collections.add-group
+114. outline.collections.add-user: catalog collections.add-user
+115. outline.collections.archive: catalog collections.archive
+116. outline.collections.delete: catalog collections.delete
+117. outline.collections.export-all: catalog collections.export-all
+118. outline.collections.remove-group: catalog collections.remove-group
+119. outline.collections.remove-user: catalog collections.remove-user
+120. outline.users.activate: catalog users.activate
+121. outline.users.delete: catalog users.delete
+122. outline.users.invite: catalog users.invite
+123. outline.users.request-delete: catalog users.request-delete
+124. outline.users.resend-invite: catalog users.resend-invite
+125. outline.users.suspend: catalog users.suspend
+126. outline.users.update: catalog users.update
+127. outline.users.update-role: catalog users.update-role
+128. outline.groups.add-user: catalog groups.add-user
+129. outline.groups.create: catalog groups.create
+130. outline.groups.update: catalog groups.update
+131. outline.groups.delete: catalog groups.delete
+132. outline.groups.delete-all: catalog groups.delete-all
+133. outline.groups.remove-user: catalog groups.remove-user
+134. outline.groups.update-user: catalog groups.update-user
+135. outline.teams.delete: catalog teams.delete
+136. outline.teams.request-delete: catalog teams.request-delete
+137. outline.teams.update: catalog teams.update
+138. outline.access-requests.approve: catalog access-requests.approve
+139. outline.access-requests.dismiss: catalog access-requests.dismiss
+140. outline.attachments.delete: catalog attachments.delete
+141. outline.authentication-providers.delete: catalog authentication-providers.delete
+142. outline.authentication-providers.start-group-sync: catalog authentication-providers.start-group-sync
+143. outline.authentication-providers.update: catalog authentication-providers.update
+144. outline.comments.delete: catalog comments.delete
+145. outline.emojis.delete: catalog emojis.delete
+146. outline.file-operations.delete: catalog file-operations.delete
+147. outline.imports.cancel: catalog imports.cancel
+148. outline.imports.delete: catalog imports.delete
+149. outline.integrations.create: catalog integrations.create
+150. outline.integrations.delete: catalog integrations.delete
+151. outline.integrations.update: catalog integrations.update
+152. outline.oauth-authentications.delete: catalog oauth-authentications.delete
+153. outline.oauth-clients.create: catalog oauth-clients.create
+154. outline.oauth-clients.delete: catalog oauth-clients.delete
+155. outline.oauth-clients.rotate-secret: catalog oauth-clients.rotate-secret
+156. outline.oauth-clients.update: catalog oauth-clients.update
+157. outline.revisions.delete: catalog revisions.delete
+158. outline.shares.create: catalog shares.create
+159. outline.shares.revoke: catalog shares.revoke
+160. outline.shares.update: catalog shares.update
+161. outline.templates.create: catalog templates.create
+162. outline.templates.update: catalog templates.update
+163. outline.templates.delete: catalog templates.delete
+164. outline.webhook-subscriptions.create: catalog webhook-subscriptions.create
+165. outline.webhook-subscriptions.update: catalog webhook-subscriptions.update
+166. outline.webhook-subscriptions.delete: catalog webhook-subscriptions.delete

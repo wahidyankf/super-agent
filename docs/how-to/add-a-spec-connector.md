@@ -69,6 +69,17 @@ An operation whose spec turns `cli` off has no command. Its MCP tool stays in th
 
 ## 5. Check the spec when it fails
 
+Check the file first, before it is loaded. `connector validate` runs the static checks and prints the review, and
+`connector test` replays every example and prints the conformance report:
+
+```sh
+retriever connector validate check.yml
+retriever connector test check.yml
+```
+
+A passing run exits `0` with the report on standard output. A failing run exits `2` with the diagnostics on standard
+error and nothing on standard output.
+
 A spec that the tool refuses stops start-up for every command that reads sources. The failure names the file, the field
 path, and a fixed rule, and it never prints a value of the spec:
 
