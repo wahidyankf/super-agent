@@ -31,6 +31,21 @@ const sourceSchemaText = "the source ID; may be omitted when exactly one outline
 // sourceWriteText describes the source input of every generated write tool, which must name its source.
 const sourceWriteText = "the source ID; required, a change names its source"
 
+// ToolsJSON returns the canonical JSON of the MCP tools of the given rows, in
+// order: one object per row with its name, description, input schema, and
+// hints. The conformance suite prints it as the MCP text derived from a spec,
+// and the stored text it is compared with comes from this same function, so a
+// change to a tool updates the stored text in the same change. The rows come
+// from the catalog, so the encoding cannot fail.
+func ToolsJSON(rows []operations.Row) []byte {
+	tools := make([]*sdk.Tool, 0, len(rows))
+	for _, row := range rows {
+		tools = append(tools, toolFor(row))
+	}
+	out, _ := json.MarshalIndent(tools, "", "  ")
+	return append(out, '\n')
+}
+
 // operationTools returns the MCP tools of the service's operation catalog, one per row that names a tool, in catalog order.
 // The built-in rows and the rows of every loaded spec are in that catalog.
 func operationTools(svc sources.Service) []operations.Row {

@@ -56,7 +56,10 @@ type Deps struct {
 	Stdout io.Writer
 	Stderr io.Writer
 	Getenv func(string) string
-	Now    func() time.Time
+	// ReadFile reads the bytes of one file. The connector commands check the
+	// spec file it names; every other command leaves it alone.
+	ReadFile func(string) ([]byte, error)
+	Now      func() time.Time
 	// Context is the parent of the context that serve and mcp run under. SIGINT and SIGTERM cancel that context with
 	// SignalCause, so a caller can end either command as a signal would, without sending one. Nil means Background.
 	Context context.Context
@@ -88,6 +91,7 @@ type runtime struct {
 	stdout   io.Writer
 	stderr   io.Writer
 	getenv   func(string) string
+	readFile func(string) ([]byte, error)
 	format   domain.OutputFormat
 	service  sources.Service
 	serve    ServeFunc
@@ -200,6 +204,7 @@ func run(argv []string, d Deps) (status int) {
 		stdout:   d.Stdout,
 		stderr:   d.Stderr,
 		getenv:   d.Getenv,
+		readFile: d.ReadFile,
 		format:   g.format(),
 		service:  d.Service,
 		serve:    d.Serve,

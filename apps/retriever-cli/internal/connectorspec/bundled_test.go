@@ -464,3 +464,14 @@ func bundledModelOf(t *testing.T, set Set, file string, kind domain.SourceKind) 
 	t.Fatalf("no bundled spec named %s", file)
 	return nil
 }
+
+// TestMustKindPanicsOnAnUnregisteredKind checks the broken invariant: a name
+// the set never registered panics instead of building half a registration.
+func TestMustKindPanicsOnAnUnregisteredKind(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("mustKind() of an unregistered kind does not panic")
+		}
+	}()
+	mustKind(kindSet(nil), "no-such-kind")
+}

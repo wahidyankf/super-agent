@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/connectorspec"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
@@ -70,6 +71,14 @@ func publicMessage(err error) string {
 	var setup setupError
 	if errors.As(err, &setup) {
 		return setup.Error()
+	}
+	var connector *connectorFailure
+	if errors.As(err, &connector) {
+		return connector.msg
+	}
+	var specErr *connectorspec.Error
+	if errors.As(err, &specErr) {
+		return specErr.Error()
 	}
 	var missing domain.MissingKeyError
 	if errors.As(err, &missing) {

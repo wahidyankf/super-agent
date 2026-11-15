@@ -1,0 +1,57 @@
+connector spec jira, version 1
+summary: Reads of a Jira Cloud site without changing it.
+endpoint: base path none, hosts: any host of the catalog
+auth: basic, key variable JIRA_API_TOKEN, account variable JIRA_EMAIL
+limits: timeout 30s (cap), reply 10485760 bytes (cap), at most 20 pages (cap)
+operations: 7
+1. jira.auth.whoami: read, GET /rest/api/3/myself, writes no, cli on, mcp on
+   show the account that the credentials sign in as
+2. jira.projects.page: read, GET /rest/api/3/project/search, writes no, cli on, mcp on
+   list one page of the projects of the source
+3. jira.issues.query: read, POST /rest/api/3/search/jql, writes no, cli on, mcp on
+   search the issues that match a JQL query, one page of at most 100 issues
+4. jira.issues.read: read, GET /rest/api/3/issue/{issueKey}, writes no, cli on, mcp on
+   print the Markdown of one Jira issue
+5. jira.comments.page: read, GET /rest/api/3/issue/{issueKey}/comment, writes no, cli on, mcp on
+   list one page of the comments of one Jira issue, as Markdown
+6. jira.projects.all: read, GET /rest/api/3/project/search, writes no, cli off, mcp off
+   read every page of the projects of the source, oldest first
+7. jira.issues.tree: read, POST /rest/api/3/search/jql, writes no, cli off, mcp off
+   read one search of issues for the tree of a project, oldest first
+POST reads: 2
+1. jira.issues.query: POST /rest/api/3/search/jql, body from slots: jql, limit
+2. jira.issues.tree: POST /rest/api/3/search/jql, body from slots: jql, limit, nextPageToken
+Body paging: 2
+1. jira.issues.query: cursor in body (limit), at most 1 pages
+2. jira.issues.tree: cursor in body (nextPageToken), at most 5 pages
+Required fields: 2
+1. jira.auth.whoami: required active, displayName
+2. jira.issues.read: formats labels=strings
+Issue keys: 2
+1. jira.issues.read: path parameter issueKey
+2. jira.comments.page: path parameter issueKey
+Page ends: 5
+1. jira.projects.page: last of /isLast; cut to limit
+2. jira.issues.query: last of /isLast; cut to limit; truncated of /nextPageToken and /isLast
+3. jira.comments.page: cut to limit
+4. jira.projects.all: last of /isLast; cut to maxResults
+5. jira.issues.tree: last of /isLast; cut to limit; truncated of /nextPageToken and /isLast
+Key echoes: 1
+1. jira.issues.read: issueKey equals /key
+Built IDs: 3
+1. jira.issues.query: projectKey as project key of /key
+2. jira.issues.read: collectionId as collection ID of /key; id as issue ID of /key; projectKey as project key of /key; url as browse URL of /key
+3. jira.issues.tree: url as browse URL of /key
+Document layouts: 1
+1. jira.issues.read: title title, 13 lines, body description as Description
+Query keys: 2
+1. jira.projects.page: limit as maxResults, offset as startAt
+2. jira.comments.page: limit as maxResults, offset as startAt
+Bundled mapping: 7
+1. jira.auth.whoami: catalog jira.whoami
+2. jira.projects.page: catalog jira.projects.list
+3. jira.issues.query: catalog jira.issues.search
+4. jira.issues.read: catalog jira.issues.get
+5. jira.comments.page: catalog jira.comments.list
+6. jira.projects.all: no catalog row, cli off, mcp off
+7. jira.issues.tree: no catalog row, cli off, mcp off

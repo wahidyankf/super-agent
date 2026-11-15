@@ -20,7 +20,7 @@ import (
 
 // commandWords are the first words of the built-in commands. A spec kind may not take one, because the kind is the first
 // word of a command path.
-var commandWords = []string{"document", "help", "mcp", "retriever", "serve", "sources"}
+var commandWords = []string{"connector", "document", "help", "mcp", "retriever", "serve", "sources"}
 
 // Rules of a kind that a spec may not use. They are fixed words, so the text never names a value.
 const (

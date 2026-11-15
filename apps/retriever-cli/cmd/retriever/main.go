@@ -29,13 +29,14 @@ func run(argv []string, getenv func(string) string, h host) int {
 	globals, _ := cli.ParseGlobals(argv)
 
 	deps := cli.Deps{
-		Ports:  ports.Ports{},
-		Stdin:  h.stdin,
-		Stdout: h.stdout,
-		Stderr: h.stderr,
-		Getenv: cli.SecretLookup(getenv),
-		Now:    h.now,
-		Sink:   h.exportSink,
+		Ports:    ports.Ports{},
+		Stdin:    h.stdin,
+		Stdout:   h.stdout,
+		Stderr:   h.stderr,
+		Getenv:   cli.SecretLookup(getenv),
+		ReadFile: os.ReadFile,
+		Now:      h.now,
+		Sink:     h.exportSink,
 	}
 	deps.SetupErr = attachSourcesFrom(&deps, globals, seams, getenv, h)
 	return cli.Run(argv, deps)
