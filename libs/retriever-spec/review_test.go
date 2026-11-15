@@ -89,6 +89,83 @@ func TestReviewNamesEachAuthKind(t *testing.T) {
 	}
 }
 
+// bundledReviewStub is a bundled stub of one claimed operation and one operation that no row names, so the review
+// shows both forms of the mapping block.
+const bundledReviewStub = `version: 1
+kind: jira
+summary: Reads issues of an example Jira source.
+endpoint:
+  host_suffix:
+    - .example.test
+auth:
+  type: bearer
+  credential_env: EXAMPLE_JIRA_API_KEY
+operations:
+  - id: jira.auth.whoami
+    summary: Show the account that signs in.
+    access: read
+    method: GET
+    path: /whoami
+    catalog_id: jira.whoami
+    response:
+      fields:
+        name:
+          pointer: /displayName
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            displayName: Ada
+        expect:
+          name: Ada
+  - id: jira.issues.export
+    summary: Export the issues of a search.
+    access: read
+    method: GET
+    path: /export
+    cli: false
+    mcp: false
+    params:
+      - name: jql
+        type: Query
+        in: query
+        required: true
+    response:
+      fields:
+        key:
+          pointer: /key
+    examples:
+      - request:
+          jql: project = EX
+        response:
+          status: 200
+          body:
+            key: EX-1
+        expect:
+          key: EX-1
+`
+
+// TestReviewListsTheBundledMapping checks the block of the bundled ID mapping: each claimed operation with its
+// catalog row, and each operation with no row with its surfaces off. A user spec writes no block, so the golden
+// review keeps its text.
+func TestReviewListsTheBundledMapping(t *testing.T) {
+	r := requireBundledValid(t, bundledReviewStub)
+	review := Review(r.Spec)
+	for _, line := range []string{
+		"Bundled mapping: 2",
+		"1. jira.auth.whoami: catalog jira.whoami",
+		"2. jira.issues.export: no catalog row, cli off, mcp off",
+	} {
+		if !strings.Contains(review, line) {
+			t.Fatalf("the review has no line %q:\n%s", line, review)
+		}
+	}
+	if strings.Contains(Review(requireValid(t, exampleWiki).Spec), "Bundled mapping") {
+		t.Fatal("the review of a user spec names a bundled mapping")
+	}
+}
+
 // authLine returns the authentication line of a review.
 func authLine(review string) string {
 	for _, l := range strings.Split(review, "\n") {

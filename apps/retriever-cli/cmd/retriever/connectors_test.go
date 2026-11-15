@@ -288,6 +288,16 @@ func TestTheSpecFileCapIsTheSpecModuleCap(t *testing.T) {
 	}
 }
 
+// TestWithBundledPassesALoadFailureThrough checks that a user-folder failure stops start-up before the merge,
+// carrying the failure unchanged.
+func TestWithBundledPassesALoadFailureThrough(t *testing.T) {
+	want := errors.New("no folder")
+	_, err := withBundled(connectorspec.Set{}, want)
+	if !errors.Is(err, want) {
+		t.Fatalf("withBundled = %v, want the load failure", err)
+	}
+}
+
 // mustSpec validates src and returns its model, failing the test when the spec is refused.
 func mustSpec(t *testing.T, src string) *spec.Spec {
 	t.Helper()

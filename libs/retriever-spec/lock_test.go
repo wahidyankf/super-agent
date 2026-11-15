@@ -32,6 +32,8 @@ var specFieldNames = []string{
 	"tree", "children", "parent_field", "depth_field", "root_parent_param", "max_depth",
 	// ADR 002, E8: the fallback read.
 	"fallback", "when", "empty", "fill",
+	// ADR 002, E9: bundled kinds and the ID mapping.
+	"catalog_id",
 }
 
 // collectPropertyNames gathers the keys of every "properties" object of a decoded schema, at any depth.

@@ -50,6 +50,7 @@ spec. Each operation id starts with the `kind` of its spec, followed by a dot.
 | Field        | Required | Meaning                                                                             |
 | ------------ | -------- | ----------------------------------------------------------------------------------- |
 | `id`         | yes      | `<kind>.<group>.<verb>`, unique in the spec.                                        |
+| `catalog_id` | no       | Only a bundled spec may name it: the catalog row the operation serves.              |
 | `summary`    | yes      | One line for help and MCP descriptions.                                             |
 | `access`     | yes      | `read`, `write`, or `admin`. A label, never a ceiling.                              |
 | `method`     | yes      | `GET` or `HEAD`, or `POST` with `read_over_post`. See POST reads.                   |
@@ -192,6 +193,26 @@ fields.
 
 There are no expressions. A pointer reads, and nothing computes.
 
+## Bundled kinds and the ID mapping
+
+After the ports, `outline`, `kiwi`, and `jira` are bundled specs. The loader refuses a built-in kind in the user
+folder, and a spec id such as `outline.documents.get` differs from the catalog id `documents.get`, which the CLI and
+MCP names come from. The spec module has two entry points: `Parse` serves every file of the user folder, and it
+refuses a built-in kind and the `catalog_id` field. `ParseBundled` accepts both, and only the loader of the embedded
+specs calls it. The embedded bytes come from `go:embed`, so no file, flag, or catalog field reaches the exception.
+
+A bundled operation may carry `catalog_id: documents.get`. The catalog row stays the source of the CLI name, the MCP
+tool name, the flags, the descriptions, the input schema, and the hints. The spec supplies only the request and the
+reply rules. A table in the app was rejected, because it would be a second place to drift.
+
+Each `catalog_id` names one existing row of the same built-in kind, once. An operation that no row names, such as a
+fallback target, has no `catalog_id` and sets `cli: false` and `mcp: false`. A spec may not claim a row that another
+spec of the kind already claims: one file holds each bundled kind, and a repeated claim inside one file never leaves
+the validation. The parameters of a claimed operation match the row in names, types, and required flags.
+
+The review text lists each bundled operation in its own block, with the catalog row it claims, or with no catalog row
+and its surfaces off.
+
 ## Examples
 
 Each example holds `request` (parameter values), `response` (status, optional constant headers, and body), and `expect`
@@ -214,8 +235,9 @@ The language cannot yet express the Outline reads, so they still run on the Go g
   list, a list merged from several lists, a tree with a computed depth, and a fallback read are described in
   [Response](#response).
 
-A spec named `outline` is also refused, because the kind is a built-in source. A bundled Outline spec would need an
-exception for bundled files only.
+A spec named `outline` is also refused in the user folder, because the kind is a built-in source. A bundled Outline
+spec takes the exception for embedded files only, as described in
+[Bundled kinds and the ID mapping](#bundled-kinds-and-the-id-mapping).
 
 ## Error reasons
 
@@ -231,10 +253,10 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 ## Planned extensions
 
 [ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
-that the Outline, Kiwi, and Jira connectors can run as specs. The first eight of them, POST reads (E1), body paging
+that the Outline, Kiwi, and Jira connectors can run as specs. All nine of them, POST reads (E1), body paging
 (E2), required and validated fields (E3), nested records with an allow-list (E4), the first item or not found
-(E5), merged lists with constant labels (E6), computed tree fields (E7), and the fallback read (E8), are built and
-described above. The other one (E9) is not built. The
+(E5), merged lists with constant labels (E6), computed tree fields (E7), the fallback read (E8), and the bundled
+kinds with the ID mapping (E9), are built and described above. The
 limits of the Outline reads, above, describe
 the language before ADR 002 for the
 shapes that the remaining extensions cover. This page documents only what the module accepts today, and each extension

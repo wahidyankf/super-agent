@@ -32,19 +32,20 @@ func (folderError) ErrorCode() string {
 	return connectorsFolderCode
 }
 
-// loadConnectors reads and validates the spec files of the connectors folder dir, and returns the set the run registers.
-// An empty dir loads nothing. A default folder that does not exist loads nothing too. A folder that --connectors-dir named
-// (named is true) must exist, so a missing one is a folderError, and so is a folder that cannot be read. A spec file that
-// is a link, a folder, too large, or unreadable is reported as a spec failure of that file.
+// loadConnectors reads and validates the spec files of the connectors folder dir, and returns the set the run
+// registers: the user-folder set merged with the embedded bundled set. An empty dir loads nothing. A default folder
+// that does not exist loads nothing too. A folder that --connectors-dir named (named is true) must exist, so a
+// missing one is a folderError, and so is a folder that cannot be read. A spec file that is a link, a folder, too
+// large, or unreadable is reported as a spec failure of that file.
 func loadConnectors(h host, dir string, named bool) (connectorspec.Set, error) {
 	if dir == "" {
-		return connectorspec.Load(nil)
+		return withBundled(connectorspec.Load(nil))
 	}
 	files, err := specfolder.Read(h.openConnectors(dir), spec.MaxBytes)
 	var file specfolder.FileError
 	switch {
 	case errors.Is(err, specfolder.ErrNoFolder) && !named:
-		return connectorspec.Load(nil)
+		return withBundled(connectorspec.Load(nil))
 	case errors.Is(err, specfolder.ErrNoFolder):
 		return connectorspec.Set{}, folderError{rule: "does not exist"}
 	case errors.As(err, &file):
@@ -54,7 +55,20 @@ func loadConnectors(h host, dir string, named bool) (connectorspec.Set, error) {
 		// failure of listing the folder is a folder that cannot be read.
 		return connectorspec.Set{}, folderError{rule: "cannot be read"}
 	}
-	return connectorspec.Load(files)
+	return withBundled(connectorspec.Load(files))
+}
+
+// withBundled merges a loaded user-folder set with the embedded bundled set. A user spec that shadows a bundled kind
+// stops start-up here, before any source is built.
+func withBundled(set connectorspec.Set, err error) (connectorspec.Set, error) {
+	if err != nil {
+		return connectorspec.Set{}, err
+	}
+	bundled, err := connectorspec.LoadBundled()
+	if err != nil {
+		return connectorspec.Set{}, err
+	}
+	return connectorspec.Merge(set, bundled)
 }
 
 // specBuilders returns one gateway builder for each spec kind of the set. Each builder runs the generic engine over the

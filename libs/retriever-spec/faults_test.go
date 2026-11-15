@@ -343,6 +343,9 @@ var faults = []fault{
 	// Rules that only the Go validation states, because a JSON Schema cannot compare two fields of one document.
 	{name: "a built-in kind is refused", layer: layerSemantic, threats: []string{"S10"}, path: "/kind",
 		doc: fx("kind: example-wiki", "kind: outline")},
+	{name: "a catalog id in a user spec is refused", layer: layerSemantic, threats: []string{"L9"},
+		path: "/operations/0/catalog_id",
+		doc:  fx("    path: /docs\n", "    path: /docs\n    catalog_id: example-wiki.docs.list\n")},
 	{name: "an operation id outside the kind is refused", layer: layerSemantic, path: "/operations/0/id",
 		doc: fx("  - id: example-wiki.docs.list", "  - id: other.docs.list")},
 	{name: "a duplicate operation id is refused", layer: layerSemantic, path: "/operations/1/id",

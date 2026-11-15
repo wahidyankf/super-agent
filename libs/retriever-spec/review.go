@@ -38,6 +38,7 @@ func Review(s *Spec) string {
 	writeMergedLists(&b, s)
 	writeTreeReads(&b, s)
 	writeFallbackReads(&b, s)
+	writeBundledMapping(&b, s)
 	return b.String()
 }
 
@@ -332,6 +333,31 @@ func writeFallbackReads(b *strings.Builder, s *Spec) {
 	fmt.Fprintf(b, "Fallback reads: %d\n", len(entries))
 	for i, e := range entries {
 		fmt.Fprintf(b, "%d. %s: fallback to %s when %s, filling %s\n", i+1, e.id, e.target, e.when, e.fill)
+	}
+}
+
+// writeBundledMapping writes the block of the bundled ID mapping, one line each, with the catalog row that a
+// claimed operation serves, and with the surfaces of an operation that no row names. A spec with no claimed row
+// writes nothing, so the review of a user spec keeps its text.
+func writeBundledMapping(b *strings.Builder, s *Spec) {
+	claimed := false
+	for _, op := range s.Operations {
+		if op.CatalogID != "" {
+			claimed = true
+			break
+		}
+	}
+	if !claimed {
+		return
+	}
+	fmt.Fprintf(b, "Bundled mapping: %d\n", len(s.Operations))
+	for i, op := range s.Operations {
+		if op.CatalogID == "" {
+			fmt.Fprintf(b, "%d. %s: no catalog row, cli %s, mcp %s\n", i+1, op.ID, surfaceWord(op.CLI),
+				surfaceWord(op.MCP))
+			continue
+		}
+		fmt.Fprintf(b, "%d. %s: catalog %s\n", i+1, op.ID, op.CatalogID)
 	}
 }
 
