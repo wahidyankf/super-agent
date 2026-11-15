@@ -6,6 +6,7 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/specfolder"
 )
@@ -245,10 +246,10 @@ func TestUserFolderCannotShadowBundledSpec(t *testing.T) {
 	}
 }
 
-// TestBundledSpecCoversEveryCatalogRow proves L10 for the whole kind: the embed loader refuses a bundled set that
-// leaves a catalog row without an operation, and it refuses an operation whose catalog_id names no row. A set that
-// covers every row of a built-in kind waits for the ports: the IssueKey and CollectionID parameter kinds are not in
-// the spec language yet, so no built-in kind can be fully claimed today.
+// TestBundledSpecCoversEveryCatalogRow proves L10 for the reads: the embed loader refuses a bundled set that leaves a
+// catalog read row without an operation, and it refuses an operation whose catalog_id names no row. A change row may
+// stay unclaimed until its port: the composite builder routes it to the Go gateway. A set that covers every read row
+// of the Outline kind is the bundled outline.yml, which TestLoadBundledLoadsTheOutlineReads checks.
 func TestBundledSpecCoversEveryCatalogRow(t *testing.T) {
 	_, err := loadBundled([]specfolder.File{specFile("jira.yml", bundledJiraStub)})
 	if err == nil {
@@ -365,17 +366,42 @@ func TestLoadBundledFromRefusesAFolderItCannotRead(t *testing.T) {
 	}
 }
 
-// TestLoadBundledLoadsNoSpecsYet proves the starting state of the embed loader: E9 carries no spec, so the
-// embedded tree loads to an empty set. The ports extend this test with their specs.
-func TestLoadBundledLoadsNoSpecsYet(t *testing.T) {
+// TestLoadBundledLoadsTheOutlineReads proves the port of pull request 16: the embedded tree loads the bundled
+// outline.yml, which claims every catalog read row of the Outline kind and the fallback target documents.export. The
+// change rows stay unclaimed until pull request 17, so the set holds the built-in operation rows only.
+func TestLoadBundledLoadsTheOutlineReads(t *testing.T) {
 	set, err := LoadBundled()
 	if err != nil {
 		t.Fatalf("LoadBundled() error = %v, want nil", err)
 	}
-	if len(set.Specs) != 0 || len(set.Digests) != 0 {
-		t.Fatalf("specs = %d, digests = %d; want none", len(set.Specs), len(set.Digests))
+	if len(set.Specs) != 1 || set.Specs[0].File != "outline.yml" {
+		t.Fatalf("specs = %+v, want the one outline.yml", set.Specs)
+	}
+	if set.Specs[0].Model.Kind != "outline" {
+		t.Fatalf("kind = %q, want outline", set.Specs[0].Model.Kind)
+	}
+	if _, ok := set.Digests["outline"]; !ok {
+		t.Fatalf("digests = %v, want the outline digest", set.Digests)
 	}
 	if got := len(set.Operations.Rows()); got != len(operations.Rows()) {
 		t.Fatalf("catalog rows = %d, want the built-in rows only", got)
+	}
+	claimed := map[string]bool{}
+	for _, op := range set.Specs[0].Model.Operations {
+		if op.CatalogID != "" {
+			claimed[op.CatalogID] = true
+		}
+	}
+	var missing []string
+	for _, row := range operations.RowsOf(domain.KindOutline) {
+		if row.Effect != domain.EffectRead {
+			continue
+		}
+		if !claimed[string(row.ID)] {
+			missing = append(missing, string(row.ID))
+		}
+	}
+	if len(missing) != 0 {
+		t.Fatalf("unclaimed outline reads = %v", missing)
 	}
 }

@@ -86,7 +86,7 @@ func specBuilders(set connectorspec.Set, seam engineSeam, creds *envfile.Credent
 
 // buildSpec returns the engine of one spec source. The credentials supply the key and the account address, and the seam
 // supplies the clock, the network, and the options.
-func buildSpec(model *spec.Spec, src domain.Source, seam engineSeam, creds *envfile.Credentials) (ports.SourceGateway, error) {
+func buildSpec(model *spec.Spec, src domain.Source, seam engineSeam, creds *envfile.Credentials) (*engine.Engine, error) {
 	eng, err := engine.New(model, src, engine.Ports{
 		Credentials: creds,
 		Identities:  creds,

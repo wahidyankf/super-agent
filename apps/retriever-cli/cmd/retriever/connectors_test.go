@@ -89,15 +89,18 @@ func (brokenFS) Open(string) (fs.File, error) {
 }
 
 // TestAMissingDefaultFolderLoadsNoSpec checks the default: a connectors folder that the user did not name and that does
-// not exist is not an error, and it loads no spec.
+// not exist is not an error, and it loads the bundled specs only, which offer no command of their own.
 func TestAMissingDefaultFolderLoadsNoSpec(t *testing.T) {
 	h := hostOver(func() (string, error) { return "/work/project", nil }, fstest.MapFS{}, missingFS{})
 	set, err := loadConnectors(h, "/var/example/.config/retriever/connectors", false)
 	if err != nil {
 		t.Fatalf("loadConnectors: %v", err)
 	}
-	if len(set.Specs) != 0 || len(set.CLIRows) != 0 {
-		t.Fatalf("set = %d specs and %d CLI rows, want none", len(set.Specs), len(set.CLIRows))
+	if len(set.Specs) != 1 || set.Specs[0].File != "outline.yml" {
+		t.Fatalf("set = %+v, want the one bundled outline.yml", set.Specs)
+	}
+	if len(set.CLIRows) != 0 {
+		t.Fatalf("set = %d CLI rows, want none", len(set.CLIRows))
 	}
 }
 
@@ -147,8 +150,8 @@ func TestAFileThatIsNotARegularFileIsASpecFailureOfThatFile(t *testing.T) {
 	}
 }
 
-// TestAValidSpecLoadsItsKindAndItsCLIRow checks a folder with one valid spec: the run registers its kind, its digest, and
-// its command row.
+// TestAValidSpecLoadsItsKindAndItsCLIRow checks a folder with one valid spec: the run registers its kind, its digest,
+// and its command row, next to the bundled outline.yml.
 func TestAValidSpecLoadsItsKindAndItsCLIRow(t *testing.T) {
 	folder := fstest.MapFS{"example-wiki.yml": &fstest.MapFile{Data: []byte(minimalSpec)}}
 	h := hostOver(func() (string, error) { return "/work/project", nil }, fstest.MapFS{}, folder)
@@ -156,11 +159,14 @@ func TestAValidSpecLoadsItsKindAndItsCLIRow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loadConnectors: %v", err)
 	}
-	if len(set.Specs) != 1 || set.Specs[0].Kind.String() != "example-wiki" {
-		t.Fatalf("specs = %+v, want one example-wiki spec", set.Specs)
+	if len(set.Specs) != 2 || set.Specs[0].Kind.String() != "example-wiki" || set.Specs[1].File != "outline.yml" {
+		t.Fatalf("specs = %+v, want example-wiki and the bundled outline.yml", set.Specs)
 	}
 	if _, ok := set.Digests["example-wiki"]; !ok {
 		t.Fatalf("digests = %v, want the example-wiki digest", set.Digests)
+	}
+	if _, ok := set.Digests["outline"]; !ok {
+		t.Fatalf("digests = %v, want the outline digest", set.Digests)
 	}
 	if len(set.CLIRows) != 1 || set.CLIRows[0].CLI != "example-wiki docs list" {
 		t.Fatalf("CLI rows = %+v, want example-wiki docs list", set.CLIRows)

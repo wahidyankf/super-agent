@@ -118,13 +118,26 @@ func (c engineClock) Sleep(ctx context.Context, d time.Duration) error {
 	return c.clk.Sleep(ctx, d)
 }
 
-// specRuntimeFor returns the runtime of the spec sources, built once for the scenario from the first set that loads a spec.
-// A set with no spec needs no runtime, so it is not kept.
+// userSpecsOf returns the user-folder specs of a merged set. The bundled specs of the set never drive the replay
+// runtime: only a user spec does, as a user spec alone did before the ports. A user spec never claims a built-in
+// kind, because the user-folder loader refuses one, so every spec of a built-in kind is bundled.
+func userSpecsOf(set connectorspec.Set) []connectorspec.Spec {
+	var out []connectorspec.Spec
+	for _, s := range set.Specs {
+		if _, err := domain.BuiltinKinds().Kind(s.Model.Kind); err != nil {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// specRuntimeFor returns the runtime of the spec sources, built once for the scenario from the first set that loads a
+// user spec. A set with no user spec needs no runtime, so it is not kept.
 func (w *world) specRuntimeFor(set connectorspec.Set) (specRuntime, error) {
 	if w.spec != nil {
 		return *w.spec, nil
 	}
-	if len(set.Specs) == 0 {
+	if len(userSpecsOf(set)) == 0 {
 		return specRuntime{network: refusingNetwork()}, nil
 	}
 	rt, err := w.buildSpecRuntime(set)
@@ -136,12 +149,13 @@ func (w *world) specRuntimeFor(set connectorspec.Set) (specRuntime, error) {
 }
 
 // buildSpecRuntime builds the runtime of the level: replay stubs in memory at the unit level, and the loopback stub of the
-// one loaded spec at the integration level.
+// one loaded spec at the integration level. Only the user specs of the set drive it, never the bundled ones.
 func (w *world) buildSpecRuntime(set connectorspec.Set) (specRuntime, error) {
+	user := userSpecsOf(set)
 	switch w.level {
 	case levelUnit:
-		pool := make(replayPool, 0, len(set.Specs))
-		for _, s := range set.Specs {
+		pool := make(replayPool, 0, len(user))
+		for _, s := range user {
 			stub, err := replay.New(s.Model)
 			if err != nil {
 				return specRuntime{}, err
@@ -150,13 +164,13 @@ func (w *world) buildSpecRuntime(set connectorspec.Set) (specRuntime, error) {
 		}
 		return specRuntime{network: refusingNetwork(), transport: pool, hits: pool.requests, sent: pool.sent}, nil
 	case levelIntegration:
-		if len(set.Specs) > 1 {
+		if len(user) > 1 {
 			return specRuntime{}, errors.New("the integration level serves one spec per scenario")
 		}
 		if loopbackSpecRuntime == nil {
 			return specRuntime{}, errors.New("the integration build holds no loopback spec runtime")
 		}
-		return loopbackSpecRuntime(w.outer, set.Specs[0].Model)
+		return loopbackSpecRuntime(w.outer, user[0].Model)
 	}
 	return specRuntime{}, errors.New("the end-to-end level runs the built binary and has no in-process spec runtime")
 }

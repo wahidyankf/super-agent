@@ -1,0 +1,4291 @@
+version: 1
+kind: outline
+summary: Reads of an Outline wiki.
+endpoint: {}
+auth:
+  type: bearer
+  credential_env: OUTLINE_API_KEY
+operations:
+  - id: outline.collections.list
+    summary: list the collections of the Outline wiki
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/collections.list
+    catalog_id: collections.list
+    headers:
+      X-API-Version: "2"
+    body: {}
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: id
+        name: { pointer: /name }
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            data:
+              - id: c1
+                name: General
+        expect:
+          id: c1
+          name: General
+  - id: outline.collections.info
+    summary: show the ID and name of one Outline collection
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/collections.info
+    catalog_id: collections.info
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: "the collection ID, from list_collections"
+    body:
+      id: "{{collectionId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: id
+        name: { pointer: /data/name }
+    examples:
+      - request: { collectionId: c1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: c1
+              name: General
+        expect:
+          id: c1
+          name: General
+  - id: outline.collections.documents
+    summary: show the document tree of one Outline collection
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/collections.documents
+    catalog_id: collections.documents
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: "the collection ID, from list_collections"
+    body:
+      id: "{{collectionId}}"
+    response:
+      items: /data
+      tree:
+        children: /children
+        parent_field: parentId
+        depth_field: depth
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: id
+        title: { pointer: /title }
+        url: { pointer: /url }
+    examples:
+      - request: { collectionId: c1 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: d1
+                title: Setup
+                url: /doc/d1
+                children:
+                  - id: d2
+                    title: Child
+                    url: /doc/d2
+        expect:
+          id: d1
+          title: Setup
+          parentId: null
+          depth: 0
+  - id: outline.documents.get
+    summary: print the Markdown of one Outline document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.info
+    catalog_id: documents.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: "the document ID, from collection_tree"
+    body:
+      id: "{{documentId}}"
+    response:
+      markdown: markdown
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: id
+        title: { pointer: /data/title }
+        url: { pointer: /data/url }
+        collectionId: { pointer: /data/collectionId }
+        revision: { pointer: /data/revision }
+        markdown: { pointer: /data/text }
+    fallback:
+      operation: outline.documents.export
+      when:
+        empty: markdown
+      fill: [markdown]
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+              title: Setup
+              url: /doc/d1
+              collectionId: c1
+              revision: 1
+              text: Hello
+        expect:
+          id: d1
+          title: Setup
+          markdown: Hello
+  - id: outline.documents.list
+    summary: list one page of Outline documents
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.list
+    catalog_id: documents.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: "only documents of this collection, by its UUID"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first document to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "documents per page, from 1 to 100; 25 when omitted"
+    body:
+      collectionId: "{{collectionId}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: id
+        title: { pointer: /title }
+        url: { pointer: /url }
+        collectionId: { pointer: /collectionId }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: d1
+                title: Setup
+                url: /doc/d1
+                collectionId: c1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: d1
+          title: Setup
+  - id: outline.documents.search
+    summary: "search Outline documents by title and text, one page at a time"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.search
+    catalog_id: documents.search
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: query
+        type: Query
+        in: body
+        required: true
+        help: the text to find in the document titles and texts
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first match to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "matches per page, from 1 to 100; 25 when omitted"
+    body:
+      query: "{{query}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      errors:
+        "404": operation_unavailable
+      fields:
+        id:
+          pointer: /document/id
+          required: true
+          format: id
+        title: { pointer: /document/title }
+        url: { pointer: /document/url }
+        collectionId: { pointer: /document/collectionId }
+    examples:
+      - request: { query: Setup, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - document:
+                  id: d1
+                  title: Setup
+                  url: /doc/d1
+                  collectionId: c1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: d1
+          title: Setup
+  - id: outline.auth.whoami
+    summary: show the user and team that the Outline API key belongs to
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/auth.info
+    catalog_id: auth.whoami
+    headers:
+      X-API-Version: "2"
+    body: {}
+    response:
+      errors:
+        "404": operation_unavailable
+      fields:
+        user:
+          object:
+            id: { pointer: /data/user/id }
+            name: { pointer: /data/user/name }
+        team:
+          object:
+            name: { pointer: /data/team/name }
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            data:
+              user:
+                id: u1
+                name: Ada
+              team:
+                id: t1
+                name: Team
+        expect:
+          user:
+            id: u1
+            name: Ada
+  - id: outline.documents.archived
+    summary: list one page of archived Outline documents
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.archived
+    catalog_id: documents.archived
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: "only documents of this collection, by its UUID"
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, publishedAt, index, title, popularityScore]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      collectionId: "{{collectionId}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: id
+        title: { pointer: /title }
+        url: { pointer: /url }
+        collectionId: { pointer: /collectionId }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: d1
+                title: Old
+                url: /doc/d1
+                collectionId: c1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: d1
+          title: Old
+  - id: outline.documents.children
+    summary: "show the documents below one Outline document, as a tree"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.documents
+    catalog_id: documents.children
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: "the document ID, from list_documents"
+    body:
+      id: "{{documentId}}"
+    response:
+      items: /data/children
+      tree:
+        children: /children
+        parent_field: parentId
+        depth_field: depth
+        root_parent_param: documentId
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: id
+        title: { pointer: /title }
+        url: { pointer: /url }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+              children:
+                - id: d2
+                  title: Child
+                  url: /doc/d2
+        expect:
+          id: d2
+          title: Child
+          parentId: d1
+          depth: 0
+  - id: outline.documents.deleted
+    summary: list one page of deleted Outline documents
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.deleted
+    catalog_id: documents.deleted
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, publishedAt, index, title, popularityScore]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: id
+        title: { pointer: /title }
+        url: { pointer: /url }
+        collectionId: { pointer: /collectionId }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: d1
+                title: Gone
+                url: /doc/d1
+                collectionId: c1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: d1
+          title: Gone
+  - id: outline.documents.drafts
+    summary: list one page of Outline draft documents
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.drafts
+    catalog_id: documents.drafts
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: "only documents of this collection, by its UUID"
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, publishedAt, index, title, popularityScore]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      collectionId: "{{collectionId}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: id
+        title: { pointer: /title }
+        url: { pointer: /url }
+        collectionId: { pointer: /collectionId }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: d1
+                title: Draft
+                url: /doc/d1
+                collectionId: c1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: d1
+          title: Draft
+  - id: outline.documents.group-memberships
+    summary: list one page of the groups that have access to one Outline document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.group_memberships
+    catalog_id: documents.group-memberships
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: "the document ID, from list_documents"
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the group name to search for
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: only items with this permission
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      id: "{{documentId}}"
+      query: "{{query}}"
+      permission: "{{permission}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/groupMemberships
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        groupId: { pointer: /groupId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        sourceId: { pointer: /sourceId }
+    examples:
+      - request: { documentId: d1, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              groupMemberships:
+                - id: ex-0001
+                  groupId: g1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.documents.insights
+    summary: show the daily view and edit counts of one Outline document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.insights
+    catalog_id: documents.insights
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: "the document ID, from list_documents"
+      - name: startDate
+        type: Time
+        in: body
+        required: false
+        help: "the first day of the window, RFC 3339 with a zone"
+      - name: endDate
+        type: Time
+        in: body
+        required: false
+        help: "the last day of the window, RFC 3339 with a zone"
+    body:
+      id: "{{documentId}}"
+      startDate: "{{startDate}}"
+      endDate: "{{endDate}}"
+    response:
+      items: /data
+      fields:
+        date: { pointer: /date }
+        period: { pointer: /period }
+        viewCount: { pointer: /viewCount }
+        viewerCount: { pointer: /viewerCount }
+        commentCount: { pointer: /commentCount }
+        reactionCount: { pointer: /reactionCount }
+        revisionCount: { pointer: /revisionCount }
+        editorCount: { pointer: /editorCount }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              - date: "2026-01-01"
+                period: day
+                viewCount: 3
+                viewerCount: 2
+                commentCount: 0
+                reactionCount: 0
+                revisionCount: 1
+                editorCount: 1
+        expect:
+          date: "2026-01-01"
+          viewCount: 3
+  - id: outline.documents.memberships
+    summary: list one page of the users who have direct access to one Outline document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.memberships
+    catalog_id: documents.memberships
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: "the document ID, from list_documents"
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the user name to search for
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: only items with this permission
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      id: "{{documentId}}"
+      query: "{{query}}"
+      permission: "{{permission}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/memberships
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        userId: { pointer: /userId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        createdById: { pointer: /createdById }
+        sourceId: { pointer: /sourceId }
+        index: { pointer: /index }
+    examples:
+      - request: { documentId: d1, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              memberships:
+                - id: ex-0001
+                  userId: u1
+                  permission: read
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.documents.search-titles
+    summary: "search Outline document titles, one page at a time"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.search_titles
+    catalog_id: documents.search-titles
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: query
+        type: Query
+        in: body
+        required: true
+        help: the text to find in the document titles; it must not be blank
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: "only documents of this collection, by its UUID"
+      - name: documentId
+        type: UUID
+        in: body
+        required: false
+        help: "only documents below this document, by its UUID"
+      - name: userId
+        type: UUID
+        in: body
+        required: false
+        help: "only documents of this user, by the user's UUID"
+      - name: statusFilter
+        type: EnumList
+        in: body
+        required: false
+        values: [published, archived, draft]
+        help: "only published, archived, or draft documents; comma-separated"
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, title]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      query: "{{query}}"
+      collectionId: "{{collectionId}}"
+      documentId: "{{documentId}}"
+      userId: "{{userId}}"
+      statusFilter: "{{statusFilter}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      errors:
+        "404": operation_unavailable
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: id
+        title: { pointer: /title }
+        url: { pointer: /url }
+        collectionId: { pointer: /collectionId }
+    examples:
+      - request: { query: Setup, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: d1
+                title: Setup
+                url: /doc/d1
+                collectionId: c1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: d1
+          title: Setup
+  - id: outline.documents.users
+    summary: list one page of the users who can see one Outline document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.users
+    catalog_id: documents.users
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: "the document ID, from list_documents"
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the user name to search for
+      - name: userId
+        type: UUID
+        in: body
+        required: false
+        help: "only this user, by the user's UUID"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      id: "{{documentId}}"
+      query: "{{query}}"
+      userId: "{{userId}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        role: { pointer: /role }
+        isSuspended: { pointer: /isSuspended }
+        lastActiveAt: { pointer: /lastActiveAt }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+        deletedAt: { pointer: /deletedAt }
+    examples:
+      - request: { documentId: d1, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                name: Ada
+                role: member
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+          name: Ada
+  - id: outline.documents.viewed
+    summary: "list one page of the Outline documents the API key's user has viewed"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.viewed
+    catalog_id: documents.viewed
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [updatedAt, createdAt]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: id
+        title: { pointer: /title }
+        url: { pointer: /url }
+        collectionId: { pointer: /collectionId }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: d1
+                title: Setup
+                url: /doc/d1
+                collectionId: c1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: d1
+          title: Setup
+  - id: outline.collections.memberships
+    summary: list one page of the users who have direct access to one Outline collection
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/collections.memberships
+    catalog_id: collections.memberships
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: "the collection ID, from list_collections"
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the user name to search for
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: only items with this permission
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      id: "{{collectionId}}"
+      query: "{{query}}"
+      permission: "{{permission}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/memberships
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        userId: { pointer: /userId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        createdById: { pointer: /createdById }
+        sourceId: { pointer: /sourceId }
+        index: { pointer: /index }
+    examples:
+      - request: { collectionId: c1, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              memberships:
+                - id: ex-0001
+                  userId: u1
+                  permission: read
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.collections.group-memberships
+    summary: list one page of the groups that have access to one Outline collection
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/collections.group_memberships
+    catalog_id: collections.group-memberships
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: "the collection ID, from list_collections"
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the group name to search for
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: only items with this permission
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      id: "{{collectionId}}"
+      query: "{{query}}"
+      permission: "{{permission}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/groupMemberships
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        groupId: { pointer: /groupId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        sourceId: { pointer: /sourceId }
+    examples:
+      - request: { collectionId: c1, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              groupMemberships:
+                - id: ex-0001
+                  groupId: g1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.comments.get
+    summary: show one Outline comment as plain text
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/comments.info
+    catalog_id: comments.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: commentId
+        type: UUID
+        in: body
+        required: true
+        help: "the comment ID, from list_comments"
+      - name: includeAnchorText
+        type: Bool
+        in: body
+        required: false
+        help: true to include the text the comment is anchored to
+    body:
+      id: "{{commentId}}"
+      includeAnchorText: "{{includeAnchorText}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        documentId: { pointer: /data/documentId }
+        parentCommentId: { pointer: /data/parentCommentId }
+        createdById: { pointer: /data/createdById }
+        resolvedById: { pointer: /data/resolvedById }
+        resolvedAt: { pointer: /data/resolvedAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        text: { pointer: /data/text }
+        anchorText: { pointer: /data/anchorText }
+    examples:
+      - request: { commentId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              documentId: d1
+              createdById: u1
+              createdAt: "2026-01-01T00:00:00.000Z"
+              updatedAt: "2026-01-01T00:00:00.000Z"
+              text: Nice
+        expect:
+          id: ex-0001
+          text: Nice
+  - id: outline.comments.list
+    summary: list one page of Outline comments as plain text
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/comments.list
+    catalog_id: comments.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: ID
+        in: body
+        required: false
+        help: "only comments of this document, by its ID"
+      - name: collectionId
+        type: ID
+        in: body
+        required: false
+        help: "only comments of this collection, by its ID"
+      - name: parentCommentId
+        type: UUID
+        in: body
+        required: false
+        help: "only replies to this comment, by its UUID"
+      - name: statusFilter
+        type: EnumList
+        in: body
+        required: false
+        values: [resolved, unresolved]
+        help: "only resolved, or only unresolved, comments; comma-separated"
+      - name: includeAnchorText
+        type: Bool
+        in: body
+        required: false
+        help: true to include the text the comments are anchored to
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      documentId: "{{documentId}}"
+      collectionId: "{{collectionId}}"
+      parentCommentId: "{{parentCommentId}}"
+      statusFilter: "{{statusFilter}}"
+      includeAnchorText: "{{includeAnchorText}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        documentId: { pointer: /documentId }
+        parentCommentId: { pointer: /parentCommentId }
+        createdById: { pointer: /createdById }
+        resolvedById: { pointer: /resolvedById }
+        resolvedAt: { pointer: /resolvedAt }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+        text: { pointer: /text }
+        anchorText: { pointer: /anchorText }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                documentId: d1
+                createdById: u1
+                createdAt: "2026-01-01T00:00:00.000Z"
+                updatedAt: "2026-01-01T00:00:00.000Z"
+                text: Nice
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.revisions.export
+    summary: print the Markdown of one revision of an Outline document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/revisions.export
+    catalog_id: revisions.export
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: revisionId
+        type: UUID
+        in: body
+        required: true
+        help: "the revision ID, from list_revisions"
+    body:
+      id: "{{revisionId}}"
+    response:
+      fields:
+        markdown: { pointer: /data }
+    mcp: false
+    examples:
+      - request: { revisionId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data: Hello
+        expect:
+          markdown: Hello
+  - id: outline.revisions.get
+    summary: print the Markdown of one revision of an Outline document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/revisions.info
+    catalog_id: revisions.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: revisionId
+        type: UUID
+        in: body
+        required: true
+        help: "the revision ID, from list_revisions"
+    body:
+      id: "{{revisionId}}"
+    response:
+      markdown: text
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        documentId: { pointer: /data/documentId }
+        title: { pointer: /data/title }
+        name: { pointer: /data/name }
+        text: { pointer: /data/text }
+        icon: { pointer: /data/icon }
+        color: { pointer: /data/color }
+        createdAt: { pointer: /data/createdAt }
+        createdById: { pointer: /data/createdById }
+        deletedAt: { pointer: /data/deletedAt }
+    examples:
+      - request: { revisionId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              documentId: d1
+              title: Setup
+              text: Hello
+              createdAt: "2026-01-01T00:00:00.000Z"
+        expect:
+          id: ex-0001
+          text: Hello
+  - id: outline.revisions.list
+    summary: list one page of the revisions of one Outline document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/revisions.list
+    catalog_id: revisions.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: UUID
+        in: body
+        required: true
+        help: "the document UUID, from list_documents"
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      documentId: "{{documentId}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      errors:
+        "404": operation_unavailable
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        documentId: { pointer: /documentId }
+        title: { pointer: /title }
+        name: { pointer: /name }
+        icon: { pointer: /icon }
+        color: { pointer: /color }
+        createdAt: { pointer: /createdAt }
+        createdById: { pointer: /createdById }
+        deletedAt: { pointer: /deletedAt }
+    examples:
+      - request: { documentId: d1, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                documentId: d1
+                title: Setup
+                createdAt: "2026-01-01T00:00:00.000Z"
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.shares.get
+    summary: "show one Outline share, without its link"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/shares.info
+    catalog_id: shares.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: shareId
+        type: ShareID
+        in: body
+        required: true
+        help: "the share ID, from list_shares"
+    body:
+      id: "{{shareId}}"
+    response:
+      first: /data/shares
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        documentTitle: { pointer: /documentTitle }
+        sourceTitle: { pointer: /sourceTitle }
+        published: { pointer: /published }
+        includeChildDocuments: { pointer: /includeChildDocuments }
+        allowIndexing: { pointer: /allowIndexing }
+        allowSubscriptions: { pointer: /allowSubscriptions }
+        showLastUpdated: { pointer: /showLastUpdated }
+        showTOC: { pointer: /showTOC }
+        title: { pointer: /title }
+        domain: { pointer: /domain }
+        views: { pointer: /views }
+        lastAccessedAt: { pointer: /lastAccessedAt }
+        createdById: { pointer: /createdBy/id }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { shareId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              shares:
+                - id: ex-0001
+                  documentId: d1
+                  published: true
+        expect:
+          id: ex-0001
+  - id: outline.shares.list
+    summary: "list one page of Outline shares, without their links"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/shares.list
+    catalog_id: shares.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the text to find in the share titles and documents
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, lastAccessedAt, views]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      query: "{{query}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        documentTitle: { pointer: /documentTitle }
+        sourceTitle: { pointer: /sourceTitle }
+        published: { pointer: /published }
+        includeChildDocuments: { pointer: /includeChildDocuments }
+        allowIndexing: { pointer: /allowIndexing }
+        allowSubscriptions: { pointer: /allowSubscriptions }
+        showLastUpdated: { pointer: /showLastUpdated }
+        showTOC: { pointer: /showTOC }
+        title: { pointer: /title }
+        domain: { pointer: /domain }
+        views: { pointer: /views }
+        lastAccessedAt: { pointer: /lastAccessedAt }
+        createdById: { pointer: /createdBy/id }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                documentId: d1
+                published: true
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.users.get
+    summary: "show one Outline user, without the e-mail address"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/users.info
+    catalog_id: users.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: userId
+        type: UUID
+        in: body
+        required: false
+        help: the user ID; omitted means the user of the API key
+    body:
+      id: "{{userId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        role: { pointer: /data/role }
+        isSuspended: { pointer: /data/isSuspended }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        deletedAt: { pointer: /data/deletedAt }
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: Ada
+              role: member
+              createdAt: "2026-01-01T00:00:00.000Z"
+              updatedAt: "2026-01-01T00:00:00.000Z"
+        expect:
+          id: ex-0001
+          name: Ada
+  - id: outline.users.list
+    summary: "list one page of Outline users, without e-mail addresses"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/users.list
+    catalog_id: users.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the user name to search for
+      - name: role
+        type: Enum
+        in: body
+        required: false
+        values: [admin, member, viewer, guest]
+        help: only users with this role
+      - name: filter
+        type: Enum
+        in: body
+        required: false
+        values: [invited, viewers, admins, members, active, all, suspended]
+        help: only users with this status
+      - name: ids
+        type: UUIDList
+        in: body
+        required: false
+        help: "only these users, by their UUIDs; comma-separated"
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, name, lastActiveAt]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      query: "{{query}}"
+      role: "{{role}}"
+      filter: "{{filter}}"
+      ids: "{{ids}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        role: { pointer: /role }
+        isSuspended: { pointer: /isSuspended }
+        lastActiveAt: { pointer: /lastActiveAt }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+        deletedAt: { pointer: /deletedAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                name: Ada
+                role: member
+                createdAt: "2026-01-01T00:00:00.000Z"
+                updatedAt: "2026-01-01T00:00:00.000Z"
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.groups.get
+    summary: show one Outline group
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/groups.info
+    catalog_id: groups.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: "the group ID, from list_groups"
+    body:
+      id: "{{groupId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        description: { pointer: /data/description }
+        color: { pointer: /data/color }
+        icon: { pointer: /data/icon }
+        memberCount: { pointer: /data/memberCount }
+        disableMentions: { pointer: /data/disableMentions }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { groupId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: Editors
+              memberCount: 2
+        expect:
+          id: ex-0001
+          name: Editors
+  - id: outline.groups.list
+    summary: list one page of Outline groups
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/groups.list
+    catalog_id: groups.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: userId
+        type: UUID
+        in: body
+        required: false
+        help: "only groups of this user, by the user's UUID"
+      - name: groupSource
+        type: Name
+        in: body
+        required: false
+        help: "only groups of this source: manual, or the name of an identity provider"
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the group name to search for
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, name]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      userId: "{{userId}}"
+      source: "{{groupSource}}"
+      query: "{{query}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/groups
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        description: { pointer: /description }
+        color: { pointer: /color }
+        icon: { pointer: /icon }
+        memberCount: { pointer: /memberCount }
+        disableMentions: { pointer: /disableMentions }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              groups:
+                - id: ex-0001
+                  name: Editors
+                  memberCount: 2
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.groups.members
+    summary: list one page of the members of one Outline group
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/groups.memberships
+    catalog_id: groups.members
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: "the group ID, from list_groups"
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the group member name to search for
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [member, admin]
+        help: only members with this permission
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      id: "{{groupId}}"
+      query: "{{query}}"
+      permission: "{{permission}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/groupMemberships
+      fields:
+        groupId: { pointer: /groupId }
+        userId: { pointer: /userId }
+        permission: { pointer: /permission }
+        createdAt: { pointer: /createdAt }
+    examples:
+      - request: { groupId: ex-0001, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              groupMemberships:
+                - groupId: ex-0001
+                  userId: ex-0002
+                  permission: member
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          userId: ex-0002
+  - id: outline.templates.get
+    summary: "show one Outline template, without its body"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/templates.info
+    catalog_id: templates.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: templateId
+        type: ID
+        in: body
+        required: true
+        help: "the template ID, from list_templates"
+    body:
+      id: "{{templateId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+        urlId: { pointer: /data/urlId }
+        url: { pointer: /data/url }
+        title: { pointer: /data/title }
+        icon: { pointer: /data/icon }
+        color: { pointer: /data/color }
+        fullWidth: { pointer: /data/fullWidth }
+        collectionId: { pointer: /data/collectionId }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        publishedAt: { pointer: /data/publishedAt }
+        deletedAt: { pointer: /data/deletedAt }
+        createdById: { pointer: /data/createdBy/id }
+        updatedById: { pointer: /data/updatedBy/id }
+    examples:
+      - request: { templateId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              title: Weekly
+        expect:
+          id: ex-0001
+          title: Weekly
+  - id: outline.templates.list
+    summary: "list one page of Outline templates, without their bodies"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/templates.list
+    catalog_id: templates.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: "only documents of this collection, by its UUID"
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the template title to search for
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, publishedAt, title, collectionId]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      collectionId: "{{collectionId}}"
+      query: "{{query}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+        urlId: { pointer: /urlId }
+        url: { pointer: /url }
+        title: { pointer: /title }
+        icon: { pointer: /icon }
+        color: { pointer: /color }
+        fullWidth: { pointer: /fullWidth }
+        collectionId: { pointer: /collectionId }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+        publishedAt: { pointer: /publishedAt }
+        deletedAt: { pointer: /deletedAt }
+        createdById: { pointer: /createdBy/id }
+        updatedById: { pointer: /updatedBy/id }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                title: Weekly
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.pins.get
+    summary: show the pin of one Outline document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/pins.info
+    catalog_id: pins.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: "the pinned document ID, from list_documents"
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: "the collection of the pin, by its UUID; Home when omitted"
+    body:
+      documentId: "{{documentId}}"
+      collectionId: "{{collectionId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        index: { pointer: /data/index }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              documentId: d1
+              index: a0
+        expect:
+          id: ex-0001
+  - id: outline.pins.list
+    summary: list one page of the Outline pins of a collection or of Home
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/pins.list
+    catalog_id: pins.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: "the collection of the pins, by its UUID; Home when omitted"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      collectionId: "{{collectionId}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/pins
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        index: { pointer: /index }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              pins:
+                - id: ex-0001
+                  documentId: d1
+                  index: a0
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.stars.list
+    summary: "list one page of the Outline stars of the API key's user"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/stars.list
+    catalog_id: stars.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/stars
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        index: { pointer: /index }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              stars:
+                - id: ex-0001
+                  documentId: d1
+                  index: a0
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.subscriptions.get
+    summary: "show the subscription of the API key's user to one Outline document or collection"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/subscriptions.info
+    catalog_id: subscriptions.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: event
+        type: Enum
+        in: body
+        required: false
+        default: documents.update
+        values: [documents.update]
+        help: the event to follow; documents.update is the only one
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: false
+        help: "the document to follow, by its ID"
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: "the collection to follow, by its UUID"
+    body:
+      event: "{{event}}"
+      documentId: "{{documentId}}"
+      collectionId: "{{collectionId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        userId: { pointer: /data/userId }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        event: { pointer: /data/event }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              userId: u1
+              documentId: d1
+              event: documents.update
+        expect:
+          id: ex-0001
+  - id: outline.subscriptions.list
+    summary: list one page of the Outline subscriptions to one document or collection
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/subscriptions.list
+    catalog_id: subscriptions.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: event
+        type: Enum
+        in: body
+        required: false
+        default: documents.update
+        values: [documents.update]
+        help: the event to follow; documents.update is the only one
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: false
+        help: "the document to follow, by its ID"
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: "the collection to follow, by its UUID"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      event: "{{event}}"
+      documentId: "{{documentId}}"
+      collectionId: "{{collectionId}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        userId: { pointer: /userId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        event: { pointer: /event }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { documentId: d1, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                userId: u1
+                documentId: d1
+                event: documents.update
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.access-requests.get
+    summary: show one Outline access request to a document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/accessRequests.info
+    catalog_id: access-requests.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: accessRequestId
+        type: UUID
+        in: body
+        required: true
+        help: the access request UUID
+    body:
+      id: "{{accessRequestId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        documentId: { pointer: /data/documentId }
+        userId: { pointer: /data/userId }
+        status: { pointer: /data/status }
+        responderId: { pointer: /data/responderId }
+        respondedAt: { pointer: /data/respondedAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { accessRequestId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              documentId: d1
+              status: pending
+        expect:
+          id: ex-0001
+  - id: outline.attachments.list
+    summary: list one page of Outline attachments
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/attachments.list
+    catalog_id: attachments.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: UUID
+        in: body
+        required: false
+        help: "only attachments of this document, by its UUID"
+      - name: userId
+        type: UUID
+        in: body
+        required: false
+        help: "only attachments of this user, by the user's UUID"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      documentId: "{{documentId}}"
+      userId: "{{userId}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        contentType: { pointer: /contentType }
+        size: { pointer: /size }
+        documentId: { pointer: /documentId }
+        userId: { pointer: /userId }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                name: pic.png
+                size: 10
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.emojis.get
+    summary: show one Outline custom emoji
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/emojis.info
+    catalog_id: emojis.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: emojiId
+        type: UUID
+        in: body
+        required: true
+        help: "the emoji UUID, from list_emojis"
+    body:
+      id: "{{emojiId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        createdById: { pointer: /data/createdById }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { emojiId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: party
+        expect:
+          id: ex-0001
+          name: party
+  - id: outline.emojis.list
+    summary: list one page of Outline custom emojis
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/emojis.list
+    catalog_id: emojis.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the emoji name to search for
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      query: "{{query}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        createdById: { pointer: /createdById }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                name: party
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.events.list
+    summary: list one page of Outline activity or audit events
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/events.list
+    catalog_id: events.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: actorId
+        type: UUID
+        in: body
+        required: false
+        help: "only events of this actor, by the actor's UUID"
+      - name: documentId
+        type: UUID
+        in: body
+        required: false
+        help: "only events of this document, by its UUID"
+      - name: collectionId
+        type: UUID
+        in: body
+        required: false
+        help: "only events of this collection, by its UUID"
+      - name: auditLog
+        type: Bool
+        in: body
+        required: false
+        help: true to read the audit log; it needs the audit policy
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [name, createdAt]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      actorId: "{{actorId}}"
+      documentId: "{{documentId}}"
+      collectionId: "{{collectionId}}"
+      auditLog: "{{auditLog}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        modelId: { pointer: /modelId }
+        userId: { pointer: /userId }
+        actorId: { pointer: /actorId }
+        collectionId: { pointer: /collectionId }
+        documentId: { pointer: /documentId }
+        authType: { pointer: /authType }
+        createdAt: { pointer: /createdAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                name: documents.create
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.file-operations.get
+    summary: show one Outline import or export file operation
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/fileOperations.info
+    catalog_id: file-operations.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: fileOperationId
+        type: UUID
+        in: body
+        required: true
+        help: "the file operation UUID, from list_file_operations"
+    body:
+      id: "{{fileOperationId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        type: { pointer: /data/type }
+        format: { pointer: /data/format }
+        name: { pointer: /data/name }
+        state: { pointer: /data/state }
+        error: { pointer: /data/error }
+        size: { pointer: /data/size }
+        collectionId: { pointer: /data/collectionId }
+        documentId: { pointer: /data/documentId }
+        userId: { pointer: /data/user/id }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { fileOperationId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              type: export
+              state: complete
+        expect:
+          id: ex-0001
+  - id: outline.file-operations.list
+    summary: list one page of Outline file operations of one type
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/file-operations.list
+    catalog_id: file-operations.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: type
+        type: Enum
+        in: body
+        required: true
+        values: [import, export]
+        help: import or export
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, state, size]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      type: "{{type}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        type: { pointer: /type }
+        format: { pointer: /format }
+        name: { pointer: /name }
+        state: { pointer: /state }
+        error: { pointer: /error }
+        size: { pointer: /size }
+        collectionId: { pointer: /collectionId }
+        documentId: { pointer: /documentId }
+        userId: { pointer: /user/id }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { type: export, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                type: export
+                state: complete
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.group-memberships.list
+    summary: list one page of the group memberships of the wiki
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/group-memberships.list
+    catalog_id: group-memberships.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: groupId
+        type: UUID
+        in: body
+        required: false
+        help: "only the memberships of this group, by the group's UUID"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      groupId: "{{groupId}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/groupMemberships
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        groupId: { pointer: /groupId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        sourceId: { pointer: /sourceId }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              groupMemberships:
+                - id: ex-0001
+                  groupId: g1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.installation.get
+    summary: show the version of the Outline server
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/installation.info
+    catalog_id: installation.get
+    headers:
+      X-API-Version: "2"
+    body: {}
+    response:
+      fields:
+        version: { pointer: /data/version }
+        latestVersion: { pointer: /data/latestVersion }
+        versionsBehind: { pointer: /data/versionsBehind }
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            data:
+              version: 1.0.0
+              latestVersion: 1.0.0
+              versionsBehind: 0
+        expect:
+          version: 1.0.0
+          versionsBehind: 0
+  - id: outline.notifications.list
+    summary: "list one page of the Outline notifications of the API key's user"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/notifications.list
+    catalog_id: notifications.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: eventType
+        type: Enum
+        in: body
+        required: false
+        values:
+          [
+            documents.publish,
+            documents.update,
+            documents.add_user,
+            collections.add_user,
+            groups.add_user,
+            groups.remove_user,
+            revisions.create,
+            collections.create,
+            comments.create,
+            comments.resolve,
+            reactions.create,
+            documents.mentioned,
+            comments.mentioned,
+            documents.group_mentioned,
+            comments.group_mentioned,
+            emails.invite_accepted,
+            emails.onboarding,
+            emails.features,
+            emails.export_completed,
+            access_requests.create,
+          ]
+        help: only notifications of this event type
+      - name: archived
+        type: Bool
+        in: body
+        required: false
+        help: "true for archived notifications, false for the others"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      eventType: "{{eventType}}"
+      archived: "{{archived}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/notifications
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        event: { pointer: /event }
+        createdAt: { pointer: /createdAt }
+        viewedAt: { pointer: /viewedAt }
+        archivedAt: { pointer: /archivedAt }
+        actorId: { pointer: /actorId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        commentId: { pointer: /commentId }
+        groupId: { pointer: /groupId }
+        revisionId: { pointer: /revisionId }
+        accessRequestId: { pointer: /accessRequestId }
+        accessRequestStatus: { pointer: /accessRequestStatus }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              notifications:
+                - id: ex-0001
+                  event: comments.create
+                  createdAt: "2026-01-01T00:00:00.000Z"
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.oauth-authentications.list
+    summary: "list one page of the OAuth sign-ins of the API key's user"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/oauth-authentications.list
+    catalog_id: oauth-authentications.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        userId: { pointer: /userId }
+        oauthClientId: { pointer: /oauthClientId }
+        lastActiveAt: { pointer: /lastActiveAt }
+        createdAt: { pointer: /createdAt }
+        oauthClient:
+          object:
+            name: { pointer: /oauthClient/name }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                scope:
+                  - read
+                createdAt: "2026-01-01T00:00:00.000Z"
+                oauthClient:
+                  name: App
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.reactions.list
+    summary: list one page of the emoji reactions of one Outline comment
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/reactions.list
+    catalog_id: reactions.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: commentId
+        type: UUID
+        in: body
+        required: true
+        help: "the comment UUID, from list_comments"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      commentId: "{{commentId}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        emoji: { pointer: /emoji }
+        commentId: { pointer: /commentId }
+        userId: { pointer: /userId }
+        createdAt: { pointer: /createdAt }
+    examples:
+      - request: { commentId: ex-0001, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                emoji: ":tada:"
+                commentId: ex-0001
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+          emoji: ":tada:"
+  - id: outline.relationships.get
+    summary: show one Outline relationship between two documents
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/relationships.info
+    catalog_id: relationships.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: relationshipId
+        type: UUID
+        in: body
+        required: true
+        help: "the relationship UUID, from list_relationships"
+    body:
+      id: "{{relationshipId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/relationship/id
+          required: true
+          format: uuid
+        type: { pointer: /data/relationship/type }
+        documentId: { pointer: /data/relationship/documentId }
+        reverseDocumentId: { pointer: /data/relationship/reverseDocumentId }
+        userId: { pointer: /data/relationship/userId }
+        createdAt: { pointer: /data/relationship/createdAt }
+        updatedAt: { pointer: /data/relationship/updatedAt }
+    examples:
+      - request: { relationshipId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              relationship:
+                id: ex-0001
+                type: backlink
+        expect:
+          id: ex-0001
+          type: backlink
+  - id: outline.relationships.list
+    summary: list one page of the Outline relationships of one document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/relationships.list
+    catalog_id: relationships.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: type
+        type: Enum
+        in: body
+        required: false
+        values: [backlink, similar]
+        help: backlink or similar
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: false
+        help: "the document the relationships start from, by its ID"
+      - name: reverseDocumentId
+        type: DocumentID
+        in: body
+        required: false
+        help: "the document the relationships point to, by its ID"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      type: "{{type}}"
+      documentId: "{{documentId}}"
+      reverseDocumentId: "{{reverseDocumentId}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/relationships
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        type: { pointer: /type }
+        documentId: { pointer: /documentId }
+        reverseDocumentId: { pointer: /reverseDocumentId }
+        userId: { pointer: /userId }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { documentId: d1, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              relationships:
+                - id: ex-0001
+                  type: backlink
+                  documentId: d1
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.searches.list
+    summary: "list one page of the Outline searches of the API key's user"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/searches.list
+    catalog_id: searches.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: searchSource
+        type: Name
+        in: body
+        required: false
+        help: "only searches of this source, as the server names it"
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      source: "{{searchSource}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        query: { pointer: /query }
+        searchSource: { pointer: /source }
+        score: { pointer: /score }
+        createdAt: { pointer: /createdAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                query: setup
+                source: app
+                score: 1
+                createdAt: "2026-01-01T00:00:00.000Z"
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+          query: setup
+  - id: outline.suggestions.mention
+    summary: "list one page of the documents, users, and groups to mention"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/suggestions.mention
+    catalog_id: suggestions.mention
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the text to find the mention suggestions for
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      query: "{{query}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      merge:
+        label_field: kind
+        lists:
+          - items: /data/documents
+            label: document
+            fields:
+              id:
+                pointer: /id
+                required: true
+              name: { pointer: /title }
+          - items: /data/users
+            label: user
+            fields:
+              id:
+                pointer: /id
+                required: true
+              name: { pointer: /name }
+          - items: /data/groups
+            label: group
+            fields:
+              id:
+                pointer: /id
+                required: true
+              name: { pointer: /name }
+    examples:
+      - request: { query: set, limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              documents:
+                - id: d1
+                  title: Setup
+              users:
+              groups:
+        expect:
+          kind: document
+          id: d1
+          name: Setup
+  - id: outline.user-memberships.list
+    summary: "list one page of the Outline memberships of the API key's user"
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/user-memberships.list
+    catalog_id: user-memberships.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data/memberships
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        userId: { pointer: /userId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        createdById: { pointer: /createdById }
+        sourceId: { pointer: /sourceId }
+        index: { pointer: /index }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              memberships:
+                - id: ex-0001
+                  userId: u1
+                  permission: read
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.views.list
+    summary: list the Outline views of one document
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/views.list
+    catalog_id: views.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: UUID
+        in: body
+        required: true
+        help: "the document UUID, from list_documents"
+      - name: includeSuspended
+        type: Bool
+        in: body
+        required: false
+        help: true to include the views of suspended users
+    body:
+      documentId: "{{documentId}}"
+      includeSuspended: "{{includeSuspended}}"
+    response:
+      items: /data
+      fields:
+        documentId: { pointer: /documentId }
+        userId: { pointer: /userId }
+        user:
+          object:
+            id: { pointer: /user/id }
+            name: { pointer: /user/name }
+        count: { pointer: /count }
+        firstViewedAt: { pointer: /firstViewedAt }
+        lastViewedAt: { pointer: /lastViewedAt }
+    examples:
+      - request: { documentId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              - documentId: d1
+                userId: u1
+                user:
+                  id: u1
+                  name: Ada
+                count: 2
+        expect:
+          documentId: d1
+          count: 2
+  - id: outline.api-keys.list
+    summary: list one page of Outline API keys (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/api-keys.list
+    catalog_id: api-keys.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: userId
+        type: UUID
+        in: body
+        required: false
+        help: "only keys of this user, by the user's UUID"
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the key name to search for
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, name, expiresAt, lastActiveAt]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      userId: "{{userId}}"
+      query: "{{query}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        userId: { pointer: /userId }
+        name: { pointer: /name }
+        last4: { pointer: /last4 }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+        expiresAt: { pointer: /expiresAt }
+        lastActiveAt: { pointer: /lastActiveAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                name: CI
+                scope:
+                  - read
+                last4: wxyz
+                createdAt: "2026-01-01T00:00:00.000Z"
+                updatedAt: "2026-01-01T00:00:00.000Z"
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+          last4: wxyz
+  - id: outline.authentication-providers.get
+    summary: show one Outline sign-in provider (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/authenticationProviders.info
+    catalog_id: authentication-providers.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: authenticationProviderId
+        type: UUID
+        in: body
+        required: true
+        help: "the sign-in provider UUID, from list_authentication_providers"
+    body:
+      id: "{{authenticationProviderId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        providerId: { pointer: /data/providerId }
+        isEnabled: { pointer: /data/isEnabled }
+        isConnected: { pointer: /data/isConnected }
+        createdAt: { pointer: /data/createdAt }
+        settings:
+          object:
+            groupSyncEnabled: { pointer: /data/settings/groupSyncEnabled }
+            groupClaim: { pointer: /data/settings/groupClaim }
+    examples:
+      - request: { authenticationProviderId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: Google
+              providerId: google
+              isEnabled: true
+              isConnected: true
+              settings:
+                groupSyncEnabled: false
+        expect:
+          id: ex-0001
+          name: Google
+  - id: outline.authentication-providers.list
+    summary: list the Outline sign-in providers (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/authentication-providers.list
+    catalog_id: authentication-providers.list
+    headers:
+      X-API-Version: "2"
+    body: {}
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        providerId: { pointer: /providerId }
+        isEnabled: { pointer: /isEnabled }
+        isConnected: { pointer: /isConnected }
+        createdAt: { pointer: /createdAt }
+        settings:
+          object:
+            groupSyncEnabled: { pointer: /settings/groupSyncEnabled }
+            groupClaim: { pointer: /settings/groupClaim }
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                name: Google
+                providerId: google
+                isEnabled: true
+                isConnected: true
+                settings:
+                  groupSyncEnabled: false
+        expect:
+          id: ex-0001
+  - id: outline.imports.get
+    summary: show one Outline import (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/imports.info
+    catalog_id: imports.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: importId
+        type: UUID
+        in: body
+        required: true
+        help: "the import UUID, from list_imports"
+    body:
+      id: "{{importId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        service: { pointer: /data/service }
+        state: { pointer: /data/state }
+        documentCount: { pointer: /data/documentCount }
+        error: { pointer: /data/error }
+        createdById: { pointer: /data/createdById }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { importId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              service: notion
+              state: complete
+              documentCount: 4
+        expect:
+          id: ex-0001
+  - id: outline.imports.list
+    summary: list one page of Outline imports (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/imports.list
+    catalog_id: imports.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: service
+        type: Enum
+        in: body
+        required: false
+        values: [notion, markdown, slab, okf, json]
+        help: only imports from this service
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, service]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      service: "{{service}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        service: { pointer: /service }
+        state: { pointer: /state }
+        documentCount: { pointer: /documentCount }
+        error: { pointer: /error }
+        createdById: { pointer: /createdById }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                service: notion
+                state: complete
+                documentCount: 4
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.integrations.get
+    summary: show one Outline integration (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/integrations.info
+    catalog_id: integrations.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: integrationId
+        type: UUID
+        in: body
+        required: true
+        help: "the integration UUID, from list_integrations"
+    body:
+      id: "{{integrationId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        type: { pointer: /data/type }
+        service: { pointer: /data/service }
+        collectionId: { pointer: /data/collectionId }
+        userId: { pointer: /data/userId }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        settings:
+          object:
+            channel: { pointer: /data/settings/channel }
+            measurementId: { pointer: /data/settings/measurementId }
+            scriptName: { pointer: /data/settings/scriptName }
+    examples:
+      - request: { integrationId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              type: post
+              service: slack
+              events:
+                - documents.update
+              settings:
+                url: "https://hooks.example.test/x"
+                channel: "#gen"
+        expect:
+          id: ex-0001
+  - id: outline.integrations.list
+    summary: list one page of Outline integrations (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/integrations.list
+    catalog_id: integrations.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: type
+        type: Enum
+        in: body
+        required: false
+        values: [post, command, embed, analytics, linkedAccount, import]
+        help: only integrations of this type
+      - name: service
+        type: Enum
+        in: body
+        required: false
+        values:
+          [
+            diagrams,
+            grist,
+            slack,
+            google-analytics,
+            matomo,
+            umami,
+            github,
+            gitlab,
+            linear,
+            figma,
+            notion,
+            markdown,
+            slab,
+            okf,
+            json,
+          ]
+        help: only integrations of this service
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      type: "{{type}}"
+      service: "{{service}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        type: { pointer: /type }
+        service: { pointer: /service }
+        collectionId: { pointer: /collectionId }
+        userId: { pointer: /userId }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+        settings:
+          object:
+            channel: { pointer: /settings/channel }
+            measurementId: { pointer: /settings/measurementId }
+            scriptName: { pointer: /settings/scriptName }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                type: post
+                service: slack
+                events:
+                  - documents.update
+                settings:
+                  url: "https://hooks.example.test/x"
+                  channel: "#gen"
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.oauth-clients.get
+    summary: show one Outline OAuth client (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/oauthClients.info
+    catalog_id: oauth-clients.get
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: oauthClientId
+        type: UUID
+        in: body
+        required: true
+        help: "the OAuth client UUID, from list_oauth_clients"
+    body:
+      id: "{{oauthClientId}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        description: { pointer: /data/description }
+        developerName: { pointer: /data/developerName }
+        developerUrl: { pointer: /data/developerUrl }
+        clientId: { pointer: /data/clientId }
+        clientType: { pointer: /data/clientType }
+        published: { pointer: /data/published }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { oauthClientId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: App
+              clientId: cid
+              clientType: confidential
+              published: false
+              redirectUris:
+        expect:
+          id: ex-0001
+          name: App
+  - id: outline.oauth-clients.list
+    summary: list one page of Outline OAuth clients (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/oauth-clients.list
+    catalog_id: oauth-clients.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        description: { pointer: /description }
+        developerName: { pointer: /developerName }
+        developerUrl: { pointer: /developerUrl }
+        clientId: { pointer: /clientId }
+        clientType: { pointer: /clientType }
+        published: { pointer: /published }
+        lastActiveAt: { pointer: /lastActiveAt }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                name: App
+                clientId: cid
+                clientType: confidential
+                published: false
+                redirectUris:
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+  - id: outline.webhook-subscriptions.list
+    summary: list one page of Outline webhook subscriptions (admin source only)
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/webhook-subscriptions.list
+    catalog_id: webhook-subscriptions.list
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the webhook name to search for
+      - name: sort
+        type: Enum
+        in: body
+        required: false
+        values: [createdAt, updatedAt, name]
+        help: "the field to sort by; the server's default when omitted"
+      - name: direction
+        type: Enum
+        in: body
+        required: false
+        values: [ASC, DESC]
+        help: ASC or DESC; DESC when omitted
+      - name: offset
+        type: Offset
+        in: body
+        required: false
+        default: 0
+        help: the first item to return; 0 when omitted
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 25
+        help: "items per page, from 1 to 100; 25 when omitted"
+    body:
+      query: "{{query}}"
+      sort: "{{sort}}"
+      direction: "{{direction}}"
+      offset: "{{offset}}"
+      limit: "{{limit}}"
+    pagination:
+      style: offset
+      in: body
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+    response:
+      items: /data
+      fields:
+        id:
+          pointer: /id
+          required: true
+          format: uuid
+        name: { pointer: /name }
+        enabled: { pointer: /enabled }
+        createdById: { pointer: /createdById }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { limit: 25 }
+        response:
+          status: 200
+          body:
+            data:
+              - id: ex-0001
+                name: Hook
+                url: "https://hooks.example.test/synthetic/path"
+                events:
+                enabled: true
+                secret: synthetic-signing-secret
+            pagination:
+              offset: 0
+              limit: 25
+        expect:
+          id: ex-0001
+          name: Hook
+  - id: outline.documents.export
+    summary: read the Markdown of one Outline document through the vault export
+    access: read
+    method: POST
+    read_over_post: true
+    path: /api/documents.export
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: "the document ID, from list_documents"
+    body:
+      id: "{{documentId}}"
+    response:
+      fields:
+        markdown: { pointer: /data }
+    cli: false
+    mcp: false
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data: Hello
+        expect:
+          markdown: Hello
