@@ -17,9 +17,19 @@ import (
 
 // decodeReply decodes one whole JSON value with the caps of the engine: a nesting depth of 64 and 1,048,576 tokens. A
 // reply that holds more than one value, a value cut off, or a value past a cap is an unexpected response, and its text
-// is never repeated.
+// is never repeated. A reply with a tree decodes to the higher tree cap instead; see decodeReplyFor.
 func decodeReply(raw []byte) (any, error) {
 	return decodeReplyWith(raw, maxJSONDepth, maxJSONNodes)
+}
+
+// decodeReplyFor decodes one whole JSON value with the caps of the operation: a reply with a tree decodes to the
+// fixed higher depth of treeJSONDepth, because each tree level takes two JSON levels, and any other reply decodes to
+// the caps of the engine. No spec field sets the higher cap, and no other reply changes.
+func decodeReplyFor(o spec.Operation, raw []byte) (any, error) {
+	if o.Response.Tree != nil {
+		return decodeReplyWith(raw, treeJSONDepth, maxJSONNodes)
+	}
+	return decodeReply(raw)
 }
 
 // decodeReplyWith decodes raw as exactly one JSON value, with numbers kept as text so a large integer is not rounded. It
@@ -329,23 +339,128 @@ func mergeRecords(o spec.Operation, root any, budget *int) ([]domain.Record, err
 	return out, nil
 }
 
-// withMergeLabel sets the label field of a merged record to the constant label of its list, beating a mapped reply
-// field of the same name. The label is charged to the shared output budget, like any mapped text.
-func withMergeLabel(rec domain.Record, name, label string, budget *int) (domain.Record, error) {
-	if len(label) > *budget {
-		return domain.Record{}, domain.ErrReplyTooLarge
+// withComputedField sets a computed field on a mapped record, beating a mapped reply field of the same name. Text
+// is charged to the shared output budget, like any mapped text, so a computed copy cannot build more output than one
+// reply may hold.
+func withComputedField(rec domain.Record, name string, value any, budget *int) (domain.Record, error) {
+	if s, isText := value.(string); isText {
+		if len(s) > *budget {
+			return domain.Record{}, domain.ErrReplyTooLarge
+		}
+		*budget -= len(s)
 	}
-	*budget -= len(label)
 	fields := rec.Fields()
 	for i, f := range fields {
 		if f.Name == name {
-			fields[i].Value = label
+			fields[i].Value = value
 			return domain.NewRecord(fields...), nil
 		}
 	}
-	fields = append(fields, domain.Field{Name: name, Value: label})
+	fields = append(fields, domain.Field{Name: name, Value: value})
 	sort.Slice(fields, func(i, j int) bool { return fields[i].Name < fields[j].Name })
 	return domain.NewRecord(fields...), nil
+}
+
+// withMergeLabel sets the label field of a merged record to the constant label of its list, beating a mapped reply
+// field of the same name. The label is charged to the shared output budget, like any mapped text.
+func withMergeLabel(rec domain.Record, name, label string, budget *int) (domain.Record, error) {
+	return withComputedField(rec, name, label, budget)
+}
+
+// treeRecords flattens the tree at the items pointer depth first, computing the parent and the depth of each node,
+// and only these two fields. Each node maps with the fields of the response, and the computed fields beat a mapped
+// reply field of the same name. The parent of a node is the id of its parent node: null for a top node, or the value
+// of the root parent parameter when the read names one. The depth counts from 0. A node deeper than the depth cap,
+// and the nodes below it, is left out, as the Go connector does today. A missing or null children value ends the
+// branch, but a children value that is not a list, or a child that is not an object, is an unexpected response. The
+// walk is a flat loop with no recursion, and the output shares the budget of any list, so a deep or wide tree cannot
+// build without bound.
+func treeRecords(o spec.Operation, args domain.Args, root any, budget *int) ([]domain.Record, error) {
+	list, found := pointerValue(root, o.Response.Items)
+	arr, isList := list.([]any)
+	if !found || !isList {
+		return nil, domain.ErrUnexpectedResponse
+	}
+	t := o.Response.Tree
+	var rootParent any
+	if t.RootParentParam != "" {
+		rootParent, _ = args.Values()[t.RootParentParam]
+	}
+	maxDepth := t.EffectiveMaxDepth()
+	type frame struct {
+		node   map[string]any
+		parent any
+		depth  int
+	}
+	stack := make([]frame, 0, len(arr))
+	for i := len(arr) - 1; i >= 0; i-- {
+		obj, isObject := arr[i].(map[string]any)
+		if !isObject {
+			return nil, domain.ErrUnexpectedResponse
+		}
+		stack = append(stack, frame{node: obj, depth: 0})
+	}
+	var out []domain.Record
+	for len(stack) > 0 {
+		top := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		if top.depth > maxDepth {
+			continue
+		}
+		rec, err := mapRecord(o.Response.Fields, top.node, budget)
+		if err != nil {
+			return nil, err
+		}
+		parent := top.parent
+		if top.depth == 0 {
+			parent = rootParent
+		}
+		if rec, err = withComputedField(rec, t.ParentField, parent, budget); err != nil {
+			return nil, err
+		}
+		if rec, err = withComputedField(rec, t.DepthField, top.depth, budget); err != nil {
+			return nil, err
+		}
+		out = append(out, rec)
+		id, _ := rec.Get("id")
+		children, found, err := treeChildren(top.node, t.Children)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			continue
+		}
+		for i := len(children) - 1; i >= 0; i-- {
+			obj, isObject := children[i].(map[string]any)
+			if !isObject {
+				return nil, domain.ErrUnexpectedResponse
+			}
+			stack = append(stack, frame{node: obj, parent: id, depth: top.depth + 1})
+		}
+	}
+	return out, nil
+}
+
+// treeChildren returns the child nodes at the children pointer of one tree node. A missing or null value ends the
+// branch with no children. A value that is not a list is an unexpected response.
+func treeChildren(node map[string]any, pointer string) ([]any, bool, error) {
+	raw, found := pointerValue(node, pointer)
+	if !found || raw == nil {
+		return nil, false, nil
+	}
+	children, isList := raw.([]any)
+	if !isList {
+		return nil, false, domain.ErrUnexpectedResponse
+	}
+	return children, true, nil
+}
+
+// pageItems maps one page of a paged read: a tree page flattens depth first, and any other page maps its list.
+func pageItems(o spec.Operation, args domain.Args, root any, budget *int) ([]domain.Record, error) {
+	if o.Response.Tree != nil {
+		return treeRecords(o, args, root, budget)
+	}
+	return listItems(o, root, budget)
 }
 
 // plainValue returns the Go value of a spec default or example value: a whole number as an int, and any other number as

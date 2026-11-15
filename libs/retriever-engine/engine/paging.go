@@ -54,7 +54,7 @@ func (e *Engine) readOffset(ctx context.Context, o spec.Operation, args domain.A
 		if err != nil {
 			return domain.Record{}, err
 		}
-		items, err := listItems(o, root, budget)
+		items, err := pageItems(o, args, root, budget)
 		if err != nil {
 			return domain.Record{}, err
 		}
@@ -101,7 +101,7 @@ func (e *Engine) readCursor(ctx context.Context, o spec.Operation, args domain.A
 		if err != nil {
 			return domain.Record{}, err
 		}
-		items, err := listItems(o, root, budget)
+		items, err := pageItems(o, args, root, budget)
 		if err != nil {
 			return domain.Record{}, err
 		}
