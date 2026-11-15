@@ -26,6 +26,8 @@ var specFieldNames = []string{
 	"object",
 	// ADR 002, E5: the first item or not found.
 	"first",
+	// ADR 002, E6: merged lists with constant labels.
+	"merge", "label_field", "lists", "label",
 }
 
 // collectPropertyNames gathers the keys of every "properties" object of a decoded schema, at any depth.

@@ -286,21 +286,37 @@ func unsupported(o spec.Operation) error {
 }
 
 // converterUnsupported refuses an operation whose reply needs a Markdown converter. The converters are not served yet, so
-// the operation fails closed before any request is sent.
+// the operation fails closed before any request is sent. The fields of each list of a merge meet the same refusal.
 func converterUnsupported(o spec.Operation) error {
 	for _, f := range o.Response.Fields {
 		if f.Convert == "markdown-from-html" || f.Convert == "markdown-from-adf" {
 			return domain.ErrUnsupportedOperation
 		}
 	}
+	if o.Response.Merge != nil {
+		for _, l := range o.Response.Merge.Lists {
+			for _, f := range l.Fields {
+				if f.Convert == "markdown-from-html" || f.Convert == "markdown-from-adf" {
+					return domain.ErrUnsupportedOperation
+				}
+			}
+		}
+	}
 	return nil
 }
 
-// mapReply maps a reply to a list, to the first item of a list, or to one object, by which shape the operation
-// names. A response holds at most one of items, first, and merge.
+// mapReply maps a reply to a list, to the first item of a list, to a merged list, or to one object, by which shape
+// the operation names. A response holds at most one of items, first, and merge.
 func mapReply(o spec.Operation, root any, budget *int) (domain.Record, error) {
 	if o.Response.First != "" {
 		return firstRecord(o, root, budget)
+	}
+	if o.Response.Merge != nil {
+		items, err := mergeRecords(o, root, budget)
+		if err != nil {
+			return domain.Record{}, err
+		}
+		return domain.NewList(items), nil
 	}
 	if o.Response.Items != "" {
 		items, err := listItems(o, root, budget)
@@ -376,6 +392,7 @@ func checkSpecShape(model *spec.Spec) error {
 	fs := spec.CheckAccessMatrix(model)
 	fs = append(fs, spec.CheckObjectFields(model)...)
 	fs = append(fs, spec.CheckResponseShape(model)...)
+	fs = append(fs, spec.CheckMerge(model)...)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {
@@ -420,13 +437,25 @@ func pathOK(path string) bool {
 }
 
 // pointersOf returns every JSON pointer that a read of the operation names: the items list, the first list, the
-// fields with the pointers of each nested sub-field, and the cursor.
+// lists of a merge with the pointers of each of their fields, the fields with the pointers of each nested sub-field,
+// and the cursor. The label field of a merge is a constant, never a pointer.
 func pointersOf(o spec.Operation) []string {
 	out := []string{o.Response.Items, o.Response.First}
 	for _, f := range o.Response.Fields {
 		out = append(out, f.Pointer)
 		for _, name := range sortedKeys(f.Object) {
 			out = append(out, f.Object[name].Pointer)
+		}
+	}
+	if o.Response.Merge != nil {
+		for _, l := range o.Response.Merge.Lists {
+			out = append(out, l.Items)
+			for _, f := range l.Fields {
+				out = append(out, f.Pointer)
+				for _, name := range sortedKeys(f.Object) {
+					out = append(out, f.Object[name].Pointer)
+				}
+			}
 		}
 	}
 	if o.Pagination != nil {

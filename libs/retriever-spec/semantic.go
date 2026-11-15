@@ -29,6 +29,7 @@ func semanticFindings(s *Spec) []Finding {
 	fs = append(fs, CheckAccessMatrix(s)...)
 	fs = append(fs, CheckObjectFields(s)...)
 	fs = append(fs, CheckResponseShape(s)...)
+	fs = append(fs, CheckMerge(s)...)
 	index := make(map[string]int, len(s.Operations))
 	for i, op := range s.Operations {
 		at := "/operations/" + strconv.Itoa(i) + "/id"
@@ -181,9 +182,13 @@ func checkResolve(s *Spec, index map[string]int, at string, r *Resolve) []Findin
 }
 
 // checkExamples checks that each example request names a parameter of the operation, and that each expectation names a
-// field of its response.
+// field of its response. For a merge response the expectation may name the label field or a field of any list.
 func checkExamples(op Operation, base string, params map[string]Param) []Finding {
 	var fs []Finding
+	var mergeFields map[string]bool
+	if op.Response.Merge != nil {
+		mergeFields = mergeOutputFields(op)
+	}
 	for j, ex := range op.Examples {
 		at := base + "/examples/" + strconv.Itoa(j)
 		for key := range ex.Request {
@@ -192,6 +197,12 @@ func checkExamples(op Operation, base string, params map[string]Param) []Finding
 			}
 		}
 		for key := range ex.Expect {
+			if mergeFields != nil {
+				if !mergeFields[key] {
+					fs = append(fs, finding(at+"/expect/"+safeName(key), "names no field of the operation"))
+				}
+				continue
+			}
 			if _, ok := op.Response.Fields[key]; !ok {
 				fs = append(fs, finding(at+"/expect/"+safeName(key), "names no field of the operation"))
 			}
@@ -208,6 +219,13 @@ func checkExamples(op Operation, base string, params map[string]Param) []Finding
 // maxObjectFields is the most sub-fields one nested record field holds.
 const maxObjectFields = 32
 
+// The limits of a merge block: two to eight lists, and a label of at most 32 characters.
+const (
+	minMergeLists = 2
+	maxMergeLists = 8
+	maxMergeLabel = 32
+)
+
 // The fixed rules of a nested record field. Each names the broken rule, never a value.
 const (
 	ruleObjectScalar = "is an object field with a scalar keyword"
@@ -219,6 +237,7 @@ const (
 // keyword of its own, it holds 1 to 32 sub-fields, and a sub-field holds no object of its own, so a record nests one
 // level only. The schema states the same rules for documents. The validation and the engine constructor both call it,
 // so a model built by hand meets the same refusals as a document. Each finding names the field path and a fixed rule.
+// The fields of each list of a merge meet the same rules at their own path.
 func CheckObjectFields(s *Spec) []Finding {
 	var fs []Finding
 	for i, op := range s.Operations {
@@ -230,6 +249,19 @@ func CheckObjectFields(s *Spec) []Finding {
 		sort.Strings(names)
 		for _, name := range names {
 			fs = append(fs, checkObjectField(base+"/"+safeName(name), op.Response.Fields[name])...)
+		}
+		if op.Response.Merge != nil {
+			for li, l := range op.Response.Merge.Lists {
+				lbase := "/operations/" + strconv.Itoa(i) + "/response/merge/lists/" + strconv.Itoa(li) + "/fields"
+				var lnames []string
+				for name := range l.Fields {
+					lnames = append(lnames, name)
+				}
+				sort.Strings(lnames)
+				for _, name := range lnames {
+					fs = append(fs, checkObjectField(lbase+"/"+safeName(name), l.Fields[name])...)
+				}
+			}
 		}
 	}
 	return fs
@@ -262,16 +294,80 @@ func checkObjectField(at string, f Field) []Finding {
 
 // ruleResponseShape is the rule of a response that names more than one reply shape. A response holds at most one of
 // items, first, and merge, so naming two is refused.
-const ruleResponseShape = "names more than one of items and first"
+const ruleResponseShape = "names more than one of items, first, and merge"
 
-// CheckResponseShape returns the findings of the responses of a spec model that name more than one reply shape: both
-// an items list and a first pointer. The schema states the same rule for documents. The validation and the engine
-// constructor both call it, so a model built by hand meets the same refusal as a document. Each finding names the
-// response path and a fixed rule.
+// The fixed rules of a merge block. Each names the broken rule, never a value.
+const (
+	ruleMergeCount      = "does not hold 2 to 8 lists"
+	ruleMergeLabel      = "is not a label of lowercase letters and hyphens of at most 32 characters"
+	ruleMergeLabelField = "is not a field name"
+)
+
+// The patterns of a merge block: a label of lowercase letters and hyphens, and a label field of the field-name form.
+var (
+	mergeLabelPattern = regexp.MustCompile(`^[a-z]+(-[a-z]+)*$`)
+	mergeFieldPattern = regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`)
+)
+
+// CheckMerge returns the findings of the merge blocks of a spec model: two to eight lists, a label of lowercase
+// letters and hyphens of at most 32 characters on each list, and a label field of the field-name form. The schema
+// states the same rules for documents. The validation and the engine constructor both call it, so a model built by
+// hand meets the same refusals as a document. Each finding names the field path and a fixed rule.
+func CheckMerge(s *Spec) []Finding {
+	var fs []Finding
+	for i, op := range s.Operations {
+		m := op.Response.Merge
+		if m == nil {
+			continue
+		}
+		base := "/operations/" + strconv.Itoa(i) + "/response/merge"
+		if len(m.Lists) < minMergeLists || len(m.Lists) > maxMergeLists {
+			fs = append(fs, finding(base+"/lists", ruleMergeCount))
+		}
+		if !mergeFieldPattern.MatchString(m.LabelField) {
+			fs = append(fs, finding(base+"/label_field", ruleMergeLabelField))
+		}
+		for li, l := range m.Lists {
+			if len(l.Label) > maxMergeLabel || !mergeLabelPattern.MatchString(l.Label) {
+				fs = append(fs, finding(base+"/lists/"+strconv.Itoa(li)+"/label", ruleMergeLabel))
+			}
+		}
+	}
+	return fs
+}
+
+// mergeOutputFields returns the output fields of a merge operation: the label field and every field of every list.
+func mergeOutputFields(op Operation) map[string]bool {
+	out := map[string]bool{}
+	if op.Response.Merge == nil {
+		return out
+	}
+	out[op.Response.Merge.LabelField] = true
+	for _, l := range op.Response.Merge.Lists {
+		for name := range l.Fields {
+			out[name] = true
+		}
+	}
+	return out
+}
+
+// CheckResponseShape returns the findings of the responses of a spec model that name more than one reply shape. The
+// schema states the same rule for documents. The validation and the engine constructor both call it, so a model built
+// by hand meets the same refusal as a document. Each finding names the response path and a fixed rule.
 func CheckResponseShape(s *Spec) []Finding {
 	var fs []Finding
 	for i, op := range s.Operations {
-		if op.Response.Items != "" && op.Response.First != "" {
+		shapes := 0
+		if op.Response.Items != "" {
+			shapes++
+		}
+		if op.Response.First != "" {
+			shapes++
+		}
+		if op.Response.Merge != nil {
+			shapes++
+		}
+		if shapes > 1 {
 			fs = append(fs, finding("/operations/"+strconv.Itoa(i)+"/response", ruleResponseShape))
 		}
 	}

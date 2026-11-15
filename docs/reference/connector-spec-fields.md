@@ -138,6 +138,13 @@ The review text lists each body-paged read in its own block, with its style, its
   The engine takes item 0 and maps its fields with pointers relative to the item; only index 0 exists. An empty
   list ends with `retriever.<kind>.not_found` and no partial record, and a value that is not a list ends with
   `unexpected_response`. A response holds at most one of `items`, `first`, and `merge`.
+- `merge`: two to eight lists merged into one output, for a read such as `suggestions.mention`, in place of `fields`
+  and of `items` and `first`. It names `label_field`, the output field that carries the constant label of each list,
+  and `lists`, each with `items` (a JSON pointer to the list in the reply), `label` (a constant of lowercase letters
+  and hyphens, at most 32 characters), and `fields` (the output fields of that list, with the same rules as above,
+  including `required`, `format`, and one level of `object`). The output keeps the declared list order, then the reply
+  order, and it shares the output cap of any list. The label beats a reply field of the same name. A pointer that
+  names no list, and an item that is not an object, end with `unexpected_response`.
 - `fields`: a map from output field to an object with `pointer`, a JSON pointer into the reply, an optional `required`,
   an optional closed `format`, and an optional `convert`. The converter is `plain`, `markdown-from-html`, or
   `markdown-from-adf`. The engine does not serve the two Markdown converters yet. A spec that names one still loads,
@@ -158,7 +165,9 @@ The review text lists each body-paged read in its own block, with its style, its
 The review text lists each operation with required or checked fields in its own block, with each required field and
 each checked field with its closed format name. The review text lists each operation with a nested record field in
 its own block, with the object field and each sub-field. The review text lists each first-item read in its own
-block, with the operation and the list pointer as `first of /data`.
+block, with the operation and the list pointer as `first of /data`. The review text lists each merge read in its own
+block, with the label field and each list as `<label> of <pointer>`, and it joins the required, checked, and nested
+fields of every list under the same operation.
 
 There are no expressions. A pointer reads, and nothing computes.
 
@@ -181,8 +190,8 @@ The language cannot yet express the Outline reads, so they still run on the Go g
 - A field is never required. A field takes `required` and a closed `format` now, which is described in
   [Response](#response), so this limit no longer blocks a read. A missing optional field still maps to null.
 - A field holds one scalar or one nested record, which is described in [Response](#response). The first item of a
-  list is described in [Response](#response); a list merged from several lists, a tree with a computed depth, and a
-  fallback read have no form in the language.
+  list and a list merged from several lists are described in [Response](#response); a tree with a computed depth and
+  a fallback read have no form in the language.
 
 A spec named `outline` is also refused, because the kind is a built-in source. A bundled Outline spec would need an
 exception for bundled files only.
@@ -201,9 +210,10 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 ## Planned extensions
 
 [ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
-that the Outline, Kiwi, and Jira connectors can run as specs. The first five of them, POST reads (E1), body paging
-(E2), required and validated fields (E3), nested records with an allow-list (E4), and the first item or not found
-(E5), are built and described above. The other four are not built. The limits of the Outline reads, above, describe
+that the Outline, Kiwi, and Jira connectors can run as specs. The first six of them, POST reads (E1), body paging
+(E2), required and validated fields (E3), nested records with an allow-list (E4), the first item or not found
+(E5), and merged lists with constant labels (E6), are built and described above. The other three are not built. The
+limits of the Outline reads, above, describe
 the language before ADR 002 for the
 shapes that the remaining extensions cover. This page documents only what the module accepts today, and each extension
 moves here when its pull request lands.

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -294,6 +295,57 @@ func firstRecord(o spec.Operation, root any, budget *int) (domain.Record, error)
 		return domain.Record{}, domain.ErrUnexpectedResponse
 	}
 	return mapRecord(o.Response.Fields, obj, budget)
+}
+
+// mergeRecords maps the lists of a merge read to one list, in the declared list order and then in the reply order.
+// Each item is mapped with the fields of its own list, and the label field is set to the constant label of the list,
+// beating a reply field of the same name. The output budget is shared by every list, so a merge cannot build more
+// output than one list may hold.
+func mergeRecords(o spec.Operation, root any, budget *int) ([]domain.Record, error) {
+	m := o.Response.Merge
+	out := make([]domain.Record, 0)
+	for _, l := range m.Lists {
+		list, found := pointerValue(root, l.Items)
+		arr, isList := list.([]any)
+		if !found || !isList {
+			return nil, domain.ErrUnexpectedResponse
+		}
+		for _, item := range arr {
+			obj, isObject := item.(map[string]any)
+			if !isObject {
+				return nil, domain.ErrUnexpectedResponse
+			}
+			rec, err := mapRecord(l.Fields, obj, budget)
+			if err != nil {
+				return nil, err
+			}
+			rec, err = withMergeLabel(rec, m.LabelField, l.Label, budget)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, rec)
+		}
+	}
+	return out, nil
+}
+
+// withMergeLabel sets the label field of a merged record to the constant label of its list, beating a mapped reply
+// field of the same name. The label is charged to the shared output budget, like any mapped text.
+func withMergeLabel(rec domain.Record, name, label string, budget *int) (domain.Record, error) {
+	if len(label) > *budget {
+		return domain.Record{}, domain.ErrReplyTooLarge
+	}
+	*budget -= len(label)
+	fields := rec.Fields()
+	for i, f := range fields {
+		if f.Name == name {
+			fields[i].Value = label
+			return domain.NewRecord(fields...), nil
+		}
+	}
+	fields = append(fields, domain.Field{Name: name, Value: label})
+	sort.Slice(fields, func(i, j int) bool { return fields[i].Name < fields[j].Name })
+	return domain.NewRecord(fields...), nil
 }
 
 // plainValue returns the Go value of a spec default or example value: a whole number as an int, and any other number as
