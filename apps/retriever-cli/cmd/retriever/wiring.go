@@ -51,14 +51,6 @@ func kiwiSeamOptions(seam seamConfig) []kiwi.Option {
 	return []kiwi.Option{kiwi.WithTimeout(seam.timeout)}
 }
 
-// jiraSeamOptions returns the gateway options the Jira seam adds. Without a seam timeout it returns none.
-func jiraSeamOptions(seam seamConfig) []jira.Option {
-	if seam.timeout <= 0 {
-		return nil
-	}
-	return []jira.Option{jira.WithTimeout(seam.timeout)}
-}
-
 // sourceWiring is what the CLI takes from the composition root for the source commands, the protocol servers included.
 type sourceWiring struct {
 	service sources.Service
@@ -174,9 +166,6 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 		domain.KindKiwi: func(src domain.Source) (ports.SourceGateway, error) {
 			return buildKiwi(src, creds, seams[domain.KindKiwi])
 		},
-		domain.KindJira: func(src domain.Source) (ports.SourceGateway, error) {
-			return buildJira(src, creds, seams[domain.KindJira])
-		},
 	}
 	maps.Copy(builders, specBuilders(set, h.engine, creds))
 	// The bundled Outline spec runs on its engine gateway: every Outline operation runs on the bundled-spec engine,
@@ -184,6 +173,13 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 	if model := bundledOutline(set); model != nil {
 		builders[domain.KindOutline] = func(src domain.Source) (ports.SourceGateway, error) {
 			return buildOutlineGateway(model, src, creds, seams[domain.KindOutline], h.engine)
+		}
+	}
+	// The bundled Jira spec runs on its engine gateway: every Jira operation runs on the bundled-spec engine,
+	// with the document-not-found translation the Go gateway maps.
+	if model := bundledJira(set); model != nil {
+		builders[domain.KindJira] = func(src domain.Source) (ports.SourceGateway, error) {
+			return buildJiraGateway(model, src, creds, seams[domain.KindJira], h.engine)
 		}
 	}
 	resolver := registry.New(builders)
@@ -208,6 +204,17 @@ func bundledOutline(set connectorspec.Set) *spec.Spec {
 	return nil
 }
 
+// bundledJira returns the bundled jira.yml model of the set, or nil when the set holds none. The merged set always
+// holds it, because a user spec that shadows a bundled kind stops start-up.
+func bundledJira(set connectorspec.Set) *spec.Spec {
+	for _, s := range set.Specs {
+		if s.Model.Kind == domain.KindJira.String() {
+			return s.Model
+		}
+	}
+	return nil
+}
+
 // buildKiwi returns the gateway of one Kiwi source: the source's endpoint receives its key, and the seam, when it
 // is on, replaces only the connection base.
 func buildKiwi(src domain.Source, creds ports.Credentials, seam seamConfig) (ports.SourceGateway, error) {
@@ -215,19 +222,6 @@ func buildKiwi(src domain.Source, creds ports.Credentials, seam seamConfig) (por
 		return kiwi.New(src, creds), nil
 	}
 	gw, err := kiwi.NewWithBase(src, seam.base, seam.client, creds, kiwiSeamOptions(seam)...)
-	if err != nil {
-		return nil, err
-	}
-	return gw, nil
-}
-
-// buildJira returns the gateway of one Jira source, under the same rule as buildKiwi. The gateway reads the token
-// and the account e-mail address through secrets, which the credentials adapter provides both of.
-func buildJira(src domain.Source, secrets jira.Secrets, seam seamConfig) (ports.SourceGateway, error) {
-	if !seam.on {
-		return jira.New(src, secrets), nil
-	}
-	gw, err := jira.NewWithBase(src, seam.base, seam.client, secrets, jiraSeamOptions(seam)...)
 	if err != nil {
 		return nil, err
 	}

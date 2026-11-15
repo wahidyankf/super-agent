@@ -3,6 +3,7 @@ package behaviour
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -172,9 +173,6 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connecto
 		domain.KindKiwi: func(src domain.Source) (ports.SourceGateway, error) {
 			return wireKiwi(src, creds, seams[domain.KindKiwi], w.clock)
 		},
-		domain.KindJira: func(src domain.Source) (ports.SourceGateway, error) {
-			return wireJira(src, creds, seams[domain.KindJira], w.clock)
-		},
 	}
 	for _, s := range set.Specs {
 		builders[s.Kind] = w.specBuilder(rt, s.Model, creds)
@@ -185,6 +183,14 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connecto
 		seam := seams[domain.KindOutline]
 		builders[domain.KindOutline] = func(src domain.Source) (ports.SourceGateway, error) {
 			return w.buildOutlineGateway(model, src, creds, seam, rt)
+		}
+	}
+	// The bundled Jira spec runs on its engine gateway, as the root wires it: every Jira operation runs on
+	// the bundled-spec engine, with the document-not-found translation the Go gateway maps.
+	if model := bundledJiraModel(set); model != nil {
+		seam := seams[domain.KindJira]
+		builders[domain.KindJira] = func(src domain.Source) (ports.SourceGateway, error) {
+			return w.buildJiraGateway(model, src, creds, seam, rt)
 		}
 	}
 	ops := set.Operations
@@ -387,21 +393,249 @@ func wireKiwi(src domain.Source, creds ports.Credentials, seam seamConfig, clk *
 	return gw, nil
 }
 
-// wireJira returns the gateway of one Jira source, under the same rule as wireKiwi. The credentials adapter
-// provides both the token and the account e-mail address.
-func wireJira(src domain.Source, secrets jira.Secrets, seam seamConfig, clk *fakeClock) (ports.SourceGateway, error) {
-	opts := []jira.Option{jira.WithClock(clk.Now), jira.WithSleep(clk.Sleep)}
-	if !seam.on {
-		return jira.New(src, secrets, opts...), nil
+// bundledJiraModel returns the bundled jira.yml model of the set, or nil when the set holds none. It mirrors
+// bundledJira in the composition root, which package main holds and this package cannot import.
+func bundledJiraModel(set connectorspec.Set) *spec.Spec {
+	for _, s := range set.Specs {
+		if s.Model.Kind == domain.KindJira.String() {
+			return s.Model
+		}
 	}
+	return nil
+}
+
+// jiraDocumentNotFoundReads mirrors the translation table of the composition root: the engine reports every 404 as a
+// plain not found, and the gateway restores the document sentinel the Go gateway maps.
+var jiraDocumentNotFoundReads = map[domain.OperationID]bool{
+	domain.OpJiraIssuesGet:    true,
+	domain.OpJiraCommentsList: true,
+}
+
+// jiraSpecOperations mirrors the operation map of the composition root: each catalog operation runs as the bundled
+// operation the map names. A spec operation never repeats a catalog row name, as the root documents.
+var jiraSpecOperations = map[domain.OperationID]domain.OperationID{
+	domain.OpJiraWhoami:       "jira.auth.whoami",
+	domain.OpJiraProjectsList: "jira.projects.page",
+	domain.OpJiraIssuesSearch: "jira.issues.query",
+	domain.OpJiraIssuesGet:    "jira.issues.read",
+	domain.OpJiraCommentsList: "jira.comments.page",
+}
+
+// harnessJiraGateway is the Jira gateway of a scenario: the engine of the bundled jira.yml, mirroring jiraGateway
+// in the composition root. Every Jira operation runs on the engine over the seam transport, and the gateway restores
+// the document-not-found sentinel the Go gateway maps.
+type harnessJiraGateway struct {
+	engine *engine.Engine
+}
+
+// buildJiraGateway returns the gateway of one Jira source of a scenario, mirroring buildJiraGateway in the
+// composition root. The engine reaches the stub Jira server through the seam: the transport rewrites the request to
+// the seam base and round-trips with the seam client, so the unit and integration levels need no socket of their
+// own. A source whose engine cannot be built stops the scenario.
+func (w *world) buildJiraGateway(model *spec.Spec, src domain.Source, creds *envfile.Credentials, seam seamConfig,
+	rt specRuntime) (ports.SourceGateway, error) {
+	var opts []engine.Option
 	if seam.timeout > 0 {
-		opts = append(opts, jira.WithTimeout(seam.timeout))
+		opts = append(opts, engine.WithTimeout(seam.timeout))
 	}
-	gw, err := jira.NewWithBase(src, seam.base, seam.client, secrets, opts...)
+	transport := harnessEngineTransport(seam, rt)
+	if seam.on && seam.client != nil {
+		base, err := url.Parse(seam.base)
+		if err != nil {
+			return nil, err
+		}
+		if err := jira.CheckBaseURL(seam.base); err != nil {
+			return nil, err
+		}
+		transport = seamTransport{base: base, rt: hardenHarnessSeamTransport(seam.client.Transport, src.Endpoint().Host())}
+	}
+	eng, err := engine.New(model, src, engine.Ports{
+		Credentials: creds,
+		Identities:  creds,
+		Clock:       engineClock{clk: w.clock},
+		Network:     rt.network,
+		Transport:   transport,
+	}, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return gw, nil
+	return &harnessJiraGateway{engine: eng}, nil
+}
+
+// hardenHarnessSeamTransport returns a copy of the seam transport that sends the endpoint host as the TLS server
+// name, mirroring hardenSeamTransport in the composition root, which package main holds and this package cannot
+// import.
+func hardenHarnessSeamTransport(rt http.RoundTripper, host string) http.RoundTripper {
+	tr, ok := rt.(*http.Transport)
+	if !ok {
+		return rt
+	}
+	clone := tr.Clone()
+	if clone.TLSClientConfig == nil {
+		clone.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	} else {
+		clone.TLSClientConfig = clone.TLSClientConfig.Clone()
+	}
+	clone.TLSClientConfig.ServerName = host
+	return clone
+}
+
+// Read runs one catalog operation of a scenario against the stub on the engine, restoring the document sentinel
+// and setting the search page, mirroring Read in the composition root.
+func (g *harnessJiraGateway) Read(ctx context.Context, op domain.OperationID, args domain.Args) (domain.Record, error) {
+	specOp, ok := jiraSpecOperations[op]
+	if !ok {
+		return domain.Record{}, domain.ErrUnsupportedOperation
+	}
+	rec, err := g.engine.Read(ctx, specOp, args)
+	if err != nil {
+		return domain.Record{}, restoreHarnessJiraError(op, err)
+	}
+	if op == domain.OpJiraIssuesSearch {
+		rec = withHarnessSearchPage(rec)
+	}
+	return rec, nil
+}
+
+// translateJiraNotFound restores the document-not-found sentinel of an engine-served read, mirroring the composition
+// root.
+func translateJiraNotFound(op domain.OperationID, err error) error {
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, domain.ErrNotFound) ||
+		errors.Is(err, domain.ErrCollectionNotFound) || errors.Is(err, domain.ErrDocumentNotFound) {
+		return err
+	}
+	if jiraDocumentNotFoundReads[op] {
+		return domain.ErrDocumentNotFound
+	}
+	return err
+}
+
+// restoreHarnessJiraError restores the bare sentinel of an unreachable source, mirroring restoreJiraError in the
+// composition root. Every other error keeps the document translation of the operation.
+func restoreHarnessJiraError(op domain.OperationID, err error) error {
+	if errors.Is(err, domain.ErrUnreachable) {
+		return domain.ErrUnreachable
+	}
+	return translateJiraNotFound(op, err)
+}
+
+// withHarnessSearchPage sets the page of an issue search from the truncated flag of its items, mirroring
+// withSearchPage in the composition root.
+func withHarnessSearchPage(rec domain.Record) domain.Record {
+	items := rec.Items()
+	more := false
+	if len(items) > 0 {
+		if flag, ok := items[0].Get("truncated"); ok {
+			more, _ = flag.(bool)
+		}
+	}
+	return rec.WithPage(domain.Page{Paged: true, HasMore: more, NextOffset: len(items)})
+}
+
+// ListCollections returns the projects of the source from the bundled-spec engine, mirroring ListCollections in
+// the composition root: the spec maps the raw project key, and the gateway prefixes it.
+func (g *harnessJiraGateway) ListCollections(ctx context.Context) ([]domain.Collection, error) {
+	rec, err := g.engine.Read(ctx, "jira.projects.all", domain.NewArgs(nil))
+	if err != nil {
+		return nil, restoreHarnessJiraError(domain.OpJiraProjectsList, err)
+	}
+	out := make([]domain.Collection, 0, len(rec.Items()))
+	for _, item := range rec.Items() {
+		id, err := jira.ProjectCollectionID(item.Str("id"))
+		if err != nil {
+			return nil, domain.ErrUnexpectedResponse
+		}
+		out = append(out, domain.Collection{ID: id.String(), Name: item.Str("name")})
+	}
+	return out, nil
+}
+
+// CollectionTree returns the issues of one project from the engine's cursor walk of the bundled spec, mirroring
+// CollectionTree in the composition root: the flat nodes with the parent ID of every child and the depth from 0.
+// A project the server refuses keeps the collection-not-found sentinel of the tree walk.
+func (g *harnessJiraGateway) CollectionTree(ctx context.Context, id domain.CollectionID) ([]domain.TreeNode, error) {
+	key, err := jira.ProjectKey(id)
+	if err != nil {
+		return nil, err
+	}
+	rec, err := g.engine.Read(ctx, "jira.issues.tree",
+		domain.NewArgs(map[string]any{"jql": `project = "` + key + `" ORDER BY key ASC`}))
+	if err != nil {
+		if errors.Is(err, domain.ErrBadRequest) {
+			return nil, domain.ErrCollectionNotFound
+		}
+		return nil, restoreHarnessJiraError(domain.OpJiraIssuesSearch, err)
+	}
+	return harnessJiraTreeNodes(rec)
+}
+
+// harnessJiraTreeNodes maps the issues of the tree walk to flat nodes, mirroring jiraTreeNodes in the composition
+// root. The parent of a top node is null, so its ParentID stays nil, and the depth counts from 0.
+func harnessJiraTreeNodes(rec domain.Record) ([]domain.TreeNode, error) {
+	items := rec.Items()
+	index := make(map[string]int, len(items))
+	keys := make([]string, len(items))
+	for i, item := range items {
+		keys[i] = item.Str("key")
+		index[keys[i]] = i
+	}
+	parentOf := make([]int, len(items))
+	nodes := make([]domain.TreeNode, len(items))
+	for i, item := range items {
+		node := domain.TreeNode{
+			ID:    "issue-" + keys[i],
+			Title: item.Str("title"),
+			URL:   item.Str("url"),
+		}
+		parentOf[i] = -1
+		if parent, ok := item.Get("parent"); ok {
+			if text, isText := parent.(string); isText && text != "" {
+				if _, err := jira.ParseIssueKey(text); err == nil {
+					if j, ok := index[text]; ok {
+						parentOf[i] = j
+						issue := "issue-" + text
+						node.ParentID = &issue
+					}
+				}
+			}
+		}
+		nodes[i] = node
+	}
+	for i := range nodes {
+		depth := 0
+		for j := parentOf[i]; j >= 0; j = parentOf[j] {
+			depth++
+			if depth > len(nodes) {
+				return nil, domain.ErrUnexpectedResponse
+			}
+		}
+		nodes[i].Depth = depth
+	}
+	return nodes, nil
+}
+
+// Document returns one issue from the engine's get read, mirroring Document in the composition root, with its
+// Markdown body. A missing issue keeps the document-not-found sentinel of the get read.
+func (g *harnessJiraGateway) Document(ctx context.Context, id domain.DocumentID) (domain.SourceDocument, error) {
+	key, err := jira.IssueKey(id)
+	if err != nil {
+		return domain.SourceDocument{}, err
+	}
+	rec, err := g.engine.Read(ctx, jiraSpecOperations[domain.OpJiraIssuesGet],
+		domain.NewArgs(map[string]any{"issueKey": key}))
+	if err != nil {
+		return domain.SourceDocument{}, restoreHarnessJiraError(domain.OpJiraIssuesGet, err)
+	}
+	return domain.SourceDocument{
+		ID:           rec.Str("id"),
+		Title:        rec.Str("title"),
+		URL:          rec.Str("url"),
+		Markdown:     rec.Str("markdown"),
+		CollectionID: rec.Str("collectionId"),
+	}, nil
 }
 
 // attachSources resolves the configuration paths and wires the sources into deps, as attachSourcesFrom does in the
