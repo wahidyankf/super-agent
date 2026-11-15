@@ -11,9 +11,10 @@ tags:
 
 # E21: the Jira text converters
 
-This page belongs to [ADR 004](../004-jira-gaps.md). E21 is built by pull request 34. It covers J4, the
-`timestampText` and `dueText` rewrites of `markdown.go`, and J5, the `titleText` cut. Each converter is a pure
-function of one reply value, with the algorithm moved from the Go code and reviewed once.
+This page belongs to [ADR 004](../004-jira-gaps.md). Pull request 34 built E21 as described here: the
+fixed `jira-time`, `jira-date`, and `jira-title` converters moved from the Go code and reviewed once. E22 to E24
+stay planned on their own pages. E21 covers J4, the `timestampText` and `dueText` rewrites of `markdown.go`, and
+J5, the `titleText` cut. Each converter is a pure function of one reply value.
 
 ```yaml
 fields:

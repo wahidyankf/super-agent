@@ -203,13 +203,19 @@ The review text lists each body-paged read in its own block, with its style, its
   shapes, an optional `required`, an optional closed `format`, and an optional `convert`. A pointer that finds an
   explicit null wins, so the fallback serves only the shape that lacks the pointer, never a second guess inside one
   shape. A fallback pointer needs the pointer it falls back from. The converter is `plain`, `markdown-from-html`,
-  `markdown-from-adf`, `hostname`, or `text-from-editor-data`. The engine serves `hostname`: the field holds the host
-  of the reply address, without the path, the query, the port, or the user name, or the empty text when the address
-  has no host. The engine serves `text-from-editor-data`: the plain text of editor data, with a line break after each
-  text block, or the raw text unchanged when the field falls back to it; a missing value maps to null, and any other
-  scalar is an unexpected response. The engine serves `markdown-from-adf`: the Markdown of the ADF document, rendered
-  as a pure function of the reply, ending with the truncation marker past the depth cap. The converter is a pure
-  function of the reply: it sends no request and reaches no other host. The engine does not serve the
+  `markdown-from-adf`, `hostname`, `text-from-editor-data`, `jira-time`, `jira-date`, or `jira-title`. The engine
+  serves `hostname`: the field holds the host of the reply address, without the path, the query, the port, or the
+  user name, or the empty text when the address has no host. The engine serves `text-from-editor-data`: the plain
+  text of editor data, with a line break after each text block, or the raw text unchanged when the field falls back
+  to it; a missing value maps to null, and any other scalar is an unexpected response. The engine serves
+  `markdown-from-adf`: the Markdown of the ADF document, rendered as a pure function of the reply, ending with the
+  truncation marker past the depth cap. The engine serves `jira-time`: the UTC instant of a Jira timestamp as RFC
+  3339; `jira-date`: a calendar day unchanged; and `jira-title`: one line of at most 255 runes with no hidden
+  character. Any other value, including a missing one, maps to the empty text with the field present, so the row is
+  kept with a visible gap, exactly as the Go code answers today. Proof: `TestJiraTimeMapsBadLayoutToEmpty`,
+  `TestJiraTitleKeeps255Runes`, `TestJiraTitleStripsInvisible`, `TestJiraDateRefusesBareYear`,
+  `TestAJiraTitleStripsABidiOverride`, and `TestAJiraBadDateMapsToEmptyWithTheFieldPresent`. The converter is a
+  pure function of the reply: it sends no request and reaches no other host. The engine does not serve the
   `markdown-from-html` converter yet. A spec that names it still loads, and each
   run of that operation fails with `retriever.<kind>.unsupported_operation` before any request is sent.
 - `required`: `true` on a reply field fails the read with `unexpected_response` when the reply holds a missing, null,
@@ -350,4 +356,6 @@ closed bool values that serves the notification subscription replies. This page 
 today, and each extension moves here when its pull request lands. Pull request 18 then served the `markdown-from-adf`
 converter, described above with the response converters. The Jira port then needed six more still: pull request 33
 built the first two, the `IssueKey` parameter kind and the page-end rule, described above with the parameters, the
-pagination, and the response. The text converters, the document layout, the key echo, and the built IDs stay planned.
+pagination, and the response. Pull request 34 built the next one, the `jira-time`, `jira-date`, and `jira-title`
+text converters, described above with the response converters. The document layout, the key echo, and the built IDs
+stay planned.
