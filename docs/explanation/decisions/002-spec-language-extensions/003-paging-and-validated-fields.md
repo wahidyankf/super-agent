@@ -11,8 +11,8 @@ tags:
 
 # E2 and E3: body paging and validated fields
 
-This page belongs to [ADR 002](../002-spec-language-extensions.md). E2 is built by pull request 8. E3 is still
-planned.
+This page belongs to [ADR 002](../002-spec-language-extensions.md). E2 is built by pull request 8, and E3 by pull
+request 9.
 
 ## E2: body paging
 
@@ -50,7 +50,7 @@ E2 cannot page by a header, grow the page size, or read two pages in parallel.
 The request side exists today: a missing required argument fails with `missing_argument` before any request, and a bad
 ID fails with `invalid_id`. The reply side is the gap. The Go connectors refuse a reply that holds no ID: `requiredID`
 in the Outline `decode.go` returns `unexpected_response` when the field is missing or its ID check fails, and 22 call
-sites use it. A spec maps a missing reply field to null today. E3 closes that gap.
+sites use it. Before pull request 9, a spec mapped a missing reply field to null. E3 closes that gap.
 
 ```yaml
 response:
