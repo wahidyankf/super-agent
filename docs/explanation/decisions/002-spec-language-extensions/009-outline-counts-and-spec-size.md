@@ -37,13 +37,16 @@ Two things follow for this ADR:
 The caps are 200 operations and 256 KiB for one spec file.
 
 - **Operations.** The catalog holds 165, and the fallback target makes 166. That fits, with 34 to spare.
-- **File size.** This is an estimate. The bundled `example-wiki.yml` takes about 0.7 KB for each of its four operations,
+- **File size.** This was an estimate. The bundled `example-wiki.yml` takes about 0.7 KB for each of its four operations,
   with one-line parameters and one or two reply fields. An Outline operation has about 2.4 parameters (about 400 in
   all), about six reply fields, a body template, and at least one example with a request, a reply, and the expected
   fields. That is 1.4 to 2.0 KB per operation, or about 230 to 330 KB for 166 operations. The cap is 256 KiB, which is
   about 262 KB.
 
-So the spec may be too large. Examples are the largest part, and each operation must have at least one.
+Pull request 16 measured the real spec: `outline.yml` holds all 67 operations (66 catalog reads + the export fallback
+target) in 115,907 bytes as committed — 44 percent of the cap, about 1.7 KB per operation. It fits with room to spare,
+so no cap change, no second file, and no new ADR. Per the standing owner rule, every byte is there because the
+operation needs it: parameters carry help text, and each operation keeps one example.
 
 ## What ADR 001 lets us do
 
