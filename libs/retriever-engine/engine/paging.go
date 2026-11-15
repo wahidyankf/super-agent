@@ -36,6 +36,11 @@ func (e *Engine) readOffset(ctx context.Context, o spec.Operation, args domain.A
 	var last domain.Page
 	cut := cutOf(o, args)
 	for i := 0; i < e.pageCap(o); i++ {
+		if i > 0 {
+			if err := e.ports.Clock.Sleep(ctx, pageAllMinDelay); err != nil {
+				return domain.Record{}, err
+			}
+		}
 		if offset >= maxOffsetValue {
 			return domain.Record{}, domain.ErrInvalidOffset
 		}
@@ -95,6 +100,11 @@ func (e *Engine) readCursor(ctx context.Context, o spec.Operation, args domain.A
 	cursor := ""
 	sent := map[string]bool{}
 	for i := 0; i < e.pageCap(o); i++ {
+		if i > 0 {
+			if err := e.ports.Clock.Sleep(ctx, pageAllMinDelay); err != nil {
+				return domain.Record{}, err
+			}
+		}
 		if sent[cursor] {
 			break
 		}
@@ -156,9 +166,10 @@ const (
 	pageAllOffsetKey = "offset"
 )
 
-// pageAllMinDelay is the least time between two requests of a page-all read, mirroring the request pacing of the Go
-// gateway the rule replaces. The engine waits the whole delay before every page after the first, and it tops a
-// shorter 429 wait up to the delay; a longer wait already covers it. The test clock advances a wait at once.
+// pageAllMinDelay is the least time between two requests of a read, mirroring the request pacing of the Go gateway
+// the rule replaces. The engine waits the whole delay before every page after the first, and it tops a shorter 429
+// wait up to the delay; a longer wait already covers it. It paces page-all, offset, and cursor reads alike, and every
+// retry, so one source never sees two requests at once. The test clock advances a wait at once.
 const pageAllMinDelay = 100 * time.Millisecond
 
 // readPageAll reads every page of a page-all read: pages of the rule's fixed size until a short page, with no
