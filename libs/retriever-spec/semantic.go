@@ -135,10 +135,18 @@ func checkBody(value any, at string, params map[string]Param) []Finding {
 	return nil
 }
 
-// checkPagination checks that each named query parameter of a paged read is a query parameter of the operation.
+// checkPagination checks that each named paging parameter of a paged read is a parameter of the operation in the
+// location the rule names: query, or body with in: body. A rule cannot mix locations.
 func checkPagination(op Operation, base string, params map[string]Param) []Finding {
 	if op.Pagination == nil {
 		return nil
+	}
+	loc := op.Pagination.In
+	if loc == "" {
+		loc = "query"
+	}
+	if loc != "query" && loc != "body" {
+		return []Finding{finding(base+"/pagination/in", "is neither query nor body")}
 	}
 	var fs []Finding
 	names := map[string]string{
@@ -150,8 +158,8 @@ func checkPagination(op Operation, base string, params map[string]Param) []Findi
 		if name == "" {
 			continue
 		}
-		if p, ok := params[name]; !ok || p.In != "query" {
-			fs = append(fs, finding(base+"/pagination/"+field, "names no query parameter of the operation"))
+		if p, ok := params[name]; !ok || p.In != loc {
+			fs = append(fs, finding(base+"/pagination/"+field, "names no "+loc+" parameter of the operation"))
 		}
 	}
 	return fs

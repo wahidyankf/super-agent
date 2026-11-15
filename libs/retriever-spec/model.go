@@ -158,6 +158,8 @@ type Field struct {
 type Pagination struct {
 	// Style is offset, cursor, or none.
 	Style string `json:"style"`
+	// In is where the paging parameters travel: query, or body. Empty means query.
+	In string `json:"in,omitempty"`
 	// MaxPages is the page cap of the read, between 1 and 20. It is the stop rule of every paged read.
 	MaxPages int `json:"max_pages,omitempty"`
 	// LimitParam is the query parameter that sets the page size of an offset read.

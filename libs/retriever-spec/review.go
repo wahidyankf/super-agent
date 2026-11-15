@@ -30,6 +30,7 @@ func Review(s *Spec) string {
 		fmt.Fprintf(&b, "   %s\n", op.Summary)
 	}
 	writePostReads(&b, s)
+	writeBodyPaging(&b, s)
 	return b.String()
 }
 
@@ -49,6 +50,38 @@ func writePostReads(b *strings.Builder, s *Spec) {
 	for i, op := range posts {
 		fmt.Fprintf(b, "%d. %s: POST %s%s, body from slots: %s\n", i+1, op.ID, s.Endpoint.BasePath, op.Path, slotsOf(op.Body))
 	}
+}
+
+// writeBodyPaging writes the block of the reads that page in the JSON body, one line each, with the style, the body
+// parameters the rule names, and the page cap. A spec with no body-paged read writes nothing, so its review keeps its
+// text.
+func writeBodyPaging(b *strings.Builder, s *Spec) {
+	var body []Operation
+	for _, op := range s.Operations {
+		if op.Pagination != nil && op.Pagination.In == "body" {
+			body = append(body, op)
+		}
+	}
+	if len(body) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Body paging: %d\n", len(body))
+	for i, op := range body {
+		fmt.Fprintf(b, "%d. %s: %s in body (%s), at most %d pages\n", i+1, op.ID, op.Pagination.Style,
+			strings.Join(pagingParams(op.Pagination), ", "), op.Pagination.MaxPages)
+	}
+}
+
+// pagingParams returns the names of the paging parameters of a rule, in sorted order.
+func pagingParams(pag *Pagination) []string {
+	var out []string
+	for _, name := range []string{pag.LimitParam, pag.OffsetParam, pag.CursorParam} {
+		if name != "" {
+			out = append(out, name)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // slotsOf names the slots of a body in sorted order, or "none" when the body takes no slot.
