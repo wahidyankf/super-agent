@@ -154,6 +154,15 @@ The review text lists each body-paged read in its own block, with its style, its
   than the cap, and its subtree, is left out. The computed fields beat a mapped reply field of the same name. A
   reply with `tree` decodes to a fixed higher cap of 146 levels, which covers a tree of 70 levels; no spec field sets
   it, and no other reply changes.
+- `fallback`: a declared second read of one object, run when the first reply triggers it. It names `operation` (the
+  ID of a read of the same spec, picked in the document and never from reply data), `when` (the one closed trigger:
+  `empty` with a mapped output field that is empty, or `status` with a list of HTTP statuses), and `fill` (the
+  output fields that take the target's values). The target declares only parameters the first operation also
+  declares, and it receives their values. At most one fallback request runs per call, and the target has no fallback
+  of its own, so a chain of two fallbacks is refused at load. Both requests share the 30 second limit and run under
+  every safeguard of the engine: the same host, the same key, no redirect, and the same caps. When the fallback
+  fails, the read fails with the error of the fallback. The triggers `empty` and `status` are owner proposals that
+  the owner can still veto at review.
 - `fields`: a map from output field to an object with `pointer`, a JSON pointer into the reply, an optional `required`,
   an optional closed `format`, and an optional `convert`. The converter is `plain`, `markdown-from-html`, or
   `markdown-from-adf`. The engine does not serve the two Markdown converters yet. A spec that names one still loads,
@@ -178,7 +187,8 @@ block, with the operation and the list pointer as `first of /data`. The review t
 block, with the label field and each list as `<label> of <pointer>`, and it joins the required, checked, and nested
 fields of every list under the same operation. The review text lists each tree read in its own block, with the items
 pointer, the children pointer, the computed fields, the root parent parameter when the read names one, and the depth
-cap.
+cap. The review text lists each fallback read in its own block, with the target operation, the trigger, and the fill
+fields.
 
 There are no expressions. A pointer reads, and nothing computes.
 
@@ -201,8 +211,8 @@ The language cannot yet express the Outline reads, so they still run on the Go g
 - A field is never required. A field takes `required` and a closed `format` now, which is described in
   [Response](#response), so this limit no longer blocks a read. A missing optional field still maps to null.
 - A field holds one scalar or one nested record, which is described in [Response](#response). The first item of a
-  list, a list merged from several lists, and a tree with a computed depth are described in [Response](#response); a
-  fallback read has no form in the language.
+  list, a list merged from several lists, a tree with a computed depth, and a fallback read are described in
+  [Response](#response).
 
 A spec named `outline` is also refused, because the kind is a built-in source. A bundled Outline spec would need an
 exception for bundled files only.
@@ -221,10 +231,10 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 ## Planned extensions
 
 [ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
-that the Outline, Kiwi, and Jira connectors can run as specs. The first seven of them, POST reads (E1), body paging
+that the Outline, Kiwi, and Jira connectors can run as specs. The first eight of them, POST reads (E1), body paging
 (E2), required and validated fields (E3), nested records with an allow-list (E4), the first item or not found
-(E5), merged lists with constant labels (E6), and computed tree fields (E7), are built and described above. The
-other two are not built. The
+(E5), merged lists with constant labels (E6), computed tree fields (E7), and the fallback read (E8), are built and
+described above. The other one (E9) is not built. The
 limits of the Outline reads, above, describe
 the language before ADR 002 for the
 shapes that the remaining extensions cover. This page documents only what the module accepts today, and each extension
