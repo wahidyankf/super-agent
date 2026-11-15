@@ -27,6 +27,10 @@ folder existed, the repository kept no decision records, so the first one starts
   the spec engine, and the port that retires its Go module. It overrules the Kiwi stop rule of ADR 002.
 - [Companion pages of ADR 003](./003-kiwi-gaps/) hold its threat model delta, its ten gap decisions, and its
   pull-request sequence.
+- [ADR 004: Jira gaps J0 to J8](./004-jira-gaps.md) records the closed extensions that let the Jira connector run on
+  the spec engine, and the port that retires its Go module. It overrules the Jira stop rule of ADR 002.
+- [Companion pages of ADR 004](./004-jira-gaps/) hold its threat model delta, its nine gap decisions, and its
+  pull-request sequence.
 
 ## Form of a record
 
