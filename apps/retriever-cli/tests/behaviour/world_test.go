@@ -141,7 +141,8 @@ func (w *world) getenv(name string) string {
 	return w.env[name]
 }
 
-// deps returns the CLI dependencies for one in-process run. The Getenv function reads the scenario environment.
+// deps returns the CLI dependencies for one in-process run. The Getenv function reads the scenario environment,
+// and file reads resolve a relative name against the scenario folder, as the working directory would.
 func (w *world) deps(stdout, stderr *bytes.Buffer) cli.Deps {
 	return cli.Deps{
 		Ports:  ports.Ports{},
@@ -149,8 +150,14 @@ func (w *world) deps(stdout, stderr *bytes.Buffer) cli.Deps {
 		Stdout: stdout,
 		Stderr: stderr,
 		Getenv: w.getenv,
-		Now:    w.clock.Now,
-		Sink:   w.be.sink,
+		ReadFile: func(name string) ([]byte, error) {
+			if !filepath.IsAbs(name) {
+				name = w.absPath(name)
+			}
+			return w.be.readFile(name)
+		},
+		Now:  w.clock.Now,
+		Sink: w.be.sink,
 	}
 }
 

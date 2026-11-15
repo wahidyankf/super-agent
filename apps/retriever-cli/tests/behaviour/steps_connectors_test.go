@@ -44,6 +44,18 @@ func registerConnectorSteps(ctx *godog.ScenarioContext, cur func() *world) {
 		func(dir, name, kind string) error {
 			return cur().writeSpec(dir, name, specWithKind(kind))
 		})
+	ctx.Step(`^the spec file "([^"]*)" holds the wiki spec$`, func(name string) error {
+		return cur().writeCheckSpec(name, checkSpec)
+	})
+	ctx.Step(`^the spec file "([^"]*)" holds the wiki spec with no examples$`, func(name string) error {
+		return cur().writeCheckSpec(name, specWithNoExamples())
+	})
+	ctx.Step(`^the spec file "([^"]*)" holds the wiki spec with an unproduced field$`, func(name string) error {
+		return cur().writeCheckSpec(name, specWithUnproducedField())
+	})
+	ctx.Step(`^the spec file "([^"]*)" holds the wiki spec with the Outline key and the credential "([^"]*)" planted$`, func(name, secret string) error {
+		return cur().writeCheckSpec(name, specWithOutlineKeyAndPlantedCredential(secret))
+	})
 	ctx.Step(`^the spec source received no requests$`, func() error {
 		return cur().checkSpecRequests(0)
 	})
@@ -54,6 +66,13 @@ func registerConnectorSteps(ctx *godog.ScenarioContext, cur func() *world) {
 		}
 		return cur().checkSpecRequests(n)
 	})
+}
+
+// writeCheckSpec writes one spec file at name, relative to the scenario folder, for the connector commands to check.
+// The spec is an input that the user wrote, so the secret scan skips it.
+func (w *world) writeCheckSpec(name, text string) error {
+	_, err := w.writeInput(name, text)
+	return err
 }
 
 // writeSpec writes one spec file into the connectors folder dir, which is relative to the scenario folder. The spec is an
