@@ -192,6 +192,10 @@ type Response struct {
 	// request argument exactly, or the read fails. It is nil unless the read echoes the key of its request. Only a
 	// single-object read declares one.
 	Echo *Echo `json:"echo,omitempty"`
+	// Document is the Markdown layout of a read of one object: the title, the closed line kinds, and the
+	// description body, rendered from the mapped fields into the markdown output field. It is nil unless the read
+	// renders a document. Only a single-object read declares one, and never with a markdown field of its own.
+	Document *Document `json:"document,omitempty"`
 	// UnavailableMessage is the exact body message that proves the method is missing: a 404 carrying exactly this
 	// message fails as operation_unavailable instead of the mapped reason. Empty means no body rule, and the 404 body
 	// is never read. The match is equality with this constant only.
@@ -215,6 +219,66 @@ type Echo struct {
 	Param string `json:"param"`
 	// Pointer is the JSON pointer of the echoed value in the reply.
 	Pointer string `json:"pointer"`
+}
+
+// Document is the Markdown layout of a read of one object, rendered from the mapped fields of the response into
+// the markdown output field. The title is one collapsed line rendered as `# <title>`, each line renders
+// `- <label>: <value>`, and the body renders `## <heading>` with the converted description, or the empty constant
+// when it is blank.
+type Document struct {
+	// Title is the output field whose value the title renders, as one collapsed line.
+	Title string `json:"title"`
+	// Lines holds one to 32 metadata lines, in the order they render.
+	Lines []DocLine `json:"lines"`
+	// Body is the description body with its fixed heading and empty text.
+	Body DocBody `json:"body"`
+}
+
+// DocLine is one metadata line of a document layout: the constant label and one closed kind. A field line escapes
+// its value, a verbatim line writes a shape-checked key or date as is, and a pair line renders `name (key)`, or
+// the bare key when the name is empty. Join renders a string list with the fixed separator `", "`. Default fills
+// an empty value with its closed constant, and skip_empty omits the line when the value is still empty; otherwise
+// the line is emitted even when empty. Valid checks the value against the issue-key shape, emptying it when it
+// does not pass.
+type DocLine struct {
+	// Label is the constant label of the line, of 1 to 32 characters.
+	Label string `json:"label"`
+	// Field is the output field whose value the line escapes. It is empty unless the line is a field line.
+	Field string `json:"field,omitempty"`
+	// Verbatim is the output field whose value the line writes as is. It is empty unless the line is verbatim.
+	Verbatim string `json:"verbatim,omitempty"`
+	// Pair is the name and key fields of a pair line. It is nil unless the line is a pair.
+	Pair *DocPair `json:"pair,omitempty"`
+	// Join renders a string list with the fixed separator. It is empty unless the line joins a strings field.
+	Join string `json:"join,omitempty"`
+	// Default fills an empty value with its closed constant. Empty means no default.
+	Default string `json:"default,omitempty"`
+	// SkipEmpty omits the line when its value is still empty. False emits the line even when empty.
+	SkipEmpty bool `json:"skip_empty,omitempty"`
+	// Valid checks the value against the issue-key shape, emptying it when it does not pass. Empty means no check.
+	Valid string `json:"valid,omitempty"`
+}
+
+// DocPair is the name and key fields of a pair line: the escaped name with the key in parentheses, or the bare
+// key when the name is empty.
+type DocPair struct {
+	// Name is the output field whose value names the pair.
+	Name string `json:"name"`
+	// Key is the output field whose value the pair carries.
+	Key string `json:"key"`
+}
+
+// DocBody is the description body of a document layout: the converted description under a fixed heading, or the
+// empty constant when it is blank.
+type DocBody struct {
+	// Field is the output field whose converted value the body renders.
+	Field string `json:"field"`
+	// Convert is the Markdown converter that produced the value. Only markdown-from-adf serves a body.
+	Convert string `json:"convert"`
+	// Heading is the fixed heading of the body, of 1 to 32 characters.
+	Heading string `json:"heading"`
+	// Empty is the closed constant of a blank description.
+	Empty string `json:"empty"`
 }
 
 // Truncated is the computed per-item flag of a cursor read with the page-end rule: it names the reply pointer of the

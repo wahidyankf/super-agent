@@ -427,6 +427,69 @@
         "pointer": { "$ref": "#/$defs/pointer" }
       }
     },
+    "doc_label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[A-Za-z][A-Za-z0-9 -]{0,31}$"
+    },
+    "doc_constant": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9 (),.!?-]{1,64}$"
+    },
+    "doc_pair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "key"],
+      "properties": {
+        "name": { "$ref": "#/$defs/param_name" },
+        "key": { "$ref": "#/$defs/param_name" }
+      }
+    },
+    "doc_line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": { "$ref": "#/$defs/doc_label" },
+        "field": { "$ref": "#/$defs/param_name" },
+        "verbatim": { "$ref": "#/$defs/param_name" },
+        "pair": { "$ref": "#/$defs/doc_pair" },
+        "join": { "const": ", " },
+        "default": { "$ref": "#/$defs/doc_constant" },
+        "skip_empty": { "const": true },
+        "valid": { "const": "issue_key" }
+      },
+      "oneOf": [{ "required": ["field"] }, { "required": ["verbatim"] }, { "required": ["pair"] }]
+    },
+    "doc_body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "convert", "heading", "empty"],
+      "properties": {
+        "field": { "$ref": "#/$defs/param_name" },
+        "convert": { "const": "markdown-from-adf" },
+        "heading": { "$ref": "#/$defs/doc_label" },
+        "empty": { "$ref": "#/$defs/doc_constant" }
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "lines", "body"],
+      "properties": {
+        "title": { "$ref": "#/$defs/param_name" },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/doc_line" }
+        },
+        "body": { "$ref": "#/$defs/doc_body" }
+      }
+    },
     "fallback_when": {
       "type": "object",
       "additionalProperties": false,
@@ -478,6 +541,7 @@
         "tree": { "$ref": "#/$defs/tree" },
         "truncated": { "$ref": "#/$defs/truncated" },
         "echo": { "$ref": "#/$defs/echo" },
+        "document": { "$ref": "#/$defs/document" },
         "fields": {
           "type": "object",
           "maxProperties": 100,
