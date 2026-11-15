@@ -189,6 +189,12 @@ The review text lists each body-paged read in its own block, with its style, its
   declares `last_pointer`; an example may expect `truncated` exactly then, like the computed parent and depth fields
   of a tree read. The flag beats a mapped reply field of the same name. Proof: `TestTruncatedNeedsTokenAndNotLast` and
   `TestTruncatedMissingTokenIsFalse`.
+- `echo`: the key check of a read of one object. It names `param` (the request parameter whose value the reply must
+  echo) and `pointer` (the JSON pointer of the echoed value in the reply). After mapping, the text at the pointer must
+  equal the request argument exactly, or the read fails with `unexpected_response` naming the pointer path, never the
+  values. Only a single-object read declares one: a list, first-item, merge, tree, paged, or write response is refused
+  at load, and a missing, null, or non-text value at the pointer fails the same way at run time. Proof:
+  `TestKeyEchoMismatchIsUnexpected`, `TestKeyEchoRefusalNamesPath`, and `TestKeyEchoOnListIsRefused`.
 - `fallback`: a declared second read of one object, run when the first reply triggers it. It names `operation` (the
   ID of a read of the same spec, picked in the document and never from reply data), `when` (the one closed trigger:
   `empty` with a mapped output field that is empty, or `status` with a list of HTTP statuses), and `fill` (the
@@ -212,7 +218,14 @@ The review text lists each body-paged read in its own block, with its style, its
   truncation marker past the depth cap. The engine serves `jira-time`: the UTC instant of a Jira timestamp as RFC
   3339; `jira-date`: a calendar day unchanged; and `jira-title`: one line of at most 255 runes with no hidden
   character. Any other value, including a missing one, maps to the empty text with the field present, so the row is
-  kept with a visible gap, exactly as the Go code answers today. Proof: `TestJiraTimeMapsBadLayoutToEmpty`,
+  kept with a visible gap, exactly as the Go code answers today.
+  A field may build its value from an issue key instead of reading it: `project_key` (the text before the last
+  hyphen), `issue_id` (the key prefixed with `issue-`), `collection_id` (the project part prefixed with `project-`),
+  and `browse_url` (the endpoint origin joined with `/browse/` and the key, never a URL the reply carries). Each names
+  the JSON pointer of the key in the reply, all four share one closed issue-key check, and a missing, null, non-text,
+  or misshaped value fails with `unexpected_response` naming the field, never the value. A built field reads one key
+  only and takes no `pointer`, `fallback_pointer`, `format`, or `convert` of its own. Proof:
+  `TestBrowseUrlIgnoresReplyUrl`, `TestBuiltIdRefusesBadKey`, and `TestProjectKeyTakesPrefix`. Proof: `TestJiraTimeMapsBadLayoutToEmpty`,
   `TestJiraTitleKeeps255Runes`, `TestJiraTitleStripsInvisible`, `TestJiraDateRefusesBareYear`,
   `TestAJiraTitleStripsABidiOverride`, and `TestAJiraBadDateMapsToEmptyWithTheFieldPresent`. The converter is a
   pure function of the reply: it sends no request and reaches no other host. The engine does not serve the
@@ -269,7 +282,10 @@ pointer, the children pointer, the computed fields, the root parent parameter wh
 cap. The review text lists each fallback read in its own block, with the target operation, the trigger, and the fill
 fields. The review text lists each `page-all` read with its fixed page size in place of parameters. The review text
 lists each read with an issue key in its own block, with the path parameter, and each read with the page-end rule in
-its own block, with the last flag, the cut parameter, and the truncated pointers. Dual pointers,
+its own block, with the last flag, the cut parameter, and the truncated pointers. The review text lists each read
+with a key echo in its own block, with the parameter and the pointer, and each read with built IDs in its own block,
+with each field, the ID it builds, and the pointer it builds it from, joining the built fields of every list under
+the same operation. Dual pointers,
 the body-matched 404 rule, and converters add no review block: the review names rules, never reply shapes.
 
 There are no expressions. A pointer reads, and nothing computes.
@@ -357,5 +373,5 @@ today, and each extension moves here when its pull request lands. Pull request 1
 converter, described above with the response converters. The Jira port then needed six more still: pull request 33
 built the first two, the `IssueKey` parameter kind and the page-end rule, described above with the parameters, the
 pagination, and the response. Pull request 34 built the next one, the `jira-time`, `jira-date`, and `jira-title`
-text converters, described above with the response converters. The document layout, the key echo, and the built IDs
-stay planned.
+text converters, described above with the response converters. Pull request 35 built the next two, the key echo and
+the built IDs, described above with the response and its review blocks. The document layout stays planned.

@@ -24,6 +24,14 @@ upgrade.
 
 ### Added
 
+- The spec language admits the key echo on a read of one object: after mapping, the text at the echo pointer must
+  equal the request argument exactly, or the read fails with `unexpected_response` naming the pointer path, never the
+  values. A reply field may build its value from an issue key instead of reading it: `project_key` (the text before
+  the last hyphen), `issue_id` (the key prefixed with `issue-`), `collection_id` (the project part prefixed with
+  `project-`), and `browse_url` (the endpoint origin joined with `/browse/` and the key, never a URL the reply
+  carries). All four share one closed issue-key check, and a value outside the shape fails with `unexpected_response`
+  naming the field, never the value. The schema stays at version 1; `retriever-spec` and `retriever-engine` stay at
+  `v0.6.0`.
 - The spec language admits the `jira-time`, `jira-date`, and `jira-title` converters as pure functions of the reply:
   a Jira timestamp answers as RFC 3339 in UTC, a calendar day passes unchanged, and a title keeps one line of at
   most 255 runes with no hidden character. Any other value, including a missing one, maps to the empty text with

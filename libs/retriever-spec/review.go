@@ -41,6 +41,8 @@ func Review(s *Spec) string {
 	writeFallbackReads(&b, s)
 	writeIssueKeys(&b, s)
 	writePageEnds(&b, s)
+	writeKeyEchoes(&b, s)
+	writeBuiltIDs(&b, s)
 	writeBundledMapping(&b, s)
 	return b.String()
 }
@@ -439,6 +441,105 @@ func writePageEnds(b *strings.Builder, s *Spec) {
 	fmt.Fprintf(b, "Page ends: %d\n", len(entries))
 	for i, e := range entries {
 		fmt.Fprintf(b, "%d. %s: %s\n", i+1, e.id, e.rule)
+	}
+}
+
+// writeKeyEchoes writes the block of the reads with the key echo, one line each, with the parameter and the pointer
+// the reply must echo. A spec with no echo writes nothing, so its review keeps its text.
+func writeKeyEchoes(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id      string
+		param   string
+		pointer string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		if op.Response.Echo == nil {
+			continue
+		}
+		entries = append(entries, entry{id: op.ID, param: op.Response.Echo.Param, pointer: op.Response.Echo.Pointer})
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Key echoes: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: %s equals %s\n", i+1, e.id, e.param, e.pointer)
+	}
+}
+
+// builtIDKind names the ID that a built field builds, for the review line.
+func builtIDKind(f Field) string {
+	switch {
+	case f.ProjectKey != "":
+		return "project key"
+	case f.IssueID != "":
+		return "issue ID"
+	case f.CollectionID != "":
+		return "collection ID"
+	default:
+		return "browse URL"
+	}
+}
+
+// builtIDPointer names the pointer that a built field reads the key from.
+func builtIDPointer(f Field) string {
+	switch {
+	case f.ProjectKey != "":
+		return f.ProjectKey
+	case f.IssueID != "":
+		return f.IssueID
+	case f.CollectionID != "":
+		return f.CollectionID
+	default:
+		return f.BrowseURL
+	}
+}
+
+// writeBuiltIDs writes the block of the operations with built IDs, one line each, with every built field, the ID it
+// builds, and the pointer it builds it from, in field-name order. A spec with no built ID writes nothing, so its
+// review keeps its text.
+func writeBuiltIDs(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id     string
+		fields []string
+	}
+	var entries []entry
+	addFields := func(id string, fields map[string]Field) []string {
+		var names []string
+		for name := range fields {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		var parts []string
+		for _, name := range names {
+			f := fields[name]
+			if f.ProjectKey == "" && f.IssueID == "" && f.CollectionID == "" && f.BrowseURL == "" {
+				continue
+			}
+			parts = append(parts, name+" as "+builtIDKind(f)+" of "+builtIDPointer(f))
+		}
+		return parts
+	}
+	for _, op := range s.Operations {
+		parts := addFields(op.ID, op.Response.Fields)
+		if op.Response.Merge != nil {
+			for _, l := range op.Response.Merge.Lists {
+				parts = append(parts, addFields(op.ID, l.Fields)...)
+			}
+		}
+		if len(parts) == 0 {
+			continue
+		}
+		sort.Strings(parts)
+		entries = append(entries, entry{id: op.ID, fields: parts})
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Built IDs: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: %s\n", i+1, e.id, strings.Join(e.fields, "; "))
 	}
 }
 
