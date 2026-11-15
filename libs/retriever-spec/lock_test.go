@@ -45,6 +45,8 @@ var specFieldNames = []string{
 	"project_key", "issue_id", "collection_id", "browse_url",
 	// ADR 004, E22: the issue document layout with its closed line kinds and description body.
 	"document", "title", "lines", "verbatim", "pair", "key", "join", "skip_empty", "valid", "heading",
+	// ADR 004, E25: the wire alias of a query parameter.
+	"query_key",
 }
 
 // collectPropertyNames gathers the keys of every "properties" object of a decoded schema, at any depth.

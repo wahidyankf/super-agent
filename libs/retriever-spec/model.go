@@ -119,6 +119,9 @@ type Param struct {
 	In string `json:"in"`
 	// Required says whether the caller must give the value. A path parameter is always required.
 	Required bool `json:"required"`
+	// QueryKey is the wire key the parameter travels under in the query. Empty means the parameter name. Only an
+	// in: query parameter takes one, and it never repeats the name or another query key of the operation.
+	QueryKey string `json:"query_key,omitempty"`
 	// Default is the value that an optional parameter takes when the caller gives none.
 	Default any `json:"default,omitempty"`
 	// Min is the lowest value of an Int parameter, when the spec sets one.

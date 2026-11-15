@@ -44,6 +44,7 @@ func Review(s *Spec) string {
 	writeKeyEchoes(&b, s)
 	writeBuiltIDs(&b, s)
 	writeDocuments(&b, s)
+	writeQueryKeys(&b, s)
 	writeBundledMapping(&b, s)
 	return b.String()
 }
@@ -570,6 +571,37 @@ func writeDocuments(b *strings.Builder, s *Spec) {
 	fmt.Fprintf(b, "Document layouts: %d\n", len(entries))
 	for i, e := range entries {
 		fmt.Fprintf(b, "%d. %s: title %s, %d lines, body %s as %s\n", i+1, e.id, e.title, e.lines, e.body, e.heading)
+	}
+}
+
+// writeQueryKeys writes the block of the operations with wire aliases, one line each, with every aliased query
+// parameter and the wire key it travels under, in declaration order. A spec with no alias writes nothing, so its
+// review keeps its text.
+func writeQueryKeys(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id     string
+		fields []string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		var parts []string
+		for _, p := range op.Params {
+			if p.In != "query" || p.QueryKey == "" {
+				continue
+			}
+			parts = append(parts, p.Name+" as "+p.QueryKey)
+		}
+		if len(parts) == 0 {
+			continue
+		}
+		entries = append(entries, entry{id: op.ID, fields: parts})
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Query keys: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: %s\n", i+1, e.id, strings.Join(e.fields, ", "))
 	}
 }
 

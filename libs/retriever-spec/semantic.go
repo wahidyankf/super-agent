@@ -43,6 +43,7 @@ func sharedSemanticFindings(s *Spec) []Finding {
 	fs = append(fs, CheckEcho(s)...)
 	fs = append(fs, CheckBuiltFields(s)...)
 	fs = append(fs, CheckDocument(s)...)
+	fs = append(fs, CheckQueryKeys(s)...)
 	index := make(map[string]int, len(s.Operations))
 	for i, op := range s.Operations {
 		at := "/operations/" + strconv.Itoa(i) + "/id"

@@ -92,6 +92,11 @@
       "type": "string",
       "pattern": "^[a-z][a-zA-Z0-9_]{0,63}$"
     },
+    "query_key": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+    },
     "param_type": {
       "type": "string",
       "enum": [
@@ -240,6 +245,7 @@
         "type": { "$ref": "#/$defs/param_type" },
         "in": { "enum": ["path", "query", "body"] },
         "required": { "type": "boolean" },
+        "query_key": { "$ref": "#/$defs/query_key" },
         "default": { "$ref": "#/$defs/json_constant" },
         "min": { "type": "integer" },
         "max": { "type": "integer" },

@@ -24,6 +24,12 @@ upgrade.
 
 ### Added
 
+- The spec language admits the `query_key` wire alias on `in: query` parameters: the engine sends the query pair
+  under the alias while the parameter keeps its catalog name everywhere else (the CLI flag, the examples, and the
+  review). The alias starts with a letter and holds letters, digits, and underscores only, covering camelCase wire
+  names such as `maxResults` and `startAt`; an alias on a parameter outside the query, one repeating the parameter
+  name, and one colliding with another query key of the same operation are refused at load. The schema stays at
+  version 1; `retriever-spec` and `retriever-engine` stay at `v0.6.0`.
 - The spec language admits the document layout on a read of one object: the title renders as `# <title>`, each line
   renders `- <label>: <value>` in one closed kind (`field` escapes its value with the moved `escapeText` algorithm,
   `verbatim` writes a shape-checked key or date as is, and `pair` renders `name (key)`), and the body renders
