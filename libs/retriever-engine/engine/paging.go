@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-spec"
@@ -116,6 +117,83 @@ func (e *Engine) readCursor(ctx context.Context, o spec.Operation, args domain.A
 		}
 	}
 	return domain.NewList(records), nil
+}
+
+// pageAllLimitKey and pageAllOffsetKey are the fixed paging keys of a page-all read. The operation declares no page
+// parameters, so the engine sends these names itself, in the query or in the JSON body per the rule, mirroring the
+// fixed page body of the Go reader.
+const (
+	pageAllLimitKey  = "limit"
+	pageAllOffsetKey = "offset"
+)
+
+// pageAllMinDelay is the least time between two requests of a page-all read, mirroring the request pacing of the Go
+// gateway the rule replaces. The engine waits the whole delay before every page after the first, and it tops a
+// shorter 429 wait up to the delay; a longer wait already covers it. The test clock advances a wait at once.
+const pageAllMinDelay = 100 * time.Millisecond
+
+// readPageAll reads every page of a page-all read: pages of the rule's fixed size until a short page, with no
+// continuation. At the page cap it fails with the page-cap error, mirroring the Go reader, instead of returning the
+// pages it has. With in: body the paging keys join the JSON body; a body the rule declares stays, and the paging
+// keys beat a declared key of the same name, so the walk cannot be steered off its pages.
+func (e *Engine) readPageAll(ctx context.Context, o spec.Operation, args domain.Args, budget *int) (domain.Record, error) {
+	pag := o.Pagination
+	if pag.PageSize < 1 || pag.PageSize > 100 {
+		return domain.Record{}, domain.ErrInvalidLimit
+	}
+	size := pag.PageSize
+	var records []domain.Record
+	for i := 0; ; i++ {
+		if i == e.pageCap(o) {
+			return domain.Record{}, domain.ErrPageCapReached
+		}
+		if i > 0 {
+			if err := e.ports.Clock.Sleep(ctx, pageAllMinDelay); err != nil {
+				return domain.Record{}, err
+			}
+		}
+		offset := i * size
+		var root any
+		var err error
+		if pag.In == "body" {
+			root, err = e.fetch(ctx, withPageBody(o, offset, size), args, nil)
+		} else {
+			extra := url.Values{
+				pageAllLimitKey:  {strconv.Itoa(size)},
+				pageAllOffsetKey: {strconv.Itoa(offset)},
+			}
+			root, err = e.fetch(ctx, o, args, extra)
+		}
+		if err != nil {
+			return domain.Record{}, err
+		}
+		items, err := pageItems(o, args, root, budget)
+		if err != nil {
+			return domain.Record{}, err
+		}
+		records = append(records, items...)
+		if len(items) < size {
+			break
+		}
+	}
+	return domain.NewList(records), nil
+}
+
+// withPageBody returns the operation with the paging keys of one page-all page joined into its JSON body. The
+// declared body stays, and the paging keys beat a declared key of the same name, so the declared document cannot
+// move the walk off its pages.
+func withPageBody(o spec.Operation, offset, size int) spec.Operation {
+	body := map[string]any{
+		pageAllOffsetKey: offset,
+		pageAllLimitKey:  size,
+	}
+	for k, v := range o.Body {
+		if k != pageAllOffsetKey && k != pageAllLimitKey {
+			body[k] = v
+		}
+	}
+	o.Body = body
+	return o
 }
 
 // argsWith returns the args with the given values set, so one page of a body-paged read renders its paging values

@@ -155,7 +155,7 @@ func TestExchangeSendsABodyAndRefusesAnInvalidMethod(t *testing.T) {
 			return &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: io.NopCloser(strings.NewReader("{}"))}, nil
 		})},
 	}
-	rep, err := e.exchange(context.Background(), request{
+	rep, err := e.exchange(context.Background(), spec.Operation{}, request{
 		method: "POST", target: "/v1/docs", header: http.Header{}, body: []byte(`{"a":1}`),
 	}, false)
 	if err != nil || rep.status != http.StatusOK || string(rep.body) != "{}" {
@@ -164,8 +164,36 @@ func TestExchangeSendsABodyAndRefusesAnInvalidMethod(t *testing.T) {
 	if gotType != "application/json" || gotBody != `{"a":1}` {
 		t.Fatalf("the request carried type %q and body %q", gotType, gotBody)
 	}
-	if _, err := e.exchange(context.Background(), request{method: "BAD METHOD", target: "/v1/docs", header: http.Header{}}, false); err == nil {
+	if _, err := e.exchange(context.Background(), spec.Operation{}, request{method: "BAD METHOD", target: "/v1/docs", header: http.Header{}}, false); err == nil {
 		t.Fatal("a request with an invalid method was built")
+	}
+}
+
+// errReader is a reply body that fails every read, for the exchange that cannot read a 404 body.
+type errReader struct{}
+
+// Read fails every read.
+func (errReader) Read([]byte) (int, error) { return 0, errReaderFailed }
+
+// errReaderFailed is the fixed failure of the failing body.
+var errReaderFailed = errors.New("the body cannot be read")
+
+// TestExchangeRefusesAnUnreadable404Body checks that a read with the body-matched 404 rule fails when the 404 body
+// cannot be read, instead of guessing the method from the status alone.
+func TestExchangeRefusesAnUnreadable404Body(t *testing.T) {
+	e := &Engine{
+		model:    &spec.Spec{Auth: spec.Auth{Type: "bearer"}},
+		ports:    Ports{Credentials: staticKeys{}, Clock: instantClock{}},
+		base:     "https://docs.example.test",
+		timeout:  time.Second,
+		maxReply: 1 << 20,
+		client: &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: http.StatusNotFound, Header: http.Header{}, Body: io.NopCloser(errReader{})}, nil
+		})},
+	}
+	o := spec.Operation{Response: spec.Response{UnavailableMessage: "Endpoint not found"}}
+	if _, err := e.exchange(context.Background(), o, request{method: "POST", target: "/v1/docs", header: http.Header{}}, false); err == nil {
+		t.Fatal("a 404 with an unreadable body was kept")
 	}
 }
 

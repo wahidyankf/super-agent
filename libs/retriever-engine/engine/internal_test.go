@@ -33,6 +33,21 @@ func TestSpecMayOnlyLowerADefault(t *testing.T) {
 	}
 }
 
+// TestWithTimeoutOverridesTheRequestLimit checks that the timeout option replaces the request limit, and that a
+// zero or negative value keeps it.
+func TestWithTimeoutOverridesTheRequestLimit(t *testing.T) {
+	e := &Engine{timeout: time.Second}
+	WithTimeout(300 * time.Millisecond)(e)
+	if e.timeout != 300*time.Millisecond {
+		t.Fatalf("timeout = %v, want 300ms", e.timeout)
+	}
+	WithTimeout(0)(e)
+	WithTimeout(-time.Second)(e)
+	if e.timeout != 300*time.Millisecond {
+		t.Fatalf("timeout = %v, want the 300ms to stand", e.timeout)
+	}
+}
+
 // TestBindsHostNeedsOneMatchingSuffix checks the host rule of the spec: no suffix binds any host, and otherwise one suffix
 // must match.
 func TestBindsHostNeedsOneMatchingSuffix(t *testing.T) {

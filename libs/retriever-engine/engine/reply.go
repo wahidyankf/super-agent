@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -165,6 +166,20 @@ func scalarOf(v any, budget *int) (any, error) {
 	}
 }
 
+// derefPointers returns the value that one field maps: the value at its pointer, or at its fallback pointer when the
+// pointer finds nothing, so one field maps the wrapped and the unwrapped shapes of a reply. A pointer that finds an
+// explicit null wins, so the fallback serves only the shape that lacks the pointer, never a second guess inside one
+// shape.
+func derefPointers(obj map[string]any, f spec.Field) (any, bool) {
+	if raw, found := pointerValue(obj, f.Pointer); found {
+		return raw, true
+	}
+	if f.FallbackPointer != "" {
+		return pointerValue(obj, f.FallbackPointer)
+	}
+	return nil, false
+}
+
 // mapRecord maps one JSON object to a record, with one field for each declared field, in name order. A required field
 // with a missing, null, or empty value fails the read, and a format-checked field whose value is not of the named
 // shape fails it too. Either failure names the field and never the value, and no partial record is returned. A field
@@ -176,6 +191,14 @@ func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (d
 	out := make([]domain.Field, 0, len(names))
 	for _, name := range names {
 		f := fields[name]
+		if f.BoolMap {
+			nested, err := mapBoolMap(name, f, obj)
+			if err != nil {
+				return domain.Record{}, err
+			}
+			out = append(out, domain.Field{Name: name, Value: nested})
+			continue
+		}
 		if f.Object != nil {
 			nested, err := mapObject(name, f.Object, obj, budget)
 			if err != nil {
@@ -184,11 +207,11 @@ func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (d
 			out = append(out, domain.Field{Name: name, Value: nested})
 			continue
 		}
-		raw, found := pointerValue(obj, f.Pointer)
+		raw, found := derefPointers(obj, f)
 		if f.Required && isMissingValue(raw, found) {
 			return domain.Record{}, fieldError(name)
 		}
-		v, err := scalarOf(raw, budget)
+		v, err := fieldValue(f, raw, budget)
 		if err != nil {
 			return domain.Record{}, err
 		}
@@ -200,6 +223,73 @@ func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (d
 	return domain.NewRecord(out...), nil
 }
 
+// fieldValue maps one reply value to a field value: a strings field reads a
+// list of strings, an editor-data converter reads the plain text of editor JSON,
+// any other field reads one scalar, and a hostname converter keeps the host of
+// an address. A value the reply holds as another shape is an unexpected
+// response, which names the field and never the value.
+func fieldValue(f spec.Field, raw any, budget *int) (any, error) {
+	if f.Format == "strings" {
+		return stringsValue(raw, budget)
+	}
+	if f.Convert == "text-from-editor-data" {
+		return editorText(raw, budget)
+	}
+	v, err := scalarOf(raw, budget)
+	if err != nil {
+		return nil, err
+	}
+	if f.Convert == "hostname" {
+		return hostOf(v), nil
+	}
+	return v, nil
+}
+
+// stringsValue maps a reply list to the texts it holds, in order. A missing
+// or null value maps to null, like any other missing optional field. A value
+// that is not a list, or an element that is not a string, is an unexpected
+// response, so a whole list is never copied. Each text is charged to the
+// shared output budget, like any mapped text.
+func stringsValue(raw any, budget *int) (any, error) {
+	if raw == nil {
+		return nil, nil
+	}
+	arr, ok := raw.([]any)
+	if !ok {
+		return nil, domain.ErrUnexpectedResponse
+	}
+	out := make([]any, 0, len(arr))
+	for _, item := range arr {
+		s, ok := item.(string)
+		if !ok {
+			return nil, domain.ErrUnexpectedResponse
+		}
+		c, err := cleanText(s, budget)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, nil
+}
+
+// hostOf returns the host name of an address, without the path, the query,
+// the port, or the user name. An address that does not parse, or that names
+// no host, maps to the empty text, so a broken address never reaches the
+// answer. A missing value maps to the empty text too, as the Go connectors
+// read a missing address.
+func hostOf(v any) any {
+	s, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	u, err := url.Parse(s)
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	return u.Hostname()
+}
+
 // mapObject maps one nested record field to a record, with one value for each declared sub-field, in name order. Each
 // sub-field follows the scalar rules, and its failure names the dotted path, never the value. A pointer that reaches
 // an object or a list is refused, so a whole object is never copied.
@@ -209,11 +299,11 @@ func mapObject(field string, sub map[string]spec.Field, obj map[string]any, budg
 	for _, name := range names {
 		f := sub[name]
 		path := field + "." + name
-		raw, found := pointerValue(obj, f.Pointer)
+		raw, found := derefPointers(obj, f)
 		if f.Required && isMissingValue(raw, found) {
 			return domain.Record{}, fieldError(path)
 		}
-		v, err := scalarOf(raw, budget)
+		v, err := fieldValue(f, raw, budget)
 		if err != nil {
 			return domain.Record{}, fieldError(path)
 		}
@@ -225,18 +315,53 @@ func mapObject(field string, sub map[string]spec.Field, obj map[string]any, budg
 	return domain.NewRecord(out...), nil
 }
 
+// mapBoolMap maps one open-key map with closed bool values to a record, keeping every key the reply holds, verbatim,
+// in sorted order, like the Go projection of the Outline notification writes. Each value must be a flag: a value that
+// is not a bool fails the read as an unexpected response naming the dotted path, never dropped. A missing or null map
+// answers an empty record, unless the field is required. A value that is not an object fails naming the field.
+func mapBoolMap(field string, f spec.Field, obj map[string]any) (domain.Record, error) {
+	raw, found := derefPointers(obj, f)
+	if !found || raw == nil {
+		if f.Required {
+			return domain.Record{}, fieldError(field)
+		}
+		return domain.NewRecord(), nil
+	}
+	m, ok := raw.(map[string]any)
+	if !ok {
+		return domain.Record{}, fieldError(field)
+	}
+	names := make([]string, 0, len(m))
+	for name := range m {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	out := make([]domain.Field, 0, len(names))
+	for _, name := range names {
+		on, ok := m[name].(bool)
+		if !ok {
+			return domain.Record{}, fieldError(field + "." + name)
+		}
+		out = append(out, domain.Field{Name: name, Value: on})
+	}
+	return domain.NewRecord(out...), nil
+}
+
 // isMissingValue reports whether a reply holds no value for a required field: the pointer names nothing, or the value
 // is null or empty text.
 func isMissingValue(raw any, found bool) bool {
 	return !found || raw == nil || raw == ""
 }
 
-// checkFormat checks a mapped value against the closed format name of its field: id, uuid, or share-id, with the
-// checks of the operation catalog. A null value has no shape to check, so only a present value is checked. The failure
-// names the field and never the value.
+// checkFormat checks a mapped value against the closed format name of its field: id, uuid, share-id, or strings, with
+// the checks of the operation catalog. A null value has no shape to check, so only a present value is checked. The
+// failure names the field and never the value.
 func checkFormat(name, format string, v any) error {
 	if format == "" || v == nil {
 		return nil
+	}
+	if format == "strings" {
+		return checkStrings(name, v)
 	}
 	s, ok := v.(string)
 	if !ok {
@@ -255,6 +380,22 @@ func checkFormat(name, format string, v any) error {
 	}
 	if err != nil {
 		return fieldError(name)
+	}
+	return nil
+}
+
+// checkStrings checks a mapped value against the strings format: every element
+// of the list is a string. A value the mapper built always passes, so this
+// guards the shape, never the content.
+func checkStrings(name string, v any) error {
+	arr, ok := v.([]any)
+	if !ok {
+		return fieldError(name)
+	}
+	for _, item := range arr {
+		if _, ok := item.(string); !ok {
+			return fieldError(name)
+		}
 	}
 	return nil
 }
@@ -455,10 +596,14 @@ func treeChildren(node map[string]any, pointer string) ([]any, bool, error) {
 	return children, true, nil
 }
 
-// pageItems maps one page of a paged read: a tree page flattens depth first, and any other page maps its list.
+// pageItems maps one page of a paged read: a tree page flattens depth first, a merged page merges its lists, and any
+// other page maps its list. A merged read concatenates the merged items of its pages in page order.
 func pageItems(o spec.Operation, args domain.Args, root any, budget *int) ([]domain.Record, error) {
 	if o.Response.Tree != nil {
 		return treeRecords(o, args, root, budget)
+	}
+	if o.Response.Merge != nil {
+		return mergeRecords(o, root, budget)
 	}
 	return listItems(o, root, budget)
 }
