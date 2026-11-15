@@ -41,11 +41,12 @@ func (e *Engine) send(ctx context.Context, o spec.Operation, r request) (any, er
 // status of the last reply it received, or zero when no reply arrived. A fallback reads the status to decide whether
 // its trigger fired; every other caller reads only the reply. The retries, the waits, and the closed errors are the
 // same as send, because it is send: every request of a fallback runs under every safeguard of the engine.
-// retryWait returns the wait before a rate-limited request is sent again. A page-all read paces its requests like the
-// Go gateway it replaces, so a wait shorter than the pacing delay is topped up to it; a longer Retry-After already
-// covers the delay. Any other read waits exactly what the reply asks for.
-func retryWait(o spec.Operation, wait time.Duration) time.Duration {
-	if o.Pagination != nil && o.Pagination.Style == "page-all" && wait < pageAllMinDelay {
+
+// retryWait returns the wait before a rate-limited request is sent again. Every read paces its requests like the Go
+// gateway it replaces, so a wait shorter than the pacing delay is topped up to it; a longer Retry-After already
+// covers the delay. Kiwi E17 reuses this pacing for its own reads.
+func retryWait(wait time.Duration) time.Duration {
+	if wait < pageAllMinDelay {
 		return pageAllMinDelay
 	}
 	return wait
@@ -80,7 +81,7 @@ func (e *Engine) sendFull(ctx context.Context, o spec.Operation, r request) (any
 			if attempt >= maxRetries {
 				return nil, rep.status, domain.ErrSourceRateLimited
 			}
-			if err := e.ports.Clock.Sleep(ctx, retryWait(o, wait)); err != nil {
+			if err := e.ports.Clock.Sleep(ctx, retryWait(wait)); err != nil {
 				return nil, rep.status, err
 			}
 			continue

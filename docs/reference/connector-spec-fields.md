@@ -277,6 +277,9 @@ The review text lists each body-paged read in its own block, with its style, its
   output field whose converted value it renders), `convert` (`markdown-from-adf`, matching the converter of its
   field), `heading` (the fixed heading of `## <heading>`), and `empty` (the closed constant of a blank
   description). Only a read of one object declares one, and an example may expect `markdown` exactly then.
+  The title, every line reference, and the body field name flat output-field names: keys of the operation's own
+  `fields` map. A dotted reply path such as `project.name` is not a field name; the loader refuses it, so a layout
+  that needs a reply value maps the value to a flat field first and names that field.
   Proof: `TestDocLayoutPlantStaysText` (a planted heading and link stay literal),
   `TestDocLayoutSkipsEmptyLines` (an empty resolution, parent, and due leave no line), and
   `TestDocLayoutDefaultsExact` (`Unassigned` and `(no description)` byte-identical).
@@ -371,6 +374,31 @@ so the nested object with explicitly named sub-fields and the bool map stay the 
 A spec named `outline` is also refused in the user folder, because the kind is a built-in source. A bundled Outline
 spec takes the exception for embedded files only, as described in
 [Bundled kinds and the ID mapping](#bundled-kinds-and-the-id-mapping).
+
+## Limits for the Jira port
+
+The bundled `jira.yml` serves the five catalog reads with a `catalog_id` and an example each: `jira.whoami`,
+`jira.projects.list`, `jira.issues.search`, `jira.issues.get`, and `jira.comments.list`. The Jira gateway runs
+each operation on the engine, with the document-not-found translation the Go gateway maps: the engine
+reports every 404 as a plain not found, and the gateway restores the document sentinel for the two reads whose path
+holds the issue key. The spec measures 7 operations in 14,946 bytes, 6 percent of the 256 KiB cap. A spec named
+`jira` is refused in the user folder, because the kind is a built-in source, as with `outline`.
+
+`whoami` ports with no new feature: three required and optional fields over `GET /rest/api/3/myself`. The
+collection walk is an offset read of the project search with the page-end rule (`last_pointer` on `/isLast` and
+`cut_to_limit` on the page size), walking at most twenty pages: the engine sends the Jira `maxResults` and `startAt`
+query keys, which the `page-all` rule cannot spell, because it sends only the fixed `limit` and `offset` keys. The
+tree walk is a second cursor read of the search endpoint with the page-end rule and the computed `truncated` flag,
+walking at most five pages: the gateway passes the JQL of one project and maps the flat issues to parent and depth
+itself. The single-page search is a cursor read with `max_pages: 1` for the same reason: only a cursor rule may
+declare the `truncated` block, and the page token never travels on its one page. Its `cursor_param` names the
+`limit` parameter, because the rule must name a declared body parameter and the catalog row declares no token
+parameter; the engine never sends a cursor on one page, so the name is validation ballast only. The project list
+and the comment
+list send the Jira wire names through the `query_key` alias: `limit` rides as `maxResults` and `offset` rides as
+`startAt`, as the Go gateway sends, so the two read scenarios that pin the Jira names pass unchanged. The document
+layout of `issues.get` names flat output-field names only, as the
+[response](#response) rule requires, and the intermediate fields stay in the record beside the five catalog fields.
 
 ## Error reasons
 

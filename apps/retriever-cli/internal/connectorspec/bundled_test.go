@@ -9,6 +9,7 @@ import (
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/specfolder"
+	"github.com/wahidyankf/super-agent/libs/retriever-spec"
 )
 
 // bundledOutlineStub is a byte copy of a bundled Outline stub: a spec of the built-in kind outline whose operation
@@ -293,14 +294,19 @@ func TestMergeKeepsTheUserSetWhenNothingIsShadowed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Merge: %v", err)
 	}
-	if len(merged.Specs) != 1 || merged.Specs[0].Kind.String() != "example-wiki" {
-		t.Fatalf("specs = %+v, want the one user spec", merged.Specs)
+	if len(merged.Specs) != 1+len(bundled.Specs) || merged.Specs[0].Kind.String() != "example-wiki" {
+		t.Fatalf("specs = %+v, want the user spec first", merged.Specs)
 	}
 	if got := len(merged.Operations.Rows()); got != len(operations.Rows())+1 {
 		t.Fatalf("catalog rows = %d, want the built-in rows plus one", got)
 	}
 	if _, ok := merged.Digests["example-wiki"]; !ok {
 		t.Fatalf("digests = %v, want the user digest", merged.Digests)
+	}
+	for _, sp := range bundled.Specs {
+		if _, ok := merged.Digests[sp.Model.Kind]; !ok {
+			t.Fatalf("digests = %v, want the digest of %s", merged.Digests, sp.File)
+		}
 	}
 }
 
@@ -374,12 +380,7 @@ func TestLoadBundledLoadsTheOutlineSpec(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadBundled() error = %v, want nil", err)
 	}
-	if len(set.Specs) != 1 || set.Specs[0].File != "outline.yml" {
-		t.Fatalf("specs = %+v, want the one outline.yml", set.Specs)
-	}
-	if set.Specs[0].Model.Kind != "outline" {
-		t.Fatalf("kind = %q, want outline", set.Specs[0].Model.Kind)
-	}
+	model := bundledModelOf(t, set, "outline.yml", domain.KindOutline)
 	if _, ok := set.Digests["outline"]; !ok {
 		t.Fatalf("digests = %v, want the outline digest", set.Digests)
 	}
@@ -387,7 +388,7 @@ func TestLoadBundledLoadsTheOutlineSpec(t *testing.T) {
 		t.Fatalf("catalog rows = %d, want the built-in rows only", got)
 	}
 	claimed := map[string]bool{}
-	for _, op := range set.Specs[0].Model.Operations {
+	for _, op := range model.Operations {
 		if op.CatalogID != "" {
 			claimed[op.CatalogID] = true
 		}
@@ -414,4 +415,52 @@ func TestLoadBundledLoadsTheOutlineSpec(t *testing.T) {
 	if got := len(unclaimedChangeRows); got != wantUnclaimed {
 		t.Fatalf("unclaimed change rows = %d, want %d", got, wantUnclaimed)
 	}
+}
+
+// TestBundledSpecCoversEveryCatalogRowForJira proves the gate of pull request 37: the embedded tree loads the
+// bundled jira.yml, which claims every read row of the Jira kind, with the catalog names the probe found covered.
+// The Jira kind holds no write row, so every row it claims is a read.
+func TestBundledSpecCoversEveryCatalogRowForJira(t *testing.T) {
+	set, err := LoadBundled()
+	if err != nil {
+		t.Fatalf("LoadBundled() error = %v, want nil", err)
+	}
+	model := bundledModelOf(t, set, "jira.yml", domain.KindJira)
+	if _, ok := set.Digests["jira"]; !ok {
+		t.Fatalf("digests = %v, want the jira digest", set.Digests)
+	}
+	claimed := map[string]bool{}
+	for _, op := range model.Operations {
+		if op.CatalogID != "" {
+			claimed[op.CatalogID] = true
+		}
+	}
+	var missing []string
+	for _, row := range operations.RowsOf(domain.KindJira) {
+		if !claimed[string(row.ID)] {
+			missing = append(missing, string(row.ID))
+		}
+	}
+	if len(missing) != 0 {
+		t.Fatalf("unclaimed jira rows = %v", missing)
+	}
+}
+
+// bundledModelOf returns the model of the bundled file of the kind, requiring the set to hold exactly the two
+// bundled specs: the jira.yml before the outline.yml, in embedded name order.
+func bundledModelOf(t *testing.T, set Set, file string, kind domain.SourceKind) *spec.Spec {
+	t.Helper()
+	if len(set.Specs) != 2 || set.Specs[0].File != "jira.yml" || set.Specs[1].File != "outline.yml" {
+		t.Fatalf("specs = %+v, want jira.yml then outline.yml", set.Specs)
+	}
+	for _, sp := range set.Specs {
+		if sp.File == file {
+			if sp.Model.Kind != kind.String() {
+				t.Fatalf("kind of %s = %q, want %s", file, sp.Model.Kind, kind.String())
+			}
+			return sp.Model
+		}
+	}
+	t.Fatalf("no bundled spec named %s", file)
+	return nil
 }

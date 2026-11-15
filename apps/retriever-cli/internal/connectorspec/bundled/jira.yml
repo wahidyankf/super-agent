@@ -1,0 +1,577 @@
+version: 1
+kind: jira
+summary: Reads of a Jira Cloud site without changing it.
+endpoint: {}
+auth:
+  type: basic
+  credential_env: JIRA_API_TOKEN
+  identity_env: JIRA_EMAIL
+operations:
+  - id: jira.auth.whoami
+    summary: show the account that the credentials sign in as
+    access: read
+    method: GET
+    path: /rest/api/3/myself
+    catalog_id: jira.whoami
+    response:
+      errors:
+        "404": not_found
+        "410": operation_unavailable
+      fields:
+        displayName:
+          pointer: /displayName
+          required: true
+        accountType:
+          pointer: /accountType
+        active:
+          pointer: /active
+          required: true
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            displayName: Ada
+            accountType: atlassian
+            active: true
+        expect:
+          displayName: Ada
+          accountType: atlassian
+          active: true
+  - id: jira.projects.page
+    summary: list one page of the projects of the source
+    access: read
+    method: GET
+    path: /rest/api/3/project/search
+    catalog_id: jira.projects.list
+    params:
+      - name: query
+        type: Query
+        in: query
+        required: false
+        help: a text to match against the project names, 1 to 1000 characters
+      - name: limit
+        type: Int
+        in: query
+        required: false
+        default: 25
+        query_key: maxResults
+        min: 1
+        max: 50
+        help: the number of projects in the page, from 1 to 50
+      - name: offset
+        type: Offset
+        in: query
+        required: false
+        default: 0
+        query_key: startAt
+        help: the number of projects to skip
+    pagination:
+      style: offset
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+      last_pointer: /isLast
+      cut_to_limit: limit
+    response:
+      errors:
+        "404": not_found
+        "410": operation_unavailable
+      items: /values
+      fields:
+        key:
+          pointer: /key
+        name:
+          pointer: /name
+        type:
+          pointer: /projectTypeKey
+        style:
+          pointer: /style
+    examples:
+      - request:
+          limit: 2
+        response:
+          status: 200
+          body:
+            startAt: 0
+            maxResults: 2
+            total: 2
+            isLast: true
+            values:
+              - key: EXAMPLE
+                name: Synthetic project
+                projectTypeKey: software
+                style: classic
+              - key: OTHER
+                name: Second project
+                projectTypeKey: software
+                style: next-gen
+        expect:
+          key: EXAMPLE
+          name: Synthetic project
+  - id: jira.issues.query
+    summary: search the issues that match a JQL query, one page of at most 100 issues
+    access: read
+    method: POST
+    read_over_post: true
+    path: /rest/api/3/search/jql
+    catalog_id: jira.issues.search
+    params:
+      - name: jql
+        type: Query
+        in: body
+        required: true
+        help: the JQL query, such as project = EXAMPLE AND status = "In Progress"
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 50
+        help: the number of issues to show, from 1 to 100
+    body:
+      jql: "{{jql}}"
+      maxResults: "{{limit}}"
+      fields:
+        - summary
+        - status
+        - issuetype
+        - priority
+        - assignee
+        - updated
+        - project
+        - parent
+    pagination:
+      style: cursor
+      in: body
+      max_pages: 1
+      cursor_param: limit
+      next_pointer: /nextPageToken
+      last_pointer: /isLast
+      cut_to_limit: limit
+    response:
+      errors:
+        "404": not_found
+        "410": operation_unavailable
+      items: /issues
+      truncated:
+        token: /nextPageToken
+        last: /isLast
+      fields:
+        key:
+          pointer: /key
+        summary:
+          pointer: /fields/summary
+          convert: jira-title
+        status:
+          pointer: /fields/status/name
+        type:
+          pointer: /fields/issuetype/name
+        priority:
+          pointer: /fields/priority/name
+        assignee:
+          pointer: /fields/assignee/displayName
+        updated:
+          pointer: /fields/updated
+          convert: jira-time
+        projectKey:
+          project_key: /key
+    examples:
+      - request:
+          jql: project = EXAMPLE
+          limit: 2
+        response:
+          status: 200
+          body:
+            issues:
+              - id: "10010"
+                key: EXAMPLE-1
+                fields:
+                  summary: First issue
+                  status:
+                    name: To Do
+                  issuetype:
+                    name: Task
+                  priority:
+                    name: Medium
+                  assignee:
+                    displayName: Ann
+                  updated: "2026-11-02T09:15:00.000+0700"
+                  project:
+                    key: EXAMPLE
+            isLast: false
+            nextPageToken: p1
+        expect:
+          key: EXAMPLE-1
+          summary: First issue
+          status: To Do
+          type: Task
+          priority: Medium
+          assignee: Ann
+          updated: "2026-11-02T02:15:00Z"
+          projectKey: EXAMPLE
+          truncated: true
+  - id: jira.issues.read
+    summary: print the Markdown of one Jira issue
+    access: read
+    method: GET
+    path: /rest/api/3/issue/{issueKey}
+    catalog_id: jira.issues.get
+    params:
+      - name: issueKey
+        type: IssueKey
+        in: path
+        required: true
+        help: the issue key, such as EXAMPLE-12
+    response:
+      errors:
+        "404": not_found
+        "410": operation_unavailable
+      echo:
+        param: issueKey
+        pointer: /key
+      fields:
+        id:
+          issue_id: /key
+        title:
+          pointer: /fields/summary
+          convert: jira-title
+        url:
+          browse_url: /key
+        collectionId:
+          collection_id: /key
+        key:
+          pointer: /key
+        projectName:
+          pointer: /fields/project/name
+        projectKey:
+          project_key: /key
+        issuetype:
+          pointer: /fields/issuetype/name
+        status:
+          pointer: /fields/status/name
+        priority:
+          pointer: /fields/priority/name
+        resolution:
+          pointer: /fields/resolution/name
+        assignee:
+          pointer: /fields/assignee/displayName
+        reporter:
+          pointer: /fields/reporter/displayName
+        labels:
+          pointer: /fields/labels
+          format: strings
+        parent:
+          pointer: /fields/parent/key
+        created:
+          pointer: /fields/created
+          convert: jira-time
+        updated:
+          pointer: /fields/updated
+          convert: jira-time
+        due:
+          pointer: /fields/duedate
+          convert: jira-date
+        description:
+          pointer: /fields/description
+          convert: markdown-from-adf
+      document:
+        title: title
+        lines:
+          - label: Key
+            verbatim: key
+          - label: Project
+            pair:
+              name: projectName
+              key: projectKey
+          - label: Type
+            field: issuetype
+          - label: Status
+            field: status
+          - label: Priority
+            field: priority
+          - label: Resolution
+            field: resolution
+            skip_empty: true
+          - label: Assignee
+            field: assignee
+            default: Unassigned
+          - label: Reporter
+            field: reporter
+          - label: Labels
+            field: labels
+            join: ", "
+            skip_empty: true
+          - label: Parent
+            field: parent
+            valid: issue_key
+            skip_empty: true
+          - label: Created
+            verbatim: created
+          - label: Updated
+            verbatim: updated
+          - label: Due
+            verbatim: due
+            skip_empty: true
+        body:
+          field: description
+          convert: markdown-from-adf
+          heading: Description
+          empty: "(no description)"
+    examples:
+      - request:
+          issueKey: EXAMPLE-12
+        response:
+          status: 200
+          body:
+            id: "10012"
+            key: EXAMPLE-12
+            fields:
+              summary: Login fails on second try
+              description:
+                type: doc
+                version: 1
+                content:
+                  - type: paragraph
+                    content:
+                      - type: text
+                        text: Press the button twice.
+              issuetype:
+                name: Bug
+              status:
+                name: To Do
+              priority:
+                name: High
+              assignee:
+                displayName: Ann
+              reporter:
+                displayName: Bob
+              labels:
+                - auth
+              created: "2026-10-01T08:00:00.000+0700"
+              updated: "2026-11-02T09:15:00.000+0700"
+              project:
+                key: EXAMPLE
+                name: Example
+        expect:
+          id: issue-EXAMPLE-12
+          title: Login fails on second try
+          url: https://jira.example.test/browse/EXAMPLE-12
+          collectionId: project-EXAMPLE
+  - id: jira.comments.page
+    summary: list one page of the comments of one Jira issue, as Markdown
+    access: read
+    method: GET
+    path: /rest/api/3/issue/{issueKey}/comment
+    catalog_id: jira.comments.list
+    params:
+      - name: issueKey
+        type: IssueKey
+        in: path
+        required: true
+        help: the issue key, such as EXAMPLE-12
+      - name: limit
+        type: Limit
+        in: query
+        required: false
+        default: 50
+        query_key: maxResults
+        help: the number of comments in the page, from 1 to 100
+      - name: offset
+        type: Offset
+        in: query
+        required: false
+        default: 0
+        query_key: startAt
+        help: the number of comments to skip
+    pagination:
+      style: offset
+      max_pages: 1
+      limit_param: limit
+      offset_param: offset
+      cut_to_limit: limit
+    response:
+      errors:
+        "404": not_found
+        "410": operation_unavailable
+      items: /comments
+      fields:
+        id:
+          pointer: /id
+        author:
+          pointer: /author/displayName
+        created:
+          pointer: /created
+          convert: jira-time
+        updated:
+          pointer: /updated
+          convert: jira-time
+        markdown:
+          pointer: /body
+          convert: markdown-from-adf
+    examples:
+      - request:
+          issueKey: EXAMPLE-12
+          limit: 2
+        response:
+          status: 200
+          body:
+            startAt: 0
+            maxResults: 2
+            total: 1
+            comments:
+              - id: "20001"
+                author:
+                  displayName: Ann
+                created: "2026-11-03T10:00:00.000+0700"
+                updated: "2026-11-03T10:00:00.000+0700"
+                body:
+                  type: doc
+                  version: 1
+                  content:
+                    - type: paragraph
+                      content:
+                        - type: text
+                          text: First comment.
+        expect:
+          id: "20001"
+          author: Ann
+          created: "2026-11-03T03:00:00Z"
+          updated: "2026-11-03T03:00:00Z"
+          markdown: First comment.
+  - id: jira.projects.all
+    summary: read every page of the projects of the source, oldest first
+    access: read
+    method: GET
+    path: /rest/api/3/project/search
+    cli: false
+    mcp: false
+    params:
+      - name: maxResults
+        type: Int
+        in: query
+        required: false
+        default: 50
+        min: 1
+        max: 50
+        help: the number of projects in each page, from 1 to 50
+      - name: startAt
+        type: Offset
+        in: query
+        required: false
+        default: 0
+        help: the number of projects to skip
+    pagination:
+      style: offset
+      max_pages: 20
+      limit_param: maxResults
+      offset_param: startAt
+      last_pointer: /isLast
+      cut_to_limit: maxResults
+    response:
+      errors:
+        "404": not_found
+        "410": operation_unavailable
+      items: /values
+      fields:
+        id:
+          pointer: /key
+        name:
+          pointer: /name
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            startAt: 0
+            maxResults: 50
+            total: 1
+            isLast: true
+            values:
+              - key: EXAMPLE
+                name: Synthetic project
+                projectTypeKey: software
+                style: classic
+        expect:
+          id: EXAMPLE
+          name: Synthetic project
+  - id: jira.issues.tree
+    summary: read one search of issues for the tree of a project, oldest first
+    access: read
+    method: POST
+    read_over_post: true
+    path: /rest/api/3/search/jql
+    cli: false
+    mcp: false
+    params:
+      - name: jql
+        type: Query
+        in: body
+        required: true
+        help: the JQL query of one project, such as project = "EXAMPLE" ORDER BY key ASC
+      - name: limit
+        type: Limit
+        in: body
+        required: false
+        default: 100
+        help: the number of issues in each page, from 1 to 100
+      - name: nextPageToken
+        type: Query
+        in: body
+        required: false
+        help: the page token of the next page, from the previous reply
+    body:
+      jql: "{{jql}}"
+      maxResults: "{{limit}}"
+      fields:
+        - summary
+        - status
+        - issuetype
+        - priority
+        - assignee
+        - updated
+        - project
+        - parent
+      nextPageToken: "{{nextPageToken}}"
+    pagination:
+      style: cursor
+      in: body
+      max_pages: 5
+      cursor_param: nextPageToken
+      next_pointer: /nextPageToken
+      last_pointer: /isLast
+      cut_to_limit: limit
+    response:
+      errors:
+        "404": not_found
+        "410": operation_unavailable
+      items: /issues
+      truncated:
+        token: /nextPageToken
+        last: /isLast
+      fields:
+        key:
+          pointer: /key
+        title:
+          pointer: /fields/summary
+          convert: jira-title
+        url:
+          browse_url: /key
+        parent:
+          pointer: /fields/parent/key
+    examples:
+      - request:
+          jql: project = "EXAMPLE" ORDER BY key ASC
+        response:
+          status: 200
+          body:
+            issues:
+              - id: "10010"
+                key: EXAMPLE-1
+                fields:
+                  summary: First issue
+            isLast: true
+        expect:
+          key: EXAMPLE-1
+          title: First issue
+          url: https://jira.example.test/browse/EXAMPLE-1
+          truncated: false

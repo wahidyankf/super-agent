@@ -214,8 +214,8 @@ func TestWireSourcesBuildsSeamGatewaysForEveryKind(t *testing.T) {
 	}
 }
 
-// TestBuildGatewaysWithoutASeamUseTheSourceEndpoint checks that a Go gateway built with the seam off is returned for
-// each Go-gateway kind. The Outline gateway is the engine gateway, which the gateway tests cover.
+// TestBuildGatewaysWithoutASeamUseTheSourceEndpoint checks that the Kiwi gateway built with the seam off is
+// returned for the Kiwi kind. The Outline and Jira gateways are engine gateways, which the gateway tests cover.
 func TestBuildGatewaysWithoutASeamUseTheSourceEndpoint(t *testing.T) {
 	creds := testCreds(t)
 	byKind := map[domain.SourceKind]domain.Source{}
@@ -225,14 +225,11 @@ func TestBuildGatewaysWithoutASeamUseTheSourceEndpoint(t *testing.T) {
 	if gw, err := buildKiwi(byKind[domain.KindKiwi], creds, seamConfig{}); err != nil || gw == nil {
 		t.Fatalf("buildKiwi without a seam = %v, %v", gw, err)
 	}
-	if gw, err := buildJira(byKind[domain.KindJira], creds, seamConfig{}); err != nil || gw == nil {
-		t.Fatalf("buildJira without a seam = %v, %v", gw, err)
-	}
 }
 
-// TestBuildGatewaysWithASeamUseTheSeamBase checks that a Go gateway built with the seam on is returned for each
-// Go-gateway kind, with and without a seam timeout. The Outline gateway is the engine gateway, which the gateway
-// tests cover.
+// TestBuildGatewaysWithASeamUseTheSeamBase checks that the Kiwi gateway built with the seam on is returned,
+// with and without a seam timeout. The Outline and Jira gateways are engine gateways, which the gateway tests
+// cover.
 func TestBuildGatewaysWithASeamUseTheSeamBase(t *testing.T) {
 	f := newSeamFixture(t)
 	creds := testCreds(t)
@@ -245,15 +242,12 @@ func TestBuildGatewaysWithASeamUseTheSeamBase(t *testing.T) {
 		if gw, err := buildKiwi(byKind[domain.KindKiwi], creds, seam); err != nil || gw == nil {
 			t.Fatalf("buildKiwi with a seam (timeout %v) = %v, %v", timeout, gw, err)
 		}
-		if gw, err := buildJira(byKind[domain.KindJira], creds, seam); err != nil || gw == nil {
-			t.Fatalf("buildJira with a seam (timeout %v) = %v, %v", timeout, gw, err)
-		}
 	}
 }
 
-// TestBuildGatewaysRefuseAnOnSeamWithANonHTTPSBase checks that each Go-gateway builder refuses a seam base that is
-// not HTTPS, even when it is called without the setup check. The Outline engine builder refuses one the same way,
-// which the gateway tests cover.
+// TestBuildGatewaysRefuseAnOnSeamWithANonHTTPSBase checks that the Kiwi builder refuses a seam base that is
+// not HTTPS, even when it is called without the setup check. The Outline and Jira engine builders refuse one the
+// same way, which the gateway tests cover.
 func TestBuildGatewaysRefuseAnOnSeamWithANonHTTPSBase(t *testing.T) {
 	creds := testCreds(t)
 	byKind := map[domain.SourceKind]domain.Source{}
@@ -263,9 +257,6 @@ func TestBuildGatewaysRefuseAnOnSeamWithANonHTTPSBase(t *testing.T) {
 	bad := seamConfig{on: true, base: "http://127.0.0.1:1"}
 	if _, err := buildKiwi(byKind[domain.KindKiwi], creds, bad); err == nil {
 		t.Fatal("buildKiwi accepted an http base")
-	}
-	if _, err := buildJira(byKind[domain.KindJira], creds, bad); err == nil {
-		t.Fatal("buildJira accepted an http base")
 	}
 }
 
