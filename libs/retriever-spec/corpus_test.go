@@ -39,6 +39,7 @@ var validCorpus = []struct {
 	}},
 	{"a resolve that names a read of its own field", fx("    params:\n      - name: id\n        type: ID\n        in: path",
 		"    params:\n      - name: id\n        type: ID\n        in: path\n        resolve:\n          operation: example-wiki.docs.list\n          field: id")},
+	{"a read with the document layout", func() string { return docLayoutDoc }},
 	{"an IssueKey path parameter", func() string { return issueKeyDoc }},
 	{"an offset read with the page-end rule", func() string { return pageEndDoc }},
 	{"a cursor read with the truncated block", func() string { return truncatedDoc }},

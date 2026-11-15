@@ -11,10 +11,12 @@ tags:
 
 # E22: the issue document layout
 
-This page belongs to [ADR 004](../004-jira-gaps.md). E22 is built by pull request 36. It covers J6:
-`issues.get` assembles Markdown from many fields (a title, a metadata list, labels, a due date, a project
-line, and the description). A converter acts on one field and cannot do this. E22 is a generic layout with
-closed line kinds; it bakes in no service.
+This page belongs to [ADR 004](../004-jira-gaps.md). Pull request 36 built E22 as described here: the
+title, the closed line kinds with defaults and skips, the moved `escapeText` algorithm, and the description
+body with its fixed heading and empty text. E19 to E24 are all built now. E22 covers J6: `issues.get`
+assembles Markdown from many fields (a title, a metadata list, labels, a due date, a project line, and the
+description). A converter acts on one field and cannot do this. E22 is a generic layout with closed line
+kinds; it bakes in no service.
 
 ```yaml
 response:

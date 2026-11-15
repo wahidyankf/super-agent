@@ -24,6 +24,13 @@ upgrade.
 
 ### Added
 
+- The spec language admits the document layout on a read of one object: the title renders as `# <title>`, each line
+  renders `- <label>: <value>` in one closed kind (`field` escapes its value with the moved `escapeText` algorithm,
+  `verbatim` writes a shape-checked key or date as is, and `pair` renders `name (key)`), and the body renders
+  `## <heading>` with the converted description, or the empty constant when it is blank. `join` renders a string
+  list with the fixed separator `", "`, `default` fills an empty value, `skip_empty` omits the line when the value
+  is still empty, and `valid` empties a value outside the issue-key shape. Planted markup stays literal text. The
+  schema stays at version 1; `retriever-spec` and `retriever-engine` stay at `v0.6.0`.
 - The spec language admits the key echo on a read of one object: after mapping, the text at the echo pointer must
   equal the request argument exactly, or the read fails with `unexpected_response` naming the pointer path, never the
   values. A reply field may build its value from an issue key instead of reading it: `project_key` (the text before

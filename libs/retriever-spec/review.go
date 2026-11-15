@@ -43,6 +43,7 @@ func Review(s *Spec) string {
 	writePageEnds(&b, s)
 	writeKeyEchoes(&b, s)
 	writeBuiltIDs(&b, s)
+	writeDocuments(&b, s)
 	writeBundledMapping(&b, s)
 	return b.String()
 }
@@ -540,6 +541,35 @@ func writeBuiltIDs(b *strings.Builder, s *Spec) {
 	fmt.Fprintf(b, "Built IDs: %d\n", len(entries))
 	for i, e := range entries {
 		fmt.Fprintf(b, "%d. %s: %s\n", i+1, e.id, strings.Join(e.fields, "; "))
+	}
+}
+
+// writeDocuments writes the block of the reads with a document layout, one line each, with the title field, the
+// line count, and the body field with its heading. A spec with no document writes nothing, so the review of a spec
+// without one keeps its text.
+func writeDocuments(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id      string
+		title   string
+		lines   int
+		body    string
+		heading string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		if op.Response.Document == nil {
+			continue
+		}
+		doc := op.Response.Document
+		entries = append(entries, entry{id: op.ID, title: doc.Title, lines: len(doc.Lines),
+			body: doc.Body.Field, heading: doc.Body.Heading})
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Document layouts: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: title %s, %d lines, body %s as %s\n", i+1, e.id, e.title, e.lines, e.body, e.heading)
 	}
 }
 
