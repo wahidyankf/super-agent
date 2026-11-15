@@ -271,8 +271,10 @@ type Field struct {
 	Required bool `json:"required,omitempty"`
 	// Format is the closed name that checks the value: id, uuid, share-id, or strings. Empty means no check.
 	Format string `json:"format,omitempty"`
-	// Convert is plain, markdown-from-html, markdown-from-adf, or hostname. Empty means plain. Hostname keeps the
-	// host of an address, so a reply never shows a secret path.
+	// Convert is plain, markdown-from-html, markdown-from-adf, hostname, text-from-editor-data, jira-time,
+	// jira-date, or jira-title. Empty means plain. Hostname keeps the host of an address, so a reply never shows a
+	// secret path. The Jira converters map a reply value to text: a timestamp to UTC, a date to itself, and a title
+	// to one line, with any other value mapping to the empty text.
 	Convert string `json:"convert,omitempty"`
 	// Object holds the sub-fields of a nested record field, each a scalar field of its own pointer. A sub-field holds
 	// no object of its own, so a record nests one level only.
