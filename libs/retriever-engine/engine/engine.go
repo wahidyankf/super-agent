@@ -91,6 +91,16 @@ func AllowPrivateNetwork() Option {
 	return func(e *Engine) { e.allowPrivate = true }
 }
 
+// WithTimeout overrides the time limit of one request. The composition root passes the test seam's timeout, so the
+// engine bounds a request the same way the gateway it replaces does. A zero or negative value keeps the model limit.
+func WithTimeout(d time.Duration) Option {
+	return func(e *Engine) {
+		if d > 0 {
+			e.timeout = d
+		}
+	}
+}
+
 // Engine runs the reads of one spec against one source. It is safe for one caller at a time.
 type Engine struct {
 	model        *spec.Spec
@@ -263,6 +273,8 @@ func (e *Engine) run(ctx context.Context, o spec.Operation, args domain.Args) (d
 		return e.readOffset(ctx, o, args, &budget)
 	case "cursor":
 		return e.readCursor(ctx, o, args, &budget)
+	case "page-all":
+		return e.readPageAll(ctx, o, args, &budget)
 	}
 	root, err := e.fetch(ctx, o, args, nil)
 	if err != nil {
@@ -301,8 +313,9 @@ func unsupported(o spec.Operation) error {
 	return nil
 }
 
-// converterUnsupported refuses an operation whose reply needs a Markdown converter. The converters are not served yet, so
-// the operation fails closed before any request is sent. The fields of each list of a merge meet the same refusal.
+// converterUnsupported refuses an operation whose reply needs a Markdown converter. The Markdown converters are not
+// served yet, so the operation fails closed before any request is sent. The hostname converter is served, so it never
+// refuses. The fields of each list of a merge meet the same refusal.
 func converterUnsupported(o spec.Operation) error {
 	for _, f := range o.Response.Fields {
 		if f.Convert == "markdown-from-html" || f.Convert == "markdown-from-adf" {
@@ -428,8 +441,9 @@ func checkSpecShape(model *spec.Spec) error {
 			}
 		}
 		for name, f := range o.Response.Fields {
-			if f.Format != "" && f.Format != "id" && f.Format != "uuid" && f.Format != "share-id" {
-				fs = append(fs, specFinding(base+"/response/fields/"+name+"/format", "is not id, uuid, or share-id"))
+			if f.Format != "" && f.Format != "id" && f.Format != "uuid" && f.Format != "share-id" &&
+				f.Format != "strings" {
+				fs = append(fs, specFinding(base+"/response/fields/"+name+"/format", "is not id, uuid, share-id, or strings"))
 			}
 		}
 	}
@@ -461,18 +475,18 @@ func pathOK(path string) bool {
 func pointersOf(o spec.Operation) []string {
 	out := []string{o.Response.Items, o.Response.First}
 	for _, f := range o.Response.Fields {
-		out = append(out, f.Pointer)
+		out = append(out, f.Pointer, f.FallbackPointer)
 		for _, name := range sortedKeys(f.Object) {
-			out = append(out, f.Object[name].Pointer)
+			out = append(out, f.Object[name].Pointer, f.Object[name].FallbackPointer)
 		}
 	}
 	if o.Response.Merge != nil {
 		for _, l := range o.Response.Merge.Lists {
 			out = append(out, l.Items)
 			for _, f := range l.Fields {
-				out = append(out, f.Pointer)
+				out = append(out, f.Pointer, f.FallbackPointer)
 				for _, name := range sortedKeys(f.Object) {
-					out = append(out, f.Object[name].Pointer)
+					out = append(out, f.Object[name].Pointer, f.Object[name].FallbackPointer)
 				}
 			}
 		}

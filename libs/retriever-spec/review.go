@@ -34,6 +34,7 @@ func Review(s *Spec) string {
 	writeBodyPaging(&b, s)
 	writeRequiredFields(&b, s)
 	writeNestedObjects(&b, s)
+	writeBoolMaps(&b, s)
 	writeFirstReads(&b, s)
 	writeMergedLists(&b, s)
 	writeTreeReads(&b, s)
@@ -75,6 +76,11 @@ func writeBodyPaging(b *strings.Builder, s *Spec) {
 	}
 	fmt.Fprintf(b, "Body paging: %d\n", len(body))
 	for i, op := range body {
+		if op.Pagination.Style == "page-all" {
+			fmt.Fprintf(b, "%d. %s: page-all in body (page size %d), at most %d pages\n", i+1, op.ID,
+				op.Pagination.PageSize, op.Pagination.MaxPages)
+			continue
+		}
 		fmt.Fprintf(b, "%d. %s: %s in body (%s), at most %d pages\n", i+1, op.ID, op.Pagination.Style,
 			strings.Join(pagingParams(op.Pagination), ", "), op.Pagination.MaxPages)
 	}
@@ -209,6 +215,45 @@ func writeNestedObjects(b *strings.Builder, s *Spec) {
 	for i, key := range order {
 		e := byKey[key]
 		fmt.Fprintf(b, "%d. %s: %s with %s\n", i+1, e.id, e.field, strings.Join(e.subs, ", "))
+	}
+}
+
+// writeBoolMaps writes the block of the operations with an open-key map with closed bool values, one line each,
+// with the map field and its pointer. A spec with no bool-map field writes nothing, so its review keeps its text.
+func writeBoolMaps(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id      string
+		field   string
+		pointer string
+	}
+	var entries []entry
+	addFields := func(id string, fields map[string]Field) {
+		var names []string
+		for name := range fields {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			if !fields[name].BoolMap {
+				continue
+			}
+			entries = append(entries, entry{id: id, field: name, pointer: fields[name].Pointer})
+		}
+	}
+	for _, op := range s.Operations {
+		addFields(op.ID, op.Response.Fields)
+		if op.Response.Merge != nil {
+			for _, l := range op.Response.Merge.Lists {
+				addFields(op.ID, l.Fields)
+			}
+		}
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Open bool maps: %d\n", len(entries))
+	for i, e := range entries {
+		fmt.Fprintf(b, "%d. %s: %s keeps every bool at %s, sorted\n", i+1, e.id, e.field, e.pointer)
 	}
 }
 

@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/outlineseam"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
-	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
@@ -43,7 +43,7 @@ func newSeamFixture(t *testing.T) seamFixture {
 // the method lives in this integration file.
 func (f seamFixture) client(t *testing.T) *http.Client {
 	t.Helper()
-	seam, err := outline.TestSeamFromEnvWithFiles(mapEnv(map[string]string{outline.BaseURLEnv: f.base, outline.CAFileEnv: f.ca}), os.ReadFile)
+	seam, err := outlineseam.TestSeamFromEnvWithFiles(mapEnv(map[string]string{outlineseam.BaseURLEnv: f.base, outlineseam.CAFileEnv: f.ca}), os.ReadFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func testCreds(t *testing.T) *envfile.Credentials {
 func TestReadSeamsTurnsOnEachKindFromItsOwnVariables(t *testing.T) {
 	f := newSeamFixture(t)
 	env := mapEnv(map[string]string{
-		outline.BaseURLEnv: f.base, outline.CAFileEnv: f.ca, outline.TimeoutEnv: "500ms",
+		outlineseam.BaseURLEnv: f.base, outlineseam.CAFileEnv: f.ca, outlineseam.TimeoutEnv: "500ms",
 	})
 	seams, err := readSeams(env)
 	if err != nil {
@@ -121,7 +121,7 @@ func TestReadSeamsTurnsOnEachKindFromItsOwnVariables(t *testing.T) {
 func TestReadSeamsStopsOnABadSeam(t *testing.T) {
 	f := newSeamFixture(t)
 	cases := map[string]map[string]string{
-		"outline base without a CA file": {outline.BaseURLEnv: f.base},
+		"outline base without a CA file": {outlineseam.BaseURLEnv: f.base},
 		"kiwi timeout without a base":    {kiwi.TimeoutEnv: "1s"},
 		"jira base without a CA file":    {jira.BaseURLEnv: f.base},
 		"jira http base":                 {jira.BaseURLEnv: "http://127.0.0.1:1", jira.CAFileEnv: f.ca},
@@ -214,15 +214,13 @@ func TestWireSourcesBuildsSeamGatewaysForEveryKind(t *testing.T) {
 	}
 }
 
-// TestBuildGatewaysWithoutASeamUseTheSourceEndpoint checks that a gateway built with the seam off is returned for each kind.
+// TestBuildGatewaysWithoutASeamUseTheSourceEndpoint checks that a Go gateway built with the seam off is returned for
+// each Go-gateway kind. The Outline gateway is the engine gateway, which the gateway tests cover.
 func TestBuildGatewaysWithoutASeamUseTheSourceEndpoint(t *testing.T) {
 	creds := testCreds(t)
 	byKind := map[domain.SourceKind]domain.Source{}
 	for _, src := range exampleSources(t) {
 		byKind[src.Kind()] = src
-	}
-	if gw, err := buildOutline(byKind[domain.KindOutline], creds, seamConfig{}); err != nil || gw == nil {
-		t.Fatalf("buildOutline without a seam = %v, %v", gw, err)
 	}
 	if gw, err := buildKiwi(byKind[domain.KindKiwi], creds, seamConfig{}); err != nil || gw == nil {
 		t.Fatalf("buildKiwi without a seam = %v, %v", gw, err)
@@ -232,39 +230,41 @@ func TestBuildGatewaysWithoutASeamUseTheSourceEndpoint(t *testing.T) {
 	}
 }
 
-// TestBuildGatewaysWithASeamUseTheSeamBase checks that a gateway built with the seam on is returned for each kind, with
-// and without a seam timeout.
+// TestBuildGatewaysWithASeamUseTheSeamBase checks that a Go gateway built with the seam on is returned for each
+// Go-gateway kind, with and without a seam timeout. The Outline gateway is the engine gateway, which the gateway
+// tests cover.
 func TestBuildGatewaysWithASeamUseTheSeamBase(t *testing.T) {
 	f := newSeamFixture(t)
 	creds := testCreds(t)
-	src := exampleSources(t)[0]
+	byKind := map[domain.SourceKind]domain.Source{}
+	for _, src := range exampleSources(t) {
+		byKind[src.Kind()] = src
+	}
 	for _, timeout := range []time.Duration{0, time.Second} {
 		seam := seamConfig{on: true, base: f.base, client: f.client(t), timeout: timeout}
-		if gw, err := buildOutline(src, creds, seam); err != nil || gw == nil {
-			t.Fatalf("buildOutline with a seam (timeout %v) = %v, %v", timeout, gw, err)
-		}
-		if gw, err := buildKiwi(src, creds, seam); err != nil || gw == nil {
+		if gw, err := buildKiwi(byKind[domain.KindKiwi], creds, seam); err != nil || gw == nil {
 			t.Fatalf("buildKiwi with a seam (timeout %v) = %v, %v", timeout, gw, err)
 		}
-		if gw, err := buildJira(src, creds, seam); err != nil || gw == nil {
+		if gw, err := buildJira(byKind[domain.KindJira], creds, seam); err != nil || gw == nil {
 			t.Fatalf("buildJira with a seam (timeout %v) = %v, %v", timeout, gw, err)
 		}
 	}
 }
 
-// TestBuildGatewaysRefuseAnOnSeamWithANonHTTPSBase checks that each builder refuses a seam base that is not HTTPS, even
-// when it is called without the setup check.
+// TestBuildGatewaysRefuseAnOnSeamWithANonHTTPSBase checks that each Go-gateway builder refuses a seam base that is
+// not HTTPS, even when it is called without the setup check. The Outline engine builder refuses one the same way,
+// which the gateway tests cover.
 func TestBuildGatewaysRefuseAnOnSeamWithANonHTTPSBase(t *testing.T) {
 	creds := testCreds(t)
-	src := exampleSources(t)[0]
-	bad := seamConfig{on: true, base: "http://127.0.0.1:1"}
-	if _, err := buildOutline(src, creds, bad); err == nil {
-		t.Fatal("buildOutline accepted an http base")
+	byKind := map[domain.SourceKind]domain.Source{}
+	for _, src := range exampleSources(t) {
+		byKind[src.Kind()] = src
 	}
-	if _, err := buildKiwi(src, creds, bad); err == nil {
+	bad := seamConfig{on: true, base: "http://127.0.0.1:1"}
+	if _, err := buildKiwi(byKind[domain.KindKiwi], creds, bad); err == nil {
 		t.Fatal("buildKiwi accepted an http base")
 	}
-	if _, err := buildJira(src, creds, bad); err == nil {
+	if _, err := buildJira(byKind[domain.KindJira], creds, bad); err == nil {
 		t.Fatal("buildJira accepted an http base")
 	}
 }

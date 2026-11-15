@@ -102,15 +102,16 @@ func refusingNetwork() engine.Network {
 	}
 }
 
-// engineClock is the engine's clock over the scenario clock. A time limit ends with its parent or its release, and a wait
-// moves the scenario clock, so no test waits on a timer.
+// engineClock is the engine's clock over the scenario clock. A wait moves the scenario clock, so no test waits on a
+// timer for a retry. A time limit is a bound on real I/O, as on the Go gateway, so it runs on the real clock: a stub
+// that answers at once never sees it fire, and a stub that never answers ends the request at the bound.
 type engineClock struct {
 	clk *fakeClock
 }
 
-// WithTimeout returns a context that ends with its parent, or when the release function runs.
-func (c engineClock) WithTimeout(parent context.Context, _ time.Duration) (context.Context, context.CancelFunc) {
-	return context.WithCancel(parent)
+// WithTimeout returns a context that ends at the bound, with its parent, or when the release function runs.
+func (c engineClock) WithTimeout(parent context.Context, d time.Duration) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(parent, d)
 }
 
 // Sleep is the scenario clock's wait.

@@ -149,7 +149,8 @@ func checkBody(value any, at string, params map[string]Param) []Finding {
 }
 
 // checkPagination checks that each named paging parameter of a paged read is a parameter of the operation in the
-// location the rule names: query, or body with in: body. A rule cannot mix locations.
+// location the rule names: query, or body with in: body. A rule cannot mix locations. A page-all rule names no
+// paging parameter at all, because the operation declares none, and its fixed page size is between 1 and 100.
 func checkPagination(op Operation, base string, params map[string]Param) []Finding {
 	if op.Pagination == nil {
 		return nil
@@ -160,6 +161,24 @@ func checkPagination(op Operation, base string, params map[string]Param) []Findi
 	}
 	if loc != "query" && loc != "body" {
 		return []Finding{finding(base+"/pagination/in", "is neither query nor body")}
+	}
+	if op.Pagination.Style == "page-all" {
+		var fs []Finding
+		named := []struct{ field, value string }{
+			{"cursor_param", op.Pagination.CursorParam},
+			{"limit_param", op.Pagination.LimitParam},
+			{"next_pointer", op.Pagination.NextPointer},
+			{"offset_param", op.Pagination.OffsetParam},
+		}
+		for _, p := range named {
+			if p.value != "" {
+				fs = append(fs, finding(base+"/pagination/"+p.field, "names a paging parameter of a page-all rule"))
+			}
+		}
+		if op.Pagination.PageSize < 1 || op.Pagination.PageSize > 100 {
+			fs = append(fs, finding(base+"/pagination/page_size", "is not a page size from 1 to 100"))
+		}
+		return fs
 	}
 	var fs []Finding
 	names := map[string]string{
@@ -251,6 +270,12 @@ const (
 	ruleObjectScalar = "is an object field with a scalar keyword"
 	ruleObjectCount  = "does not hold 1 to 32 sub-fields"
 	ruleObjectDepth  = "nests an object inside an object"
+	// ruleFallbackPointer is the rule of a scalar field whose fallback pointer has no pointer to fall back from.
+	ruleFallbackPointer = "names a fallback pointer with no pointer to fall back from"
+	// The fixed rules of an open-key map with closed bool values. Each names the broken rule, never a value.
+	ruleBoolMapScalar  = "is a bool map with a scalar keyword"
+	ruleBoolMapDepth   = "nests a bool map inside an object"
+	ruleBoolMapPointer = "is a bool map with no pointer"
 )
 
 // CheckObjectFields returns the findings of the nested record fields of a spec model: an object field takes no scalar
@@ -287,12 +312,19 @@ func CheckObjectFields(s *Spec) []Finding {
 	return fs
 }
 
-// checkObjectField checks one response field. A scalar field passes with no finding.
+// checkObjectField checks one response field. A scalar field passes with no finding, unless its fallback pointer
+// has no pointer to fall back from. A bool-map field passes under its own rule.
 func checkObjectField(at string, f Field) []Finding {
-	if f.Object == nil {
+	if f.Object == nil && !f.BoolMap {
+		if f.FallbackPointer != "" && f.Pointer == "" {
+			return []Finding{finding(at+"/fallback_pointer", ruleFallbackPointer)}
+		}
 		return nil
 	}
-	if f.Pointer != "" || f.Required || f.Format != "" || f.Convert != "" {
+	if f.BoolMap {
+		return checkBoolMapField(at, f)
+	}
+	if f.Pointer != "" || f.FallbackPointer != "" || f.Required || f.Format != "" || f.Convert != "" {
 		return []Finding{finding(at, ruleObjectScalar)}
 	}
 	if len(f.Object) < 1 || len(f.Object) > maxObjectFields {
@@ -308,8 +340,23 @@ func checkObjectField(at string, f Field) []Finding {
 		if f.Object[name].Object != nil {
 			fs = append(fs, finding(at+"/object/"+safeName(name)+"/object", ruleObjectDepth))
 		}
+		if f.Object[name].BoolMap {
+			fs = append(fs, finding(at+"/object/"+safeName(name)+"/bool_map", ruleBoolMapDepth))
+		}
 	}
 	return fs
+}
+
+// checkBoolMapField checks one open-key map with closed bool values: it reads the reply object at its pointer, so
+// the pointer is required, and it takes no format, converter, or object of its own.
+func checkBoolMapField(at string, f Field) []Finding {
+	if f.Pointer == "" {
+		return []Finding{finding(at, ruleBoolMapPointer)}
+	}
+	if f.Format != "" || f.Convert != "" || f.Object != nil {
+		return []Finding{finding(at, ruleBoolMapScalar)}
+	}
+	return nil
 }
 
 // ruleResponseShape is the rule of a response that names more than one reply shape. A response holds at most one of

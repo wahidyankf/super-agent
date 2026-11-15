@@ -21,15 +21,14 @@ const (
 // moduleKinds maps the directory of each Go module, relative to the repository root, to its kind. Every module of the
 // workspace appears here, and the integration test checks the list against the files on disk.
 var moduleKinds = map[string]string{
-	"apps/retriever-cli":               kindApp,
-	"libs/retriever-contract":          kindContract,
-	"libs/retriever-runtime":           kindRuntime,
-	"libs/retriever-testkit":           kindTestkit,
-	"libs/retriever-connector-outline": kindConnector,
-	"libs/retriever-connector-kiwi":    kindConnector,
-	"libs/retriever-connector-jira":    kindConnector,
-	"libs/retriever-spec":              kindSpec,
-	"libs/retriever-engine":            kindEngine,
+	"apps/retriever-cli":            kindApp,
+	"libs/retriever-contract":       kindContract,
+	"libs/retriever-runtime":        kindRuntime,
+	"libs/retriever-testkit":        kindTestkit,
+	"libs/retriever-connector-kiwi": kindConnector,
+	"libs/retriever-connector-jira": kindConnector,
+	"libs/retriever-spec":           kindSpec,
+	"libs/retriever-engine":         kindEngine,
 }
 
 // engineDirs are the directories whose production code is the engine. The engine speaks HTTP, so it may import the

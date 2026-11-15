@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,7 +20,8 @@ import (
 )
 
 // reply is the part of one exchange that the classifier reads: the status, the Retry-After value, and the body of a
-// successful reply. The body of any other reply is never read, so it never reaches an error.
+// successful reply. The body of any other reply is never read, except the 404 body of an operation that declares an
+// unavailable message, which the classifier compares for exact equality only, so it never reaches an error.
 type reply struct {
 	status     int
 	retryAfter string
@@ -39,19 +41,46 @@ func (e *Engine) send(ctx context.Context, o spec.Operation, r request) (any, er
 // status of the last reply it received, or zero when no reply arrived. A fallback reads the status to decide whether
 // its trigger fired; every other caller reads only the reply. The retries, the waits, and the closed errors are the
 // same as send, because it is send: every request of a fallback runs under every safeguard of the engine.
+// retryWait returns the wait before a rate-limited request is sent again. A page-all read paces its requests like the
+// Go gateway it replaces, so a wait shorter than the pacing delay is topped up to it; a longer Retry-After already
+// covers the delay. Any other read waits exactly what the reply asks for.
+func retryWait(o spec.Operation, wait time.Duration) time.Duration {
+	if o.Pagination != nil && o.Pagination.Style == "page-all" && wait < pageAllMinDelay {
+		return pageAllMinDelay
+	}
+	return wait
+}
+
+// unavailableMethod reports whether a 404 reply proves the method is missing: the operation declares the exact body
+// message, and the body carries it in its message field. The match is equality with the declared constant only, and
+// the message never reaches an error: the failure names the method, never the body. A 404 with any other body falls
+// through to the mapped reason, so a missing object keeps its own failure.
+func unavailableMethod(o spec.Operation, rep reply) bool {
+	if rep.status != http.StatusNotFound || o.Response.UnavailableMessage == "" {
+		return false
+	}
+	var body struct {
+		Message string `json:"message"`
+	}
+	return json.Unmarshal(rep.body, &body) == nil && body.Message == o.Response.UnavailableMessage
+}
+
 func (e *Engine) sendFull(ctx context.Context, o spec.Operation, r request) (any, int, error) {
 	write := o.Access != "read"
 	for attempt := 0; ; attempt++ {
-		rep, err := e.exchange(ctx, r, write)
+		rep, err := e.exchange(ctx, o, r, write)
 		if err != nil {
 			return nil, 0, err
+		}
+		if unavailableMethod(o, rep) {
+			return nil, rep.status, domain.OperationUnavailableError{Method: o.Method}
 		}
 		wait, retry, err := classify(o, rep.status, rep.retryAfter)
 		if retry {
 			if attempt >= maxRetries {
 				return nil, rep.status, domain.ErrSourceRateLimited
 			}
-			if err := e.ports.Clock.Sleep(ctx, wait); err != nil {
+			if err := e.ports.Clock.Sleep(ctx, retryWait(o, wait)); err != nil {
 				return nil, rep.status, err
 			}
 			continue
@@ -73,8 +102,10 @@ func (e *Engine) sendFull(ctx context.Context, o spec.Operation, r request) (any
 // exchange sends one request once. It reads the key for this request, sets the authorization header, and runs the
 // request under the time limit. The body of a successful reply is read up to the reply cap, and a longer one fails. For a
 // write, the reply is read whole, up to the cap, whatever its status, and a failure after the request left is an unknown
-// outcome. A connection that never opened means the request did not leave, so that failure is known.
-func (e *Engine) exchange(ctx context.Context, r request, write bool) (reply, error) {
+// outcome. A connection that never opened means the request did not leave, so that failure is known. The 404 body of
+// an operation that declares an unavailable message is read too, up to the cap, so the classifier can compare its
+// exact message; every other failed reply keeps no body.
+func (e *Engine) exchange(ctx context.Context, o spec.Operation, r request, write bool) (reply, error) {
 	key, err := e.ports.Credentials.APIKey(e.src.Credential())
 	if err != nil {
 		return reply{}, err
@@ -125,6 +156,13 @@ func (e *Engine) exchange(ctx context.Context, r request, write bool) (reply, er
 		return rep, nil
 	}
 	if rep.status < 200 || rep.status >= 300 {
+		if rep.status == http.StatusNotFound && o.Response.UnavailableMessage != "" {
+			raw, err := readCapped(resp.Body, e.maxReply)
+			if err != nil {
+				return reply{}, transportError(ctx, err, secret)
+			}
+			rep.body = raw
+		}
 		return rep, nil
 	}
 	raw, err := readCapped(resp.Body, e.maxReply)

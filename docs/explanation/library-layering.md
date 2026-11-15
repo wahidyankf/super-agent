@@ -13,7 +13,7 @@ tags:
 
 # Library layering
 
-The Go code of super-agent is one app and eight libraries. Each library is its own Go module, so an import rule is
+The Go code of super-agent is one app and seven libraries. Each library is its own Go module, so an import rule is
 also a rule between modules. This page explains the layers, the rules between them, and why the rules exist. The module
 paths, versions, and tags are in [Go modules and tags](../reference/go-modules-and-tags.md).
 
@@ -24,19 +24,22 @@ repository. An arrow in the diagram points from the importer to the module it im
 
 ```text
                        retriever-cli (the app)
-                        |           |          |
-                        |           |          +----------------+
-                        v           v                           v
-                 retriever-runtime  retriever-connector-outline  retriever-connector-kiwi
+                        |           |
+                        |           +----------------+
+                        v                            v
+                 retriever-runtime  retriever-connector-kiwi
                         |           retriever-connector-jira
                         |                 |
-                        +--------+--------+-----------------------+
+                        +--------+--------+
                                  v
                         retriever-contract
 
     retriever-testkit ----> retriever-contract        (production code of the testkit)
     tests of the app, the runtime, and the connectors ----> retriever-testkit   (test code only)
 ```
+
+Pull request 17 retired `retriever-connector-outline`: the bundled-spec engine serves every Outline operation, so
+the app no longer imports that module. Its directory was removed in the same pull request.
 
 The app also imports the contract directly, and so do the runtime and the connectors. The diagram leaves those arrows
 out to keep it readable.
@@ -72,9 +75,9 @@ Third-party modules sit outside these rules. The runtime uses `go.yaml.in/yaml/v
 ## Why the rules exist
 
 **A connector change touches only itself and the app.** A connector imports only the contract in production code. No
-other connector and no runtime imports it. A change to the Outline connector therefore changes the Outline package and
-the app that wires it. The Kiwi and Jira connectors do not change, the runtime does not change, and the contract does
-not change.
+other connector and no runtime imports it. A change to a wired connector therefore changes that connector's package
+and the app that wires it. The other connectors do not change, the runtime does not change, and the contract does
+not change. The retired Outline connector is wired by no one: a change to it touches its own tests only.
 
 **The contract is the stable part.** Every module depends on it, so it depends on nothing. Its version is the
 `ContractVersion` constant, and a contract change bumps the minor version in v0.x. The [changelog](../../CHANGELOG.md)
@@ -107,8 +110,10 @@ check that each module's `go.mod` requires and replaces the siblings it imports.
 The rules above cover the contract and the runtime's `sources` package. They do not cover the rest of the libraries, so
 two exceptions exist:
 
-- Each connector's `seam.go` has an entry point, `TestSeamFromEnv`, which calls `os.ReadFile` directly. The composition
-  root calls it with the real environment, and only for tests. The seam accepts a loopback address only.
+- Each wired connector's `seam.go` has an entry point, `TestSeamFromEnv`, which calls `os.ReadFile` directly. The
+  composition root calls it with the real environment, and only for tests. The seam accepts a loopback address only.
+  The retired Outline connector's seam lives in the app at `apps/retriever-cli/internal/outlineseam`, where the root
+  and the behaviour harness both read it, because the engine still reaches the stub Outline server through it.
 - The runtime's other packages, such as `catalog` and `markdownfiles`, name `os` types and take the file system as a
   parameter. Their production code calls no `os` function that reaches the disk. The app's composition root passes the
   real calls in.

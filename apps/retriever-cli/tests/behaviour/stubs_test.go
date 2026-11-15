@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/outlineseam"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
-	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
 	"github.com/wahidyankf/super-agent/libs/retriever-testkit/jirastub"
 	"github.com/wahidyankf/super-agent/libs/retriever-testkit/kiwistub"
 	"github.com/wahidyankf/super-agent/libs/retriever-testkit/outlinestub"
@@ -182,8 +182,8 @@ func (w *world) ensureStubs() error {
 		if err != nil {
 			return fmt.Errorf("write the Outline certificate: %w", err)
 		}
-		w.env[outline.BaseURLEnv] = w.stubs.outline.URL()
-		w.env[outline.CAFileEnv] = path
+		w.env[outlineseam.BaseURLEnv] = w.stubs.outline.URL()
+		w.env[outlineseam.CAFileEnv] = path
 		w.stubs.seamed[outlineKind] = true
 	}
 	if w.stubs.kiwi != nil && !w.stubs.seamed[kiwiKind] {

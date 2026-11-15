@@ -92,9 +92,12 @@ The review text lists each POST read in its own block, with its path and the slo
 ## Parameters
 
 Each parameter has `name`, `type`, `in` (`path`, `query`, or `body`), and `required`. It may have `default`, `min`,
-`max`, `values`, `help`, and `resolve`. The `type` is one of the 24 parameter kinds of the operation catalog, such as
+`max`, `values`, `help`, and `resolve`. The `type` is one of the 27 parameter kinds of the operation catalog, such as
 `ID`, `Query`, `Limit`, `Enum`, `Time`, and `URL`, so every adapter validates a value the same way. A bundled port
-also uses `CollectionID`, `CollectionUUID`, and `DocumentID`, which validate as an opaque ID or UUID. Names start
+also uses `CollectionID`, `CollectionUUID`, and `DocumentID`, which validate as an opaque ID or UUID, and `Icon`,
+`URLList`, and `EventList`, which validate exactly as the catalog does: an icon is one emoji, a named icon, or an
+attachment UUID, but never blank; a URL list holds 1 to 10 HTTPS addresses of at most 1024 characters each; an event
+list holds at most 50 event names, each `*` or a dotted name such as `documents.create`. Names start
 lower-case and may hold upper-case letters, so a bundled operation names the catalog parameters exactly
 (`collectionId`, `searchSource`). Two rules narrow the type:
 
@@ -119,10 +122,13 @@ alone sets them. The header parameter location of the draft is not in the spec: 
 
 ## Pagination
 
-- `style`: `offset`, `cursor`, or `none`.
+- `style`: `offset`, `cursor`, `page-all`, or `none`.
 - `in`: `query` (the default) or `body`. With `in: body`, every parameter the paging rule names must be a declared
-  body parameter of the same operation; a rule cannot mix locations.
-- `max_pages`: the page cap of the read, from 1 to 20. It is the stop rule, so `offset` and `cursor` always name it.
+  body parameter of the same operation; a rule cannot mix locations. A `page-all` rule names no parameter, so the
+  engine sends the fixed paging keys `offset` and `limit` itself, in the query or in the JSON body per `in`.
+- `max_pages`: the page cap of the read, from 1 to 20. It is the stop rule, so `offset`, `cursor`, and `page-all`
+  always name it.
+- `page_size`: the fixed page size of a `page-all` read, from 1 to 100. Only a `page-all` rule names it.
 - `offset`: needs `limit_param` and `offset_param`. With `in: query` both name query parameters of the operation; with
   `in: body` both name body parameters, and the values travel in the JSON body instead of the query. The offset is a
   non-negative integer below 2^31. The engine advances it by the number of items in the page, and stops at the first
@@ -131,9 +137,14 @@ alone sets them. The header parameter location of the draft is not in the spec: 
   `in: body` the cursor parameter is a body parameter, and the value travels in the JSON body. A next cursor that
   repeats one already sent ends the read, so a reply that never advances cannot run to the cap. At the cap the engine
   returns the pages it has, with no continuation.
+- `page-all`: reads every page of an operation that declares no page parameters, until a short page, with no
+  continuation. The engine spaces the requests 100 ms apart, mirroring the pacing of the Go reader it replaces. At
+  the cap it fails with the page-cap error instead of returning the pages it has. A `page-all` rule on a write is
+  refused, as a write takes one request.
 - `none`: takes no other field.
 
-The review text lists each body-paged read in its own block, with its style, its body parameters, and its page cap.
+The review text lists each body-paged read in its own block, with its style, its body parameters, and its page cap. A
+`page-all` read lists its fixed page size in place of parameters.
 
 ## Response
 
@@ -167,32 +178,69 @@ The review text lists each body-paged read in its own block, with its style, its
   every safeguard of the engine: the same host, the same key, no redirect, and the same caps. When the fallback
   fails, the read fails with the error of the fallback. The triggers `empty` and `status` are owner proposals that
   the owner can still veto at review.
-- `fields`: a map from output field to an object with `pointer`, a JSON pointer into the reply, an optional `required`,
-  an optional closed `format`, and an optional `convert`. The converter is `plain`, `markdown-from-html`, or
-  `markdown-from-adf`. The engine does not serve the two Markdown converters yet. A spec that names one still loads,
-  and each run of that operation fails with `retriever.<kind>.unsupported_operation` before any request is sent.
+- `fields`: a map from output field to an object with `pointer`, a JSON pointer into the reply, an optional
+  `fallback_pointer`, a second JSON pointer that is read when the first finds nothing, so one field maps two reply
+  shapes, an optional `required`, an optional closed `format`, and an optional `convert`. A pointer that finds an
+  explicit null wins, so the fallback serves only the shape that lacks the pointer, never a second guess inside one
+  shape. A fallback pointer needs the pointer it falls back from. The converter is `plain`, `markdown-from-html`,
+  `markdown-from-adf`, `hostname`, or `text-from-editor-data`. The engine serves `hostname`: the field holds the host
+  of the reply address, without the path, the query, the port, or the user name, or the empty text when the address
+  has no host. The engine serves `text-from-editor-data`: the plain text of editor data, with a line break after each
+  text block, or the raw text unchanged when the field falls back to it; a missing value maps to null, and any other
+  scalar is an unexpected response. The converter is a pure function of the reply: it sends no request and reaches no
+  other host. The engine does not serve the two Markdown converters yet. A spec that names one still loads, and each
+  run of that operation fails with `retriever.<kind>.unsupported_operation` before any request is sent.
 - `required`: `true` on a reply field fails the read with `unexpected_response` when the reply holds a missing, null,
   or empty value for it, and no partial record is returned. A missing optional field still maps to null.
-- `format`: one closed name, `id`, `uuid`, or `share-id`, checked on the value with the same checks the catalog kinds
-  use on request parameters. A free pattern has no form in the language. The failure names the field and never the
-  value.
+- `format`: one closed name, `id`, `uuid`, `share-id`, or `strings`, checked on the value with the same checks the
+  catalog kinds use on request parameters. `strings` reads a list of strings instead of one scalar; any other value
+  shape fails. A free pattern has no form in the language. The failure names the field and never the value.
 - `object`: a reply field may hold one nested record instead of a scalar: `user` with `object` holding at most 32
   named sub-fields, each a pointer with its own optional `required`, `format`, and `convert`. One level only: a
   sub-field with its own `object` is refused, and so is an object field with a scalar keyword of its own. A pointer
   that reaches an object or a list is refused, so a whole object is never copied. The mapper reads declared pointers
   only, and the reply tree is dropped after mapping. A failure names the dotted path, never the value.
+- `bool_map`: a reply field may hold one open-key map with closed bool values instead of a scalar or a nested
+  record: `notificationSettings` with a `pointer` to the reply object and `bool_map: true` keeps every key the reply
+  holds, verbatim, sorted, with each value checked as a flag. An optional `fallback_pointer` reads the second reply
+  shape the same way, and an optional `required` fails a missing map. A value that is not a bool fails the read with
+  `unexpected_response` naming the dotted path, and the value is never kept; the mapper never drops a key. A bool-map
+  field takes no `format`, `convert`, or `object`, and no bool map nests inside an `object`. An empty map answers an
+  empty record. A failure names the dotted path, never the value.
+- **Threat: an open key set smuggles a value the author meant to withhold.** Control: the one open record form keeps
+  flags only, so no nested object, text, or list can ride along; every key is kept verbatim with no per-key pointer
+  to misdirect; a wrong-shaped value fails the read instead of mapping; and no other open spelling loads, because the
+  schema and the Go rule refuse a star sub-field, `patternProperties`, `additionalProperties`, and any undeclared
+  value rule. Proof: `TestBoolMapKeepsEveryKeySorted` (every key kept, sorted, with exact flags),
+  `TestBoolMapEmptyMapOk` (an empty map answers an empty record),
+  `TestBoolMapNonBoolFailsNamingPath` (a non-bool fails naming the dotted path),
+  `TestGatewayServesNotificationWritesOnTheEngine` (both notification writes run on the engine with every row
+  field), `TestBoolMapRefusesScalarKeywords`, and `TestDynamicRecordFieldsStayRefused`.
 - `markdown`: the output field that holds the Markdown body, for a document read. It must name a field.
 - `errors`: a map from HTTP status, from 100 to 599, to a reason from the closed list in the error section.
+- `unavailable_message`: the exact body message that proves the method is missing. A 404 carrying exactly this message
+  fails as `operation_unavailable` instead of the mapped reason, so one status tells a missing object from a missing
+  method. The match is equality with the declared constant only: no pattern, and no substring match on arbitrary text.
+  The message never reaches an error: the failure names the method, never the body. The 404 body of any other
+  operation is never read. A 404 with any other body falls through to the mapped reason, so a missing object keeps its
+  own failure.
+- **Threat: a body rule leaks the reply or widens the language.** Control: the rule fires on 404 only, the outcome is
+  fixed to `operation_unavailable`, and only the exact declared message matches. Proof:
+  `TestUnavailableMessageDistinguishesAMissingMethod` (the router's catch-all fails as unavailable),
+  `TestUnavailableMessageKeepsAMissingObjectNotFound` (any other 404 keeps the mapped reason), and
+  `TestUnavailableMessageLeavesOtherStatusesAlone` (a 401 with the same body keeps its own error).
 
 The review text lists each operation with required or checked fields in its own block, with each required field and
 each checked field with its closed format name. The review text lists each operation with a nested record field in
-its own block, with the object field and each sub-field. The review text lists each first-item read in its own
+its own block, with the object field and each sub-field. The review text lists each operation with an open-key map with closed bool values in its own block, with the map
+field and its pointer. The review text lists each first-item read in its own
 block, with the operation and the list pointer as `first of /data`. The review text lists each merge read in its own
 block, with the label field and each list as `<label> of <pointer>`, and it joins the required, checked, and nested
-fields of every list under the same operation. The review text lists each tree read in its own block, with the items
+fields of every list under the same operation. The bool-map block covers the map fields of every list too. The review text lists each tree read in its own block, with the items
 pointer, the children pointer, the computed fields, the root parent parameter when the read names one, and the depth
 cap. The review text lists each fallback read in its own block, with the target operation, the trigger, and the fill
-fields.
+fields. The review text lists each `page-all` read with its fixed page size in place of parameters. Dual pointers,
+the body-matched 404 rule, and converters add no review block: the review names rules, never reply shapes.
 
 There are no expressions. A pointer reads, and nothing computes.
 
@@ -213,7 +261,7 @@ fallback target, has no `catalog_id` and sets `cli: false` and `mcp: false`. A s
 spec of the kind already claims: one file holds each bundled kind, and a repeated claim inside one file never leaves
 the validation. The parameters of a claimed operation match the row in names, types, and required flags. The claimed
 operations of each kind cover every read row of the kind; a change row may stay unclaimed until its port, because the
-composite builder routes it to the Go gateway meanwhile.
+app routes it to a gateway meanwhile.
 
 The review text lists each bundled operation in its own block, with the catalog row it claims, or with no catalog row
 and its surfaces off.
@@ -226,24 +274,29 @@ Each example holds `request` (parameter values), `response` (status, optional co
 may hold a bearer or basic credential or a token-shaped run of 32 characters. A spec holds no host, so an example names
 none. The bundled fixture uses `example.test` names only.
 
-## Limits for the Outline reads
+## Limits for the Outline port
 
-The bundled `outline.yml` serves the 66 catalog reads with a `catalog_id` and an example each, and the fallback
-target `documents.export` with both surfaces off. A composite builder routes each operation to the engine or to the
-Go gateway until pull request 17, and the Go connector module stays in the graph. The earlier language limits no
-longer block a read: `POST` with `read_over_post` ([POST reads](#post-reads)), paging in the body (`in: body`,
-[Pagination](#pagination)), required and format-checked fields, nested records, the first item, merged lists, trees,
-and the fallback ([Response](#response)).
+The bundled `outline.yml` serves the 66 catalog reads with a `catalog_id` and an example each, the fallback target
+`documents.export` with both surfaces off, and all 99 write, destructive, and admin rows with a `catalog_id` and an
+example each. The Outline gateway runs each operation on the engine, with the not-found translation the retired Go
+gateway mapped. The earlier language limits no longer block a read or a write: `POST` with `read_over_post`
+([POST reads](#post-reads)), paging in the body (`in: body`) and the `page-all` rule for an operation with no page
+parameters ([Pagination](#pagination)), required and format-checked fields including string lists, nested records,
+the first item, merged lists, trees, the fallback, dual reply pointers with a body-matched 404 rule, the `hostname`
+converter, and the `text-from-editor-data` converter ([Response](#response)).
 
-Thirteen reads stay on the Go gateway until the language can express them:
+All 66 reads run on the engine: `collections.list` pages with the `page-all` rule under the `list-collections` role,
+failing at the cap with the page-cap error, `documents.get` maps its wrapped and unwrapped shapes through fallback
+pointers, telling a missing document from a missing method by the exact 404 body message, and the comment reads map
+editor data through the converter.
 
-- `collections.list` declares no page parameters, so no spec operation can page it, and the page-cap failure belongs
-  to the Go reader.
-- `documents.get` shares one status for a missing document and a missing method, which no error mapping can tell
-  apart, and its wrapped and unwrapped reply shapes need two pointers.
-- The comment reads map editor data the spec cannot compute. The key, client, authentication, webhook, and
-  integration lists map reply lists the spec cannot read, the integration reads compute address hosts the spec cannot
-  compute, and the sign-in provider settings hold a list the spec cannot read either.
+All 99 writes run on the engine, including the seven whose parameters need the `Icon`, `URLList`, or
+`EventList` kinds, and the two notification subscription writes, whose `notificationSettings` reply field is an
+open-key map with closed bool values: the engine keeps every event type the wiki returns, sorted, with each value
+checked as a flag. A value that is not a bool fails the read with `unexpected_response` naming the dotted path
+instead of being dropped, which is stricter than the Go projection and accepted. No other open record form exists:
+the spec still refuses a star sub-field, `patternProperties`, `additionalProperties`, and any undeclared value rule,
+so the nested object with explicitly named sub-fields and the bool map stay the only record mechanisms.
 
 A spec named `outline` is also refused in the user folder, because the kind is a built-in source. A bundled Outline
 spec takes the exception for embedded files only, as described in
@@ -266,8 +319,8 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 that the Outline, Kiwi, and Jira connectors can run as specs. All nine of them, POST reads (E1), body paging
 (E2), required and validated fields (E3), nested records with an allow-list (E4), the first item or not found
 (E5), merged lists with constant labels (E6), computed tree fields (E7), the fallback read (E8), and the bundled
-kinds with the ID mapping (E9), are built and described above. The
-limits of the Outline reads, above, describe
-the language before ADR 002 for the
-shapes that the remaining extensions cover. This page documents only what the module accepts today, and each extension
-moves here when its pull request lands.
+kinds with the ID mapping (E9), are built and described above. The Outline port then needed six more, built by pull
+request 17 and described above with it: the `Icon`, `URLList`, and `EventList` parameter kinds, the `page-all` rule,
+dual reply pointers with the body-matched 404 rule, the `text-from-editor-data` converter, and the open-key map with
+closed bool values that serves the notification subscription replies. This page documents only what the module accepts
+today, and each extension moves here when its pull request lands.

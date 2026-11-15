@@ -11,7 +11,6 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.64
 	github.com/wahidyankf/super-agent/libs/retriever-connector-jira v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi v0.4.0
-	github.com/wahidyankf/super-agent/libs/retriever-connector-outline v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-contract v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-engine v0.5.0
 	github.com/wahidyankf/super-agent/libs/retriever-runtime v0.4.0
@@ -59,7 +58,6 @@ tool (
 replace (
 	github.com/wahidyankf/super-agent/libs/retriever-connector-jira => ../../libs/retriever-connector-jira
 	github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi => ../../libs/retriever-connector-kiwi
-	github.com/wahidyankf/super-agent/libs/retriever-connector-outline => ../../libs/retriever-connector-outline
 	github.com/wahidyankf/super-agent/libs/retriever-contract => ../../libs/retriever-contract
 	github.com/wahidyankf/super-agent/libs/retriever-engine => ../../libs/retriever-engine
 	github.com/wahidyankf/super-agent/libs/retriever-runtime => ../../libs/retriever-runtime

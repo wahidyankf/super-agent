@@ -116,9 +116,12 @@
         "URL",
         "Index",
         "Color",
+        "Icon",
         "Score",
         "Reason",
-        "Email"
+        "Email",
+        "EventList",
+        "URLList"
       ]
     },
     "operation_id": {
@@ -286,7 +289,11 @@
       ]
     },
     "field": {
-      "anyOf": [{ "$ref": "#/$defs/scalar_field" }, { "$ref": "#/$defs/object_field" }]
+      "anyOf": [
+        { "$ref": "#/$defs/scalar_field" },
+        { "$ref": "#/$defs/object_field" },
+        { "$ref": "#/$defs/bool_map_field" }
+      ]
     },
     "scalar_field": {
       "type": "object",
@@ -294,9 +301,10 @@
       "required": ["pointer"],
       "properties": {
         "pointer": { "$ref": "#/$defs/pointer" },
+        "fallback_pointer": { "$ref": "#/$defs/pointer" },
         "required": { "type": "boolean" },
         "format": { "$ref": "#/$defs/field_format" },
-        "convert": { "enum": ["plain", "markdown-from-html", "markdown-from-adf"] }
+        "convert": { "enum": ["plain", "markdown-from-html", "markdown-from-adf", "hostname", "text-from-editor-data"] }
       }
     },
     "object_field": {
@@ -315,9 +323,20 @@
         }
       }
     },
+    "bool_map_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pointer", "bool_map"],
+      "properties": {
+        "pointer": { "$ref": "#/$defs/pointer" },
+        "fallback_pointer": { "$ref": "#/$defs/pointer" },
+        "required": { "type": "boolean" },
+        "bool_map": { "const": true }
+      }
+    },
     "field_format": {
       "type": "string",
-      "enum": ["id", "uuid", "share-id"]
+      "enum": ["id", "uuid", "share-id", "strings"]
     },
     "label": {
       "type": "string",
@@ -444,7 +463,8 @@
             }
           },
           "additionalProperties": false
-        }
+        },
+        "unavailable_message": { "type": "string", "minLength": 1, "maxLength": 256 }
       }
     },
     "pagination": {
@@ -452,9 +472,10 @@
       "additionalProperties": false,
       "required": ["style"],
       "properties": {
-        "style": { "enum": ["offset", "cursor", "none"] },
+        "style": { "enum": ["offset", "cursor", "none", "page-all"] },
         "in": { "enum": ["query", "body"] },
         "max_pages": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "page_size": { "type": "integer", "minimum": 1, "maximum": 100 },
         "limit_param": { "$ref": "#/$defs/param_name" },
         "offset_param": { "$ref": "#/$defs/param_name" },
         "cursor_param": { "$ref": "#/$defs/param_name" },
@@ -462,8 +483,23 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "style": { "enum": ["offset", "cursor"] } }, "required": ["style"] },
+          "if": { "properties": { "style": { "enum": ["offset", "cursor", "page-all"] } }, "required": ["style"] },
           "then": { "required": ["max_pages"] }
+        },
+        {
+          "if": { "properties": { "style": { "const": "page-all" } }, "required": ["style"] },
+          "then": {
+            "required": ["page_size"],
+            "not": {
+              "anyOf": [
+                { "required": ["limit_param"] },
+                { "required": ["offset_param"] },
+                { "required": ["cursor_param"] },
+                { "required": ["next_pointer"] }
+              ]
+            }
+          },
+          "else": { "not": { "required": ["page_size"] } }
         },
         {
           "if": { "properties": { "style": { "const": "offset" } }, "required": ["style"] },

@@ -48,10 +48,6 @@ func TestUntaggedTestsStayHermetic(t *testing.T) {
 	if _, ok := folders[behaviour]; !ok {
 		t.Fatalf("the walk found no test file in %s; the repository root %q is wrong", behaviour, repoRoot)
 	}
-	outline := filepath.Join(repoRoot, "libs", "retriever-connector-outline", "outline")
-	if _, ok := folders[outline]; !ok {
-		t.Fatalf("the walk found no test file in %s; the library roots are wrong", outline)
-	}
 	for dir, files := range folders {
 		findings, err := analyzeDir(files)
 		if err != nil {
