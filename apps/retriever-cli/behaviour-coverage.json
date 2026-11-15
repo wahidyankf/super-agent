@@ -3,10 +3,10 @@
   "description": "Scenario counts of the behaviour specs, by feature file and by test level. A Scenario Outline counts once here; the test runner runs each of its Examples rows as its own scenario. A scenario that carries more than one level tag counts at each of those levels. Counts come from the feature files; test results are not recorded here.",
   "specs": "specs/behaviours",
   "totals": {
-    "scenarios": 347,
-    "unit": 347,
-    "integration": 347,
-    "e2e": 344
+    "scenarios": 352,
+    "unit": 352,
+    "integration": 352,
+    "e2e": 349
   },
   "features": [
     {
@@ -29,6 +29,13 @@
       "unit": 18,
       "integration": 18,
       "e2e": 18
+    },
+    {
+      "path": "specs/behaviours/connectors/spec-conformance.feature",
+      "scenarios": 5,
+      "unit": 5,
+      "integration": 5,
+      "e2e": 5
     },
     {
       "path": "specs/behaviours/connectors/spec-connectors.feature",
