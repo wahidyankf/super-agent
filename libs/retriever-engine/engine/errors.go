@@ -63,6 +63,7 @@ var reasons = []struct {
 	{domain.ErrWrongSourceKind, "wrong_source_kind"},
 	{domain.ErrInvalidEndpoint, "invalid_endpoint"},
 	{domain.ErrInvalidID, "invalid_id"},
+	{domain.ErrInvalidDocumentID, "invalid_document_id"},
 	{domain.ErrInvalidLimit, "invalid_limit"},
 	{domain.ErrInvalidOffset, "invalid_offset"},
 	{domain.ErrInvalidInt, "invalid_number"},
