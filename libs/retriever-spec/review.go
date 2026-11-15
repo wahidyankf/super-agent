@@ -35,6 +35,7 @@ func Review(s *Spec) string {
 	writeNestedObjects(&b, s)
 	writeFirstReads(&b, s)
 	writeMergedLists(&b, s)
+	writeTreeReads(&b, s)
 	return b.String()
 }
 
@@ -257,6 +258,43 @@ func writeMergedLists(b *strings.Builder, s *Spec) {
 	fmt.Fprintf(b, "Merged lists: %d\n", len(entries))
 	for i, e := range entries {
 		fmt.Fprintf(b, "%d. %s: merge %s from %d lists (%s)\n", i+1, e.id, e.labelField, len(e.lists), strings.Join(e.lists, ", "))
+	}
+}
+
+// writeTreeReads writes the block of the reads that flatten a tree, one line each, with the items pointer, the
+// children pointer, the computed fields, the root parent parameter when the read names one, and the depth cap. A
+// spec with no tree read writes nothing, so its review keeps its text.
+func writeTreeReads(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id         string
+		items      string
+		children   string
+		parent     string
+		depth      string
+		rootParent string
+		maxDepth   int
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		if op.Response.Tree == nil {
+			continue
+		}
+		t := op.Response.Tree
+		entries = append(entries, entry{id: op.ID, items: op.Response.Items, children: t.Children,
+			parent: t.ParentField, depth: t.DepthField, rootParent: t.RootParentParam,
+			maxDepth: t.EffectiveMaxDepth()})
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Tree reads: %d\n", len(entries))
+	for i, e := range entries {
+		roots := ""
+		if e.rootParent != "" {
+			roots = ", roots under " + e.rootParent
+		}
+		fmt.Fprintf(b, "%d. %s: tree of %s with children %s, parent %s, depth %s%s, at most depth %d\n",
+			i+1, e.id, e.items, e.children, e.parent, e.depth, roots, e.maxDepth)
 	}
 }
 
