@@ -24,14 +24,41 @@ upgrade.
 
 ### Added
 
-- The bundled `outline.yml` serves the 66 catalog reads, each with a `catalog_id` and an example, and the fallback
-  target `documents.export` with both surfaces off. A composite builder routes each read to the bundled-spec engine or
-  to the Go gateway until pull request 17, and `retriever-connector-outline` stays in the graph. Fifty-three reads run
-  on the engine; `collections.list`, `documents.get`, the comment reads, and the key, client, authentication, webhook,
-  integration, and sign-in provider reads stay on the gateway, as the
-  [connector spec fields](docs/reference/connector-spec-fields.md) page lists. The MCP surface of the 65 read tools
-  stays byte-identical to its golden, and the unchanged read, redaction, and transport scenarios run against the
-  composite.
+- The spec language admits the `Icon`, `URLList`, and `EventList` parameter kinds with exactly the catalog
+  validation, and the bundled `outline.yml` claims the last 7 unclaimed write rows: the template, group, OAuth
+  client, and webhook subscription creates and updates. Every catalog row is claimed and the unclaimed set is empty.
+  The spec measures 166 operations in 244 KiB of the 256 KiB cap.
+- The spec language pages an operation with no page parameters through the `page-all` rule: the fixed page size and
+  the page cap, with the paging keys sent in the query or the JSON body. `collections.list` pages with it and fails
+  at the cap with the page-cap error, mirroring the Go reader. The engine takes a timeout option so the test seam
+  bounds an engine request the same way it bounds a Go gateway request.
+- A reply field maps two reply shapes through `fallback_pointer`, and a response tells a missing object from a
+  missing method through `unavailable_message`: a 404 carrying exactly the declared body message fails as
+  `operation_unavailable`, matched by equality only. `documents.get` maps its wrapped and unwrapped shapes and keeps
+  both 404 meanings, and now runs on the engine.
+- The spec language reads editor data as plain text through `convert: text-from-editor-data`, a pure function of the
+  reply. The comment reads map it, falling back to the raw text when a reply carries no editor data.
+- A reply field holds one open-key map with closed bool values through `bool_map: true`: the engine keeps every key
+  the reply holds, verbatim, sorted, with each value checked as a flag. The two notification subscription writes run
+  on the engine with it, so all 99 Outline writes run on the engine. A value that is not a bool fails the read with
+  `unexpected_response` naming the dotted path instead of being dropped, which is stricter than the retired Go
+  projection and accepted. Any other open key set stays refused: a star sub-field, `patternProperties`,
+  `additionalProperties`, or an undeclared value rule is refused at load.
+- The bundled `outline.yml` claims all 99 Outline write, destructive, and admin rows, each with a `catalog_id`
+  and an example. The Outline gateway runs every claimed operation on the bundled-spec engine, with the not-found
+  translation the retired Go gateway mapped. `retriever-connector-outline` leaves the dependency graph: the app no
+  longer imports it, and the architecture test fails on any new import. The unchanged write and
+  destructive scenarios pass on the engine with no edits, and the MCP surface of the 65 read tools stays
+  byte-identical to its golden.
+- All 66 Outline reads run on the bundled-spec engine, including the comment reads, the key, authentication,
+  integration, webhook, OAuth client, and sign-in provider reads, with `collections.list` paging under the
+  `page-all` rule and `documents.get` mapping its wrapped and unwrapped shapes through fallback pointers. The
+  unchanged read, redaction, and transport scenarios pass on the engine.
+- The spec language maps a list of strings with `format: strings` and the host of an address with
+  `convert: hostname`, so the engine serves reply lists and address hosts without new keywords. Every previously valid
+  spec still validates, and the schema keyword lock is unchanged.
+- The engine merges each page of a merged list read that pages, instead of failing it. The bundled
+  `suggestions.mention` example names empty lists instead of nulls, matching the wire.
 - The connector spec names catalog parameters exactly: names start lower-case and may hold upper-case letters, and the
   `CollectionID`, `CollectionUUID`, and `DocumentID` parameter kinds join the 21 existing kinds. They validate as an
   opaque ID or UUID. The bundled Outline port needs both, and every previously valid spec still validates.

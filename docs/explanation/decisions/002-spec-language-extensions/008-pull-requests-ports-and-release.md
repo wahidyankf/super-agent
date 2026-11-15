@@ -42,12 +42,21 @@ to the spec or to the Go gateway until pull request 17.
 
 ## 17. Port Outline writes and admin
 
-The bundled spec gains the write, destructive, and admin operations. The composite builder and
-`retriever-connector-outline` leave the graph. Docs: the modules, tags, and layering pages.
+The bundled spec gains the write, destructive, and admin operations. The owner decided to extend the language in the
+same pull request so the remaining 11 operations move: the `Icon`, `URLList`, and `EventList` parameter kinds move 7
+writes, the `page-all` rule moves `collections.list`, dual reply pointers with a body-matched 404 rule move
+`documents.get`, the editor-data converter serves the comment reads, and the open-key map with closed bool values
+moves the two notification subscription writes: their `notificationSettings` reply field keeps every event type the
+wiki returns, sorted, with each value checked as a flag, and a non-bool value fails the read instead of being
+dropped. The Outline gateway runs every operation on the bundled-spec engine, with the not-found translation the
+retired Go gateway mapped, and `retriever-connector-outline` leaves the dependency graph. Docs: the fields page, the
+counts page, and the modules, tags, and layering pages.
 
 - Given the unchanged write and destructive scenarios, then every one passes.
 - Given a write whose outcome is unknown, then the code is `write_outcome_unknown` and the write is never retried.
-- Gate: the architecture test shows no import of the retired module.
+- Gate: every catalog row is claimed, and the unclaimed set is empty.
+- Closed: no Go module serves an Outline operation any more, so the module is retired; the architecture test fails on
+  any new import of it.
 
 ## 18. The `markdown-from-adf` converter
 
