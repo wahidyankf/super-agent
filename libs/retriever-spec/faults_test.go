@@ -298,6 +298,22 @@ var faults = []fault{
 		path: "/operations/4/response/merge/label_field",
 		doc:  mfx("        label_field: kind\n", "        label_field: Kind\n")},
 
+	// E7: computed tree fields. A tree rides on the items list with a depth cap of at most 64, and it needs a
+	// required id field, because the parent of a node is the id of its parent node. The tree read is operation 4
+	// of these rows.
+	{name: "a tree without items is refused", layer: layerSchema, threats: []string{"L7"},
+		path: "/operations/4/response/items",
+		doc:  tfx("      items: /data\n", "")},
+	{name: "a tree with first is refused", layer: layerSchema, threats: []string{"L7"},
+		path: "/operations/4/response",
+		doc:  tfx("      items: /data\n", "      items: /data\n      first: /data\n")},
+	{name: "a max_depth above 64 is refused", layer: layerSchema, threats: []string{"L7"},
+		path: "/operations/4/response/tree/max_depth",
+		doc:  tfx("        max_depth: 64\n", "        max_depth: 65\n")},
+	{name: "a tree without a required id is refused", layer: layerSemantic, threats: []string{"L7"},
+		path: "/operations/4/response/tree",
+		doc:  tfx("          required: true\n", "")},
+
 	// Rules that only the Go validation states, because a JSON Schema cannot compare two fields of one document.
 	{name: "a built-in kind is refused", layer: layerSemantic, threats: []string{"S10"}, path: "/kind",
 		doc: fx("kind: example-wiki", "kind: outline")},

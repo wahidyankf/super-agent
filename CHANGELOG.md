@@ -96,6 +96,17 @@ upgrade.
   read with its label field and its lists, and it joins the required, checked, and nested fields of every list under
   the same operation. A merge returns a list record, as an items read does. The command-line list rendering for a
   merge read is left to a later pull request.
+- A response of a connector spec takes `tree` with `children`, `parent_field`, `depth_field`, an optional
+  `root_parent_param`, and an optional `max_depth`, to flatten the nested nodes of the `items` list depth first
+  (ADR 002, E7). The engine computes only the parent and the depth of each node: the parent is the id of the parent
+  node, null for a top node or the value of `root_parent_param`, and the depth counts from 0. The response holds a
+  required `id` field, a node deeper than the cap with its subtree is left out, and `max_depth` is at most 64. The
+  computed fields beat a reply field of the same name. A reply with `tree` decodes to a fixed higher cap of 146
+  levels, which covers a tree of 70 levels; no spec field sets it, and no other reply changes. A response holds at
+  most one of `items`, `first`, and `merge`, and a tree rides on `items`. The review text lists each tree read with
+  its pointers, its computed fields, and its depth cap. A tree returns a list record, as an items read does, and each
+  page of a paged tree read flattens on its own. The collection-tree gateway role reads the computed `parent_id` and
+  `depth` fields. The higher decode cap is an owner proposal that the owner can still veto at review.
 
 ### Changed
 

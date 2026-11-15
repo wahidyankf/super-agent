@@ -28,6 +28,8 @@ var specFieldNames = []string{
 	"first",
 	// ADR 002, E6: merged lists with constant labels.
 	"merge", "label_field", "lists", "label",
+	// ADR 002, E7: computed tree fields.
+	"tree", "children", "parent_field", "depth_field", "root_parent_param", "max_depth",
 }
 
 // collectPropertyNames gathers the keys of every "properties" object of a decoded schema, at any depth.

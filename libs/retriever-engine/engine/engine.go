@@ -40,6 +40,11 @@ const (
 	maxJSONDepth = 64
 	// maxJSONNodes is the most JSON tokens that a reply may hold.
 	maxJSONNodes = 1 << 20
+	// treeJSONDepth is the fixed decode depth of a reply with a tree: 146 levels, which covers a tree of 70 levels.
+	// Each tree level takes two JSON levels, an array and an object, and the six levels above that cover the reply
+	// envelope, the same slack the S9 cap keeps for 65 tree levels. No spec field sets it, so the owner can still
+	// veto it at review.
+	treeJSONDepth = 146
 )
 
 // Clock supplies the time limit of one request and the waits between two tries. A test passes a fake, so no unit test
@@ -259,7 +264,7 @@ func (e *Engine) run(ctx context.Context, o spec.Operation, args domain.Args) (d
 	if err != nil {
 		return domain.Record{}, err
 	}
-	return mapReply(o, root, &budget)
+	return mapReply(o, args, root, &budget)
 }
 
 // fetch renders the request of one page and sends it. A refused argument or header fails here, before any request.
@@ -305,9 +310,10 @@ func converterUnsupported(o spec.Operation) error {
 	return nil
 }
 
-// mapReply maps a reply to a list, to the first item of a list, to a merged list, or to one object, by which shape
-// the operation names. A response holds at most one of items, first, and merge.
-func mapReply(o spec.Operation, root any, budget *int) (domain.Record, error) {
+// mapReply maps a reply to a list, to the first item of a list, to a merged list, to a flattened tree, or to one
+// object, by which shape the operation names. A response holds at most one of items, first, and merge, and a tree
+// rides on items.
+func mapReply(o spec.Operation, args domain.Args, root any, budget *int) (domain.Record, error) {
 	if o.Response.First != "" {
 		return firstRecord(o, root, budget)
 	}
@@ -319,7 +325,7 @@ func mapReply(o spec.Operation, root any, budget *int) (domain.Record, error) {
 		return domain.NewList(items), nil
 	}
 	if o.Response.Items != "" {
-		items, err := listItems(o, root, budget)
+		items, err := pageItems(o, args, root, budget)
 		if err != nil {
 			return domain.Record{}, err
 		}
@@ -393,6 +399,7 @@ func checkSpecShape(model *spec.Spec) error {
 	fs = append(fs, spec.CheckObjectFields(model)...)
 	fs = append(fs, spec.CheckResponseShape(model)...)
 	fs = append(fs, spec.CheckMerge(model)...)
+	fs = append(fs, spec.CheckTree(model)...)
 	for i, o := range model.Operations {
 		base := "/operations/" + strconv.Itoa(i)
 		if !pathOK(o.Path) {
@@ -457,6 +464,9 @@ func pointersOf(o spec.Operation) []string {
 				}
 			}
 		}
+	}
+	if o.Response.Tree != nil {
+		out = append(out, o.Response.Tree.Children)
 	}
 	if o.Pagination != nil {
 		out = append(out, o.Pagination.NextPointer)

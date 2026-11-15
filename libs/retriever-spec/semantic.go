@@ -30,6 +30,7 @@ func semanticFindings(s *Spec) []Finding {
 	fs = append(fs, CheckObjectFields(s)...)
 	fs = append(fs, CheckResponseShape(s)...)
 	fs = append(fs, CheckMerge(s)...)
+	fs = append(fs, CheckTree(s)...)
 	index := make(map[string]int, len(s.Operations))
 	for i, op := range s.Operations {
 		at := "/operations/" + strconv.Itoa(i) + "/id"
@@ -182,12 +183,17 @@ func checkResolve(s *Spec, index map[string]int, at string, r *Resolve) []Findin
 }
 
 // checkExamples checks that each example request names a parameter of the operation, and that each expectation names a
-// field of its response. For a merge response the expectation may name the label field or a field of any list.
+// field of its response. For a merge response the expectation may name the label field or a field of any list. For
+// a tree response the expectation may name the computed parent and depth fields too.
 func checkExamples(op Operation, base string, params map[string]Param) []Finding {
 	var fs []Finding
 	var mergeFields map[string]bool
 	if op.Response.Merge != nil {
 		mergeFields = mergeOutputFields(op)
+	}
+	var treeFields map[string]bool
+	if op.Response.Tree != nil {
+		treeFields = treeOutputFields(op)
 	}
 	for j, ex := range op.Examples {
 		at := base + "/examples/" + strconv.Itoa(j)
@@ -199,6 +205,12 @@ func checkExamples(op Operation, base string, params map[string]Param) []Finding
 		for key := range ex.Expect {
 			if mergeFields != nil {
 				if !mergeFields[key] {
+					fs = append(fs, finding(at+"/expect/"+safeName(key), "names no field of the operation"))
+				}
+				continue
+			}
+			if treeFields != nil {
+				if !treeFields[key] {
 					fs = append(fs, finding(at+"/expect/"+safeName(key), "names no field of the operation"))
 				}
 				continue
@@ -372,6 +384,52 @@ func CheckResponseShape(s *Spec) []Finding {
 		}
 	}
 	return fs
+}
+
+// The fixed rules of a tree block. Each names the broken rule, never a value.
+const (
+	ruleTreeNeedsItems = "needs items"
+	ruleTreeMaxDepth   = "is above the depth cap of 64"
+	ruleTreeNeedsID    = "needs a required id field"
+)
+
+// CheckTree returns the findings of the tree blocks of a spec model: a tree rides on items, the depth cap is at
+// most 64, and the response holds a required id field, because the parent of a node is the id of its parent node.
+// The schema states the shape rules for documents. The validation and the engine constructor both call it, so a
+// model built by hand meets the same refusals as a document. Each finding names the field path and a fixed rule.
+func CheckTree(s *Spec) []Finding {
+	var fs []Finding
+	for i, op := range s.Operations {
+		t := op.Response.Tree
+		if t == nil {
+			continue
+		}
+		base := "/operations/" + strconv.Itoa(i) + "/response/tree"
+		if op.Response.Items == "" {
+			fs = append(fs, finding(base, ruleTreeNeedsItems))
+		}
+		if t.MaxDepth > treeDepthCap {
+			fs = append(fs, finding(base+"/max_depth", ruleTreeMaxDepth))
+		}
+		if id, ok := op.Response.Fields["id"]; !ok || !id.Required {
+			fs = append(fs, finding(base, ruleTreeNeedsID))
+		}
+	}
+	return fs
+}
+
+// treeOutputFields returns the output fields of a tree operation: every mapped field with the computed parent and
+// depth fields, which no pointer reads.
+func treeOutputFields(op Operation) map[string]bool {
+	out := map[string]bool{}
+	for name := range op.Response.Fields {
+		out[name] = true
+	}
+	if op.Response.Tree != nil {
+		out[op.Response.Tree.ParentField] = true
+		out[op.Response.Tree.DepthField] = true
+	}
+	return out
 }
 
 // reservedRule is the rule of a header that the engine sets itself, so no spec may name it.

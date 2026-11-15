@@ -53,7 +53,7 @@ func (e *Engine) send(ctx context.Context, o spec.Operation, r request) (any, er
 			}
 			return nil, err
 		}
-		root, err := decodeReply(rep.body)
+		root, err := decodeReplyFor(o, rep.body)
 		if err != nil && write {
 			return nil, domain.ErrWriteOutcomeUnknown
 		}

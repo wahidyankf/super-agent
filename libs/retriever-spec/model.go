@@ -135,7 +135,8 @@ type Resolve struct {
 }
 
 // Response says how the reply of an operation maps to output fields, or to the Markdown of a document. A merge
-// response names merge instead of fields: each list of the merge names its own fields.
+// response names merge instead of fields: each list of the merge names its own fields. A tree response names tree
+// with items: the tree flattens the nested nodes of the list, computing the parent and the depth of each node.
 type Response struct {
 	// Items is the JSON pointer to the list of a list operation. It is empty for a whole reply.
 	Items string `json:"items,omitempty"`
@@ -145,6 +146,9 @@ type Response struct {
 	// Merge merges two to eight lists with constant labels. It is nil unless the read merges lists, and a response
 	// holds at most one of items, first, and merge.
 	Merge *Merge `json:"merge,omitempty"`
+	// Tree flattens the nested nodes of the items list depth first. It is nil unless the read is a tree, and it
+	// rides on items, so a response with a tree names items and neither first nor merge.
+	Tree *Tree `json:"tree,omitempty"`
 	// Fields maps each output field to the JSON pointer that reads it. A merge response names no top-level field:
 	// each list of the merge names its own fields.
 	Fields map[string]Field `json:"fields,omitempty"`
@@ -173,6 +177,35 @@ type MergeList struct {
 	Label string `json:"label"`
 	// Fields maps each output field of the list to the JSON pointer that reads it.
 	Fields map[string]Field `json:"fields"`
+}
+
+// treeDepthCap is the deepest node a tree read keeps when the spec leaves max_depth unset.
+const treeDepthCap = 64
+
+// Tree flattens the nested nodes of a list reply depth first, computing the parent and the depth of each node, and
+// only these two fields. The parent of a node is the id of its parent node: null for a top node, or the value of
+// the root parent parameter when the read names one. The depth counts from 0. A node deeper than the depth cap,
+// and the nodes below it, is left out.
+type Tree struct {
+	// Children is the JSON pointer of the child nodes of one node, read relative to the node.
+	Children string `json:"children"`
+	// ParentField is the output field that carries the id of the parent node.
+	ParentField string `json:"parent_field"`
+	// DepthField is the output field that carries the depth of the node.
+	DepthField string `json:"depth_field"`
+	// RootParentParam names the read parameter whose value is the parent of the top nodes. Empty means null.
+	RootParentParam string `json:"root_parent_param,omitempty"`
+	// MaxDepth is the deepest node the read keeps. Zero means the default of 64, and a spec may only lower it.
+	MaxDepth int `json:"max_depth,omitempty"`
+}
+
+// EffectiveMaxDepth returns the deepest node the tree keeps: max_depth, or the cap of 64 when the spec leaves it
+// unset. A value above the cap is refused at load, so it never reaches the engine.
+func (t *Tree) EffectiveMaxDepth() int {
+	if t == nil || t.MaxDepth <= 0 {
+		return treeDepthCap
+	}
+	return t.MaxDepth
 }
 
 // Field is one output field: either the JSON pointer that reads a scalar, with whether the reply must hold it, the

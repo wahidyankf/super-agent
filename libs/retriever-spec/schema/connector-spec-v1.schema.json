@@ -348,6 +348,18 @@
         }
       }
     },
+    "tree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["children", "parent_field", "depth_field"],
+      "properties": {
+        "children": { "$ref": "#/$defs/pointer" },
+        "parent_field": { "$ref": "#/$defs/param_name" },
+        "depth_field": { "$ref": "#/$defs/param_name" },
+        "root_parent_param": { "$ref": "#/$defs/param_name" },
+        "max_depth": { "type": "integer", "minimum": 0, "maximum": 64 }
+      }
+    },
     "response": {
       "type": "object",
       "additionalProperties": false,
@@ -356,12 +368,14 @@
         { "not": { "required": ["items", "first"] } },
         { "not": { "required": ["items", "merge"] } },
         { "not": { "required": ["first", "merge"] } },
-        { "not": { "required": ["fields", "merge"] } }
+        { "not": { "required": ["fields", "merge"] } },
+        { "if": { "required": ["tree"] }, "then": { "required": ["items"] } }
       ],
       "properties": {
         "items": { "$ref": "#/$defs/pointer" },
         "first": { "$ref": "#/$defs/pointer" },
         "merge": { "$ref": "#/$defs/merge" },
+        "tree": { "$ref": "#/$defs/tree" },
         "fields": {
           "type": "object",
           "maxProperties": 100,

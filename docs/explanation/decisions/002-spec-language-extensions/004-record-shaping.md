@@ -6,14 +6,15 @@ tags:
   - explanation
   - security
   - decision
-  - planned
+  - built
 ---
 
 # E4 to E7: nested records, first items, merged lists, and trees
 
 This page belongs to [ADR 002](../002-spec-language-extensions.md). E4 is built by pull request 10, E5 by pull
-request 11, and E6 by pull request 12; E7 is still planned. A response holds at most one of `items`, `first`, and
-`merge`. `tree` needs `items`. All four keep the caps of S9: 64 levels and 1,048,576 tokens.
+request 11, E6 by pull request 12, and E7 by pull request 13. A response holds at most one of `items`, `first`, and
+`merge`. `tree` needs `items`. All four keep the token cap of S9 at 1,048,576. The first three keep the depth cap of
+64 levels; a reply with `tree` decodes to the fixed higher cap of 146 levels, which covers a tree of 70 levels.
 
 ## E4: nested record with an allow-list
 
@@ -85,18 +86,20 @@ response:
     id: { pointer: /id, required: true }
   tree:
     children: /children
-    parent_field: parentId
+    parent_field: parent_id
     depth_field: depth
     root_parent_param: document_id # optional: the parent of the top nodes
     max_depth: 64
 ```
 
-- **Rule.** `parentId` is the ID of the parent node. For a top node it is null, or the value of `root_parent_param`.
-  `depth` counts from 0. A node deeper than `max_depth`, and its subtree, is left out, as the Go connector does today.
-  `max_depth` is at most 64, and a spec may lower it.
+- **Rule.** The computed parent field carries the ID of the parent node. For a top node it is null, or the value
+  of `root_parent_param`. `depth` counts from 0. A node deeper than `max_depth`, and its subtree, is left out, as the
+  Go connector does today. `max_depth` is at most 64, and a spec may lower it. The response holds a required `id`
+  field, because the parent of a node is the id of its parent node. The computed fields beat a mapped reply field
+  of the same name.
 - **A cap to raise.** A tree level takes two JSON levels, an array and an object, but S9 stops decoding at 64 levels.
-  So a reply with `tree` is decoded with a fixed higher cap of 136 levels, which covers 65 tree levels. No spec field
-  sets it, and no other reply changes. It is a proposal that the owner can still veto at review.
+  So a reply with `tree` is decoded with a fixed higher cap of 146 levels, which covers a tree of 70 levels. No
+  spec field sets it, and no other reply changes. It is a proposal that the owner can still veto at review.
 - **L7. A deep or wide tree makes the engine compute without bound.** Control: the depth cap, a flat loop with no
   recursion, and the token cap. Proof: `TestTreeFlattensDepthFirstWithParentAndDepth`,
   `TestTreeDropsNodesPastMaxDepth`, `TestTreeRefusesMaxDepthAbove64`, `TestTreeNeedsRequiredId`, and
