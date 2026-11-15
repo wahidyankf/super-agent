@@ -1,4 +1,4 @@
-package jira
+package jiraseam
 
 import (
 	"crypto/ecdsa"
@@ -17,24 +17,24 @@ import (
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
 
-// jiraSeamFault is the fault a test makes the CA file read return.
-var jiraSeamFault = errors.New("injected CA read fault")
+// seamFault is the fault a test makes the CA file read return.
+var seamFault = errors.New("injected CA read fault")
 
-// jiraSeamSettings returns an environment that reads the three seam variables from values.
-func jiraSeamSettings(values map[string]string) func(string) string {
+// seamSettings returns an environment that reads the three seam variables from values.
+func seamSettings(values map[string]string) func(string) string {
 	return func(name string) string { return values[name] }
 }
 
-// jiraSeamNoRead is a CA file read that the test must never reach.
-func jiraSeamNoRead(t *testing.T) func(string) ([]byte, error) {
+// seamNoRead is a CA file read that the test must never reach.
+func seamNoRead(t *testing.T) func(string) ([]byte, error) {
 	return func(string) ([]byte, error) {
 		t.Error("the CA file was read when the settings should have been refused first")
-		return nil, jiraSeamFault
+		return nil, seamFault
 	}
 }
 
-// jiraSeamPEM returns one self-signed certificate in PEM form. It names no host and touches no network.
-func jiraSeamPEM(t *testing.T) []byte {
+// seamPEM returns one self-signed certificate in PEM form. It names no host and touches no network.
+func seamPEM(t *testing.T) []byte {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -53,9 +53,9 @@ func jiraSeamPEM(t *testing.T) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
 }
 
-// TestJiraSeamSettingsAreRefusedBeforeTheCAFileIsRead checks each bad combination of the seam variables. Each is refused
+// TestSeamSettingsAreRefusedBeforeTheCAFileIsRead checks each bad combination of the seam variables. Each is refused
 // with its own rule, and the CA file is never read.
-func TestJiraSeamSettingsAreRefusedBeforeTheCAFileIsRead(t *testing.T) {
+func TestSeamSettingsAreRefusedBeforeTheCAFileIsRead(t *testing.T) {
 	tests := []struct {
 		name   string
 		values map[string]string
@@ -73,7 +73,7 @@ func TestJiraSeamSettingsAreRefusedBeforeTheCAFileIsRead(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := seamFromEnv(jiraSeamSettings(tt.values), jiraSeamNoRead(t))
+			_, err := seamFromEnv(seamSettings(tt.values), seamNoRead(t))
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("seamFromEnv error = %v, want %v", err, tt.want)
 			}
@@ -81,30 +81,30 @@ func TestJiraSeamSettingsAreRefusedBeforeTheCAFileIsRead(t *testing.T) {
 	}
 }
 
-// TestJiraSeamWithNoVariablesIsOff checks that an environment with no seam variable turns the seam off, and reads no file.
+// TestSeamWithNoVariablesIsOff checks that an environment with no seam variable turns the seam off, and reads no file.
 // It also checks the exported entry point with the same environment.
-func TestJiraSeamWithNoVariablesIsOff(t *testing.T) {
-	seam, err := seamFromEnv(jiraSeamSettings(nil), jiraSeamNoRead(t))
+func TestSeamWithNoVariablesIsOff(t *testing.T) {
+	seam, err := seamFromEnv(seamSettings(nil), seamNoRead(t))
 	if err != nil || seam.Enabled || seam.Client != nil {
 		t.Fatalf("seamFromEnv = %+v, %v; want the seam off", seam, err)
 	}
-	seam, err = seamFromEnvNoRead(jiraSeamSettings(nil))
+	seam, err = seamFromEnvNoRead(seamSettings(nil))
 	if err != nil || seam.Enabled {
 		t.Fatalf("TestSeamFromEnv = %+v, %v; want the seam off", seam, err)
 	}
 }
 
-// TestJiraSeamReadsTheCAFileIntoAClientThatTrustsOnlyIt checks the accepted setting: the base, the timeout, and a client
+// TestSeamReadsTheCAFileIntoAClientThatTrustsOnlyIt checks the accepted setting: the base, the timeout, and a client
 // whose transport trusts the file's certificate, takes no proxy, and whose redirects are refused.
-func TestJiraSeamReadsTheCAFileIntoAClientThatTrustsOnlyIt(t *testing.T) {
-	pemBytes := jiraSeamPEM(t)
+func TestSeamReadsTheCAFileIntoAClientThatTrustsOnlyIt(t *testing.T) {
+	pemBytes := seamPEM(t)
 	values := map[string]string{
 		BaseURLEnv: "https://127.0.0.1:9443",
 		CAFileEnv:  "/ca.pem",
 		TimeoutEnv: "500ms",
 	}
 	var readPath string
-	seam, err := seamFromEnv(jiraSeamSettings(values), func(name string) ([]byte, error) {
+	seam, err := seamFromEnv(seamSettings(values), func(name string) ([]byte, error) {
 		readPath = name
 		return pemBytes, nil
 	})
@@ -126,21 +126,21 @@ func TestJiraSeamReadsTheCAFileIntoAClientThatTrustsOnlyIt(t *testing.T) {
 	}
 }
 
-// TestJiraSeamRefusesACAFileThatCannotBeReadOrHoldsNoCertificate checks the two failures of the CA file. The read fault is
+// TestSeamRefusesACAFileThatCannotBeReadOrHoldsNoCertificate checks the two failures of the CA file. The read fault is
 // returned, and neither error names the file's path.
-func TestJiraSeamRefusesACAFileThatCannotBeReadOrHoldsNoCertificate(t *testing.T) {
+func TestSeamRefusesACAFileThatCannotBeReadOrHoldsNoCertificate(t *testing.T) {
 	values := map[string]string{BaseURLEnv: "https://127.0.0.1:9443", CAFileEnv: "/private/ca.pem"}
 	tests := []struct {
 		name string
 		read func(string) ([]byte, error)
 		want error
 	}{
-		{name: "a CA file that cannot be read is refused", read: func(string) ([]byte, error) { return nil, jiraSeamFault }, want: jiraSeamFault},
+		{name: "a CA file that cannot be read is refused", read: func(string) ([]byte, error) { return nil, seamFault }, want: seamFault},
 		{name: "a CA file with no certificate is refused", read: func(string) ([]byte, error) { return []byte("not a certificate"), nil }, want: errSeamNoCertificate},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := seamFromEnv(jiraSeamSettings(values), tt.read)
+			_, err := seamFromEnv(seamSettings(values), tt.read)
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("seamFromEnv error = %v, want %v", err, tt.want)
 			}

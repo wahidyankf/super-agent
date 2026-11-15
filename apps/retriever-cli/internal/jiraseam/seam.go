@@ -1,6 +1,12 @@
-package jira
+// Package jiraseam reads the loopback test seam of a Jira source: the base URL, the CA file, and the
+// request timeout that point the engine at the stub Jira server in tests. It moved here from
+// libs/retriever-connector-jira when pull request 39 retired that module's gateway: the engine serves every
+// Jira operation now, and it needs the same base, client, and timeout the gateway took. The environment variable
+// names are unchanged, so the transport scenarios keep their text.
+package jiraseam
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -22,6 +28,9 @@ const CAFileEnv = "RETRIEVER_JIRA_TEST_CA_FILE"
 // TimeoutEnv names the environment variable that bounds one request on the override base. It is a Go duration such as
 // "500ms", and it needs BaseURLEnv. These are Jira's own names: no other kind's stub ever receives Jira's credentials.
 const TimeoutEnv = "RETRIEVER_JIRA_TEST_TIMEOUT"
+
+// errInvalidBaseURL reports a connection base that does not parse, has no host, or holds user information.
+var errInvalidBaseURL = errors.New("invalid Jira base URL")
 
 // Seam errors. Their text names a variable, never a value.
 var (
@@ -58,7 +67,7 @@ type Seam struct {
 }
 
 // TestSeamFromEnvWithFiles reads the loopback test seam through getenv. The composition root passes os.ReadFile for the CA file,
-// so the real read lives there and not in this library. A unit test passes the certificate bytes from
+// so the real read lives there and not in this package. A unit test passes the certificate bytes from
 // memory, so the seam reads no disk. Every rule is the same.
 func TestSeamFromEnvWithFiles(getenv func(string) string, readFile func(string) ([]byte, error)) (Seam, error) {
 	return seamFromEnv(getenv, readFile)
@@ -118,4 +127,41 @@ func seamFromEnv(getenv func(string) string, readFile func(string) ([]byte, erro
 func isLoopbackHost(host string) bool {
 	ip := net.ParseIP(host)
 	return ip != nil && ip.IsLoopback()
+}
+
+// CheckBaseURL reports whether baseURL can be a Jira connection base: an HTTPS URL with a host and no user information. Any
+// other scheme returns domain.ErrHTTPSRequired.
+func CheckBaseURL(baseURL string) error {
+	u, err := url.Parse(baseURL)
+	switch {
+	case err != nil:
+		return errInvalidBaseURL
+	case u.Scheme != "https":
+		return domain.ErrHTTPSRequired
+	case u.Host == "" || u.User != nil:
+		return errInvalidBaseURL
+	}
+	return nil
+}
+
+// refuseRedirects stops the client at the first redirect, so the 3xx reply is read and refused, never followed.
+func refuseRedirects(*http.Request, []*http.Request) error {
+	return http.ErrUseLastResponse
+}
+
+// kindError names Jira as the kind of a failure, so a presenter prints "Jira rejected the API key", never
+// a text about another system. A context error is returned as it is, because the caller cancelled it, and an error that is
+// already a KindError is not wrapped twice.
+func kindError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	var named domain.KindError
+	if errors.As(err, &named) {
+		return err
+	}
+	return domain.KindError{Kind: domain.KindJira, Err: err}
 }

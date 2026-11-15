@@ -16,8 +16,8 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 	mcpadapter "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/mcp"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/connectorspec"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/jiraseam"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/outlineseam"
-	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
@@ -50,7 +50,7 @@ type seamSet map[domain.SourceKind]seamConfig
 var seamKinds = []domain.SourceKind{domain.KindOutline, domain.KindKiwi, domain.KindJira}
 
 // readSeam reads the seam of one kind through getenv. An invalid seam is an error. The Outline seam feeds the
-// bundled-spec engine, now that no Go gateway reads it.
+// bundled-spec engine, now that no Go gateway reads them.
 func readSeam(kind domain.SourceKind, getenv func(string) string,
 	readFile func(string) ([]byte, error)) (seamConfig, error) {
 	switch kind {
@@ -67,7 +67,7 @@ func readSeam(kind domain.SourceKind, getenv func(string) string,
 		}
 		return seamConfig{base: seam.BaseURL, client: seam.Client, on: seam.Enabled, timeout: seam.Timeout}, nil
 	case domain.KindJira:
-		seam, err := jira.TestSeamFromEnvWithFiles(getenv, readFile)
+		seam, err := jiraseam.TestSeamFromEnvWithFiles(getenv, readFile)
 		if err != nil {
 			return seamConfig{}, err
 		}
@@ -102,7 +102,7 @@ func checkSeams(seams seamSet) error {
 		}
 	}
 	if seam := seams[domain.KindJira]; seam.on {
-		if err := jira.CheckBaseURL(seam.base); err != nil {
+		if err := jiraseam.CheckBaseURL(seam.base); err != nil {
 			return err
 		}
 	}
@@ -186,7 +186,7 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connecto
 		}
 	}
 	// The bundled Jira spec runs on its engine gateway, as the root wires it: every Jira operation runs on
-	// the bundled-spec engine, with the document-not-found translation the Go gateway maps.
+	// the bundled-spec engine, with the document-not-found translation the retired Go gateway mapped.
 	if model := bundledJiraModel(set); model != nil {
 		seam := seams[domain.KindJira]
 		builders[domain.KindJira] = func(src domain.Source) (ports.SourceGateway, error) {
@@ -405,7 +405,7 @@ func bundledJiraModel(set connectorspec.Set) *spec.Spec {
 }
 
 // jiraDocumentNotFoundReads mirrors the translation table of the composition root: the engine reports every 404 as a
-// plain not found, and the gateway restores the document sentinel the Go gateway maps.
+// plain not found, and the gateway restores the document sentinel the retired Go gateway mapped.
 var jiraDocumentNotFoundReads = map[domain.OperationID]bool{
 	domain.OpJiraIssuesGet:    true,
 	domain.OpJiraCommentsList: true,
@@ -423,7 +423,7 @@ var jiraSpecOperations = map[domain.OperationID]domain.OperationID{
 
 // harnessJiraGateway is the Jira gateway of a scenario: the engine of the bundled jira.yml, mirroring jiraGateway
 // in the composition root. Every Jira operation runs on the engine over the seam transport, and the gateway restores
-// the document-not-found sentinel the Go gateway maps.
+// the document-not-found sentinel the retired Go gateway mapped.
 type harnessJiraGateway struct {
 	engine *engine.Engine
 }
@@ -444,7 +444,7 @@ func (w *world) buildJiraGateway(model *spec.Spec, src domain.Source, creds *env
 		if err != nil {
 			return nil, err
 		}
-		if err := jira.CheckBaseURL(seam.base); err != nil {
+		if err := jiraseam.CheckBaseURL(seam.base); err != nil {
 			return nil, err
 		}
 		transport = seamTransport{base: base, rt: hardenHarnessSeamTransport(seam.client.Transport, src.Endpoint().Host())}
@@ -544,7 +544,7 @@ func (g *harnessJiraGateway) ListCollections(ctx context.Context) ([]domain.Coll
 	}
 	out := make([]domain.Collection, 0, len(rec.Items()))
 	for _, item := range rec.Items() {
-		id, err := jira.ProjectCollectionID(item.Str("id"))
+		id, err := jiraseam.ProjectCollectionID(item.Str("id"))
 		if err != nil {
 			return nil, domain.ErrUnexpectedResponse
 		}
@@ -557,7 +557,7 @@ func (g *harnessJiraGateway) ListCollections(ctx context.Context) ([]domain.Coll
 // CollectionTree in the composition root: the flat nodes with the parent ID of every child and the depth from 0.
 // A project the server refuses keeps the collection-not-found sentinel of the tree walk.
 func (g *harnessJiraGateway) CollectionTree(ctx context.Context, id domain.CollectionID) ([]domain.TreeNode, error) {
-	key, err := jira.ProjectKey(id)
+	key, err := jiraseam.ProjectKey(id)
 	if err != nil {
 		return nil, err
 	}
@@ -593,7 +593,7 @@ func harnessJiraTreeNodes(rec domain.Record) ([]domain.TreeNode, error) {
 		parentOf[i] = -1
 		if parent, ok := item.Get("parent"); ok {
 			if text, isText := parent.(string); isText && text != "" {
-				if _, err := jira.ParseIssueKey(text); err == nil {
+				if _, err := jiraseam.ParseIssueKey(text); err == nil {
 					if j, ok := index[text]; ok {
 						parentOf[i] = j
 						issue := "issue-" + text
@@ -620,7 +620,7 @@ func harnessJiraTreeNodes(rec domain.Record) ([]domain.TreeNode, error) {
 // Document returns one issue from the engine's get read, mirroring Document in the composition root, with its
 // Markdown body. A missing issue keeps the document-not-found sentinel of the get read.
 func (g *harnessJiraGateway) Document(ctx context.Context, id domain.DocumentID) (domain.SourceDocument, error) {
-	key, err := jira.IssueKey(id)
+	key, err := jiraseam.IssueKey(id)
 	if err != nil {
 		return domain.SourceDocument{}, err
 	}

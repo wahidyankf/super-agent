@@ -26,7 +26,6 @@ var moduleKinds = map[string]string{
 	"libs/retriever-runtime":        kindRuntime,
 	"libs/retriever-testkit":        kindTestkit,
 	"libs/retriever-connector-kiwi": kindConnector,
-	"libs/retriever-connector-jira": kindConnector,
 	"libs/retriever-spec":           kindSpec,
 	"libs/retriever-engine":         kindEngine,
 }

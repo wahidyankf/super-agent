@@ -1,7 +1,9 @@
-package jira
+package jiraseam
 
 import (
+	"context"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
@@ -20,7 +22,7 @@ func TestProjectCollectionIDMapsOnlyStrictProjectKeys(t *testing.T) {
 			t.Errorf("ProjectCollectionID(%q) = %q, want project-%s", key, id.String(), key)
 		}
 	}
-	bad := []string{"", "A", "example", "EXA EMP", "EXA-EMP", "1ABC", "ABCDEFGHIJKLMNOPQRSTU", "EXA/EMP", "EXA\n"}
+	bad := []string{"", "A", "example", "EXA EMP", "EXA-EMP", "1ABC", "ABCDEFGHIJKLMNOPQRSTU", "EXA/EMP", "EXA\\n"}
 	for _, key := range bad {
 		if _, err := ProjectCollectionID(key); !errors.Is(err, domain.ErrInvalidCollectionID) {
 			t.Errorf("ProjectCollectionID(%q) = %v, want ErrInvalidCollectionID", key, err)
@@ -69,7 +71,7 @@ func TestParseIssueKeyAcceptsOnlyStrictUpperCaseKeys(t *testing.T) {
 		"A-1",
 		"EXAMPLE-1 ",
 		" EXAMPLE-1",
-		"EXAMPLE-1\n",
+		"EXAMPLE-1\\n",
 		"EXAMPLE-1/../x",
 		"EXAMPLE-1?x=1",
 		"EXAMPLE-1&x",
@@ -111,5 +113,47 @@ func TestIssueKeyReadsOnlyIssueIDs(t *testing.T) {
 		if _, err := IssueKey(id); !errors.Is(err, domain.ErrInvalidDocumentID) {
 			t.Errorf("IssueKey(%q) = %v, want ErrInvalidDocumentID", raw, err)
 		}
+	}
+}
+
+// TestCheckBaseURLRefusesABadBase checks the connection base rules: an unparsable base, a non-HTTPS scheme, and a
+// base with no host or with user information are refused, and an HTTPS base with a host passes.
+func TestCheckBaseURLRefusesABadBase(t *testing.T) {
+	if err := CheckBaseURL("https://[::1"); !errors.Is(err, errInvalidBaseURL) {
+		t.Fatalf("CheckBaseURL error = %v, want errInvalidBaseURL", err)
+	}
+	if err := CheckBaseURL("http://127.0.0.1:9443"); !errors.Is(err, domain.ErrHTTPSRequired) {
+		t.Fatalf("CheckBaseURL error = %v, want ErrHTTPSRequired", err)
+	}
+	if err := CheckBaseURL("https://user@127.0.0.1:9443"); !errors.Is(err, errInvalidBaseURL) {
+		t.Fatalf("CheckBaseURL error = %v, want errInvalidBaseURL", err)
+	}
+	if err := CheckBaseURL("https://jira.example.test"); err != nil {
+		t.Fatalf("CheckBaseURL = %v, want nil", err)
+	}
+}
+
+// TestRefuseRedirectsKeepsTheLastResponse checks that the seam client stops at the first redirect.
+func TestRefuseRedirectsKeepsTheLastResponse(t *testing.T) {
+	if err := refuseRedirects(nil, nil); !errors.Is(err, http.ErrUseLastResponse) {
+		t.Fatalf("refuseRedirects = %v, want ErrUseLastResponse", err)
+	}
+}
+
+// TestKindErrorNamesJiraOnce checks that a plain failure is named for Jira exactly once, and that a nil, a
+// cancellation, and an already-named failure pass through unchanged.
+func TestKindErrorNamesJiraOnce(t *testing.T) {
+	if kindError(nil) != nil {
+		t.Fatal("kindError(nil) is not nil")
+	}
+	if err := kindError(context.Canceled); !errors.Is(err, context.Canceled) || err != context.Canceled {
+		t.Fatalf("kindError(context.Canceled) = %v, want the cancellation", err)
+	}
+	once := kindError(domain.ErrKeyRejected)
+	if !errors.Is(once, domain.ErrKeyRejected) {
+		t.Fatalf("kindError does not wrap the sentinel: %v", once)
+	}
+	if twice := kindError(once); twice.Error() != once.Error() {
+		t.Fatalf("kindError wrapped twice: %q against %q", twice, once)
 	}
 }

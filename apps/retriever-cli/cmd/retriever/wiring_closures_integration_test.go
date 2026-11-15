@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/jiraseam"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/outlineseam"
-	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
@@ -123,8 +123,8 @@ func TestReadSeamsStopsOnABadSeam(t *testing.T) {
 	cases := map[string]map[string]string{
 		"outline base without a CA file": {outlineseam.BaseURLEnv: f.base},
 		"kiwi timeout without a base":    {kiwi.TimeoutEnv: "1s"},
-		"jira base without a CA file":    {jira.BaseURLEnv: f.base},
-		"jira http base":                 {jira.BaseURLEnv: "http://127.0.0.1:1", jira.CAFileEnv: f.ca},
+		"jira base without a CA file":    {jiraseam.BaseURLEnv: f.base},
+		"jira http base":                 {jiraseam.BaseURLEnv: "http://127.0.0.1:1", jiraseam.CAFileEnv: f.ca},
 	}
 	for name, vars := range cases {
 		if _, err := readSeams(mapEnv(vars)); err == nil {

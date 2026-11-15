@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/jiraseam"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/outlineseam"
-	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
 	"github.com/wahidyankf/super-agent/libs/retriever-testkit/jirastub"
 	"github.com/wahidyankf/super-agent/libs/retriever-testkit/kiwistub"
@@ -207,8 +207,8 @@ func (w *world) ensureStubs() error {
 			if err != nil {
 				return err
 			}
-			w.env[jira.BaseURLEnv] = w.stubs.jiraSrv.URL
-			w.env[jira.CAFileEnv] = path
+			w.env[jiraseam.BaseURLEnv] = w.stubs.jiraSrv.URL
+			w.env[jiraseam.CAFileEnv] = path
 			w.stubs.seamed[jiraKind] = true
 		}
 	}
