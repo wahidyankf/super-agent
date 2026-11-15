@@ -283,8 +283,14 @@
       "required": ["pointer"],
       "properties": {
         "pointer": { "$ref": "#/$defs/pointer" },
+        "required": { "type": "boolean" },
+        "format": { "$ref": "#/$defs/field_format" },
         "convert": { "enum": ["plain", "markdown-from-html", "markdown-from-adf"] }
       }
+    },
+    "field_format": {
+      "type": "string",
+      "enum": ["id", "uuid", "share-id"]
     },
     "response": {
       "type": "object",

@@ -31,6 +31,7 @@ func Review(s *Spec) string {
 	}
 	writePostReads(&b, s)
 	writeBodyPaging(&b, s)
+	writeRequiredFields(&b, s)
 	return b.String()
 }
 
@@ -69,6 +70,52 @@ func writeBodyPaging(b *strings.Builder, s *Spec) {
 	for i, op := range body {
 		fmt.Fprintf(b, "%d. %s: %s in body (%s), at most %d pages\n", i+1, op.ID, op.Pagination.Style,
 			strings.Join(pagingParams(op.Pagination), ", "), op.Pagination.MaxPages)
+	}
+}
+
+// writeRequiredFields writes the block of the operations with required or format-checked reply fields, one line each,
+// with the required fields and each checked field with its closed format name. A spec with no required or checked
+// field writes nothing, so its review keeps its text.
+func writeRequiredFields(b *strings.Builder, s *Spec) {
+	type entry struct {
+		id       string
+		required []string
+		formats  []string
+	}
+	var entries []entry
+	for _, op := range s.Operations {
+		e := entry{id: op.ID}
+		var names []string
+		for name := range op.Response.Fields {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			f := op.Response.Fields[name]
+			if f.Required {
+				e.required = append(e.required, name)
+			}
+			if f.Format != "" {
+				e.formats = append(e.formats, name+"="+f.Format)
+			}
+		}
+		if len(e.required) > 0 || len(e.formats) > 0 {
+			entries = append(entries, e)
+		}
+	}
+	if len(entries) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "Required fields: %d\n", len(entries))
+	for i, e := range entries {
+		var parts []string
+		if len(e.required) > 0 {
+			parts = append(parts, "required "+strings.Join(e.required, ", "))
+		}
+		if len(e.formats) > 0 {
+			parts = append(parts, "formats "+strings.Join(e.formats, ", "))
+		}
+		fmt.Fprintf(b, "%d. %s: %s\n", i+1, e.id, strings.Join(parts, "; "))
 	}
 }
 

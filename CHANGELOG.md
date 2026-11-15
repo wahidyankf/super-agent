@@ -68,6 +68,12 @@ upgrade.
   page, stops at the first short page, and at the cap returns the pages it has with a continuation; a next cursor that
   repeats one already sent ends the read the same way. The Go `collections.list` keeps failing at the cap with a
   page-cap error, while the engine returns pages plus a continuation. The review text lists each body-paged read.
+- A reply field of a connector spec takes `required` and a closed `format` (ADR 002, E3). A missing, null, or empty
+  value for a field with `required: true` fails the read with `retriever.<kind>.unexpected_response`, and no partial
+  record is returned. A field with `format` is checked against one closed name, `id`, `uuid`, or `share-id`, with the
+  same checks the catalog kinds use on request parameters; a free pattern has no form in the language. The failure
+  names the field and never the value. The review text lists each operation with required or checked fields. A request
+  with a missing argument still sends no request.
 
 ### Changed
 

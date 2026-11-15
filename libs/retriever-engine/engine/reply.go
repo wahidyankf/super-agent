@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -153,19 +154,69 @@ func scalarOf(v any, budget *int) (any, error) {
 	}
 }
 
-// mapRecord maps one JSON object to a record, with one field for each declared field, in name order.
+// mapRecord maps one JSON object to a record, with one field for each declared field, in name order. A required field
+// with a missing, null, or empty value fails the read, and a format-checked field whose value is not of the named
+// shape fails it too. Either failure names the field and never the value, and no partial record is returned.
 func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (domain.Record, error) {
 	names := sortedKeys(fields)
 	out := make([]domain.Field, 0, len(names))
 	for _, name := range names {
-		raw, _ := pointerValue(obj, fields[name].Pointer)
+		f := fields[name]
+		raw, found := pointerValue(obj, f.Pointer)
+		if f.Required && isMissingValue(raw, found) {
+			return domain.Record{}, fieldError(name)
+		}
 		v, err := scalarOf(raw, budget)
 		if err != nil {
+			return domain.Record{}, err
+		}
+		if err := checkFormat(name, f.Format, v); err != nil {
 			return domain.Record{}, err
 		}
 		out = append(out, domain.Field{Name: name, Value: v})
 	}
 	return domain.NewRecord(out...), nil
+}
+
+// isMissingValue reports whether a reply holds no value for a required field: the pointer names nothing, or the value
+// is null or empty text.
+func isMissingValue(raw any, found bool) bool {
+	return !found || raw == nil || raw == ""
+}
+
+// checkFormat checks a mapped value against the closed format name of its field: id, uuid, or share-id, with the
+// checks of the operation catalog. A null value has no shape to check, so only a present value is checked. The failure
+// names the field and never the value.
+func checkFormat(name, format string, v any) error {
+	if format == "" || v == nil {
+		return nil
+	}
+	s, ok := v.(string)
+	if !ok {
+		return fieldError(name)
+	}
+	var err error
+	switch format {
+	case "id":
+		err = domain.ValidateID(s)
+	case "uuid":
+		err = domain.ValidateUUID(s)
+	case "share-id":
+		err = domain.ValidateShareID(s)
+	default:
+		return fieldError(name)
+	}
+	if err != nil {
+		return fieldError(name)
+	}
+	return nil
+}
+
+// fieldError returns the unexpected-response failure of one reply field. It names the field and never the value, so a
+// value the reply carries never reaches a message. It matches ErrUnexpectedResponse, so its code stays
+// unexpected_response on every surface.
+func fieldError(name string) error {
+	return fmt.Errorf("field %s: %w", name, domain.ErrUnexpectedResponse)
 }
 
 // listItems maps the list of a reply to records. The items pointer must name a list, and each item must be an object.

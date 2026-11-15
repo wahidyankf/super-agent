@@ -13,12 +13,15 @@ import (
 var specFieldNames = []string{
 	// ADR 001: the document and its parts.
 	"access", "auth", "body", "cli", "convert", "credential_env", "cursor_param", "default", "endpoint", "errors", "examples",
-	"expect", "field", "fields", "header_name", "headers", "help", "identity_env", "in", "items", "kind", "limit_param",
-	"limits", "markdown", "max", "max_pages", "max_reply_bytes", "mcp", "method", "min", "name", "next_pointer", "offset_param",
-	"operation", "operations", "params", "pagination", "path", "pointer", "request", "required", "resolve", "response", "role",
-	"status", "style", "summary", "timeout_seconds", "type", "values", "version", "base_path", "host_suffix", "id",
+	"expect", "field", "fields", "format", "header_name", "headers", "help", "identity_env", "in", "items", "kind",
+	"limit_param", "limits", "markdown", "max", "max_pages", "max_reply_bytes", "mcp", "method", "min", "name",
+	"next_pointer", "offset_param", "operation", "operations", "params", "pagination", "path", "pointer", "request",
+	"required", "resolve", "response", "role", "status", "style", "summary", "timeout_seconds", "type", "values", "version",
+	"base_path", "host_suffix", "id",
 	// ADR 002, E1: POST reads.
 	"read_over_post",
+	// ADR 002, E3: required and validated reply fields.
+	"format",
 }
 
 // collectPropertyNames gathers the keys of every "properties" object of a decoded schema, at any depth.

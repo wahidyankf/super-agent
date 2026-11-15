@@ -134,12 +134,20 @@ The review text lists each body-paged read in its own block, with its style, its
 ## Response
 
 - `items`: a JSON pointer to the list, for a list operation.
-- `fields`: a map from output field to an object with `pointer`, a JSON pointer into the reply, and an optional
-  `convert`. The converter is `plain`, `markdown-from-html`, or `markdown-from-adf`. The engine does not serve the two
-  Markdown converters yet. A spec that names one still loads, and each run of that operation fails with
-  `retriever.<kind>.unsupported_operation` before any request is sent.
+- `fields`: a map from output field to an object with `pointer`, a JSON pointer into the reply, an optional `required`,
+  an optional closed `format`, and an optional `convert`. The converter is `plain`, `markdown-from-html`, or
+  `markdown-from-adf`. The engine does not serve the two Markdown converters yet. A spec that names one still loads,
+  and each run of that operation fails with `retriever.<kind>.unsupported_operation` before any request is sent.
+- `required`: `true` on a reply field fails the read with `unexpected_response` when the reply holds a missing, null,
+  or empty value for it, and no partial record is returned. A missing optional field still maps to null.
+- `format`: one closed name, `id`, `uuid`, or `share-id`, checked on the value with the same checks the catalog kinds
+  use on request parameters. A free pattern has no form in the language. The failure names the field and never the
+  value.
 - `markdown`: the output field that holds the Markdown body, for a document read. It must name a field.
 - `errors`: a map from HTTP status, from 100 to 599, to a reason from the closed list in the error section.
+
+The review text lists each operation with required or checked fields in its own block, with each required field and
+each checked field with its closed format name.
 
 There are no expressions. A pointer reads, and nothing computes.
 
@@ -159,7 +167,8 @@ The language cannot yet express the Outline reads, so they still run on the Go g
   described in [POST reads](#post-reads), so this limit no longer blocks a read.
 - Outline paging puts `offset` and `limit` in the body. A paging rule may now travel in the body with `in: body`,
   which is described in [Pagination](#pagination), so this limit no longer blocks a read.
-- A field is never required. A missing field maps to null, where the Go connectors refuse a reply with no ID.
+- A field is never required. A field takes `required` and a closed `format` now, which is described in
+  [Response](#response), so this limit no longer blocks a read. A missing optional field still maps to null.
 - A field holds one scalar. A nested record, the first item of a list, a list merged from several lists, a tree with a
   computed depth, and a fallback read have no form in the language.
 
@@ -180,7 +189,7 @@ reports `retriever.connector.folder_unavailable`. The draft's other connector re
 ## Planned extensions
 
 [ADR 002](../explanation/decisions/002-spec-language-extensions.md) plans nine closed extensions of this language, so
-that the Outline, Kiwi, and Jira connectors can run as specs. The first two of them, POST reads (E1) and body paging
-(E2), are built and described above. The other seven are not built. The limits of the Outline reads, above, describe the
-language before ADR 002 for the fields and the shapes that the remaining extensions cover. This page documents only what
-the module accepts today, and each extension moves here when its pull request lands.
+that the Outline, Kiwi, and Jira connectors can run as specs. The first three of them, POST reads (E1), body paging
+(E2), and required and validated fields (E3), are built and described above. The other six are not built. The limits of
+the Outline reads, above, describe the language before ADR 002 for the shapes that the remaining extensions cover. This
+page documents only what the module accepts today, and each extension moves here when its pull request lands.
