@@ -9,11 +9,11 @@ func TestImportRulesByKind(t *testing.T) {
 		contract  = "libs/retriever-contract"
 		runtime   = "libs/retriever-runtime"
 		testkit   = "libs/retriever-testkit"
-		outline   = "libs/retriever-connector-outline"
+		kiwi      = "libs/retriever-connector-kiwi"
 		spec      = "libs/retriever-spec"
 		app       = "apps/retriever-cli"
 		domainPkg = workspacePrefix + "libs/retriever-contract/domain"
-		outlinePk = workspacePrefix + "libs/retriever-connector-outline/outline"
+		kiwiPk    = workspacePrefix + "libs/retriever-connector-kiwi/kiwi"
 		runtimePk = workspacePrefix + "libs/retriever-runtime/sources"
 		kitPkg    = workspacePrefix + "libs/retriever-testkit/outlinestub"
 		appPkg    = workspacePrefix + "apps/retriever-cli/internal/adapters/in/cli"
@@ -32,37 +32,37 @@ func TestImportRulesByKind(t *testing.T) {
 		{"a contract imports nothing of the workspace", contract, false, domainPkg, false},
 		{"a contract imports a runtime", contract, false, runtimePk, true},
 		{"a runtime imports the contract", runtime, false, domainPkg, false},
-		{"a runtime imports a connector", runtime, false, outlinePk, true},
+		{"a runtime imports a connector", runtime, false, kiwiPk, true},
 		{"a runtime test imports the test kit", runtime, true, kitPkg, false},
 		{"a runtime imports the test kit", runtime, false, kitPkg, true},
-		{"a connector imports the contract", outline, false, domainPkg, false},
-		{"a connector imports a runtime", outline, false, runtimePk, true},
-		{"a connector imports the test kit in production code", outline, false, kitPkg, true},
-		{"a connector test imports the test kit", outline, true, kitPkg, false},
-		{"a connector test imports a runtime", outline, true, runtimePk, true},
+		{"a connector imports the contract", kiwi, false, domainPkg, false},
+		{"a connector imports a runtime", kiwi, false, runtimePk, true},
+		{"a connector imports the test kit in production code", kiwi, false, kitPkg, true},
+		{"a connector test imports the test kit", kiwi, true, kitPkg, false},
+		{"a connector test imports a runtime", kiwi, true, runtimePk, true},
 		{"the test kit imports the contract", testkit, false, domainPkg, false},
 		{"the test kit imports a runtime", testkit, false, runtimePk, true},
 		{"a contract test imports the test kit", contract, true, kitPkg, true},
 		{"the app imports the contract", app, false, domainPkg, false},
-		{"the app imports a connector", app, false, outlinePk, false},
+		{"the app imports a connector", app, false, kiwiPk, false},
 		{"the app imports the test kit in production code", app, false, kitPkg, true},
 		{"the app test imports the test kit", app, true, kitPkg, false},
-		{"a library imports the app", outline, false, appPkg, true},
+		{"a library imports the app", kiwi, false, appPkg, true},
 		{"a spec imports the contract", spec, false, domainPkg, false},
 		{"a spec imports a runtime", spec, false, runtimePk, true},
-		{"a spec imports a connector", spec, false, outlinePk, true},
+		{"a spec imports a connector", spec, false, kiwiPk, true},
 		{"a spec imports the test kit in production code", spec, false, kitPkg, true},
 		{"a spec test imports the test kit", spec, true, kitPkg, false},
-		{"a spec test imports a connector", spec, true, outlinePk, true},
+		{"a spec test imports a connector", spec, true, kiwiPk, true},
 		{"a spec imports the app", spec, false, appPkg, true},
-		{"a connector imports the spec", outline, false, specPk, true},
+		{"a connector imports the spec", kiwi, false, specPk, true},
 		{"a runtime imports the spec", runtime, false, specPk, true},
 		{"the contract imports the spec", contract, false, specPk, true},
 		{"the app imports the spec", app, false, specPk, false},
 		{"an engine imports the contract", engine, false, domainPkg, false},
 		{"an engine imports the spec module", engine, false, specPk, false},
 		{"an engine imports its replay stub", engine, false, replayPk, false},
-		{"an engine imports a connector", engine, false, outlinePk, true},
+		{"an engine imports a connector", engine, false, kiwiPk, true},
 		{"an engine imports a runtime", engine, false, runtimePk, true},
 		{"an engine imports the test kit in production code", engine, false, kitPkg, true},
 		{"an engine test imports the test kit", engine, true, kitPkg, false},
@@ -70,10 +70,10 @@ func TestImportRulesByKind(t *testing.T) {
 		{"an engine imports the app", engine, false, appPkg, true},
 		{"a spec imports the engine", spec, false, enginePk, true},
 		{"the contract imports the engine", contract, false, enginePk, true},
-		{"a connector imports the engine", outline, false, enginePk, true},
+		{"a connector imports the engine", kiwi, false, enginePk, true},
 		{"a runtime imports the engine", runtime, false, enginePk, true},
 		{"the app imports the engine", app, false, enginePk, false},
-		{"a module imports itself", outline, false, outlinePk, false},
+		{"a module imports itself", kiwi, false, kiwiPk, false},
 		{"an external module is never a workspace edge", contract, false, "example.test/other/pkg", false},
 		{"a standard package is never a workspace edge", contract, false, "fmt", false},
 	}

@@ -974,10 +974,6 @@ extensions:
         path: libs/retriever-testkit
         kind: testkit
         stacks: [golang]
-      retriever-connector-outline:
-        path: libs/retriever-connector-outline
-        kind: connector
-        stacks: [golang]
       retriever-connector-kiwi:
         path: libs/retriever-connector-kiwi
         kind: connector

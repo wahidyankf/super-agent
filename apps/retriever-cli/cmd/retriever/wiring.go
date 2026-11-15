@@ -14,9 +14,9 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/cli"
 	mcpadapter "github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/in/mcp"
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/connectorspec"
+	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/outlineseam"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-jira/jira"
 	"github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi/kiwi"
-	"github.com/wahidyankf/super-agent/libs/retriever-connector-outline/outline"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
@@ -39,17 +39,9 @@ type seamConfig struct {
 // its seam off. The variables of one kind never reach another kind's gateway.
 type seamSet map[domain.SourceKind]seamConfig
 
-// seamKinds lists the kinds that have a test seam, in the order their variables are read.
+// seamKinds lists the kinds that have a test seam, in the order their variables are read. The Outline seam feeds
+// the bundled-spec engine: the base rewrites engine requests to the stub, and the timeout bounds them.
 var seamKinds = []domain.SourceKind{domain.KindOutline, domain.KindKiwi, domain.KindJira}
-
-// seamOptions returns the gateway options the Outline seam adds. Without a seam timeout it returns none,
-// so the gateway keeps its production default.
-func seamOptions(seam seamConfig) []outline.Option {
-	if seam.timeout <= 0 {
-		return nil
-	}
-	return []outline.Option{outline.WithTimeout(seam.timeout)}
-}
 
 // kiwiSeamOptions returns the gateway options the Kiwi seam adds. Without a seam timeout it returns none.
 func kiwiSeamOptions(seam seamConfig) []kiwi.Option {
@@ -75,11 +67,12 @@ type sourceWiring struct {
 }
 
 // readSeam reads the test seam of one kind through getenv. An invalid seam is an error, never a fallback to a real
-// host. Each kind reads only its own variables.
+// host. Each kind reads only its own variables. The Outline seam feeds the bundled-spec engine, now that no Go
+// gateway reads it.
 func readSeam(kind domain.SourceKind, getenv func(string) string) (seamConfig, error) {
 	switch kind {
 	case domain.KindOutline:
-		seam, err := outline.TestSeamFromEnvWithFiles(getenv, os.ReadFile)
+		seam, err := outlineseam.TestSeamFromEnvWithFiles(getenv, os.ReadFile)
 		if err != nil {
 			return seamConfig{}, err
 		}
@@ -116,7 +109,7 @@ func readSeams(getenv func(string) string) (seamSet, error) {
 // checkSeams checks each seam that is on, at setup, so a bad base fails the wiring and not the first source call.
 func checkSeams(seams seamSet) error {
 	if seam := seams[domain.KindOutline]; seam.on {
-		if err := outline.CheckBaseURL(seam.base); err != nil {
+		if err := outlineseam.CheckBaseURL(seam.base); err != nil {
 			return err
 		}
 	}
@@ -141,10 +134,19 @@ func registeredKinds() domain.KindSet {
 }
 
 // wireSources loads the sources catalog, builds the gateway registry, and returns the source service and the serve and
-// MCP functions for the configuration paths the caller resolved. The catalog is read once here. A catalog error stops the
-// sources commands, and the process still starts for every other command.
+// MCP functions for the configuration paths the caller resolved. The run registers the bundled specs, as a run that
+// loaded no connector folder does, so the Outline gateway is built. The catalog is read once here. A catalog error
+// stops the sources commands, and the process still starts for every other command.
 func wireSources(paths configpaths.Paths, seams seamSet, h host, kinds domain.KindSet) (sourceWiring, error) {
-	return wireSourcesWith(paths, seams, h, connectorspec.Set{Kinds: kinds, Operations: operations.BuiltinCatalog()})
+	set, err := withBundled(connectorspec.Set{
+		Kinds:      kinds,
+		Operations: operations.BuiltinCatalog(),
+		Digests:    map[string]string{},
+	}, nil)
+	if err != nil {
+		return sourceWiring{}, err
+	}
+	return wireSourcesWith(paths, seams, h, set)
 }
 
 // wireSourcesWith is wireSources for a run that loaded connector specs. The set supplies the kinds the catalog may name,
@@ -169,9 +171,6 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 	// The pins are known only now, so a POST read takes the read hints of a spec that every source pins.
 	set = set.WithPinned(loader.PinnedKinds())
 	builders := map[domain.SourceKind]registry.Builder{
-		domain.KindOutline: func(src domain.Source) (ports.SourceGateway, error) {
-			return buildOutline(src, creds, seams[domain.KindOutline])
-		},
 		domain.KindKiwi: func(src domain.Source) (ports.SourceGateway, error) {
 			return buildKiwi(src, creds, seams[domain.KindKiwi])
 		},
@@ -180,11 +179,11 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 		},
 	}
 	maps.Copy(builders, specBuilders(set, h.engine, creds))
-	// The bundled Outline spec rides with the Go gateway until pull request 17: the composite routes each operation
-	// to the engine or to the gateway, and nothing retires yet.
+	// The bundled Outline spec runs on its engine gateway: every Outline operation runs on the bundled-spec engine,
+	// with the not-found translation the retired Go gateway mapped.
 	if model := bundledOutline(set); model != nil {
 		builders[domain.KindOutline] = func(src domain.Source) (ports.SourceGateway, error) {
-			return buildOutlineComposite(model, src, creds, seams[domain.KindOutline], h.engine)
+			return buildOutlineGateway(model, src, creds, seams[domain.KindOutline], h.engine)
 		}
 	}
 	resolver := registry.New(builders)
@@ -199,8 +198,7 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 }
 
 // bundledOutline returns the bundled outline.yml model of the set, or nil when the set holds none. The merged set
-// always holds it, because a user spec that shadows a bundled kind stops start-up; a set built without the bundled
-// specs keeps the pure Go gateway.
+// always holds it, because a user spec that shadows a bundled kind stops start-up.
 func bundledOutline(set connectorspec.Set) *spec.Spec {
 	for _, s := range set.Specs {
 		if s.Model.Kind == domain.KindOutline.String() {
@@ -210,22 +208,8 @@ func bundledOutline(set connectorspec.Set) *spec.Spec {
 	return nil
 }
 
-// buildOutline returns the gateway of one Outline source. The source's endpoint names the host that receives its key:
-// the catalog is the reviewed control. The seam, when it is on, replaces only the connection base. It returns the
-// concrete gateway, so the composite uses it as a reader and a writer with no assertion.
-func buildOutline(src domain.Source, creds ports.Credentials, seam seamConfig) (*outline.Gateway, error) {
-	if !seam.on {
-		return outline.New(src, creds), nil
-	}
-	gw, err := outline.NewWithBase(src, seam.base, seam.client, creds, seamOptions(seam)...)
-	if err != nil {
-		return nil, err
-	}
-	return gw, nil
-}
-
-// buildKiwi returns the gateway of one Kiwi source, under the same rule as buildOutline: the
-// source's endpoint receives its key, and the seam, when it is on, replaces only the connection base.
+// buildKiwi returns the gateway of one Kiwi source: the source's endpoint receives its key, and the seam, when it
+// is on, replaces only the connection base.
 func buildKiwi(src domain.Source, creds ports.Credentials, seam seamConfig) (ports.SourceGateway, error) {
 	if !seam.on {
 		return kiwi.New(src, creds), nil
@@ -237,9 +221,8 @@ func buildKiwi(src domain.Source, creds ports.Credentials, seam seamConfig) (por
 	return gw, nil
 }
 
-// buildJira returns the gateway of one Jira source, under the same rule as buildOutline and buildKiwi.
-// The gateway reads the token and the account e-mail address through secrets, which the credentials adapter provides
-// both of.
+// buildJira returns the gateway of one Jira source, under the same rule as buildKiwi. The gateway reads the token
+// and the account e-mail address through secrets, which the credentials adapter provides both of.
 func buildJira(src domain.Source, secrets jira.Secrets, seam seamConfig) (ports.SourceGateway, error) {
 	if !seam.on {
 		return jira.New(src, secrets), nil

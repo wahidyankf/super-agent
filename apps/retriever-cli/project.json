@@ -184,7 +184,6 @@
     "retriever-contract",
     "retriever-runtime",
     "retriever-testkit",
-    "retriever-connector-outline",
     "retriever-connector-kiwi",
     "retriever-connector-jira",
     "retriever-spec",

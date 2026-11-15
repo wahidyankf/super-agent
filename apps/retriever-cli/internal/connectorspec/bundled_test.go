@@ -246,10 +246,10 @@ func TestUserFolderCannotShadowBundledSpec(t *testing.T) {
 	}
 }
 
-// TestBundledSpecCoversEveryCatalogRow proves L10 for the reads: the embed loader refuses a bundled set that leaves a
-// catalog read row without an operation, and it refuses an operation whose catalog_id names no row. A change row may
-// stay unclaimed until its port: the composite builder routes it to the Go gateway. A set that covers every read row
-// of the Outline kind is the bundled outline.yml, which TestLoadBundledLoadsTheOutlineReads checks.
+// TestBundledSpecCoversEveryCatalogRow proves L10: the embed loader refuses a bundled set that leaves a catalog row
+// without an operation, except for the documented unclaimed change rows, and it refuses an operation whose catalog_id
+// names no row. A set that covers every row of the Outline kind is the bundled outline.yml, which
+// TestLoadBundledLoadsTheOutlineSpec checks.
 func TestBundledSpecCoversEveryCatalogRow(t *testing.T) {
 	_, err := loadBundled([]specfolder.File{specFile("jira.yml", bundledJiraStub)})
 	if err == nil {
@@ -366,10 +366,10 @@ func TestLoadBundledFromRefusesAFolderItCannotRead(t *testing.T) {
 	}
 }
 
-// TestLoadBundledLoadsTheOutlineReads proves the port of pull request 16: the embedded tree loads the bundled
-// outline.yml, which claims every catalog read row of the Outline kind and the fallback target documents.export. The
-// change rows stay unclaimed until pull request 17, so the set holds the built-in operation rows only.
-func TestLoadBundledLoadsTheOutlineReads(t *testing.T) {
+// TestLoadBundledLoadsTheOutlineSpec proves the ports of pull requests 16 and 17: the embedded tree loads the
+// bundled outline.yml, which claims every catalog row of the Outline kind and the fallback target documents.export,
+// except the documented unclaimed change rows. The set holds the built-in operation rows only.
+func TestLoadBundledLoadsTheOutlineSpec(t *testing.T) {
 	set, err := LoadBundled()
 	if err != nil {
 		t.Fatalf("LoadBundled() error = %v, want nil", err)
@@ -394,14 +394,24 @@ func TestLoadBundledLoadsTheOutlineReads(t *testing.T) {
 	}
 	var missing []string
 	for _, row := range operations.RowsOf(domain.KindOutline) {
-		if row.Effect != domain.EffectRead {
-			continue
-		}
-		if !claimed[string(row.ID)] {
+		if !claimed[string(row.ID)] && !unclaimedChangeRows[string(row.ID)] {
 			missing = append(missing, string(row.ID))
 		}
 	}
 	if len(missing) != 0 {
-		t.Fatalf("unclaimed outline reads = %v", missing)
+		t.Fatalf("unclaimed outline rows = %v", missing)
+	}
+	for row := range unclaimedChangeRows {
+		if claimed[row] {
+			t.Fatalf("row %s is claimed but listed as unclaimed", row)
+		}
+		looked, ok := operations.Lookup(domain.OperationID(row))
+		if !ok || looked.Effect == domain.EffectRead {
+			t.Fatalf("unclaimed row %s is not an Outline change row", row)
+		}
+	}
+	wantUnclaimed := 0
+	if got := len(unclaimedChangeRows); got != wantUnclaimed {
+		t.Fatalf("unclaimed change rows = %d, want %d", got, wantUnclaimed)
 	}
 }

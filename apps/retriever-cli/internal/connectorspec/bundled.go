@@ -102,10 +102,16 @@ func loadBundled(files []specfolder.File) (Set, error) {
 	return set, nil
 }
 
-// checkBundledCoverage refuses a bundled kind that leaves a catalog read row of the kind without an operation. The
-// rows come from the built-in catalog in catalog order, and the first file of the kind answers for the gap, so the
-// text names no value and stays put while rows move. A change operation may stay with the Go gateway until its port:
-// the composite builder routes it there, so only reads must be claimed. Pull request 17 claims the Outline writes.
+// unclaimedChangeRows are the Outline change rows that no bundled operation claims. Pull request 17 claimed every
+// change row, so the set is empty; the Outline gateway runs every claimed change row on the engine. The set stays, so
+// a future port that cannot claim a row names it here instead of silently dropping it, and the coverage test names
+// the set exactly.
+var unclaimedChangeRows = map[string]bool{}
+
+// checkBundledCoverage refuses a bundled kind that leaves a catalog row of the kind without an operation, except for
+// the documented unclaimed change rows. The rows come from the built-in catalog in catalog order, and the first file
+// of the kind answers for the gap, so the text names no value and stays put while rows move. Pull request 17 claims
+// every Outline row, so the unclaimed set is empty.
 func checkBundledCoverage(names []string, models []*spec.Spec, kinds domain.KindSet) *Error {
 	claimed := map[string]map[string]bool{}
 	first := map[string]string{}
@@ -122,10 +128,7 @@ func checkBundledCoverage(names []string, models []*spec.Spec, kinds domain.Kind
 	}
 	for _, kind := range slices.Sorted(maps.Keys(claimed)) {
 		for _, row := range operations.RowsOf(mustKind(kinds, kind)) {
-			if row.Effect != domain.EffectRead {
-				continue
-			}
-			if !claimed[kind][string(row.ID)] {
+			if !claimed[kind][string(row.ID)] && !unclaimedChangeRows[string(row.ID)] {
 				return &Error{File: first[kind], Rule: ruleBundledMissing}
 			}
 		}

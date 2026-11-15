@@ -64,27 +64,25 @@ func (noNetwork) RoundTrip(*http.Request) (*http.Response, error) {
 // fakeClient returns an HTTP client whose transport is noNetwork.
 func fakeClient() *http.Client { return &http.Client{Transport: noNetwork{}} }
 
-// TestSeamOptionsAreEmptyWithoutATimeout checks that each seam adds a gateway option only when it names a timeout.
+// TestSeamOptionsAreEmptyWithoutATimeout checks that each Go-gateway seam adds a gateway option only when it names
+// a timeout. The Outline seam feeds the engine, so it takes no gateway option: the engine timeout is set when the
+// engine is built.
 func TestSeamOptionsAreEmptyWithoutATimeout(t *testing.T) {
-	if seamOptions(seamConfig{}) != nil || kiwiSeamOptions(seamConfig{}) != nil || jiraSeamOptions(seamConfig{}) != nil {
+	if kiwiSeamOptions(seamConfig{}) != nil || jiraSeamOptions(seamConfig{}) != nil {
 		t.Fatal("a seam without a timeout must add no option")
 	}
 	timed := seamConfig{timeout: time.Second}
-	if len(seamOptions(timed)) != 1 || len(kiwiSeamOptions(timed)) != 1 || len(jiraSeamOptions(timed)) != 1 {
+	if len(kiwiSeamOptions(timed)) != 1 || len(jiraSeamOptions(timed)) != 1 {
 		t.Fatal("a seam with a timeout must add one option")
 	}
 }
 
-// TestSeamBuildersReturnAGatewayWithTheSeamOff checks that each builder returns the gateway of its own endpoint when its seam
-// is off.
+// TestSeamBuildersReturnAGatewayWithTheSeamOff checks that each Go-gateway builder returns the gateway of its own
+// endpoint when its seam is off. The Outline gateway is the engine gateway, which the gateway tests cover.
 func TestSeamBuildersReturnAGatewayWithTheSeamOff(t *testing.T) {
 	creds := seamCredentialsOf(t)
-	outlineSrc := seamSourceOf(t, "outline", "https://docs.example.test", "EXAMPLE_OUTLINE_API_KEY")
 	kiwiSrc := seamSourceOf(t, "kiwi", "https://kiwi.example.test", "EXAMPLE_KIWI_API_KEY")
 	jiraSrc := seamSourceOf(t, "jira", "https://jira.example.test", "EXAMPLE_JIRA_API_TOKEN")
-	if gw, err := buildOutline(outlineSrc, creds, seamConfig{}); err != nil || gw == nil {
-		t.Fatalf("buildOutline with the seam off = %v, %v", gw, err)
-	}
 	if gw, err := buildKiwi(kiwiSrc, creds, seamConfig{}); err != nil || gw == nil {
 		t.Fatalf("buildKiwi with the seam off = %v, %v", gw, err)
 	}
@@ -93,18 +91,15 @@ func TestSeamBuildersReturnAGatewayWithTheSeamOff(t *testing.T) {
 	}
 }
 
-// TestSeamBuildersReturnAGatewayWithTheSeamOn checks that each builder uses a seam base and client when its seam is on, with
-// and without a seam timeout. The base is a loopback HTTPS address, and the fake client sends no request.
+// TestSeamBuildersReturnAGatewayWithTheSeamOn checks that each Go-gateway builder uses a seam base and client when
+// its seam is on, with and without a seam timeout. The base is a loopback HTTPS address, and the fake client sends
+// no request. The Outline gateway is the engine gateway, which the gateway tests cover.
 func TestSeamBuildersReturnAGatewayWithTheSeamOn(t *testing.T) {
 	creds := seamCredentialsOf(t)
-	src := seamSourceOf(t, "outline", "https://docs.example.test", "EXAMPLE_OUTLINE_API_KEY")
 	kiwiSrc := seamSourceOf(t, "kiwi", "https://kiwi.example.test", "EXAMPLE_KIWI_API_KEY")
 	jiraSrc := seamSourceOf(t, "jira", "https://jira.example.test", "EXAMPLE_JIRA_API_TOKEN")
 	for _, timeout := range []time.Duration{0, time.Second} {
 		seam := seamConfig{on: true, base: "https://127.0.0.1:9443", client: fakeClient(), timeout: timeout}
-		if gw, err := buildOutline(src, creds, seam); err != nil || gw == nil {
-			t.Fatalf("buildOutline with a seam (timeout %v) = %v, %v", timeout, gw, err)
-		}
 		if gw, err := buildKiwi(kiwiSrc, creds, seam); err != nil || gw == nil {
 			t.Fatalf("buildKiwi with a seam (timeout %v) = %v, %v", timeout, gw, err)
 		}
@@ -114,17 +109,14 @@ func TestSeamBuildersReturnAGatewayWithTheSeamOn(t *testing.T) {
 	}
 }
 
-// TestSeamBuildersRefuseAPlainHTTPBase checks that each builder refuses a seam base that is not HTTPS, so a seam can never
-// send a key to a plain connection, even when the setup check is skipped.
+// TestSeamBuildersRefuseAPlainHTTPBase checks that each Go-gateway builder refuses a seam base that is not HTTPS,
+// so a seam can never send a key to a plain connection, even when the setup check is skipped. The Outline engine
+// builder refuses one the same way, which the gateway tests cover.
 func TestSeamBuildersRefuseAPlainHTTPBase(t *testing.T) {
 	creds := seamCredentialsOf(t)
-	src := seamSourceOf(t, "outline", "https://docs.example.test", "EXAMPLE_OUTLINE_API_KEY")
 	kiwiSrc := seamSourceOf(t, "kiwi", "https://kiwi.example.test", "EXAMPLE_KIWI_API_KEY")
 	jiraSrc := seamSourceOf(t, "jira", "https://jira.example.test", "EXAMPLE_JIRA_API_TOKEN")
 	plain := seamConfig{on: true, base: "http://127.0.0.1:1", client: fakeClient()}
-	if _, err := buildOutline(src, creds, plain); err == nil {
-		t.Fatal("buildOutline accepted a plain HTTP base")
-	}
 	if _, err := buildKiwi(kiwiSrc, creds, plain); err == nil {
 		t.Fatal("buildKiwi accepted a plain HTTP base")
 	}

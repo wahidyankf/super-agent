@@ -1,6 +1,6 @@
 version: 1
 kind: outline
-summary: Reads of an Outline wiki.
+summary: Reads, writes, and admin operations of an Outline wiki.
 endpoint: {}
 auth:
   type: bearer
@@ -16,6 +16,12 @@ operations:
     headers:
       X-API-Version: "2"
     body: {}
+    pagination:
+      style: page-all
+      in: body
+      max_pages: 20
+      page_size: 25
+    role: list-collections
     response:
       items: /data
       fields:
@@ -137,16 +143,30 @@ operations:
       id: "{{documentId}}"
     response:
       markdown: markdown
+      errors:
+        "404": not_found
+      unavailable_message: Endpoint not found
       fields:
         id:
-          pointer: /data/id
+          pointer: /data/document/id
+          fallback_pointer: /data/id
           required: true
           format: id
-        title: { pointer: /data/title }
-        url: { pointer: /data/url }
-        collectionId: { pointer: /data/collectionId }
-        revision: { pointer: /data/revision }
-        markdown: { pointer: /data/text }
+        title:
+          pointer: /data/document/title
+          fallback_pointer: /data/title
+        url:
+          pointer: /data/document/url
+          fallback_pointer: /data/url
+        collectionId:
+          pointer: /data/document/collectionId
+          fallback_pointer: /data/collectionId
+        revision:
+          pointer: /data/document/revision
+          fallback_pointer: /data/revision
+        markdown:
+          pointer: /data/document/text
+          fallback_pointer: /data/text
     fallback:
       operation: outline.documents.export
       when:
@@ -1262,7 +1282,10 @@ operations:
         resolvedAt: { pointer: /data/resolvedAt }
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
-        text: { pointer: /data/text }
+        text:
+          pointer: /data/data
+          fallback_pointer: /data/text
+          convert: text-from-editor-data
         anchorText: { pointer: /data/anchorText }
     examples:
       - request: { commentId: ex-0001 }
@@ -1279,6 +1302,26 @@ operations:
         expect:
           id: ex-0001
           text: Nice
+      - request: { commentId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              documentId: d1
+              createdById: u1
+              createdAt: "2026-01-01T00:00:00.000Z"
+              updatedAt: "2026-01-01T00:00:00.000Z"
+              data:
+                type: doc
+                content:
+                  - type: paragraph
+                    content:
+                      - type: text
+                        text: Hello
+        expect:
+          id: ex-0001
+          text: Hello
   - id: outline.comments.list
     summary: list one page of Outline comments as plain text
     access: read
@@ -1369,7 +1412,10 @@ operations:
         resolvedAt: { pointer: /resolvedAt }
         createdAt: { pointer: /createdAt }
         updatedAt: { pointer: /updatedAt }
-        text: { pointer: /text }
+        text:
+          pointer: /data
+          fallback_pointer: /text
+          convert: text-from-editor-data
         anchorText: { pointer: /anchorText }
     examples:
       - request: { limit: 25 }
@@ -3108,7 +3154,7 @@ operations:
     access: read
     method: POST
     read_over_post: true
-    path: /api/oauth-authentications.list
+    path: /api/oauthAuthentications.list
     catalog_id: oauth-authentications.list
     headers:
       X-API-Version: "2"
@@ -3143,6 +3189,7 @@ operations:
           format: uuid
         userId: { pointer: /userId }
         oauthClientId: { pointer: /oauthClientId }
+        scope: { pointer: /scope, format: strings }
         lastActiveAt: { pointer: /lastActiveAt }
         createdAt: { pointer: /createdAt }
         oauthClient:
@@ -3483,8 +3530,8 @@ operations:
               documents:
                 - id: d1
                   title: Setup
-              users:
-              groups:
+              users: []
+              groups: []
         expect:
           kind: document
           id: d1
@@ -3604,7 +3651,7 @@ operations:
     access: read
     method: POST
     read_over_post: true
-    path: /api/api-keys.list
+    path: /api/apiKeys.list
     catalog_id: api-keys.list
     headers:
       X-API-Version: "2"
@@ -3665,6 +3712,7 @@ operations:
           format: uuid
         userId: { pointer: /userId }
         name: { pointer: /name }
+        scope: { pointer: /scope, format: strings }
         last4: { pointer: /last4 }
         createdAt: { pointer: /createdAt }
         updatedAt: { pointer: /updatedAt }
@@ -3721,6 +3769,7 @@ operations:
           object:
             groupSyncEnabled: { pointer: /data/settings/groupSyncEnabled }
             groupClaim: { pointer: /data/settings/groupClaim }
+            groupSyncScopes: { pointer: /data/settings/groupSyncScopes, format: strings }
     examples:
       - request: { authenticationProviderId: ex-0001 }
         response:
@@ -3742,7 +3791,7 @@ operations:
     access: read
     method: POST
     read_over_post: true
-    path: /api/authentication-providers.list
+    path: /api/authenticationProviders.list
     catalog_id: authentication-providers.list
     headers:
       X-API-Version: "2"
@@ -3763,6 +3812,7 @@ operations:
           object:
             groupSyncEnabled: { pointer: /settings/groupSyncEnabled }
             groupClaim: { pointer: /settings/groupClaim }
+            groupSyncScopes: { pointer: /settings/groupSyncScopes, format: strings }
     examples:
       - request: {}
         response:
@@ -3928,14 +3978,23 @@ operations:
           format: uuid
         type: { pointer: /data/type }
         service: { pointer: /data/service }
+        events:
+          pointer: /data/events
+          format: strings
         collectionId: { pointer: /data/collectionId }
         userId: { pointer: /data/userId }
         createdAt: { pointer: /data/createdAt }
         updatedAt: { pointer: /data/updatedAt }
         settings:
           object:
+            urlHost:
+              pointer: /data/settings/url
+              convert: hostname
             channel: { pointer: /data/settings/channel }
             measurementId: { pointer: /data/settings/measurementId }
+            instanceUrl:
+              pointer: /data/settings/instanceUrl
+              convert: hostname
             scriptName: { pointer: /data/settings/scriptName }
     examples:
       - request: { integrationId: ex-0001 }
@@ -4038,14 +4097,23 @@ operations:
           format: uuid
         type: { pointer: /type }
         service: { pointer: /service }
+        events:
+          pointer: /events
+          format: strings
         collectionId: { pointer: /collectionId }
         userId: { pointer: /userId }
         createdAt: { pointer: /createdAt }
         updatedAt: { pointer: /updatedAt }
         settings:
           object:
+            urlHost:
+              pointer: /settings/url
+              convert: hostname
             channel: { pointer: /settings/channel }
             measurementId: { pointer: /settings/measurementId }
+            instanceUrl:
+              pointer: /settings/instanceUrl
+              convert: hostname
             scriptName: { pointer: /settings/scriptName }
     examples:
       - request: { limit: 25 }
@@ -4095,6 +4163,7 @@ operations:
         developerUrl: { pointer: /data/developerUrl }
         clientId: { pointer: /data/clientId }
         clientType: { pointer: /data/clientType }
+        redirectUris: { pointer: /data/redirectUris, format: strings }
         published: { pointer: /data/published }
         lastActiveAt: { pointer: /data/lastActiveAt }
         createdAt: { pointer: /data/createdAt }
@@ -4119,7 +4188,7 @@ operations:
     access: read
     method: POST
     read_over_post: true
-    path: /api/oauth-clients.list
+    path: /api/oauthClients.list
     catalog_id: oauth-clients.list
     headers:
       X-API-Version: "2"
@@ -4158,6 +4227,7 @@ operations:
         developerUrl: { pointer: /developerUrl }
         clientId: { pointer: /clientId }
         clientType: { pointer: /clientType }
+        redirectUris: { pointer: /redirectUris, format: strings }
         published: { pointer: /published }
         lastActiveAt: { pointer: /lastActiveAt }
         createdAt: { pointer: /createdAt }
@@ -4184,7 +4254,7 @@ operations:
     access: read
     method: POST
     read_over_post: true
-    path: /api/webhook-subscriptions.list
+    path: /api/webhookSubscriptions.list
     catalog_id: webhook-subscriptions.list
     headers:
       X-API-Version: "2"
@@ -4232,12 +4302,20 @@ operations:
       offset_param: offset
     response:
       items: /data
+      errors:
+        "404": operation_unavailable
       fields:
         id:
           pointer: /id
           required: true
           format: uuid
         name: { pointer: /name }
+        urlHost:
+          pointer: /url
+          convert: hostname
+        events:
+          pointer: /events
+          format: strings
         enabled: { pointer: /enabled }
         createdById: { pointer: /createdById }
         createdAt: { pointer: /createdAt }
@@ -4252,6 +4330,7 @@ operations:
                 name: Hook
                 url: "https://hooks.example.test/synthetic/path"
                 events:
+                  - documents.update
                 enabled: true
                 secret: synthetic-signing-secret
             pagination:
@@ -4260,6 +4339,7 @@ operations:
         expect:
           id: ex-0001
           name: Hook
+          urlHost: hooks.example.test
   - id: outline.documents.export
     summary: read the Markdown of one Outline document through the vault export
     access: read
@@ -4289,3 +4369,4325 @@ operations:
             data: Hello
         expect:
           markdown: Hello
+  - id: outline.documents.create
+    summary: create one Outline document, as a draft unless --publish is true
+    access: write
+    method: POST
+    path: /api/documents.create
+    catalog_id: documents.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: title
+        type: Name
+        in: body
+        required: false
+        help: the title, 1 to 255 characters
+      - name: text
+        type: Text
+        in: body
+        required: false
+        help: the Markdown body, at most 1 MiB
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection the document goes in, by its UUID
+      - name: parentDocumentId
+        type: UUID
+        in: body
+        required: false
+        help: the parent document, by its UUID
+      - name: templateId
+        type: UUID
+        in: body
+        required: false
+        help: a template to create the document from, by its UUID
+      - name: publish
+        type: Bool
+        in: body
+        required: false
+        help: true to publish at once; false or omitted keeps a draft
+    body:
+      collectionId: "{{collectionId}}"
+      parentDocumentId: "{{parentDocumentId}}"
+      publish: "{{publish}}"
+      templateId: "{{templateId}}"
+      text: "{{text}}"
+      title: "{{title}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        title: { pointer: /data/title }
+        url: { pointer: /data/url }
+        collectionId: { pointer: /data/collectionId }
+        revision: { pointer: /data/revision }
+    examples:
+      - request: { title: Synthetic }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.documents.duplicate
+    summary: copy one Outline document, and its children when recursive is true
+    access: write
+    method: POST
+    path: /api/documents.duplicate
+    catalog_id: documents.duplicate
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document to copy, from collection_tree
+      - name: title
+        type: Name
+        in: body
+        required: false
+        help: the title of the copy, 1 to 255 characters
+      - name: recursive
+        type: Bool
+        in: body
+        required: false
+        help: true to copy the child documents too
+      - name: publish
+        type: Bool
+        in: body
+        required: false
+        help: true to publish the copies at once
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection of the copy, by its UUID
+      - name: parentDocumentId
+        type: UUID
+        in: body
+        required: false
+        help: the parent document of the copy, by its UUID
+    body:
+      collectionId: "{{collectionId}}"
+      id: "{{documentId}}"
+      parentDocumentId: "{{parentDocumentId}}"
+      publish: "{{publish}}"
+      recursive: "{{recursive}}"
+      title: "{{title}}"
+    response:
+      items: /data/documents
+      fields:
+        id: { pointer: /id, required: true, format: id }
+        title: { pointer: /title }
+        url: { pointer: /url }
+        collectionId: { pointer: /collectionId }
+        revision: { pointer: /revision }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              documents:
+                - id: d1
+        expect:
+          id: d1
+  - id: outline.documents.move
+    summary: move one Outline document to another collection or parent
+    access: write
+    method: POST
+    path: /api/documents.move
+    catalog_id: documents.move
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document to move, from collection_tree
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection to move it to, by its UUID
+      - name: parentDocumentId
+        type: UUID
+        in: body
+        required: false
+        help: the new parent document, by its UUID; it must not be the document itself
+      - name: index
+        type: Int
+        in: body
+        required: false
+        min: 0
+        max: 2147483647
+        help: the position among its siblings, from 0
+    body:
+      collectionId: "{{collectionId}}"
+      id: "{{documentId}}"
+      index: "{{index}}"
+      parentDocumentId: "{{parentDocumentId}}"
+    response:
+      items: /data/documents
+      fields:
+        id: { pointer: /id, required: true, format: id }
+        title: { pointer: /title }
+        url: { pointer: /url }
+        collectionId: { pointer: /collectionId }
+        revision: { pointer: /revision }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              documents:
+                - id: d1
+        expect:
+          id: d1
+  - id: outline.documents.restore
+    summary: restore one archived or deleted Outline document, or one of its revisions
+    access: write
+    method: POST
+    path: /api/documents.restore
+    catalog_id: documents.restore
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document to restore, from list_deleted_documents
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection to restore it into, by its UUID
+      - name: revisionId
+        type: UUID
+        in: body
+        required: false
+        help: a revision to restore the text from, by its UUID
+    body:
+      collectionId: "{{collectionId}}"
+      id: "{{documentId}}"
+      revisionId: "{{revisionId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        title: { pointer: /data/title }
+        url: { pointer: /data/url }
+        collectionId: { pointer: /data/collectionId }
+        revision: { pointer: /data/revision }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.documents.templatize
+    summary: make a template from one Outline document
+    access: write
+    method: POST
+    path: /api/documents.templatize
+    catalog_id: documents.templatize
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document to make a template from, from collection_tree
+      - name: publish
+        type: Bool
+        in: body
+        required: true
+        help: true to publish the template at once; the server requires the choice
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection of the template, by its UUID
+    body:
+      collectionId: "{{collectionId}}"
+      id: "{{documentId}}"
+      publish: "{{publish}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true }
+        urlId: { pointer: /data/urlId }
+        url: { pointer: /data/url }
+        title: { pointer: /data/title }
+        icon: { pointer: /data/icon }
+        color: { pointer: /data/color }
+        fullWidth: { pointer: /data/fullWidth }
+        collectionId: { pointer: /data/collectionId }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        publishedAt: { pointer: /data/publishedAt }
+        deletedAt: { pointer: /data/deletedAt }
+        createdById: { pointer: /data/createdBy.id }
+        updatedById: { pointer: /data/updatedBy.id }
+    examples:
+      - request: { documentId: d1, publish: true }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.documents.unpublish
+    summary: take one Outline document back to a draft
+    access: write
+    method: POST
+    path: /api/documents.unpublish
+    catalog_id: documents.unpublish
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document to unpublish, from collection_tree
+      - name: detach
+        type: Bool
+        in: body
+        required: false
+        help: true to leave the collection as well
+    body:
+      detach: "{{detach}}"
+      id: "{{documentId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        title: { pointer: /data/title }
+        url: { pointer: /data/url }
+        collectionId: { pointer: /data/collectionId }
+        revision: { pointer: /data/revision }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.documents.update
+    summary: change the title or the text of one Outline document
+    access: write
+    method: POST
+    path: /api/documents.update
+    catalog_id: documents.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document to change, from collection_tree
+      - name: title
+        type: Name
+        in: body
+        required: false
+        help: the new title, 1 to 255 characters
+      - name: text
+        type: Text
+        in: body
+        required: false
+        help: the Markdown text, at most 1 MiB
+      - name: editMode
+        type: Enum
+        in: body
+        required: false
+        values: [replace, append, prepend, patch]
+        help: "how text applies: replace (the default), append, prepend, or patch"
+      - name: findText
+        type: Query
+        in: body
+        required: false
+        help: "for patch: the text to find and replace in the document"
+      - name: lastRevision
+        type: Int
+        in: body
+        required: false
+        min: 0
+        max: 2147483647
+        help: the revision you read, from get_document; the wiki refuses the change if it moved on
+      - name: publish
+        type: Bool
+        in: body
+        required: false
+        help: true to publish the document
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection to move it into, by its UUID
+    body:
+      collectionId: "{{collectionId}}"
+      editMode: "{{editMode}}"
+      findText: "{{findText}}"
+      id: "{{documentId}}"
+      lastRevision: "{{lastRevision}}"
+      publish: "{{publish}}"
+      text: "{{text}}"
+      title: "{{title}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        title: { pointer: /data/title }
+        url: { pointer: /data/url }
+        collectionId: { pointer: /data/collectionId }
+        revision: { pointer: /data/revision }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.collections.create
+    summary: create one Outline collection, private unless permission is set
+    access: write
+    method: POST
+    path: /api/collections.create
+    catalog_id: collections.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: name
+        type: Name
+        in: body
+        required: true
+        help: the name of the collection, 1 to 255 characters
+      - name: description
+        type: Text
+        in: body
+        required: false
+        help: the Markdown description, at most 1 MiB
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: "the default access of its members: read, read_write, or admin; omitted makes it private"
+      - name: sharing
+        type: Bool
+        in: body
+        required: false
+        help: true to allow the collection to be shared publicly
+      - name: commenting
+        type: Bool
+        in: body
+        required: false
+        help: true to allow comments in the collection
+      - name: templateManagement
+        type: Enum
+        in: body
+        required: false
+        values: [admin, read_write]
+        help: "who may manage its templates: admin or read_write"
+    body:
+      commenting: "{{commenting}}"
+      description: "{{description}}"
+      name: "{{name}}"
+      permission: "{{permission}}"
+      sharing: "{{sharing}}"
+      templateManagement: "{{templateManagement}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        name: { pointer: /data/name }
+    examples:
+      - request: { name: Synthetic }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.collections.duplicate
+    summary: copy one Outline collection, under a new name when one is given
+    access: write
+    method: POST
+    path: /api/collections.duplicate
+    catalog_id: collections.duplicate
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection to copy, from list_collections
+      - name: name
+        type: Name
+        in: body
+        required: false
+        help: the name of the copy, 1 to 255 characters
+    body:
+      id: "{{collectionId}}"
+      name: "{{name}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        name: { pointer: /data/name }
+    examples:
+      - request: { collectionId: c1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.collections.export
+    summary: start a file export of one Outline collection
+    access: write
+    method: POST
+    path: /api/collections.export
+    catalog_id: collections.export
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection to export, from list_collections
+      - name: format
+        type: Enum
+        in: body
+        required: false
+        values:
+          - json
+          - outline-markdown
+          - okf
+          - html
+          - textbundle
+          - pdf
+          - notion
+        help: the file format; outline-markdown when omitted
+      - name: includeAttachments
+        type: Bool
+        in: body
+        required: false
+        help: true to include the attachments of the documents
+    body:
+      format: "{{format}}"
+      id: "{{collectionId}}"
+      includeAttachments: "{{includeAttachments}}"
+    response:
+      fields:
+        id: { pointer: /data/fileOperation/id, required: true, format: uuid }
+        type: { pointer: /data/fileOperation/type }
+        format: { pointer: /data/fileOperation/format }
+        name: { pointer: /data/fileOperation/name }
+        state: { pointer: /data/fileOperation/state }
+        error: { pointer: /data/fileOperation/error }
+        size: { pointer: /data/fileOperation/size }
+        collectionId: { pointer: /data/fileOperation/collectionId }
+        documentId: { pointer: /data/fileOperation/documentId }
+        userId: { pointer: /data/fileOperation/user.id }
+        createdAt: { pointer: /data/fileOperation/createdAt }
+        updatedAt: { pointer: /data/fileOperation/updatedAt }
+    examples:
+      - request: { collectionId: c1 }
+        response:
+          status: 200
+          body:
+            success: true
+            data:
+              fileOperation:
+                id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.collections.move
+    summary: move one Outline collection to a new position
+    access: write
+    method: POST
+    path: /api/collections.move
+    catalog_id: collections.move
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection to move, from list_collections
+      - name: index
+        type: Index
+        in: body
+        required: true
+        help: the new position, a fractional index of 1 to 256 printable characters
+    body:
+      id: "{{collectionId}}"
+      index: "{{index}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+        index: { pointer: /data/index }
+    examples:
+      - request: { collectionId: c1, index: a0 }
+        response:
+          status: 200
+          body:
+            success: true
+            data:
+              index: a0
+        expect:
+          ok: true
+  - id: outline.collections.restore
+    summary: restore one archived Outline collection
+    access: write
+    method: POST
+    path: /api/collections.restore
+    catalog_id: collections.restore
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the archived collection to restore, by its ID
+    body:
+      id: "{{collectionId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        name: { pointer: /data/name }
+    examples:
+      - request: { collectionId: c1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.collections.update
+    summary: change the name, the description, or the access of one Outline collection
+    access: write
+    method: POST
+    path: /api/collections.update
+    catalog_id: collections.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection to change, from list_collections
+      - name: name
+        type: Name
+        in: body
+        required: false
+        help: the new name, 1 to 255 characters
+      - name: description
+        type: Text
+        in: body
+        required: false
+        help: the new Markdown description, at most 1 MiB
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: "the default access of its members: read, read_write, or admin"
+      - name: sharing
+        type: Bool
+        in: body
+        required: false
+        help: true to allow the collection to be shared publicly
+      - name: commenting
+        type: Bool
+        in: body
+        required: false
+        help: true to allow comments in the collection
+      - name: templateManagement
+        type: Enum
+        in: body
+        required: false
+        values: [admin, read_write]
+        help: "who may manage its templates: admin or read_write"
+    body:
+      commenting: "{{commenting}}"
+      description: "{{description}}"
+      id: "{{collectionId}}"
+      name: "{{name}}"
+      permission: "{{permission}}"
+      sharing: "{{sharing}}"
+      templateManagement: "{{templateManagement}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        name: { pointer: /data/name }
+    examples:
+      - request: { collectionId: c1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.comments.create
+    summary: add one comment to an Outline document, or a reply to a comment
+    access: write
+    method: POST
+    path: /api/comments.create
+    catalog_id: comments.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: UUID
+        in: body
+        required: true
+        help: the document the comment goes on, by its UUID
+      - name: text
+        type: Text
+        in: body
+        required: true
+        help: the Markdown text of the comment
+      - name: parentCommentId
+        type: UUID
+        in: body
+        required: false
+        help: the comment this one replies to, by its UUID
+    body:
+      documentId: "{{documentId}}"
+      parentCommentId: "{{parentCommentId}}"
+      text: "{{text}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        parentCommentId: { pointer: /data/parentCommentId }
+        createdById: { pointer: /data/createdById }
+        resolvedById: { pointer: /data/resolvedById }
+        resolvedAt: { pointer: /data/resolvedAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        text: { pointer: /data/text }
+        anchorText: { pointer: /data/anchorText }
+    examples:
+      - request: { documentId: ex-0001, text: Synthetic body }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.comments.update
+    summary: change the text of one Outline comment
+    access: write
+    method: POST
+    path: /api/comments.update
+    catalog_id: comments.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: commentId
+        type: UUID
+        in: body
+        required: true
+        help: the comment to change, from list_comments
+      - name: text
+        type: Text
+        in: body
+        required: true
+        help: the new Markdown text of the comment
+    body:
+      id: "{{commentId}}"
+      text: "{{text}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        parentCommentId: { pointer: /data/parentCommentId }
+        createdById: { pointer: /data/createdById }
+        resolvedById: { pointer: /data/resolvedById }
+        resolvedAt: { pointer: /data/resolvedAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        text: { pointer: /data/text }
+        anchorText: { pointer: /data/anchorText }
+    examples:
+      - request: { commentId: ex-0001, text: Synthetic body }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.comments.resolve
+    summary: mark one Outline comment as resolved
+    access: write
+    method: POST
+    path: /api/comments.resolve
+    catalog_id: comments.resolve
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: commentId
+        type: UUID
+        in: body
+        required: true
+        help: the comment to resolve, from list_comments
+    body:
+      id: "{{commentId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        parentCommentId: { pointer: /data/parentCommentId }
+        createdById: { pointer: /data/createdById }
+        resolvedById: { pointer: /data/resolvedById }
+        resolvedAt: { pointer: /data/resolvedAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        text: { pointer: /data/text }
+        anchorText: { pointer: /data/anchorText }
+    examples:
+      - request: { commentId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.comments.unresolve
+    summary: reopen one resolved Outline comment
+    access: write
+    method: POST
+    path: /api/comments.unresolve
+    catalog_id: comments.unresolve
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: commentId
+        type: UUID
+        in: body
+        required: true
+        help: the comment to reopen, from list_comments
+    body:
+      id: "{{commentId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        parentCommentId: { pointer: /data/parentCommentId }
+        createdById: { pointer: /data/createdById }
+        resolvedById: { pointer: /data/resolvedById }
+        resolvedAt: { pointer: /data/resolvedAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        text: { pointer: /data/text }
+        anchorText: { pointer: /data/anchorText }
+    examples:
+      - request: { commentId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.comments.add-reaction
+    summary: add one emoji reaction to an Outline comment
+    access: write
+    method: POST
+    path: /api/comments.add_reaction
+    catalog_id: comments.add-reaction
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: commentId
+        type: UUID
+        in: body
+        required: true
+        help: the comment to react to, from list_comments
+      - name: emoji
+        type: Name
+        in: body
+        required: true
+        help: one emoji, or the UUID of a custom emoji
+    body:
+      emoji: "{{emoji}}"
+      id: "{{commentId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { commentId: ex-0001, emoji: Synthetic }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.comments.remove-reaction
+    summary: remove one emoji reaction from an Outline comment
+    access: write
+    method: POST
+    path: /api/comments.remove_reaction
+    catalog_id: comments.remove-reaction
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: commentId
+        type: UUID
+        in: body
+        required: true
+        help: the comment to remove the reaction from, from list_comments
+      - name: emoji
+        type: Name
+        in: body
+        required: true
+        help: the emoji of the reaction to remove, or the UUID of a custom emoji
+    body:
+      emoji: "{{emoji}}"
+      id: "{{commentId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { commentId: ex-0001, emoji: Synthetic }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.access-requests.create
+    summary: ask for access to one Outline document
+    access: write
+    method: POST
+    path: /api/accessRequests.create
+    catalog_id: access-requests.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document to ask for access to, by its ID
+    body:
+      documentId: "{{documentId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        userId: { pointer: /data/userId }
+        status: { pointer: /data/status }
+        responderId: { pointer: /data/responderId }
+        respondedAt: { pointer: /data/respondedAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.revisions.update
+    summary: rename one revision of an Outline document
+    access: write
+    method: POST
+    path: /api/revisions.update
+    catalog_id: revisions.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: revisionId
+        type: UUID
+        in: body
+        required: true
+        help: the revision to rename, from list_revisions
+      - name: name
+        type: Name
+        in: body
+        required: true
+        help: the new name of the revision
+    body:
+      id: "{{revisionId}}"
+      name: "{{name}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        title: { pointer: /data/title }
+        name: { pointer: /data/name }
+        icon: { pointer: /data/icon }
+        color: { pointer: /data/color }
+        createdAt: { pointer: /data/createdAt }
+        createdById: { pointer: /data/createdById }
+        deletedAt: { pointer: /data/deletedAt }
+    examples:
+      - request: { revisionId: ex-0001, name: Synthetic }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.notifications.update
+    summary: mark one Outline notification as viewed or archived
+    access: write
+    method: POST
+    path: /api/notifications.update
+    catalog_id: notifications.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: notificationId
+        type: UUID
+        in: body
+        required: true
+        help: the notification to change, from list_notifications
+      - name: viewedAt
+        type: Time
+        in: body
+        required: false
+        help: the time it was viewed, in RFC 3339 with a zone
+      - name: archivedAt
+        type: Time
+        in: body
+        required: false
+        help: the time it was archived, in RFC 3339 with a zone
+    body:
+      archivedAt: "{{archivedAt}}"
+      id: "{{notificationId}}"
+      viewedAt: "{{viewedAt}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        event: { pointer: /data/event }
+        createdAt: { pointer: /data/createdAt }
+        viewedAt: { pointer: /data/viewedAt }
+        archivedAt: { pointer: /data/archivedAt }
+        actorId: { pointer: /data/actorId }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        commentId: { pointer: /data/commentId }
+        groupId: { pointer: /data/groupId }
+        revisionId: { pointer: /data/revisionId }
+        accessRequestId: { pointer: /data/accessRequestId }
+        accessRequestStatus: { pointer: /data/accessRequestStatus }
+    examples:
+      - request: { notificationId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.notifications.update-all
+    summary: mark all Outline notifications of the user as viewed or archived
+    access: write
+    method: POST
+    path: /api/notifications.update_all
+    catalog_id: notifications.update-all
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: viewedAt
+        type: Time
+        in: body
+        required: false
+        help: the time to mark every notification as viewed, in RFC 3339 with a zone
+      - name: archivedAt
+        type: Time
+        in: body
+        required: false
+        help: the time to mark every notification as archived, in RFC 3339 with a zone
+    body:
+      archivedAt: "{{archivedAt}}"
+      viewedAt: "{{viewedAt}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+        total: { pointer: /data/total }
+    examples:
+      - request: { viewedAt: "2026-01-01T00:00:00Z" }
+        response:
+          status: 200
+          body:
+            success: true
+            data:
+              total: 1
+        expect:
+          ok: true
+  - id: outline.pins.create
+    summary: pin one Outline document to a collection or to Home
+    access: write
+    method: POST
+    path: /api/pins.create
+    catalog_id: pins.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document to pin, from collection_tree
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection to pin it in, by its UUID; Home when omitted
+      - name: index
+        type: Index
+        in: body
+        required: false
+        help: the position of the pin, a fractional index of 1 to 256 printable characters
+    body:
+      collectionId: "{{collectionId}}"
+      documentId: "{{documentId}}"
+      index: "{{index}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        index: { pointer: /data/index }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.pins.delete
+    summary: unpin one Outline pin
+    access: write
+    method: POST
+    path: /api/pins.delete
+    catalog_id: pins.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: pinId
+        type: UUID
+        in: body
+        required: true
+        help: the pin to remove, from list_pins
+    body:
+      id: "{{pinId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { pinId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.pins.update
+    summary: move one Outline pin to a new position
+    access: write
+    method: POST
+    path: /api/pins.update
+    catalog_id: pins.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: pinId
+        type: UUID
+        in: body
+        required: true
+        help: the pin to move, from list_pins
+      - name: index
+        type: Index
+        in: body
+        required: true
+        help: the new position, a fractional index of 1 to 256 printable characters
+    body:
+      id: "{{pinId}}"
+      index: "{{index}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        index: { pointer: /data/index }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { pinId: ex-0001, index: a0 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.searches.delete
+    summary: remove one saved search of the user, by its ID or by its query
+    access: write
+    method: POST
+    path: /api/searches.delete
+    catalog_id: searches.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: searchId
+        type: UUID
+        in: body
+        required: false
+        help: the saved search to remove, from list_searches
+      - name: query
+        type: Query
+        in: body
+        required: false
+        help: the query of the saved search to remove, 1 to 1000 characters
+    body:
+      id: "{{searchId}}"
+      query: "{{query}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { searchId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.searches.update
+    summary: change the score of one saved search of the user
+    access: write
+    method: POST
+    path: /api/searches.update
+    catalog_id: searches.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: searchId
+        type: UUID
+        in: body
+        required: true
+        help: the saved search to change, from list_searches
+      - name: score
+        type: Score
+        in: body
+        required: true
+        help: the score of the search, a number from -1 to 1
+    body:
+      id: "{{searchId}}"
+      score: "{{score}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        query: { pointer: /data/query }
+        searchSource: { pointer: /data/source }
+        score: { pointer: /data/score }
+        createdAt: { pointer: /data/createdAt }
+    examples:
+      - request: { searchId: ex-0001, score: 1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.stars.create
+    summary: star one Outline document or collection for the user
+    access: write
+    method: POST
+    path: /api/stars.create
+    catalog_id: stars.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: false
+        help: the document to star, from collection_tree
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection to star, by its UUID
+      - name: index
+        type: Index
+        in: body
+        required: false
+        help: the position of the star, a fractional index of 1 to 256 printable characters
+    body:
+      collectionId: "{{collectionId}}"
+      documentId: "{{documentId}}"
+      index: "{{index}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        index: { pointer: /data/index }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.stars.delete
+    summary: unstar one Outline star
+    access: write
+    method: POST
+    path: /api/stars.delete
+    catalog_id: stars.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: starId
+        type: UUID
+        in: body
+        required: true
+        help: the star to remove, from list_stars
+    body:
+      id: "{{starId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { starId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.stars.update
+    summary: move one Outline star to a new position
+    access: write
+    method: POST
+    path: /api/stars.update
+    catalog_id: stars.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: starId
+        type: UUID
+        in: body
+        required: true
+        help: the star to move, from list_stars
+      - name: index
+        type: Index
+        in: body
+        required: true
+        help: the new position, a fractional index of 1 to 256 printable characters
+    body:
+      id: "{{starId}}"
+      index: "{{index}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        index: { pointer: /data/index }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { starId: ex-0001, index: a0 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.subscriptions.create
+    summary: follow the updates of one Outline document or collection
+    access: write
+    method: POST
+    path: /api/subscriptions.create
+    catalog_id: subscriptions.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: event
+        type: Enum
+        in: body
+        required: false
+        default: documents.update
+        values: [documents.update]
+        help: the event to follow; documents.update is the only one
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: false
+        help: the document to follow, from collection_tree
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection to follow, by its UUID
+    body:
+      collectionId: "{{collectionId}}"
+      documentId: "{{documentId}}"
+      event: "{{event}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        userId: { pointer: /data/userId }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        event: { pointer: /data/event }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { event: documents.update }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.subscriptions.delete
+    summary: unfollow the updates of one Outline subscription
+    access: write
+    method: POST
+    path: /api/subscriptions.delete
+    catalog_id: subscriptions.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: subscriptionId
+        type: UUID
+        in: body
+        required: true
+        help: the subscription to remove, from list_subscriptions
+    body:
+      id: "{{subscriptionId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { subscriptionId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.templates.duplicate
+    summary: copy one Outline template, under a new title when one is given
+    access: write
+    method: POST
+    path: /api/templates.duplicate
+    catalog_id: templates.duplicate
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: templateId
+        type: ID
+        in: body
+        required: true
+        help: the template to copy, from list_templates
+      - name: title
+        type: Name
+        in: body
+        required: false
+        help: the title of the copy, 1 to 255 characters
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection of the copy, by its UUID
+    body:
+      collectionId: "{{collectionId}}"
+      id: "{{templateId}}"
+      title: "{{title}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true }
+        urlId: { pointer: /data/urlId }
+        url: { pointer: /data/url }
+        title: { pointer: /data/title }
+        icon: { pointer: /data/icon }
+        color: { pointer: /data/color }
+        fullWidth: { pointer: /data/fullWidth }
+        collectionId: { pointer: /data/collectionId }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        publishedAt: { pointer: /data/publishedAt }
+        deletedAt: { pointer: /data/deletedAt }
+        createdById: { pointer: /data/createdBy.id }
+        updatedById: { pointer: /data/updatedBy.id }
+    examples:
+      - request: { templateId: t1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.templates.restore
+    summary: restore one deleted Outline template
+    access: write
+    method: POST
+    path: /api/templates.restore
+    catalog_id: templates.restore
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: templateId
+        type: ID
+        in: body
+        required: true
+        help: the deleted template to restore, by its ID
+    body:
+      id: "{{templateId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true }
+        urlId: { pointer: /data/urlId }
+        url: { pointer: /data/url }
+        title: { pointer: /data/title }
+        icon: { pointer: /data/icon }
+        color: { pointer: /data/color }
+        fullWidth: { pointer: /data/fullWidth }
+        collectionId: { pointer: /data/collectionId }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        publishedAt: { pointer: /data/publishedAt }
+        deletedAt: { pointer: /data/deletedAt }
+        createdById: { pointer: /data/createdBy.id }
+        updatedById: { pointer: /data/updatedBy.id }
+    examples:
+      - request: { templateId: t1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.user-memberships.update
+    summary: "change the position of one membership of the API key's user"
+    access: write
+    method: POST
+    path: /api/userMemberships.update
+    catalog_id: user-memberships.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: membershipId
+        type: UUID
+        in: body
+        required: true
+        help: the membership to move, from list_user_memberships
+      - name: index
+        type: Index
+        in: body
+        required: true
+        help: the new position, a fractional index of 1 to 256 printable characters
+    body:
+      id: "{{membershipId}}"
+      index: "{{index}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        userId: { pointer: /data/userId }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        permission: { pointer: /data/permission }
+        createdById: { pointer: /data/createdById }
+        sourceId: { pointer: /data/sourceId }
+        index: { pointer: /data/index }
+    examples:
+      - request: { membershipId: ex-0001, index: a0 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.users.notifications-subscribe
+    summary: "turn on the notification settings of the API key's user, for one event type"
+    access: write
+    method: POST
+    path: /api/users.notificationsSubscribe
+    catalog_id: users.notifications-subscribe
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: eventType
+        type: Enum
+        in: body
+        required: false
+        values:
+          - documents.publish
+          - documents.update
+          - documents.add_user
+          - collections.add_user
+          - groups.add_user
+          - groups.remove_user
+          - revisions.create
+          - collections.create
+          - comments.create
+          - comments.resolve
+          - reactions.create
+          - documents.mentioned
+          - comments.mentioned
+          - documents.group_mentioned
+          - comments.group_mentioned
+          - emails.invite_accepted
+          - emails.onboarding
+          - emails.features
+          - emails.export_completed
+          - access_requests.create
+        help: "the event type to turn on; the wiki's own default when omitted"
+    body:
+      eventType: "{{eventType}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        role: { pointer: /data/role }
+        isSuspended: { pointer: /data/isSuspended }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        deletedAt: { pointer: /data/deletedAt }
+        notificationSettings: { pointer: /data/notificationSettings, bool_map: true }
+    examples:
+      - request: { eventType: documents.publish }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              notificationSettings:
+                documents.publish: true
+                comments.create: false
+        expect:
+          id: ex-0001
+          notificationSettings:
+            documents.publish: true
+            comments.create: false
+  - id: outline.users.notifications-unsubscribe
+    summary: "turn off the notification settings of the API key's user, for one event type"
+    access: write
+    method: POST
+    path: /api/users.notificationsUnsubscribe
+    catalog_id: users.notifications-unsubscribe
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: eventType
+        type: Enum
+        in: body
+        required: false
+        values:
+          - documents.publish
+          - documents.update
+          - documents.add_user
+          - collections.add_user
+          - groups.add_user
+          - groups.remove_user
+          - revisions.create
+          - collections.create
+          - comments.create
+          - comments.resolve
+          - reactions.create
+          - documents.mentioned
+          - comments.mentioned
+          - documents.group_mentioned
+          - comments.group_mentioned
+          - emails.invite_accepted
+          - emails.onboarding
+          - emails.features
+          - emails.export_completed
+          - access_requests.create
+        help: "the event type to turn off; the wiki's own default when omitted"
+    body:
+      eventType: "{{eventType}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        role: { pointer: /data/role }
+        isSuspended: { pointer: /data/isSuspended }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        deletedAt: { pointer: /data/deletedAt }
+        notificationSettings: { pointer: /data/notificationSettings, bool_map: true }
+    examples:
+      - request: { eventType: documents.publish }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              notificationSettings:
+                documents.publish: false
+                comments.create: true
+        expect:
+          id: ex-0001
+          notificationSettings:
+            documents.publish: false
+            comments.create: true
+  - id: outline.documents.add-group
+    summary: give one group access to one Outline document, at a permission
+    access: admin
+    method: POST
+    path: /api/documents.add_group
+    catalog_id: documents.add-group
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document ID, from list_documents
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: the group, by its UUID
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: only items with this permission
+    body:
+      groupId: "{{groupId}}"
+      id: "{{documentId}}"
+      permission: "{{permission}}"
+    response:
+      items: /data/groupMemberships
+      fields:
+        id: { pointer: /id, required: true, format: uuid }
+        groupId: { pointer: /groupId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        sourceId: { pointer: /sourceId }
+    examples:
+      - request: { documentId: d1, groupId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              groupMemberships:
+                - id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.documents.add-user
+    summary: give one user access to one Outline document, at a permission
+    access: admin
+    method: POST
+    path: /api/documents.add_user
+    catalog_id: documents.add-user
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document ID, from list_documents
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user, by its UUID
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: only items with this permission
+    body:
+      id: "{{documentId}}"
+      permission: "{{permission}}"
+      userId: "{{userId}}"
+    response:
+      items: /data/memberships
+      fields:
+        id: { pointer: /id, required: true, format: uuid }
+        userId: { pointer: /userId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        createdById: { pointer: /createdById }
+        sourceId: { pointer: /sourceId }
+        index: { pointer: /index }
+    examples:
+      - request: { documentId: d1, userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              memberships:
+                - id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.documents.archive
+    summary: archive one Outline document
+    access: admin
+    method: POST
+    path: /api/documents.archive
+    catalog_id: documents.archive
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document ID, from list_documents
+      - name: reason
+        type: Reason
+        in: body
+        required: false
+        help: why it is archived, at most 2000 characters
+    body:
+      id: "{{documentId}}"
+      reason: "{{reason}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        title: { pointer: /data/title }
+        url: { pointer: /data/url }
+        collectionId: { pointer: /data/collectionId }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.documents.delete
+    summary: move one Outline document to the trash; --permanent deletes it for good
+    access: admin
+    method: POST
+    path: /api/documents.delete
+    catalog_id: documents.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document ID, from list_documents
+      - name: permanent
+        type: Bool
+        in: body
+        required: false
+        help: true to delete the document for good, without a trash step
+      - name: reason
+        type: Reason
+        in: body
+        required: false
+        help: why it is deleted, at most 2000 characters
+    body:
+      id: "{{documentId}}"
+      permanent: "{{permanent}}"
+      reason: "{{reason}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.documents.empty-trash
+    summary: delete every document in the trash of the source for good
+    access: admin
+    method: POST
+    path: /api/documents.empty_trash
+    catalog_id: documents.empty-trash
+    headers:
+      X-API-Version: "2"
+    body: {}
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.documents.remove-group
+    summary: "remove one group's access to one Outline document"
+    access: admin
+    method: POST
+    path: /api/documents.remove_group
+    catalog_id: documents.remove-group
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document ID, from list_documents
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: the group, by its UUID
+    body:
+      groupId: "{{groupId}}"
+      id: "{{documentId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { documentId: d1, groupId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.documents.remove-user
+    summary: "remove one user's access to one Outline document"
+    access: admin
+    method: POST
+    path: /api/documents.remove_user
+    catalog_id: documents.remove-user
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: true
+        help: the document ID, from list_documents
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user, by its UUID
+    body:
+      id: "{{documentId}}"
+      userId: "{{userId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { documentId: d1, userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.collections.add-group
+    summary: give one group access to one Outline collection, at a permission
+    access: admin
+    method: POST
+    path: /api/collections.add_group
+    catalog_id: collections.add-group
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection ID, from list_collections
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: the group, by its UUID
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: only items with this permission
+    body:
+      groupId: "{{groupId}}"
+      id: "{{collectionId}}"
+      permission: "{{permission}}"
+    response:
+      items: /data/groupMemberships
+      fields:
+        id: { pointer: /id, required: true, format: uuid }
+        groupId: { pointer: /groupId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        sourceId: { pointer: /sourceId }
+    examples:
+      - request: { collectionId: c1, groupId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              groupMemberships:
+                - id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.collections.add-user
+    summary: give one user access to one Outline collection, at a permission
+    access: admin
+    method: POST
+    path: /api/collections.add_user
+    catalog_id: collections.add-user
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection ID, from list_collections
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user, by its UUID
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: only items with this permission
+    body:
+      id: "{{collectionId}}"
+      permission: "{{permission}}"
+      userId: "{{userId}}"
+    response:
+      items: /data/memberships
+      fields:
+        id: { pointer: /id, required: true, format: uuid }
+        userId: { pointer: /userId }
+        documentId: { pointer: /documentId }
+        collectionId: { pointer: /collectionId }
+        permission: { pointer: /permission }
+        createdById: { pointer: /createdById }
+        sourceId: { pointer: /sourceId }
+        index: { pointer: /index }
+    examples:
+      - request: { collectionId: c1, userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              memberships:
+                - id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.collections.archive
+    summary: archive one Outline collection
+    access: admin
+    method: POST
+    path: /api/collections.archive
+    catalog_id: collections.archive
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection ID, from list_collections
+      - name: reason
+        type: Reason
+        in: body
+        required: false
+        help: why it is archived, at most 2000 characters
+    body:
+      id: "{{collectionId}}"
+      reason: "{{reason}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: id }
+        name: { pointer: /data/name }
+    examples:
+      - request: { collectionId: c1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: d1
+        expect:
+          id: d1
+  - id: outline.collections.delete
+    summary: delete one Outline collection and its documents
+    access: admin
+    method: POST
+    path: /api/collections.delete
+    catalog_id: collections.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection ID, from list_collections
+      - name: reason
+        type: Reason
+        in: body
+        required: false
+        help: why it is deleted, at most 2000 characters
+    body:
+      id: "{{collectionId}}"
+      reason: "{{reason}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { collectionId: c1 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.collections.export-all
+    summary: start an export of every collection of the wiki, as a file operation
+    access: admin
+    method: POST
+    path: /api/collections.export_all
+    catalog_id: collections.export-all
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: format
+        type: Enum
+        in: body
+        required: false
+        values:
+          - json
+          - outline-markdown
+          - okf
+          - html
+          - textbundle
+          - pdf
+          - notion
+        help: the export format; outline-markdown when omitted
+      - name: includeAttachments
+        type: Bool
+        in: body
+        required: false
+        help: true to include the attachments; true when omitted
+      - name: includePrivate
+        type: Bool
+        in: body
+        required: false
+        help: true to include the private collections; true when omitted
+    body:
+      format: "{{format}}"
+      includeAttachments: "{{includeAttachments}}"
+      includePrivate: "{{includePrivate}}"
+    response:
+      fields:
+        id: { pointer: /data/fileOperation/id, required: true, format: uuid }
+        type: { pointer: /data/fileOperation/type }
+        format: { pointer: /data/fileOperation/format }
+        name: { pointer: /data/fileOperation/name }
+        state: { pointer: /data/fileOperation/state }
+        error: { pointer: /data/fileOperation/error }
+        size: { pointer: /data/fileOperation/size }
+        collectionId: { pointer: /data/fileOperation/collectionId }
+        documentId: { pointer: /data/fileOperation/documentId }
+        userId: { pointer: /data/fileOperation/user.id }
+        createdAt: { pointer: /data/fileOperation/createdAt }
+        updatedAt: { pointer: /data/fileOperation/updatedAt }
+    examples:
+      - request: { format: json }
+        response:
+          status: 200
+          body:
+            success: true
+            data:
+              fileOperation:
+                id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.collections.remove-group
+    summary: "remove one group's access to one Outline collection"
+    access: admin
+    method: POST
+    path: /api/collections.remove_group
+    catalog_id: collections.remove-group
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection ID, from list_collections
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: the group, by its UUID
+    body:
+      groupId: "{{groupId}}"
+      id: "{{collectionId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { collectionId: c1, groupId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.collections.remove-user
+    summary: "remove one user's access to one Outline collection"
+    access: admin
+    method: POST
+    path: /api/collections.remove_user
+    catalog_id: collections.remove-user
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: collectionId
+        type: CollectionID
+        in: body
+        required: true
+        help: the collection ID, from list_collections
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user, by its UUID
+    body:
+      id: "{{collectionId}}"
+      userId: "{{userId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { collectionId: c1, userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.users.activate
+    summary: reactivate one suspended Outline user
+    access: admin
+    method: POST
+    path: /api/users.activate
+    catalog_id: users.activate
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user ID, from list_users
+    body:
+      id: "{{userId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        role: { pointer: /data/role }
+        isSuspended: { pointer: /data/isSuspended }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        deletedAt: { pointer: /data/deletedAt }
+    examples:
+      - request: { userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.users.delete
+    summary: delete one Outline user for good
+    access: admin
+    method: POST
+    path: /api/users.delete
+    catalog_id: users.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user ID, from list_users
+    body:
+      id: "{{userId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.users.invite
+    summary: invite one person to the wiki by e-mail, with a role
+    access: admin
+    method: POST
+    path: /api/users.invite
+    catalog_id: users.invite
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: email
+        type: Email
+        in: body
+        required: true
+        help: the e-mail address of the person; it is never shown back
+      - name: name
+        type: Name
+        in: body
+        required: true
+        help: the name of the person, 1 to 255 characters
+      - name: role
+        type: Enum
+        in: body
+        required: true
+        values: [admin, member, viewer, guest]
+        help: "the role: admin, member, viewer, or guest"
+      - name: suppressEmail
+        type: Bool
+        in: body
+        required: false
+        help: true to send no invitation e-mail; false when omitted
+    body:
+      invites:
+        - email: "{{email}}"
+          name: "{{name}}"
+          role: "{{role}}"
+      suppressEmail: "{{suppressEmail}}"
+    response:
+      items: /data/users
+      fields:
+        id: { pointer: /id, required: true, format: uuid }
+        name: { pointer: /name }
+        role: { pointer: /role }
+        isSuspended: { pointer: /isSuspended }
+        lastActiveAt: { pointer: /lastActiveAt }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+        deletedAt: { pointer: /deletedAt }
+    examples:
+      - request: { email: synthetic.person@example.test, name: Synthetic, role: admin }
+        response:
+          status: 200
+          body:
+            data:
+              users:
+                - id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.users.request-delete
+    summary: request the e-mail code that deletes the user of the API key
+    access: admin
+    method: POST
+    path: /api/users.requestDelete
+    catalog_id: users.request-delete
+    headers:
+      X-API-Version: "2"
+    body: {}
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.users.resend-invite
+    summary: send the invitation e-mail to one invited user again
+    access: admin
+    method: POST
+    path: /api/users.resendInvite
+    catalog_id: users.resend-invite
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: "the invited user's ID, from list_users"
+    body:
+      id: "{{userId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.users.suspend
+    summary: suspend one Outline user, so the user cannot sign in
+    access: admin
+    method: POST
+    path: /api/users.suspend
+    catalog_id: users.suspend
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user ID, from list_users
+    body:
+      id: "{{userId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        role: { pointer: /data/role }
+        isSuspended: { pointer: /data/isSuspended }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        deletedAt: { pointer: /data/deletedAt }
+    examples:
+      - request: { userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.users.update
+    summary: change the name, language, or time zone of one Outline user
+    access: admin
+    method: POST
+    path: /api/users.update
+    catalog_id: users.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: userId
+        type: UUID
+        in: body
+        required: false
+        help: the user ID; the user of the API key when omitted
+      - name: name
+        type: Name
+        in: body
+        required: false
+        help: the new name, 1 to 255 characters
+      - name: language
+        type: Name
+        in: body
+        required: false
+        help: the locale of the user, such as en_US
+      - name: timezone
+        type: Name
+        in: body
+        required: false
+        help: an IANA time zone name, such as Asia/Jakarta
+    body:
+      id: "{{userId}}"
+      language: "{{language}}"
+      name: "{{name}}"
+      timezone: "{{timezone}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        role: { pointer: /data/role }
+        isSuspended: { pointer: /data/isSuspended }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        deletedAt: { pointer: /data/deletedAt }
+    examples:
+      - request: { userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.users.update-role
+    summary: change the role of one Outline user
+    access: admin
+    method: POST
+    path: /api/users.update_role
+    catalog_id: users.update-role
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user ID, from list_users
+      - name: role
+        type: Enum
+        in: body
+        required: true
+        values: [admin, member, viewer, guest]
+        help: "the new role: admin, member, viewer, or guest"
+    body:
+      id: "{{userId}}"
+      role: "{{role}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        role: { pointer: /data/role }
+        isSuspended: { pointer: /data/isSuspended }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        deletedAt: { pointer: /data/deletedAt }
+    examples:
+      - request: { userId: ex-0001, role: admin }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.groups.add-user
+    summary: add one user to one Outline group, as a member or an admin
+    access: admin
+    method: POST
+    path: /api/groups.add_user
+    catalog_id: groups.add-user
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: the group ID, from list_groups
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user ID, from list_users
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [member, admin]
+        help: member or admin of the group; member when omitted
+    body:
+      id: "{{groupId}}"
+      permission: "{{permission}}"
+      userId: "{{userId}}"
+    response:
+      items: /data/groupMemberships
+      fields:
+        groupId: { pointer: /groupId }
+        userId: { pointer: /userId }
+        permission: { pointer: /permission }
+        createdAt: { pointer: /createdAt }
+    examples:
+      - request: { groupId: ex-0001, userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              groupMemberships:
+                - groupId: d1
+        expect:
+          groupId: d1
+  - id: outline.groups.create
+    summary: create one Outline group
+    access: write
+    method: POST
+    path: /api/groups.create
+    catalog_id: groups.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: name
+        type: Name
+        in: body
+        required: true
+        help: the name of the group, 1 to 255 characters
+      - name: description
+        type: Text
+        in: body
+        required: false
+        help: the description of the group, in Markdown
+      - name: color
+        type: Color
+        in: body
+        required: false
+        help: the colour as a hex value, such as #3a7bd5
+      - name: icon
+        type: Icon
+        in: body
+        required: false
+        help: an emoji, a named icon, or an icon attachment
+      - name: disableMentions
+        type: Bool
+        in: body
+        required: false
+        help: true to stop the members being mentioned
+    body:
+      color: "{{color}}"
+      description: "{{description}}"
+      disableMentions: "{{disableMentions}}"
+      icon: "{{icon}}"
+      name: "{{name}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        description: { pointer: /data/description }
+        color: { pointer: /data/color }
+        icon: { pointer: /data/icon }
+        memberCount: { pointer: /data/memberCount }
+        disableMentions: { pointer: /data/disableMentions }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { name: Editors }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: Editors
+              memberCount: 0
+        expect:
+          id: ex-0001
+          name: Editors
+  - id: outline.groups.update
+    summary: change the name, description, colour, icon, or mention setting of one Outline group
+    access: write
+    method: POST
+    path: /api/groups.update
+    catalog_id: groups.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: the group ID, from list_groups
+      - name: name
+        type: Name
+        in: body
+        required: false
+        help: the new name, 1 to 255 characters
+      - name: description
+        type: Text
+        in: body
+        required: false
+        help: the new description, in Markdown
+      - name: color
+        type: Color
+        in: body
+        required: false
+        help: the colour as a hex value, such as #3a7bd5
+      - name: icon
+        type: Icon
+        in: body
+        required: false
+        help: an emoji, a named icon, or an icon attachment
+      - name: disableMentions
+        type: Bool
+        in: body
+        required: false
+        help: true to stop the members being mentioned
+    body:
+      color: "{{color}}"
+      description: "{{description}}"
+      disableMentions: "{{disableMentions}}"
+      icon: "{{icon}}"
+      id: "{{groupId}}"
+      name: "{{name}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        description: { pointer: /data/description }
+        color: { pointer: /data/color }
+        icon: { pointer: /data/icon }
+        memberCount: { pointer: /data/memberCount }
+        disableMentions: { pointer: /data/disableMentions }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { groupId: ex-0001, name: Editors }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: Editors
+              memberCount: 2
+        expect:
+          id: ex-0001
+          name: Editors
+  - id: outline.groups.delete
+    summary: delete one Outline group
+    access: admin
+    method: POST
+    path: /api/groups.delete
+    catalog_id: groups.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: the group ID, from list_groups
+    body:
+      id: "{{groupId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { groupId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.groups.delete-all
+    summary: delete every group synced from one sign-in provider
+    access: admin
+    method: POST
+    path: /api/groups.deleteAll
+    catalog_id: groups.delete-all
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: authenticationProviderId
+        type: UUID
+        in: body
+        required: true
+        help: the sign-in provider UUID, from list_authentication_providers
+    body:
+      authenticationProviderId: "{{authenticationProviderId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { authenticationProviderId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.groups.remove-user
+    summary: remove one user from one Outline group
+    access: admin
+    method: POST
+    path: /api/groups.remove_user
+    catalog_id: groups.remove-user
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: the group ID, from list_groups
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user ID, from list_users
+    body:
+      id: "{{groupId}}"
+      userId: "{{userId}}"
+    response:
+      items: /data/groups
+      fields:
+        id: { pointer: /id, required: true, format: uuid }
+        name: { pointer: /name }
+        description: { pointer: /description }
+        color: { pointer: /color }
+        icon: { pointer: /icon }
+        memberCount: { pointer: /memberCount }
+        disableMentions: { pointer: /disableMentions }
+        createdAt: { pointer: /createdAt }
+        updatedAt: { pointer: /updatedAt }
+    examples:
+      - request: { groupId: ex-0001, userId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              groups:
+                - id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.groups.update-user
+    summary: change the permission of one user in one Outline group
+    access: admin
+    method: POST
+    path: /api/groups.update_user
+    catalog_id: groups.update-user
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: groupId
+        type: UUID
+        in: body
+        required: true
+        help: the group ID, from list_groups
+      - name: userId
+        type: UUID
+        in: body
+        required: true
+        help: the user ID, from list_users
+      - name: permission
+        type: Enum
+        in: body
+        required: true
+        values: [member, admin]
+        help: member or admin of the group
+    body:
+      id: "{{groupId}}"
+      permission: "{{permission}}"
+      userId: "{{userId}}"
+    response:
+      items: /data/groupMemberships
+      fields:
+        groupId: { pointer: /groupId }
+        userId: { pointer: /userId }
+        permission: { pointer: /permission }
+        createdAt: { pointer: /createdAt }
+    examples:
+      - request: { groupId: ex-0001, userId: ex-0001, permission: member }
+        response:
+          status: 200
+          body:
+            data:
+              groupMemberships:
+                - groupId: d1
+        expect:
+          groupId: d1
+  - id: outline.teams.delete
+    summary: delete the whole Outline team of the API key
+    access: admin
+    method: POST
+    path: /api/teams.delete
+    catalog_id: teams.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: code
+        type: Text
+        in: body
+        required: true
+        help: the delete code of teams request-delete; never shown
+    body:
+      code: "{{code}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { code: Synthetic body }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.teams.request-delete
+    summary: request the e-mail code that deletes the team of the API key
+    access: admin
+    method: POST
+    path: /api/teams.requestDelete
+    catalog_id: teams.request-delete
+    headers:
+      X-API-Version: "2"
+    body: {}
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: {}
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.teams.update
+    summary: change the settings of the Outline team of the API key
+    access: admin
+    method: POST
+    path: /api/teams.update
+    catalog_id: teams.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: name
+        type: Name
+        in: body
+        required: false
+        help: the new name of the team, 1 to 255 characters
+      - name: description
+        type: Text
+        in: body
+        required: false
+        help: the new description of the team, in Markdown
+      - name: sharing
+        type: Bool
+        in: body
+        required: false
+        help: true to allow public sharing
+      - name: documentEmbeds
+        type: Bool
+        in: body
+        required: false
+        help: true to allow embeds in documents
+      - name: memberCollectionCreate
+        type: Bool
+        in: body
+        required: false
+        help: true to let members create collections
+      - name: defaultUserRole
+        type: Enum
+        in: body
+        required: false
+        values: [admin, member, viewer, guest]
+        help: "the role of a new user: admin, member, viewer, or guest"
+    body:
+      defaultUserRole: "{{defaultUserRole}}"
+      description: "{{description}}"
+      documentEmbeds: "{{documentEmbeds}}"
+      memberCollectionCreate: "{{memberCollectionCreate}}"
+      name: "{{name}}"
+      sharing: "{{sharing}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        description: { pointer: /data/description }
+        sharing: { pointer: /data/sharing }
+        documentEmbeds: { pointer: /data/documentEmbeds }
+        memberCollectionCreate: { pointer: /data/memberCollectionCreate }
+        memberTeamCreate: { pointer: /data/memberTeamCreate }
+        defaultUserRole: { pointer: /data/defaultUserRole }
+        inviteRequired: { pointer: /data/inviteRequired }
+        guestSignin: { pointer: /data/guestSignin }
+        passkeysEnabled: { pointer: /data/passkeysEnabled }
+        subdomain: { pointer: /data/subdomain }
+        domain: { pointer: /data/domain }
+        url: { pointer: /data/url }
+    examples:
+      - request: { name: Synthetic }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.access-requests.approve
+    summary: approve one access request to an Outline document
+    access: admin
+    method: POST
+    path: /api/accessRequests.approve
+    catalog_id: access-requests.approve
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: accessRequestId
+        type: UUID
+        in: body
+        required: true
+        help: the access request UUID, from get_access_request
+      - name: permission
+        type: Enum
+        in: body
+        required: false
+        values: [read, read_write, admin]
+        help: read, read_write, or admin; read when omitted
+    body:
+      id: "{{accessRequestId}}"
+      permission: "{{permission}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        userId: { pointer: /data/userId }
+        status: { pointer: /data/status }
+        responderId: { pointer: /data/responderId }
+        respondedAt: { pointer: /data/respondedAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { accessRequestId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.access-requests.dismiss
+    summary: dismiss one access request to an Outline document
+    access: admin
+    method: POST
+    path: /api/accessRequests.dismiss
+    catalog_id: access-requests.dismiss
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: accessRequestId
+        type: UUID
+        in: body
+        required: true
+        help: the access request UUID, from get_access_request
+    body:
+      id: "{{accessRequestId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        userId: { pointer: /data/userId }
+        status: { pointer: /data/status }
+        responderId: { pointer: /data/responderId }
+        respondedAt: { pointer: /data/respondedAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { accessRequestId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.attachments.delete
+    summary: delete one attachment of the Outline wiki
+    access: admin
+    method: POST
+    path: /api/attachments.delete
+    catalog_id: attachments.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: attachmentId
+        type: UUID
+        in: body
+        required: true
+        help: the attachment UUID, from list_attachments
+    body:
+      id: "{{attachmentId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { attachmentId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.authentication-providers.delete
+    summary: delete one sign-in provider of the Outline wiki
+    access: admin
+    method: POST
+    path: /api/authenticationProviders.delete
+    catalog_id: authentication-providers.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: authenticationProviderId
+        type: UUID
+        in: body
+        required: true
+        help: the sign-in provider UUID, from list_authentication_providers
+    body:
+      id: "{{authenticationProviderId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { authenticationProviderId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.authentication-providers.start-group-sync
+    summary: start a group sync with one sign-in provider of the Outline wiki
+    access: admin
+    method: POST
+    path: /api/authenticationProviders.startGroupSync
+    catalog_id: authentication-providers.start-group-sync
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: authenticationProviderId
+        type: UUID
+        in: body
+        required: true
+        help: the sign-in provider UUID, from list_authentication_providers
+    body:
+      id: "{{authenticationProviderId}}"
+    response:
+      fields:
+        started: { pointer: /data/url, required: true }
+    examples:
+      - request: { authenticationProviderId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              url: "https://hooks.example.test/synthetic"
+        expect:
+          started: "https://hooks.example.test/synthetic"
+  - id: outline.authentication-providers.update
+    summary: enable or disable one sign-in provider, or change its group sync settings
+    access: admin
+    method: POST
+    path: /api/authenticationProviders.update
+    catalog_id: authentication-providers.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: authenticationProviderId
+        type: UUID
+        in: body
+        required: true
+        help: the sign-in provider UUID, from list_authentication_providers
+      - name: isEnabled
+        type: Bool
+        in: body
+        required: false
+        help: true to enable the provider, false to disable it
+      - name: groupSyncEnabled
+        type: Bool
+        in: body
+        required: false
+        help: true to sync the groups of the identity provider
+      - name: groupClaim
+        type: Name
+        in: body
+        required: false
+        help: the claim of the identity provider that names the groups
+    body:
+      id: "{{authenticationProviderId}}"
+      isEnabled: "{{isEnabled}}"
+      settings:
+        groupSyncEnabled: "{{groupSyncEnabled}}"
+        groupClaim: "{{groupClaim}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        providerId: { pointer: /data/providerId }
+        isEnabled: { pointer: /data/isEnabled }
+        isConnected: { pointer: /data/isConnected }
+        createdAt: { pointer: /data/createdAt }
+        settings:
+          object:
+            groupSyncEnabled: { pointer: /data/settings/groupSyncEnabled }
+            groupClaim: { pointer: /data/settings/groupClaim }
+            groupSyncScopes: { pointer: /data/settings/groupSyncScopes, format: strings }
+    examples:
+      - request: { authenticationProviderId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.comments.delete
+    summary: delete one comment on an Outline document
+    access: admin
+    method: POST
+    path: /api/comments.delete
+    catalog_id: comments.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: commentId
+        type: UUID
+        in: body
+        required: true
+        help: the comment UUID, from list_comments
+    body:
+      id: "{{commentId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { commentId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.emojis.delete
+    summary: delete one custom emoji of the Outline wiki
+    access: admin
+    method: POST
+    path: /api/emojis.delete
+    catalog_id: emojis.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: emojiId
+        type: UUID
+        in: body
+        required: true
+        help: the emoji UUID, from list_emojis
+    body:
+      id: "{{emojiId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { emojiId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.file-operations.delete
+    summary: delete one import or export file operation of the Outline wiki
+    access: admin
+    method: POST
+    path: /api/fileOperations.delete
+    catalog_id: file-operations.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: fileOperationId
+        type: UUID
+        in: body
+        required: true
+        help: the file operation UUID, from list_file_operations
+    body:
+      id: "{{fileOperationId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { fileOperationId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.imports.cancel
+    summary: cancel one Outline import that has not finished
+    access: admin
+    method: POST
+    path: /api/imports.cancel
+    catalog_id: imports.cancel
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: importId
+        type: UUID
+        in: body
+        required: true
+        help: the import UUID, from list_imports
+    body:
+      id: "{{importId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        service: { pointer: /data/service }
+        state: { pointer: /data/state }
+        documentCount: { pointer: /data/documentCount }
+        error: { pointer: /data/error }
+        createdById: { pointer: /data/createdById }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { importId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.imports.delete
+    summary: delete one Outline import record
+    access: admin
+    method: POST
+    path: /api/imports.delete
+    catalog_id: imports.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: importId
+        type: UUID
+        in: body
+        required: true
+        help: the import UUID, from list_imports
+    body:
+      id: "{{importId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { importId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.integrations.create
+    summary: create one Outline integration that sends data to an address
+    access: admin
+    method: POST
+    path: /api/integrations.create
+    catalog_id: integrations.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: url
+        type: URL
+        in: body
+        required: true
+        help: the HTTPS address the integration sends to; only its host is shown
+      - name: type
+        type: Enum
+        in: body
+        required: true
+        values:
+          - post
+          - command
+          - embed
+          - analytics
+          - linkedAccount
+          - import
+        help: "the type: post, command, embed, analytics, linkedAccount, or import"
+      - name: service
+        type: Enum
+        in: body
+        required: true
+        values: [matomo, umami]
+        help: "the service: matomo or umami"
+      - name: channel
+        type: Name
+        in: body
+        required: false
+        help: the channel the integration posts to, when the service takes one
+      - name: channelId
+        type: Name
+        in: body
+        required: false
+        help: the ID of the channel, when the service takes one
+    body:
+      type: "{{type}}"
+      service: "{{service}}"
+      settings:
+        url: "{{url}}"
+        channel: "{{channel}}"
+        channelId: "{{channelId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        type: { pointer: /data/type }
+        service: { pointer: /data/service }
+        events: { pointer: /data/events, format: strings }
+        collectionId: { pointer: /data/collectionId }
+        userId: { pointer: /data/userId }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        settings:
+          object:
+            urlHost: { pointer: /data/settings/url, convert: hostname }
+            channel: { pointer: /data/settings/channel }
+            measurementId: { pointer: /data/settings/measurementId }
+            instanceUrl: { pointer: /data/settings/instanceUrl, convert: hostname }
+            scriptName: { pointer: /data/settings/scriptName }
+    examples:
+      - request: { url: "https://hooks.example.test/synthetic", type: post, service: matomo }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.integrations.delete
+    summary: delete one Outline integration
+    access: admin
+    method: POST
+    path: /api/integrations.delete
+    catalog_id: integrations.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: integrationId
+        type: UUID
+        in: body
+        required: true
+        help: the integration UUID, from list_integrations
+    body:
+      id: "{{integrationId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { integrationId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.integrations.update
+    summary: change the address or the channel of one Outline integration
+    access: admin
+    method: POST
+    path: /api/integrations.update
+    catalog_id: integrations.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: integrationId
+        type: UUID
+        in: body
+        required: true
+        help: the integration UUID, from list_integrations
+      - name: url
+        type: URL
+        in: body
+        required: true
+        help: the new HTTPS address; only its host is shown
+      - name: channel
+        type: Name
+        in: body
+        required: false
+        help: the channel the integration posts to, when the service takes one
+      - name: channelId
+        type: Name
+        in: body
+        required: false
+        help: the ID of the channel, when the service takes one
+    body:
+      id: "{{integrationId}}"
+      settings:
+        url: "{{url}}"
+        channel: "{{channel}}"
+        channelId: "{{channelId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        type: { pointer: /data/type }
+        service: { pointer: /data/service }
+        events: { pointer: /data/events, format: strings }
+        collectionId: { pointer: /data/collectionId }
+        userId: { pointer: /data/userId }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        settings:
+          object:
+            urlHost: { pointer: /data/settings/url, convert: hostname }
+            channel: { pointer: /data/settings/channel }
+            measurementId: { pointer: /data/settings/measurementId }
+            instanceUrl: { pointer: /data/settings/instanceUrl, convert: hostname }
+            scriptName: { pointer: /data/settings/scriptName }
+    examples:
+      - request: { integrationId: ex-0001, url: "https://hooks.example.test/synthetic" }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.oauth-authentications.delete
+    summary: revoke the authorization of one OAuth client for the Outline user of the key
+    access: admin
+    method: POST
+    path: /api/oauthAuthentications.delete
+    catalog_id: oauth-authentications.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: oauthClientId
+        type: UUID
+        in: body
+        required: true
+        help: the OAuth client UUID, from list_oauth_clients
+    body:
+      oauthClientId: "{{oauthClientId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { oauthClientId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.oauth-clients.create
+    summary: create one OAuth client of the Outline wiki
+    access: write
+    method: POST
+    path: /api/oauthClients.create
+    catalog_id: oauth-clients.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: name
+        type: Name
+        in: body
+        required: true
+        help: the name of the new client
+      - name: redirectUris
+        type: URLList
+        in: body
+        required: true
+        help: 1 to 10 HTTPS redirect addresses, separated by commas
+      - name: clientType
+        type: Enum
+        in: body
+        required: false
+        values: [confidential, public]
+        help: confidential or public; the wiki's default is confidential
+      - name: description
+        type: Text
+        in: body
+        required: false
+        help: what the client is for
+      - name: published
+        type: Bool
+        in: body
+        required: false
+        help: true to list the client to other users; the wiki's default is false
+    body:
+      clientType: "{{clientType}}"
+      description: "{{description}}"
+      name: "{{name}}"
+      published: "{{published}}"
+      redirectUris: "{{redirectUris}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        description: { pointer: /data/description }
+        developerName: { pointer: /data/developerName }
+        developerUrl: { pointer: /data/developerUrl }
+        clientId: { pointer: /data/clientId }
+        clientType: { pointer: /data/clientType }
+        redirectUris: { pointer: /data/redirectUris, format: strings }
+        published: { pointer: /data/published }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request:
+          name: App
+          redirectUris: [https://app.example.test/callback]
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: App
+              clientType: confidential
+              published: false
+              redirectUris:
+                - https://app.example.test/callback
+        expect:
+          id: ex-0001
+          name: App
+  - id: outline.oauth-clients.delete
+    summary: delete one OAuth client of the Outline wiki
+    access: admin
+    method: POST
+    path: /api/oauthClients.delete
+    catalog_id: oauth-clients.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: oauthClientId
+        type: UUID
+        in: body
+        required: true
+        help: the OAuth client UUID, from list_oauth_clients
+    body:
+      id: "{{oauthClientId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { oauthClientId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.oauth-clients.rotate-secret
+    summary: replace the client secret of one OAuth client of the Outline wiki
+    access: admin
+    method: POST
+    path: /api/oauthClients.rotate_secret
+    catalog_id: oauth-clients.rotate-secret
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: oauthClientId
+        type: UUID
+        in: body
+        required: true
+        help: the OAuth client UUID, from list_oauth_clients
+    body:
+      id: "{{oauthClientId}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        description: { pointer: /data/description }
+        developerName: { pointer: /data/developerName }
+        developerUrl: { pointer: /data/developerUrl }
+        clientId: { pointer: /data/clientId }
+        clientType: { pointer: /data/clientType }
+        redirectUris: { pointer: /data/redirectUris, format: strings }
+        published: { pointer: /data/published }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { oauthClientId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.oauth-clients.update
+    summary: change the name, the description, the listing, or the client type of one OAuth client
+    access: admin
+    method: POST
+    path: /api/oauthClients.update
+    catalog_id: oauth-clients.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: oauthClientId
+        type: UUID
+        in: body
+        required: true
+        help: the OAuth client UUID, from list_oauth_clients
+      - name: name
+        type: Name
+        in: body
+        required: false
+        help: the new name of the client
+      - name: description
+        type: Text
+        in: body
+        required: false
+        help: the new description of the client
+      - name: published
+        type: Bool
+        in: body
+        required: false
+        help: true to list the client to other users, false to unlist it
+      - name: clientType
+        type: Enum
+        in: body
+        required: false
+        values: [confidential, public]
+        help: confidential or public
+    body:
+      clientType: "{{clientType}}"
+      description: "{{description}}"
+      id: "{{oauthClientId}}"
+      name: "{{name}}"
+      published: "{{published}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        name: { pointer: /data/name }
+        description: { pointer: /data/description }
+        developerName: { pointer: /data/developerName }
+        developerUrl: { pointer: /data/developerUrl }
+        clientId: { pointer: /data/clientId }
+        clientType: { pointer: /data/clientType }
+        redirectUris: { pointer: /data/redirectUris, format: strings }
+        published: { pointer: /data/published }
+        lastActiveAt: { pointer: /data/lastActiveAt }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { oauthClientId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.revisions.delete
+    summary: delete one revision of an Outline document
+    access: admin
+    method: POST
+    path: /api/revisions.delete
+    catalog_id: revisions.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: revisionId
+        type: UUID
+        in: body
+        required: true
+        help: the revision UUID, from list_revisions
+    body:
+      id: "{{revisionId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { revisionId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.shares.create
+    summary: share one Outline document or collection, by a public link
+    access: admin
+    method: POST
+    path: /api/shares.create
+    catalog_id: shares.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: documentId
+        type: DocumentID
+        in: body
+        required: false
+        help: the document to share, by its ID; give it or --collection-id, not both
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection to share, by its UUID; give it or --document-id, not both
+      - name: published
+        type: Bool
+        in: body
+        required: false
+        help: "true to publish the share; the wiki's default is false"
+      - name: includeChildDocuments
+        type: Bool
+        in: body
+        required: false
+        help: true to share the documents below the document or collection
+      - name: allowIndexing
+        type: Bool
+        in: body
+        required: false
+        help: true to let search engines index the share
+      - name: allowSubscriptions
+        type: Bool
+        in: body
+        required: false
+        help: true to let readers subscribe to the share
+      - name: showLastUpdated
+        type: Bool
+        in: body
+        required: false
+        help: true to show when the share was last updated
+      - name: showTOC
+        type: Bool
+        in: body
+        required: false
+        help: true to show the table of contents
+    body:
+      allowIndexing: "{{allowIndexing}}"
+      allowSubscriptions: "{{allowSubscriptions}}"
+      collectionId: "{{collectionId}}"
+      documentId: "{{documentId}}"
+      includeChildDocuments: "{{includeChildDocuments}}"
+      published: "{{published}}"
+      showLastUpdated: "{{showLastUpdated}}"
+      showTOC: "{{showTOC}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        documentTitle: { pointer: /data/documentTitle }
+        sourceTitle: { pointer: /data/sourceTitle }
+        published: { pointer: /data/published }
+        includeChildDocuments: { pointer: /data/includeChildDocuments }
+        allowIndexing: { pointer: /data/allowIndexing }
+        allowSubscriptions: { pointer: /data/allowSubscriptions }
+        showLastUpdated: { pointer: /data/showLastUpdated }
+        showTOC: { pointer: /data/showTOC }
+        title: { pointer: /data/title }
+        domain: { pointer: /data/domain }
+        views: { pointer: /data/views }
+        lastAccessedAt: { pointer: /data/lastAccessedAt }
+        createdById: { pointer: /data/createdBy.id }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { documentId: d1 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.shares.revoke
+    summary: revoke one Outline share, so its public link stops working
+    access: admin
+    method: POST
+    path: /api/shares.revoke
+    catalog_id: shares.revoke
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: shareId
+        type: UUID
+        in: body
+        required: true
+        help: the share UUID, from list_shares
+    body:
+      id: "{{shareId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { shareId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.shares.update
+    summary: change the settings of one Outline share, without its link
+    access: admin
+    method: POST
+    path: /api/shares.update
+    catalog_id: shares.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: shareId
+        type: UUID
+        in: body
+        required: true
+        help: the share UUID, from list_shares
+      - name: published
+        type: Bool
+        in: body
+        required: false
+        help: true to publish the share, false to unpublish it
+      - name: includeChildDocuments
+        type: Bool
+        in: body
+        required: false
+        help: true to share the documents below the document or collection
+      - name: allowIndexing
+        type: Bool
+        in: body
+        required: false
+        help: true to let search engines index the share
+      - name: allowSubscriptions
+        type: Bool
+        in: body
+        required: false
+        help: true to let readers subscribe to the share
+      - name: showLastUpdated
+        type: Bool
+        in: body
+        required: false
+        help: true to show when the share was last updated
+      - name: showTOC
+        type: Bool
+        in: body
+        required: false
+        help: true to show the table of contents
+      - name: title
+        type: Name
+        in: body
+        required: false
+        help: the title shown for the share
+    body:
+      allowIndexing: "{{allowIndexing}}"
+      allowSubscriptions: "{{allowSubscriptions}}"
+      id: "{{shareId}}"
+      includeChildDocuments: "{{includeChildDocuments}}"
+      published: "{{published}}"
+      showLastUpdated: "{{showLastUpdated}}"
+      showTOC: "{{showTOC}}"
+      title: "{{title}}"
+    response:
+      fields:
+        id: { pointer: /data/id, required: true, format: uuid }
+        documentId: { pointer: /data/documentId }
+        collectionId: { pointer: /data/collectionId }
+        documentTitle: { pointer: /data/documentTitle }
+        sourceTitle: { pointer: /data/sourceTitle }
+        published: { pointer: /data/published }
+        includeChildDocuments: { pointer: /data/includeChildDocuments }
+        allowIndexing: { pointer: /data/allowIndexing }
+        allowSubscriptions: { pointer: /data/allowSubscriptions }
+        showLastUpdated: { pointer: /data/showLastUpdated }
+        showTOC: { pointer: /data/showTOC }
+        title: { pointer: /data/title }
+        domain: { pointer: /data/domain }
+        views: { pointer: /data/views }
+        lastAccessedAt: { pointer: /data/lastAccessedAt }
+        createdById: { pointer: /data/createdBy.id }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request: { shareId: ex-0001 }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+        expect:
+          id: ex-0001
+  - id: outline.templates.create
+    summary: create one Outline template with a title, an icon, and a colour
+    access: write
+    method: POST
+    path: /api/templates.create
+    catalog_id: templates.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: title
+        type: Name
+        in: body
+        required: false
+        help: the title of the template, 1 to 255 characters
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection of the template, by its UUID
+      - name: icon
+        type: Icon
+        in: body
+        required: false
+        help: "the icon: one emoji, a named icon, or the UUID of an attachment"
+      - name: color
+        type: Color
+        in: body
+        required: false
+        help: the colour as hex, such as #3a7bd5 or #3ad
+      - name: publish
+        type: Bool
+        in: body
+        required: false
+        help: true to publish the template at once
+    body:
+      collectionId: "{{collectionId}}"
+      color: "{{color}}"
+      icon: "{{icon}}"
+      publish: "{{publish}}"
+      title: "{{title}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+        urlId: { pointer: /data/urlId }
+        url: { pointer: /data/url }
+        title: { pointer: /data/title }
+        icon: { pointer: /data/icon }
+        color: { pointer: /data/color }
+        fullWidth: { pointer: /data/fullWidth }
+        collectionId: { pointer: /data/collectionId }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        publishedAt: { pointer: /data/publishedAt }
+        deletedAt: { pointer: /data/deletedAt }
+        createdById: { pointer: /data/createdBy/id }
+        updatedById: { pointer: /data/updatedBy/id }
+    examples:
+      - request: { title: Weekly, icon: star }
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              title: Weekly
+        expect:
+          id: ex-0001
+          title: Weekly
+  - id: outline.templates.update
+    summary: change the title, the icon, the colour, or the collection of one Outline template
+    access: write
+    method: POST
+    path: /api/templates.update
+    catalog_id: templates.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: templateId
+        type: ID
+        in: body
+        required: true
+        help: the template to change, from list_templates
+      - name: title
+        type: Name
+        in: body
+        required: false
+        help: the new title, 1 to 255 characters
+      - name: icon
+        type: Icon
+        in: body
+        required: false
+        help: "the new icon: one emoji, a named icon, or the UUID of an attachment"
+      - name: color
+        type: Color
+        in: body
+        required: false
+        help: the new colour as hex, such as #3a7bd5 or #3ad
+      - name: fullWidth
+        type: Bool
+        in: body
+        required: false
+        help: true to show the template at full width
+      - name: collectionId
+        type: CollectionUUID
+        in: body
+        required: false
+        help: the collection to move the template into, by its UUID
+      - name: publish
+        type: Bool
+        in: body
+        required: false
+        help: true to publish the template
+    body:
+      collectionId: "{{collectionId}}"
+      color: "{{color}}"
+      fullWidth: "{{fullWidth}}"
+      icon: "{{icon}}"
+      id: "{{templateId}}"
+      publish: "{{publish}}"
+      title: "{{title}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+        urlId: { pointer: /data/urlId }
+        url: { pointer: /data/url }
+        title: { pointer: /data/title }
+        icon: { pointer: /data/icon }
+        color: { pointer: /data/color }
+        fullWidth: { pointer: /data/fullWidth }
+        collectionId: { pointer: /data/collectionId }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+        publishedAt: { pointer: /data/publishedAt }
+        deletedAt: { pointer: /data/deletedAt }
+        createdById: { pointer: /data/createdBy/id }
+        updatedById: { pointer: /data/updatedBy/id }
+    examples:
+      - request: { templateId: t1, title: Weekly }
+        response:
+          status: 200
+          body:
+            data:
+              id: t1
+              title: Weekly
+        expect:
+          id: t1
+          title: Weekly
+  - id: outline.templates.delete
+    summary: delete one Outline template
+    access: admin
+    method: POST
+    path: /api/templates.delete
+    catalog_id: templates.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: templateId
+        type: ID
+        in: body
+        required: true
+        help: the template ID, from list_templates
+    body:
+      id: "{{templateId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { templateId: t1 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
+  - id: outline.webhook-subscriptions.create
+    summary: create one Outline webhook subscription that sends events to an address
+    access: write
+    method: POST
+    path: /api/webhookSubscriptions.create
+    catalog_id: webhook-subscriptions.create
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: url
+        type: URL
+        in: body
+        required: true
+        help: the HTTPS address the events are sent to; only its host is shown
+      - name: name
+        type: Name
+        in: body
+        required: true
+        help: the name of the subscription
+      - name: events
+        type: EventList
+        in: body
+        required: true
+        help: the event names to send, such as documents.create, or * for every event; separated by commas
+    body:
+      events: "{{events}}"
+      name: "{{name}}"
+      url: "{{url}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        urlHost:
+          pointer: /data/url
+          convert: hostname
+        events:
+          pointer: /data/events
+          format: strings
+        enabled: { pointer: /data/enabled }
+        createdById: { pointer: /data/createdById }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request:
+          name: Hook
+          url: https://hooks.example.test/synthetic/path
+          events: [documents.create]
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: Hook
+              url: https://hooks.example.test/synthetic/path
+              events:
+                - documents.create
+              enabled: true
+        expect:
+          id: ex-0001
+          name: Hook
+          urlHost: hooks.example.test
+  - id: outline.webhook-subscriptions.update
+    summary: change the address, the name, or the events of one Outline webhook subscription
+    access: write
+    method: POST
+    path: /api/webhookSubscriptions.update
+    catalog_id: webhook-subscriptions.update
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: webhookSubscriptionId
+        type: UUID
+        in: body
+        required: true
+        help: the webhook subscription UUID, from list_webhook_subscriptions
+      - name: url
+        type: URL
+        in: body
+        required: true
+        help: the new HTTPS address; only its host is shown
+      - name: name
+        type: Name
+        in: body
+        required: true
+        help: the new name of the subscription
+      - name: events
+        type: EventList
+        in: body
+        required: true
+        help: the event names to send, or * for every event; separated by commas
+    body:
+      events: "{{events}}"
+      id: "{{webhookSubscriptionId}}"
+      name: "{{name}}"
+      url: "{{url}}"
+    response:
+      fields:
+        id:
+          pointer: /data/id
+          required: true
+          format: uuid
+        name: { pointer: /data/name }
+        urlHost:
+          pointer: /data/url
+          convert: hostname
+        events:
+          pointer: /data/events
+          format: strings
+        enabled: { pointer: /data/enabled }
+        createdById: { pointer: /data/createdById }
+        createdAt: { pointer: /data/createdAt }
+        updatedAt: { pointer: /data/updatedAt }
+    examples:
+      - request:
+          webhookSubscriptionId: ex-0001
+          name: Hook
+          url: https://hooks.example.test/synthetic/path
+          events: [documents.create]
+        response:
+          status: 200
+          body:
+            data:
+              id: ex-0001
+              name: Hook
+              url: https://hooks.example.test/synthetic/path
+              events:
+                - documents.create
+              enabled: true
+        expect:
+          id: ex-0001
+          name: Hook
+          urlHost: hooks.example.test
+  - id: outline.webhook-subscriptions.delete
+    summary: delete one Outline webhook subscription
+    access: admin
+    method: POST
+    path: /api/webhookSubscriptions.delete
+    catalog_id: webhook-subscriptions.delete
+    headers:
+      X-API-Version: "2"
+    params:
+      - name: webhookSubscriptionId
+        type: UUID
+        in: body
+        required: true
+        help: the webhook subscription UUID, from list_webhook_subscriptions
+    body:
+      id: "{{webhookSubscriptionId}}"
+    response:
+      fields:
+        ok: { pointer: /success, required: true }
+    examples:
+      - request: { webhookSubscriptionId: ex-0001 }
+        response:
+          status: 200
+          body:
+            success: true
+        expect:
+          ok: true
