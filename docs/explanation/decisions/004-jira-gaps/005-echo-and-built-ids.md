@@ -11,9 +11,11 @@ tags:
 
 # E23 and E24: the key echo and the built IDs
 
-This page belongs to [ADR 004](../004-jira-gaps.md). E23 and E24 are built by pull request 35. They cover J7,
-the reply key that must equal the request key in `issues.get`; J3, the `projectKey` taken from the issue key;
-and J8, the document ID, the collection ID, and the `/browse/<key>` URL built from the key.
+This page belongs to [ADR 004](../004-jira-gaps.md). Pull request 35 built E23 and E24 as described here: the
+key echo with its exact-equality check, and the built IDs with their shared issue-key check. E22 stays planned on
+its own page. E23 and E24 cover J7, the reply key that must equal the request key in `issues.get`; J3, the
+`projectKey` taken from the issue key; and J8, the document ID, the collection ID, and the `/browse/<key>` URL
+built from the key.
 
 ## E23: the key echo
 

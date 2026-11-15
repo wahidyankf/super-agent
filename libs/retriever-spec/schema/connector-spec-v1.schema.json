@@ -299,9 +299,12 @@
     "scalar_field": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["pointer"],
       "properties": {
         "pointer": { "$ref": "#/$defs/pointer" },
+        "project_key": { "$ref": "#/$defs/pointer" },
+        "issue_id": { "$ref": "#/$defs/pointer" },
+        "collection_id": { "$ref": "#/$defs/pointer" },
+        "browse_url": { "$ref": "#/$defs/pointer" },
         "fallback_pointer": { "$ref": "#/$defs/pointer" },
         "required": { "type": "boolean" },
         "format": { "$ref": "#/$defs/field_format" },
@@ -317,7 +320,14 @@
             "jira-title"
           ]
         }
-      }
+      },
+      "oneOf": [
+        { "required": ["pointer"] },
+        { "required": ["project_key"] },
+        { "required": ["issue_id"] },
+        { "required": ["collection_id"] },
+        { "required": ["browse_url"] }
+      ]
     },
     "object_field": {
       "type": "object",
@@ -408,6 +418,15 @@
         "last": { "$ref": "#/$defs/pointer" }
       }
     },
+    "echo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["param", "pointer"],
+      "properties": {
+        "param": { "$ref": "#/$defs/param_name" },
+        "pointer": { "$ref": "#/$defs/pointer" }
+      }
+    },
     "fallback_when": {
       "type": "object",
       "additionalProperties": false,
@@ -458,6 +477,7 @@
         "merge": { "$ref": "#/$defs/merge" },
         "tree": { "$ref": "#/$defs/tree" },
         "truncated": { "$ref": "#/$defs/truncated" },
+        "echo": { "$ref": "#/$defs/echo" },
         "fields": {
           "type": "object",
           "maxProperties": 100,

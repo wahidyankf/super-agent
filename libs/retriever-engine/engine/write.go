@@ -47,7 +47,7 @@ func (e *Engine) Write(ctx context.Context, op domain.OperationID, args domain.A
 		return domain.Record{}, err
 	}
 	budget := e.maxReply
-	rec, err := mapReply(o, domain.NewArgs(vals), root, &budget)
+	rec, err := mapReply(o, domain.NewArgs(vals), root, &budget, e.base)
 	if err != nil {
 		return domain.Record{}, domain.ErrWriteOutcomeUnknown
 	}

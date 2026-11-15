@@ -180,17 +180,27 @@ func derefPointers(obj map[string]any, f spec.Field) (any, bool) {
 	return nil, false
 }
 
-// mapRecord maps one JSON object to a record, with one field for each declared field, in name order. A required field
+// mapRecord maps one JSON object to a record, with one field for each declared field, in name order. A built ID
+// field builds its value from the issue key at its pointer instead, sharing one closed check, and the browse URL
+// joins the endpoint origin, never a URL the reply carries. A required field
 // with a missing, null, or empty value fails the read, and a format-checked field whose value is not of the named
 // shape fails it too. Either failure names the field and never the value, and no partial record is returned. A field
 // that holds an object maps one nested record instead, with the same rules for each declared sub-field; a pointer that
 // reaches an object or a list is refused, so a whole object is never copied. The reply tree is dropped after mapping:
 // no value of a record aliases it.
-func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (domain.Record, error) {
+func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int, base string) (domain.Record, error) {
 	names := sortedKeys(fields)
 	out := make([]domain.Field, 0, len(names))
 	for _, name := range names {
 		f := fields[name]
+		if isBuiltField(f) {
+			v, err := builtValue(name, f, obj, base, budget)
+			if err != nil {
+				return domain.Record{}, err
+			}
+			out = append(out, domain.Field{Name: name, Value: v})
+			continue
+		}
 		if f.BoolMap {
 			nested, err := mapBoolMap(name, f, obj)
 			if err != nil {
@@ -200,7 +210,7 @@ func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (d
 			continue
 		}
 		if f.Object != nil {
-			nested, err := mapObject(name, f.Object, obj, budget)
+			nested, err := mapObject(name, f.Object, obj, budget, base)
 			if err != nil {
 				return domain.Record{}, err
 			}
@@ -211,7 +221,7 @@ func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (d
 		if f.Required && isMissingValue(raw, found) {
 			return domain.Record{}, fieldError(name)
 		}
-		v, err := fieldValue(f, raw, budget)
+		v, err := fieldValue(f, raw, budget, base)
 		if err != nil {
 			return domain.Record{}, err
 		}
@@ -231,7 +241,7 @@ func mapRecord(fields map[string]spec.Field, obj map[string]any, budget *int) (d
 // of an address. A value the reply holds as another shape is an unexpected
 // response, which names the field and never the value, except for the Jira
 // converters, which keep the row with an empty field.
-func fieldValue(f spec.Field, raw any, budget *int) (any, error) {
+func fieldValue(f spec.Field, raw any, budget *int, base string) (any, error) {
 	if f.Format == "strings" {
 		return stringsValue(raw, budget)
 	}
@@ -308,17 +318,25 @@ func hostOf(v any) any {
 // mapObject maps one nested record field to a record, with one value for each declared sub-field, in name order. Each
 // sub-field follows the scalar rules, and its failure names the dotted path, never the value. A pointer that reaches
 // an object or a list is refused, so a whole object is never copied.
-func mapObject(field string, sub map[string]spec.Field, obj map[string]any, budget *int) (domain.Record, error) {
+func mapObject(field string, sub map[string]spec.Field, obj map[string]any, budget *int, base string) (domain.Record, error) {
 	names := sortedKeys(sub)
 	out := make([]domain.Field, 0, len(names))
 	for _, name := range names {
 		f := sub[name]
 		path := field + "." + name
+		if isBuiltField(f) {
+			v, err := builtValue(path, f, obj, base, budget)
+			if err != nil {
+				return domain.Record{}, err
+			}
+			out = append(out, domain.Field{Name: name, Value: v})
+			continue
+		}
 		raw, found := derefPointers(obj, f)
 		if f.Required && isMissingValue(raw, found) {
 			return domain.Record{}, fieldError(path)
 		}
-		v, err := fieldValue(f, raw, budget)
+		v, err := fieldValue(f, raw, budget, base)
 		if err != nil {
 			return domain.Record{}, fieldError(path)
 		}
@@ -423,7 +441,7 @@ func fieldError(name string) error {
 }
 
 // listItems maps the list of a reply to records. The items pointer must name a list, and each item must be an object.
-func listItems(o spec.Operation, root any, budget *int) ([]domain.Record, error) {
+func listItems(o spec.Operation, root any, budget *int, base string) ([]domain.Record, error) {
 	list, found := pointerValue(root, o.Response.Items)
 	arr, isList := list.([]any)
 	if !found || !isList {
@@ -435,7 +453,7 @@ func listItems(o spec.Operation, root any, budget *int) ([]domain.Record, error)
 		if !isObject {
 			return nil, domain.ErrUnexpectedResponse
 		}
-		rec, err := mapRecord(o.Response.Fields, obj, budget)
+		rec, err := mapRecord(o.Response.Fields, obj, budget, base)
 		if err != nil {
 			return nil, err
 		}
@@ -447,7 +465,7 @@ func listItems(o spec.Operation, root any, budget *int) ([]domain.Record, error)
 // firstRecord maps the first item of the list at the first pointer to one record, with the field pointers read
 // relative to the item. An empty list ends with domain.ErrNotFound, and no partial record is returned. A value that
 // is not a list, or an item that is not an object, is an unexpected response.
-func firstRecord(o spec.Operation, root any, budget *int) (domain.Record, error) {
+func firstRecord(o spec.Operation, root any, budget *int, base string) (domain.Record, error) {
 	list, found := pointerValue(root, o.Response.First)
 	arr, isList := list.([]any)
 	if !found || !isList {
@@ -460,14 +478,14 @@ func firstRecord(o spec.Operation, root any, budget *int) (domain.Record, error)
 	if !isObject {
 		return domain.Record{}, domain.ErrUnexpectedResponse
 	}
-	return mapRecord(o.Response.Fields, obj, budget)
+	return mapRecord(o.Response.Fields, obj, budget, base)
 }
 
 // mergeRecords maps the lists of a merge read to one list, in the declared list order and then in the reply order.
 // Each item is mapped with the fields of its own list, and the label field is set to the constant label of the list,
 // beating a reply field of the same name. The output budget is shared by every list, so a merge cannot build more
 // output than one list may hold.
-func mergeRecords(o spec.Operation, root any, budget *int) ([]domain.Record, error) {
+func mergeRecords(o spec.Operation, root any, budget *int, base string) ([]domain.Record, error) {
 	m := o.Response.Merge
 	out := make([]domain.Record, 0)
 	for _, l := range m.Lists {
@@ -481,7 +499,7 @@ func mergeRecords(o spec.Operation, root any, budget *int) ([]domain.Record, err
 			if !isObject {
 				return nil, domain.ErrUnexpectedResponse
 			}
-			rec, err := mapRecord(l.Fields, obj, budget)
+			rec, err := mapRecord(l.Fields, obj, budget, base)
 			if err != nil {
 				return nil, err
 			}
@@ -531,7 +549,7 @@ func withMergeLabel(rec domain.Record, name, label string, budget *int) (domain.
 // branch, but a children value that is not a list, or a child that is not an object, is an unexpected response. The
 // walk is a flat loop with no recursion, and the output shares the budget of any list, so a deep or wide tree cannot
 // build without bound.
-func treeRecords(o spec.Operation, args domain.Args, root any, budget *int) ([]domain.Record, error) {
+func treeRecords(o spec.Operation, args domain.Args, root any, budget *int, base string) ([]domain.Record, error) {
 	list, found := pointerValue(root, o.Response.Items)
 	arr, isList := list.([]any)
 	if !found || !isList {
@@ -563,7 +581,7 @@ func treeRecords(o spec.Operation, args domain.Args, root any, budget *int) ([]d
 		if top.depth > maxDepth {
 			continue
 		}
-		rec, err := mapRecord(o.Response.Fields, top.node, budget)
+		rec, err := mapRecord(o.Response.Fields, top.node, budget, base)
 		if err != nil {
 			return nil, err
 		}
@@ -613,14 +631,14 @@ func treeChildren(node map[string]any, pointer string) ([]any, bool, error) {
 
 // pageItems maps one page of a paged read: a tree page flattens depth first, a merged page merges its lists, and any
 // other page maps its list. A merged read concatenates the merged items of its pages in page order.
-func pageItems(o spec.Operation, args domain.Args, root any, budget *int) ([]domain.Record, error) {
+func pageItems(o spec.Operation, args domain.Args, root any, budget *int, base string) ([]domain.Record, error) {
 	if o.Response.Tree != nil {
-		return treeRecords(o, args, root, budget)
+		return treeRecords(o, args, root, budget, base)
 	}
 	if o.Response.Merge != nil {
-		return mergeRecords(o, root, budget)
+		return mergeRecords(o, root, budget, base)
 	}
-	return listItems(o, root, budget)
+	return listItems(o, root, budget, base)
 }
 
 // plainValue returns the Go value of a spec default or example value: a whole number as an int, and any other number as

@@ -28,7 +28,7 @@ func (e *Engine) runWithFallback(ctx context.Context, o spec.Operation, args dom
 	if triggersOnStatus(fb, status) {
 		return e.runFallbackTarget(fctx, o, args, domain.Record{}, false, budget)
 	}
-	rec, err := mapReply(o, args, root, budget)
+	rec, err := mapReply(o, args, root, budget, e.base)
 	if err != nil {
 		return domain.Record{}, err
 	}
@@ -80,7 +80,7 @@ func (e *Engine) runFallbackTarget(ctx context.Context, o spec.Operation, args d
 	if err != nil {
 		return domain.Record{}, err
 	}
-	trec, err := mapReply(target, bound, root, budget)
+	trec, err := mapReply(target, bound, root, budget, e.base)
 	if err != nil {
 		return domain.Record{}, err
 	}
