@@ -27,8 +27,9 @@ text, `bool_map`, and `markdown-from-adf`.
   row per gap below, one page per feature in the [companion pages](./004-jira-gaps/). The line of D10 holds:
   closed list, fixed limits, named tests.
 - **D16. Port Jira.** Jira runs on the engine from a bundled `jira.yml`. D9 is overruled for Jira.
-- **D17. Retire the module.** `retriever-connector-jira` leaves the graph in the retirement pull request, with
-  an architecture test that fails on any new import. Breaking changes reach the CHANGELOG at port time, not here.
+- **D17. Retire the module.** `retriever-connector-jira` left the graph in pull request 39, with
+  an architecture test that fails on any new import. Done as built: the directory is removed and the CHANGELOG
+  records the removed module at retire time.
 
 | Gap | What the Go code does                    | Verdict | Feature         |
 | --- | ---------------------------------------- | ------- | --------------- |
@@ -77,5 +78,5 @@ The expression language, the plugin host, profiles, channel connectors, and the 
 
 ## Migration order
 
-Pull requests 33 to 36 grow the language, 37 ports Jira, and 38 retires the module. The conformance suite,
+Pull requests 33 to 37 grow the language, 38 ports Jira, and 39 retires the module. The conformance suite,
 the plugin host, profiles, and the `v0.3.0` pre-release follow, as ADR 002 orders them.

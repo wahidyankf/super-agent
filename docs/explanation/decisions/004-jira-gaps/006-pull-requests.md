@@ -73,7 +73,14 @@ for Jira, and no scenario edited.
 
 ## 39. Retire the module
 
-`retriever-connector-jira` leaves the dependency graph. An architecture test fails on any new import of it. The
-CHANGELOG records each breaking change of this ADR at port time: the removed module and any refined error
-mapping. Exit gate for the ADR: the shared gates, every named test passing, `TestExistingSpecsStillValidate`,
-`TestSchemaKeywordLock` extended to E19-E25 and the three converters, and no Go connector serving Jira.
+`retriever-connector-jira` left the dependency graph: the app no longer imports it, and its directory was removed.
+The Jira seam and the issue and project ID checks moved into the app at `apps/retriever-cli/internal/jiraseam`, with
+the environment variable names unchanged, so the transport scenarios keep their text. The CHANGELOG records the
+breaking change of this ADR at retire time: the removed module. The error mapping is unrefined: the engine gateway
+keeps the document-not-found translation the Go gateway mapped.
+
+- Given the unchanged Jira scenarios, then every one passes with no scenario edited.
+- Closed: no Go module serves a Jira operation any more, so the module is retired; the architecture test fails on
+  any new import of it. Exit gate for the ADR: the shared gates, every named test passing,
+  `TestExistingSpecsStillValidate`, `TestSchemaKeywordLock` extended to E19-E25 and the three converters, and no Go
+  connector serving Jira.

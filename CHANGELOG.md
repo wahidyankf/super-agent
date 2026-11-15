@@ -22,6 +22,11 @@ upgrade.
   intermediate fields stay in the record beside the five catalog fields of `issues.get`. The spec measures
   7 operations in 14,946 bytes, 6 percent of the 256 KiB cap, and `TestBundledSpecCoversEveryCatalogRow` covers the
   Jira kind with no scenario edited.
+- The Jira gateway runs every Jira operation on the bundled-spec engine, with the document-not-found translation
+  the retired Go gateway mapped. `retriever-connector-jira` leaves the dependency graph: the app no longer imports
+  it, and the architecture test fails on any new import. The Jira seam and the issue and project ID checks move
+  into the app at `apps/retriever-cli/internal/jiraseam` with the environment variable names unchanged. The
+  unchanged Jira read, redaction, and transport scenarios pass on the engine with no edits.
 
 ### Breaking
 

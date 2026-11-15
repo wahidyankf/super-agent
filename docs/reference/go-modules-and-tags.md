@@ -1,7 +1,7 @@
 ---
 title: Go modules and tags
 description: >-
-  Module paths, Nx projects and tags, requirements, versions, and the tag format of the app and the seven libraries.
+  Module paths, Nx projects and tags, requirements, versions, and the tag format of the app and the six libraries.
 category: reference
 tags:
   - reference
@@ -13,7 +13,7 @@ tags:
 
 # Go modules and tags
 
-Eight Go modules sit in this repository: the app and seven libraries. Each module has its own `go.mod`. No
+Seven Go modules sit in this repository: the app and six libraries. Each module has its own `go.mod`. No
 `go.work` file joins them. This page states the facts. The rules for imports are in
 [library layering](../explanation/library-layering.md).
 
@@ -29,7 +29,6 @@ Every module path is `github.com/wahidyankf/super-agent/` followed by the module
 | `libs/retriever-runtime`        | `retriever-runtime`        | `type:runtime`   | none          |
 | `libs/retriever-testkit`        | `retriever-testkit`        | `type:testkit`   | none          |
 | `libs/retriever-connector-kiwi` | `retriever-connector-kiwi` | `type:connector` | `source:kiwi` |
-| `libs/retriever-connector-jira` | `retriever-connector-jira` | `type:connector` | `source:jira` |
 | `libs/retriever-spec`           | `retriever-spec`           | `type:spec`      | none          |
 | `libs/retriever-engine`         | `retriever-engine`         | `type:engine`    | none          |
 
@@ -43,14 +42,15 @@ Each module names its sibling modules in its `go.mod`, at `v0.4.0`. Each require
 sibling's folder, so a build in this repository uses the working tree.
 
 - `apps/retriever-cli` requires the libraries that it builds on, including `libs/retriever-spec` and
-  `libs/retriever-engine`, which load and run connector specs, and the Kiwi and Jira connectors. Pull request 17
-  retired `libs/retriever-connector-outline` and removed its directory; the architecture test fails on any new import
-  of it. Its Nx `implicitDependencies` lists the same libraries.
+  `libs/retriever-engine`, which load and run connector specs, and the Kiwi connector. Pull request 17
+  retired `libs/retriever-connector-outline` and removed its directory, and pull request 39 retired
+  `libs/retriever-connector-jira` and removed its directory; the architecture test fails on any new import
+  of either. Its Nx `implicitDependencies` lists the same libraries.
 - `libs/retriever-contract` requires no sibling.
 - `libs/retriever-spec` requires `retriever-contract` alone.
 - `libs/retriever-engine` requires `retriever-contract` and `retriever-spec`.
 - `libs/retriever-runtime` and `libs/retriever-testkit` each require `retriever-contract`.
-- Each connector requires `retriever-contract` and `retriever-testkit`. It requires the testkit for its tests only.
+- The Kiwi connector requires `retriever-contract` and `retriever-testkit`. It requires the testkit for its tests only.
   Its production code imports the contract alone.
 
 The Nx `implicitDependencies` of each library name the siblings that its Go files import, tests included. The
@@ -58,7 +58,7 @@ architecture test checks that each list is complete.
 
 ## Versions
 
-- Each library is at `v0.4.0`. The seven libraries are released in lockstep, so one version applies to all of them.
+- Each library is at `v0.4.0`. The six libraries are released in lockstep, so one version applies to all of them.
   `libs/retriever-spec` and `libs/retriever-engine` have no tag yet, and they take the lockstep version when the
   libraries are next released.
 - `ContractVersion` in [contract.go](../../libs/retriever-contract/contract.go) is `0.4.0`. Its comment says that the
