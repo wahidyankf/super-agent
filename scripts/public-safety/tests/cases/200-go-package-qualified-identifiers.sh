@@ -38,6 +38,10 @@ run() {
 		printf 'go.shape.struct { %s/%s.%s string; %s/%s.domain string }\n' "$pkg" "$leaf" "$sfx" "$pkg" "$leaf"
 		printf '%s/%s.%s[...]\n' "$pkg" "$leaf" "$sfx"
 		printf 'symbol internal/abi.%s is a package-level name\n' "$sfx"
+		printf 'changes data in the wiki.%s/sync.HashTrieMap: r\n' "$int"
+		printf 'read the manual.%s/v2/guide before the cutover\n' "$sfx"
+		printf 'the cache.zone.%s/sync.Map entry\n' "$int"
+		printf 'see %s/tls.Config for the handshake\n' "$pkg"
 	} >"$CASE_TMP/go-identifiers.txt"
 	out=$("$PREFLIGHT" --surface logs --file "$CASE_TMP/go-identifiers.txt" 2>&1)
 	rc=$?
@@ -53,6 +57,17 @@ run() {
 	rc=$?
 	assert_exit 1 "$rc" "exit code for a host beside a Go identifier" || return 1
 	assert_contains "internal-hostname" "$out" "diagnostic for a host beside a Go identifier" || return 1
+
+	# An abutting Go path beside a real host still blocks: the skip covers
+	# the token, never the line or the file it sits in.
+	{
+		printf 'changes data in the wiki.%s/sync.HashTrieMap: r\n' "$int"
+		printf 'reach nas%s.%s for the backup\n' "$octet" "$sfx"
+	} >"$CASE_TMP/mixed-abutting.txt"
+	out=$("$PREFLIGHT" --surface logs --file "$CASE_TMP/mixed-abutting.txt" 2>&1)
+	rc=$?
+	assert_exit 1 "$rc" "exit code for a host beside an abutting Go path" || return 1
+	assert_contains "internal-hostname" "$out" "diagnostic for a host beside an abutting Go path" || return 1
 
 	# Real hosts keep blocking, in every context the rule must still read.
 	probe_blocks "db.${sfx}" || return 1
