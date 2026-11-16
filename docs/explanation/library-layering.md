@@ -55,6 +55,7 @@ out to keep it readable.
 | `retriever-testkit`       | `retriever-contract`                      | nothing else               |
 | `retriever-spec`          | `retriever-contract`                      | `retriever-testkit`        |
 | `retriever-engine`        | `retriever-contract`, `retriever-spec`    | `retriever-testkit`        |
+| `retriever-plugin`        | `retriever-contract`                      | `retriever-testkit`        |
 | `retriever-cli` (the app) | `retriever-contract`, runtime, connectors | `retriever-testkit`        |
 
 These rules follow from them:
@@ -70,6 +71,9 @@ These rules follow from them:
 - The engine is the one module whose production code imports `net`, `net/http`, and `crypto/tls`, because it reaches its
   source over HTTPS. It imports none of `os`, `os/exec`, `path/filepath`, `io/fs`, or `syscall`, so it reads no local
   file, no environment variable, and no process. The key and the clock reach it through ports.
+- The plugin is the one module whose production code imports `os/exec`: it starts the only child processes of the
+  tool, one per plugin call. No other module imports it, and the architecture test fails on any new production
+  import outside `libs/retriever-plugin`.
 
 Third-party modules sit outside these rules. The runtime uses `go.yaml.in/yaml/v3` to parse the catalog, for example.
 

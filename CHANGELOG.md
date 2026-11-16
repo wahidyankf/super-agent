@@ -226,6 +226,17 @@ upgrade.
   operation that no row names sets `cli: false` and `mcp: false`. The catalog row stays the source of the CLI name,
   the MCP tool name, the flags, the descriptions, the input schema, and the hints. The review text lists each bundled
   operation with its catalog row. E9 carries no spec yet.
+- `retriever-plugin` starts one pinned out-of-process plugin per call and speaks JSON-RPC 2.0 with it (ADR 001,
+  P1 to P6). A catalog source names the plugin with a `plugin` block holding an absolute `path` and a `sha256` pin;
+  a source without one starts no process, and the spec schema has no plugin field. The host copies the file into a
+  fresh private folder, hashes the copy, and runs the copy only when the hash equals the pin. The child gets an
+  environment of exactly its own credential variable and, when declared, its identity variable, and it starts in an
+  empty private folder. Each call has a 30-second limit, each frame is at most 1 MiB, and a plugin that never answers
+  is killed with its process group and exits `124`. A refused reply fails with `retriever.connector.plugin_protocol`,
+  a failed start exits `2` with `retriever.connector.plugin_start_failed` (never `126` or `127`), and the host
+  redacts the credential values from replies and captured standard error, capped at 64 KiB. The exit-code page now
+  says the tool starts a child process only for a plugin. The architecture test allows `os/exec` in the plugin
+  module only, and the contract change is additive, so the contract stays at `0.4.0`.
 
 ### Changed
 
