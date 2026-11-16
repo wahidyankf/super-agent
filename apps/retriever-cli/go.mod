@@ -12,6 +12,7 @@ require (
 	github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-contract v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-engine v0.5.0
+	github.com/wahidyankf/super-agent/libs/retriever-plugin v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-runtime v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-spec v0.5.0
 	github.com/wahidyankf/super-agent/libs/retriever-testkit v0.4.0
@@ -58,6 +59,7 @@ replace (
 	github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi => ../../libs/retriever-connector-kiwi
 	github.com/wahidyankf/super-agent/libs/retriever-contract => ../../libs/retriever-contract
 	github.com/wahidyankf/super-agent/libs/retriever-engine => ../../libs/retriever-engine
+	github.com/wahidyankf/super-agent/libs/retriever-plugin => ../../libs/retriever-plugin
 	github.com/wahidyankf/super-agent/libs/retriever-runtime => ../../libs/retriever-runtime
 	github.com/wahidyankf/super-agent/libs/retriever-spec => ../../libs/retriever-spec
 	github.com/wahidyankf/super-agent/libs/retriever-testkit => ../../libs/retriever-testkit

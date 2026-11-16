@@ -14,6 +14,7 @@ import (
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 	"github.com/wahidyankf/super-agent/libs/retriever-engine/engine"
+	"github.com/wahidyankf/super-agent/libs/retriever-plugin"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
 )
@@ -49,6 +50,11 @@ func hostOver(getwd func() (string, error), files fstest.MapFS, connectors fs.FS
 		openConnectors: func(string) fs.FS { return connectors },
 		exportSink:     func(string) ports.ExportSink { return nil },
 		engine:         testEngineSeam(),
+		plugin: plugin.Seams{
+			Files: failingPluginFiles{},
+			Start: failingPluginStart,
+			After: func(time.Duration) <-chan time.Time { return make(chan time.Time) },
+		},
 	}
 	return h
 }

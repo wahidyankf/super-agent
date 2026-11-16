@@ -16,6 +16,7 @@ const (
 	kindTestkit   = "testkit"
 	kindSpec      = "spec"
 	kindEngine    = "engine"
+	kindPlugin    = "plugin"
 )
 
 // moduleKinds maps the directory of each Go module, relative to the repository root, to its kind. Every module of the
@@ -28,6 +29,7 @@ var moduleKinds = map[string]string{
 	"libs/retriever-connector-kiwi": kindConnector,
 	"libs/retriever-spec":           kindSpec,
 	"libs/retriever-engine":         kindEngine,
+	"libs/retriever-plugin":         kindPlugin,
 }
 
 // engineDirs are the directories whose production code is the engine. The engine speaks HTTP, so it may import the
@@ -122,7 +124,7 @@ func importViolation(self string, test bool, importPath string) string {
 		return ""
 	case kindContract:
 		return "is the contract, and the contract may import no other module of the workspace"
-	case kindRuntime, kindConnector, kindTestkit, kindSpec:
+	case kindRuntime, kindConnector, kindTestkit, kindSpec, kindPlugin:
 		if targetKind == kindContract {
 			return ""
 		}

@@ -241,6 +241,28 @@ func TestImportsFollowTheLayering(t *testing.T) {
 	}
 }
 
+// TestOnlyThePluginModuleImportsExec checks that the production code of every module except the plugin module
+// imports no os/exec: the plugin is the only code-execution path (threat P1 and the module layout), so the tool
+// starts a child process only for a plugin.
+func TestOnlyThePluginModuleImportsExec(t *testing.T) {
+	for dir := range moduleKinds {
+		for _, f := range walkGoFiles(t, dir) {
+			if f.test {
+				continue
+			}
+			for _, imp := range f.imports {
+				if imp == "os/exec" && dir != "libs/retriever-plugin" {
+					rel, err := filepath.Rel(repoRoot, f.path)
+					if err != nil {
+						t.Fatalf("relative path of %s: %v", f.path, err)
+					}
+					t.Errorf("%s imports os/exec, which only the plugin module may import", filepath.ToSlash(rel))
+				}
+			}
+		}
+	}
+}
+
 // TestEngineProductionImportsNoLocalEffects checks that the production code of the engine imports no package that reads
 // or writes a local file, reads the working directory, or runs a process. The engine reaches the network only.
 func TestEngineProductionImportsNoLocalEffects(t *testing.T) {

@@ -66,6 +66,13 @@ func TestParseKeepsAPlainFieldNameInThePath(t *testing.T) {
 	requireRefused(t, []byte(fixtureWith("endpoint:\n", "extra: 1\nendpoint:\n")), "/extra")
 }
 
+// TestParseRefusesAPluginField checks P2 at the spec level: the schema has no plugin field, so a spec that names one
+// fails validation and can never enable a plugin. Only a catalog source enables one, for that source only.
+func TestParseRefusesAPluginField(t *testing.T) {
+	doc := fixtureWith("endpoint:\n", "plugin:\n  path: /opt/plugins/wiki\nendpoint:\n")
+	requireRefused(t, []byte(doc), "/plugin")
+}
+
 // TestParseOfAnEmptyNumberOrTextIsNotAFinding checks the empty-value edge: an empty text value is a value, and the
 // schema decides whether an empty text is allowed.
 func TestParseOfAnEmptyNumberOrTextIsNotAFinding(t *testing.T) {
