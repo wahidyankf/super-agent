@@ -36,6 +36,8 @@ retriever --version
 - `--connectors-dir <path>`: the folder of connector specs. A loaded spec adds a command group named by its kind, such as
   `example-wiki docs list`. See [configuration](./retriever-cli-configuration.md) and
   [add a spec connector](../how-to/add-a-spec-connector.md).
+- `--profile <name>`: the active profile (default: `RETRIEVER_PROFILE`). With a profiles folder one profile is
+  required, and explicit paths are refused. See [configuration](./retriever-cli-configuration.md).
 - `-V, --version`: print `retriever <version>` and the alpha notice, then exit `0`.
 - `-h, --help`: show help for the command it follows. Help wins over other options.
 
@@ -94,7 +96,8 @@ retriever sources list [--kind <kind>] [--tag <tag[,tag...]>]
 ```
 
 Lists the configured sources, sorted by source ID. `--kind` keeps one kind. `--tag` keeps the sources that have every
-tag given, as a comma-separated list. In text mode the first line is the count, then one row per source.
+tag given, as a comma-separated list. In text mode the first line is the count, then one row per source. With a
+profiles folder the count line names the active profile, such as `2 sources (profile: personal)`.
 In JSON mode the
 document is described in [JSON schemas](./retriever-cli-json-schemas.md).
 
@@ -179,7 +182,9 @@ retriever mcp [--tools <resource,...>]
 
 Runs one Model Context Protocol session over standard input and standard output. The session offers every tool of the
 catalog, each with its read-only and destructive hints. `--tools` keeps the tools of the named resources, such as
-`documents` or `comments`. The `list_sources` tool is always offered. The `--max-access` flag was removed, and passing
+`documents` or `comments`. The `list_sources` tool is always offered, and its answer names the active profile. A tool
+call with a `profile` argument is an unknown argument: the run keeps the profile its process started with. The
+`--max-access` flag was removed, and passing
 it exits `2`. Standard output carries only the protocol. Each tool call writes
 one log line to standard error. The session ends when the client closes its input (exit `0`), on `SIGINT` (exit `130`),
 or on `SIGTERM` (exit `143`).

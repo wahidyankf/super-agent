@@ -11,6 +11,13 @@ upgrade.
 
 ### Added
 
+- Profiles keep work and personal sources apart. With a profiles folder under the user configuration folder, the run
+  takes one profile from `--profile` or `RETRIEVER_PROFILE`, and reads only that profile's catalog, env file, and
+  connectors folder. With a profiles folder and no choice, every source command exits `2` with
+  `retriever.usage.profile_required` and reads no catalog. A credential or identity name in a profile catalog must
+  start with the profile prefix (`WORK_` for `work`), and `sources list` and the MCP `list_sources` answer name the
+  active profile.
+
 - `retriever-conformance` checks any connector spec: the schema is valid, every operation carries examples, each
   example replays through the engine and matches its expected fields, and the CLI, MCP, and README texts derived from
   the spec equal the stored texts. `retriever connector validate <spec>` runs the static half and prints the review,

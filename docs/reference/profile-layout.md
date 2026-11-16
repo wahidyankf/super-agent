@@ -1,18 +1,17 @@
 ---
 title: Profile layout
 description: >-
-  PLANNED. Where the files of a work or personal profile live, how a run picks one, and the rules that keep profiles
+  Where the files of a work or personal profile live, how a run picks one, and the rules that keep profiles
   apart.
 category: reference
 tags:
   - reference
-  - planned
   - profiles
 ---
 
-# Profile layout (planned)
+# Profile layout
 
-**Status: PLANNED.** No profile support exists yet. The reasons are in
+The reasons are in
 [ADR 001](../explanation/decisions/001-user-defined-connectors-and-profiles.md), and the threats are in the
 [profile threats](../explanation/decisions/001-user-defined-connectors-and-profiles/004-profile-and-secret-threats.md).
 
@@ -44,8 +43,12 @@ profiles folder and no choice, the tool exits `2` with `retriever.usage.profile_
 ## Rules
 
 - A profile name is a lower-case slug of letters, digits, and single hyphens. It is resolved inside `profiles/` only.
-- A credential name in a profile catalog starts with the profile name in upper case, with hyphens as underscores. The
-  profile `work` uses `WORK_EXAMPLE_API_KEY`. The catalog loader refuses any other name.
+  A name that escapes its folder, such as `../other`, exits `2` with `retriever.usage.profile_invalid`, and a profile
+  folder that is a symbolic link is refused.
+- A credential or identity name in a profile catalog starts with the profile name in upper case, with hyphens as
+  underscores. The profile `work` uses `WORK_EXAMPLE_API_KEY`. The catalog loader refuses any other name.
 - The process environment is read only for names that the active catalog declares.
-- A run never lists, reads, or merges a second profile. `mcp` and `serve` keep their profile until they stop.
+- A run never lists, reads, or merges a second profile. `mcp` and `serve` keep their profile until they stop. A
+  repeated `--profile` flag, a profile together with `--catalog`, `--env-file`, or `--connectors-dir`, and a tool call
+  with a `profile` argument are usage errors.
 - `sources list` and the MCP `list_sources` result name the active profile.

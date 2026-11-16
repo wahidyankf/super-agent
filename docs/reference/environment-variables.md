@@ -25,6 +25,8 @@ The `retriever` command-line tool reads these variables. Each one is optional.
 
 - `RETRIEVER_CATALOG`: the path of the sources catalog. It is used when `--catalog` is not given.
 - `RETRIEVER_ENV_FILE`: the path of the env file that holds source keys. It is used when `--env-file` is not given.
+- `RETRIEVER_PROFILE`: the active profile. It is used when `--profile` is not given, and the flag wins over it. With
+  a profiles folder one of the two is required.
 - `XDG_CONFIG_HOME`: the base folder for the user configuration. The tool reads `retriever/` inside it. When it is unset
   or empty, the tool reads `~/.config/retriever`.
 

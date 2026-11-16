@@ -36,6 +36,17 @@ whether output is a terminal.
 }
 ```
 
+With a profiles folder the document carries the active profile after `schemaVersion`:
+
+```json
+{
+  "schemaVersion": 2,
+  "profile": "personal",
+  "sources": [{ "id": "example-jira", "kind": "jira", "tags": ["tickets"] }]
+}
+```
+
+- `profile`: a string, the active profile name. It is present only for a run with a profiles folder.
 - `sources`: an array with one object per configured source, sorted by `id`.
 - `id`: a string, the source ID from the catalog.
 - `kind`: a string, `outline`, `kiwi`, or `jira`.
@@ -163,6 +174,10 @@ Reasons that the CLI can emit:
 - `usage_invalid_argument`: a value is not valid for its option.
 - `usage_unrecognized_argument`: an argument or option is not known.
 - `usage_missing_argument`: a required argument or option is absent.
+- `profile_required`: a profiles folder exists and no profile was selected. Pass `--profile <name>` or set
+  `RETRIEVER_PROFILE`.
+- `profile_invalid`: a profile selection the run refuses: a name outside the slug rule, a symbolic link, an explicit
+  path together with profiles, or a profile flag without a profiles folder.
 - `usage_invalid_output`: `--output` is not `text` or `json`.
 - `usage_invalid_color`: `--color` is not `auto`, `always`, or `never`.
 - `usage_no_subcommand`: a group was named with no subcommand.

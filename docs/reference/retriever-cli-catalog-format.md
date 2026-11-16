@@ -45,9 +45,12 @@ The top level has two keys, and no other key is allowed:
 - `endpoint`: required. It is `https://` followed by a host name only: no path, no port, and no user information. A
   trailing slash is allowed.
 - `credential_env`: required. It is the name of the variable that holds the key. It must match
-  `^[A-Z][A-Z0-9_]*_API_(KEY|TOKEN)$`, and it is at most 64 characters.
+  `^[A-Z][A-Z0-9_]*_API_(KEY|TOKEN)$`, and it is at most 64 characters. In a profile catalog it must start with the
+  profile prefix: the profile name in upper case, with hyphens as underscores, followed by an underscore, so the
+  `work` profile uses `WORK_EXAMPLE_API_KEY`. Any other name is refused when the catalog loads.
 - `identity_env`: required for Jira only. It is the name of the variable that holds the account e-mail address. It must
-  match `^[A-Z][A-Z0-9_]*_EMAIL$`, and it is 7 to 64 characters.
+  match `^[A-Z][A-Z0-9_]*_EMAIL$`, and it is 7 to 64 characters. In a profile catalog it must start with the same
+  profile prefix.
 - `spec_sha256`: optional, and allowed only on a source whose kind a loaded spec declares. It is the SHA-256 of the spec
   file's bytes, as 64 lower-case hex characters. A mismatch fails the run with `retriever.connector.spec_pin_mismatch`,
   and no request goes out.
