@@ -11,10 +11,10 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.64
 	github.com/wahidyankf/super-agent/libs/retriever-connector-kiwi v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-contract v0.4.0
-	github.com/wahidyankf/super-agent/libs/retriever-engine v0.5.0
+	github.com/wahidyankf/super-agent/libs/retriever-engine v0.6.0
 	github.com/wahidyankf/super-agent/libs/retriever-plugin v0.4.0
 	github.com/wahidyankf/super-agent/libs/retriever-runtime v0.4.0
-	github.com/wahidyankf/super-agent/libs/retriever-spec v0.5.0
+	github.com/wahidyankf/super-agent/libs/retriever-spec v0.6.0
 	github.com/wahidyankf/super-agent/libs/retriever-testkit v0.4.0
 	go.yaml.in/yaml/v3 v3.0.6
 )
