@@ -15,7 +15,7 @@ This page maps each feature file of the older Butler CLI specs to the retriever 
 and it lists what is not ported. It states facts. It ports no scenario.
 
 Butler's specs hold 98 feature files and 1013 scenario headings, 170 of them outlines. The retriever specs under
-`specs/behaviours` hold 14 feature files and 333 scenario headings. Both counts count `Scenario` and `Scenario Outline`
+`specs/behaviours` hold 16 feature files and 352 scenario headings. Both counts count `Scenario` and `Scenario Outline`
 lines. The retriever count matches `apps/retriever-cli/behaviour-coverage.json`, which `bdd:check` verifies.
 
 ## Status

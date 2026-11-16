@@ -6,7 +6,7 @@ toolchain go1.27.4
 
 require (
 	github.com/wahidyankf/super-agent/libs/retriever-contract v0.4.0
-	github.com/wahidyankf/super-agent/libs/retriever-spec v0.5.0
+	github.com/wahidyankf/super-agent/libs/retriever-spec v0.6.0
 )
 
 require (

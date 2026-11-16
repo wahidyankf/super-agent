@@ -9,6 +9,14 @@ upgrade.
 
 ## Unreleased
 
+## v0.3.0
+
+Alpha pre-release. Expect breaking changes: commands, flags, file formats, connector specs, JSON output, and APIs can
+change in any release, including minor and patch releases, until a stable 1.0. Read the
+[migration table](docs/reference/retriever-cli-migration-from-butler.md) before you move from Butler, and the
+[scenario-gap page](docs/reference/retriever-cli-scenario-gap.md) for the behaviours that no scenario covers yet. The
+breaking changes below are the ones made since `v0.2.0`.
+
 ### Added
 
 - Profiles keep work and personal sources apart. With a profiles folder under the user configuration folder, the run
@@ -51,12 +59,26 @@ upgrade.
   `catalog.NewWithFiles` takes the registered kinds as a third argument. A Go caller passes `domain.BuiltinKinds()` to
   keep the built-in set. The contract adds `KindSet`, `KindDefinition`, and `NewKindSet`, and `operations` adds
   `NewCatalog` and `BuiltinCatalog`.
-- The catalog's unknown-kind message lists the registered kinds in alphabetical order. For the built-in set it reads
-  `unknown kind (known: jira, kiwi, outline)` in place of `unknown kind (known: outline, kiwi, jira)`. The stable code
-  `retriever.sources.unknown_source_kind` does not change, and the `--kind` flag and GraphQL messages keep their text.
+- **Breaking**: the catalog's unknown-kind message lists the registered kinds in alphabetical order. For the built-in
+  set it reads `unknown kind (known: jira, kiwi, outline)` in place of `unknown kind (known: outline, kiwi, jira)`.
+  The stable code `retriever.sources.unknown_source_kind` does not change, and the `--kind` flag and GraphQL messages
+  keep their text.
 - **Breaking**: the access matrix of a connector spec is strict. An `admin` operation with `GET` is now refused at load,
   where it was accepted before. A read takes `GET` or `HEAD`, or `POST` with `read_over_post: true`, and a write or an
   admin takes `POST`, `PUT`, `PATCH`, or `DELETE`. The bundled example uses none of the refused pairs.
+- **Breaking**: `libs/retriever-connector-outline` is retired. Its Go gateway served every Outline operation; now the
+  directory is gone and every Outline operation runs on the bundled-spec engine. The architecture test fails on any new
+  import of the module. A Go caller builds on the bundled spec and the engine instead. No library tag was ever cut, so
+  no build outside this repository can require the retired module.
+- **Breaking**: `libs/retriever-connector-jira` is retired. Its Go gateway served every Jira operation; now the
+  directory is gone and every Jira operation runs on the bundled-spec engine. The Jira seam and the issue and project
+  ID checks move into the app at `apps/retriever-cli/internal/jiraseam`, with the environment variable names unchanged,
+  and the architecture test fails on any new import of the module. A Go caller builds on the bundled spec and the
+  engine instead. No library tag was ever cut, so no build outside this repository can require the retired module.
+- **Breaking**: a notification-settings value that is not a flag fails the read. The Go projection of the two Outline
+  notification subscription writes dropped a value that was not a bool and kept the rest; now the engine fails the read
+  with `unexpected_response` naming the dotted path. A caller that reads notification settings treats
+  `unexpected_response` as a bad reply value from the wiki instead of a partial record.
 
 ### Added
 
