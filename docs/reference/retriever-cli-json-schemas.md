@@ -178,6 +178,10 @@ Reasons that the CLI can emit:
 - `spec_unreadable`: a connector spec file that cannot be read, or that is larger than the size limit.
 - `test_failed`: a connector spec whose examples do not replay. The message names the operation, the example, and the
   field at fault.
+- `plugin_pin_mismatch`: a plugin whose bytes differ from the approved pin. No process starts.
+- `plugin_protocol`: a plugin reply the host refuses: a wrong id, a notification, a malformed frame, an oversize
+  frame, or a JSON-RPC error object.
+- `plugin_start_failed`: a plugin the host could not prepare or start.
 - `panic`: an internal failure. See [exit codes](./retriever-cli-exit-codes.md#panics).
 
 The list is a summary. The `invalid_*`, `*_required`, and `*_mismatch` entries stand for groups of reasons, and the

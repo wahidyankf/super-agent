@@ -11,6 +11,7 @@ import (
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 	"github.com/wahidyankf/super-agent/libs/retriever-engine/engine"
+	"github.com/wahidyankf/super-agent/libs/retriever-plugin"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
 )
@@ -31,6 +32,9 @@ type host struct {
 	openConnectors func(dir string) fs.FS
 	exportSink     func(dir string) ports.ExportSink
 	engine         engineSeam
+	// plugin holds the file, process, and clock calls of one plugin call. realHost leaves it zero, which reads as
+	// production; a unit test passes fakes, so no real file or process is touched.
+	plugin plugin.Seams
 }
 
 // engineSeam holds the outbound ports of the generic engine for every spec source. realHost passes the real clock and

@@ -10,6 +10,13 @@ type Source struct {
 	credential CredentialRef
 	// identity names the variable that holds the source's account e-mail address. The zero value means none. It is set by WithIdentity, so NewSource keeps its signature.
 	identity IdentityRef
+	// plugin is the pinned out-of-process program that serves this source. The zero value means none: plugins are
+	// off by default, and only a catalog source enables one, for that source only. It is set by WithPlugin, so
+	// NewSource keeps its signature.
+	plugin PluginRef
+	// hasPlugin reports whether WithPlugin set a plugin. A zero PluginRef means none, and NewPluginRef never
+	// returns one, so the flag only records intent.
+	hasPlugin bool
 }
 
 // NewSource assembles a source from validated value objects.
@@ -42,6 +49,21 @@ func (s Source) WithIdentity(ref IdentityRef) Source {
 	s.identity = ref
 	return s
 }
+
+// WithPlugin returns a copy of the source served by the pinned plugin ref. Every other field stays as the constructor
+// set it, and the receiver does not change.
+func (s Source) WithPlugin(ref PluginRef) Source {
+	s.plugin = ref
+	s.hasPlugin = true
+	return s
+}
+
+// HasPlugin reports whether a catalog source enabled a plugin for this source. A source without one is served by its
+// kind's gateway and starts no process.
+func (s Source) HasPlugin() bool { return s.hasPlugin }
+
+// Plugin returns the pinned plugin of the source. It is meaningful only when HasPlugin is true.
+func (s Source) Plugin() PluginRef { return s.plugin }
 
 // SourceSummary is what an inbound adapter may show about a source. It has no endpoint and no credential name.
 type SourceSummary struct {

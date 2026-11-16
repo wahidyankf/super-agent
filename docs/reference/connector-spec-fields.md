@@ -405,8 +405,10 @@ layout of `issues.get` names flat output-field names only, as the
 A refused spec carries the stable code `retriever.connector.spec_invalid`, which the spec module defines. The app reports it
 with exit status `2`, and the failure names the file and the field path. A catalog `spec_sha256` that does not match the
 file reports `retriever.connector.spec_pin_mismatch`, and a connectors folder that `--connectors-dir` names but cannot use
-reports `retriever.connector.folder_unavailable`. The draft's other connector reasons, `plugin_pin_mismatch` and
-`plugin_protocol`, belong to later changes, and this module does not define them. Runtime failures use `retriever.<kind>.<reason>` with the reasons of the
+reports `retriever.connector.folder_unavailable`. A plugin whose bytes differ from its pin reports
+`retriever.connector.plugin_pin_mismatch` with no process started, a refused plugin reply reports
+`retriever.connector.plugin_protocol`, and a plugin that cannot start reports
+`retriever.connector.plugin_start_failed`; `retriever-plugin` defines all three. Runtime failures use `retriever.<kind>.<reason>` with the reasons of the
 [error codes](./retriever-cli-json-schemas.md#error-codes). A write whose outcome is unknown uses
 `write_outcome_unknown`, which exits 2 and is never retried. Exit statuses follow the
 [exit-code contract](./retriever-cli-exit-codes.md).

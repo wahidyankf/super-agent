@@ -9,6 +9,7 @@ import (
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/connectorspec"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
+	"github.com/wahidyankf/super-agent/libs/retriever-plugin"
 )
 
 // errNotConfigured reports a command whose collaborator the composition root did not supply.
@@ -100,6 +101,20 @@ func publicMessage(err error) string {
 	var unavailable domain.OperationUnavailableError
 	if errors.As(err, &unavailable) {
 		return unavailable.Error()
+	}
+	// A plugin failure keeps its fixed text in every command that reports it: the text names the rule and never a
+	// value, because a frame may echo a secret. The timeout unwraps to the bounded wait below.
+	var pin plugin.PinMismatchError
+	if errors.As(err, &pin) {
+		return pin.Error()
+	}
+	var protocol plugin.ProtocolError
+	if errors.As(err, &protocol) {
+		return protocol.Error()
+	}
+	var start plugin.StartError
+	if errors.As(err, &start) {
+		return start.Error()
 	}
 	var noSource domain.NoSourceOfKindError
 	if errors.As(err, &noSource) {

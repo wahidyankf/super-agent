@@ -42,7 +42,10 @@ interrupt and `SIGTERM` as explicit statuses. Any other signal that ends the pro
 - **`retriever serve`** returns `0` when its server ends without a signal, `130` on an interrupt, `143` on `SIGTERM`,
   and `125` when the loopback port cannot be bound. Its help page lists `0`, `2`, `124`, `125`, `130`, and `143`.
 
-The CLI never returns `126` or `127`, because it starts no child process.
+The CLI starts a child process only for a plugin source, and a failed start exits `2`, never `126` or `127`: the
+child's own statuses never surface. A plugin whose bytes differ from its pin fails with
+`retriever.connector.plugin_pin_mismatch`, a refused reply fails with `retriever.connector.plugin_protocol`, and a
+plugin that never answers is killed at the limit and exits `124`.
 
 ## Usage and configuration errors
 
@@ -53,8 +56,11 @@ field, never a value. A catalog pin that does not match its spec file fails with
 cannot be read fails with `retriever.connector.folder_unavailable`. A missing default connectors folder is not an error.
 `connector validate <spec>` and `connector test <spec>` check one spec file: an unreadable or oversized file fails
 with `retriever.connector.spec_unreadable`, a refused spec with `retriever.connector.spec_invalid`, and a failed
-replay with `retriever.connector.test_failed`. Every connector failure exits `2` with its diagnostics on standard
-error and nothing on standard output.
+replay with `retriever.connector.test_failed`. A source with a `plugin` block is served by its pinned plugin: a
+plugin whose bytes differ from the pin fails with `retriever.connector.plugin_pin_mismatch`, a refused reply fails
+with `retriever.connector.plugin_protocol`, and a failed start fails with
+`retriever.connector.plugin_start_failed`. Every connector and plugin failure exits `2` with its diagnostics on
+standard error and nothing on standard output.
 See [add a spec connector](../how-to/add-a-spec-connector.md). This includes an unknown option, a missing argument, a bad `--output` or `--color` value,
 an unknown source kind, a port outside `0` to `65535`, and a catalog that does not load. The message goes to standard
 error, and standard output stays empty. A missing catalog is the same case. It exits `2` and names the three ways to

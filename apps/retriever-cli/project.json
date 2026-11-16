@@ -186,6 +186,7 @@
     "retriever-testkit",
     "retriever-connector-kiwi",
     "retriever-spec",
-    "retriever-engine"
+    "retriever-engine",
+    "retriever-plugin"
   ]
 }

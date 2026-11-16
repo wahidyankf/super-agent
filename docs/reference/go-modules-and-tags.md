@@ -13,7 +13,7 @@ tags:
 
 # Go modules and tags
 
-Seven Go modules sit in this repository: the app and six libraries. Each module has its own `go.mod`. No
+Eight Go modules sit in this repository: the app and seven libraries. Each module has its own `go.mod`. No
 `go.work` file joins them. This page states the facts. The rules for imports are in
 [library layering](../explanation/library-layering.md).
 
@@ -31,6 +31,7 @@ Every module path is `github.com/wahidyankf/super-agent/` followed by the module
 | `libs/retriever-connector-kiwi` | `retriever-connector-kiwi` | `type:connector` | `source:kiwi` |
 | `libs/retriever-spec`           | `retriever-spec`           | `type:spec`      | none          |
 | `libs/retriever-engine`         | `retriever-engine`         | `type:engine`    | none          |
+| `libs/retriever-plugin`         | `retriever-plugin`         | `type:plugin`    | none          |
 
 Every Nx project also carries `lang:go` and `domain:retriever`. The app also carries `platform:cli`. The type tag names
 the module's kind, and the architecture test reads it. The `lang:go` tag makes the continuous-integration Go job run for

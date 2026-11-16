@@ -51,6 +51,15 @@ The top level has two keys, and no other key is allowed:
 - `spec_sha256`: optional, and allowed only on a source whose kind a loaded spec declares. It is the SHA-256 of the spec
   file's bytes, as 64 lower-case hex characters. A mismatch fails the run with `retriever.connector.spec_pin_mismatch`,
   and no request goes out.
+- `plugin`: optional, on a source of any kind. It names the pinned out-of-process program that serves the source,
+  and the source is then served by that program instead of its kind's gateway. A source without it starts no process.
+  It holds two keys, and no other key is allowed:
+  - `path`: required. The absolute path of the program. A relative path is refused.
+  - `sha256`: required. The SHA-256 of the approved bytes, as 64 lower-case hex characters. The host copies the file
+    into a private folder, hashes the copy, and runs the copy only when the hash equals the pin. A mismatch fails the
+    run with `retriever.connector.plugin_pin_mismatch`, and no process starts. The child gets an environment of
+    exactly its own credential variable and, when declared, its identity variable, and it starts in an empty private
+    folder. Each call has a 30-second limit; a plugin that never answers is killed and exits `124`.
 
 Each rule states a requirement, and no error message repeats a value. For example, a bad endpoint reports that it must
 be an `https` host name, and it does not print the endpoint.

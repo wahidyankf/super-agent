@@ -20,6 +20,7 @@ import (
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/operations"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-plugin"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/registry"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/sources"
@@ -182,6 +183,17 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 			return buildJiraGateway(model, src, creds, seams[domain.KindJira], h.engine)
 		}
 	}
+	// A source with a plugin block is served by its pinned plugin instead of its kind's gateway, whatever the kind.
+	// A source without one keeps its kind's builder and starts no process (threat P2).
+	for kind, built := range builders {
+		inner := built
+		builders[kind] = func(src domain.Source) (ports.SourceGateway, error) {
+			if src.HasPlugin() {
+				return buildPlugin(src, creds, creds, h.plugin)
+			}
+			return inner(src)
+		}
+	}
 	resolver := registry.New(builders)
 	ops := set.Operations
 	svc := sources.Service{Catalog: cat, Gateways: resolver, Operations: &ops}
@@ -213,6 +225,13 @@ func bundledJira(set connectorspec.Set) *spec.Spec {
 		}
 	}
 	return nil
+}
+
+// buildPlugin returns the gateway of one plugin source: the pinned program serves the source through JSON-RPC,
+// with the secrets the credentials and identities resolve. The seams run the real file and process calls in
+// production, and fakes in a unit test.
+func buildPlugin(src domain.Source, creds ports.Credentials, idents ports.Identities, s plugin.Seams) (ports.SourceGateway, error) {
+	return &plugin.Gateway{Source: src, Credentials: creds, Identities: idents, Seams: s}, nil
 }
 
 // buildKiwi returns the gateway of one Kiwi source: the source's endpoint receives its key, and the seam, when it

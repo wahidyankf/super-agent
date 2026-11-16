@@ -20,6 +20,8 @@ func TestImportRulesByKind(t *testing.T) {
 		specPk    = workspacePrefix + "libs/retriever-spec"
 		engine    = "libs/retriever-engine"
 		enginePk  = workspacePrefix + "libs/retriever-engine/engine"
+		plugin    = "libs/retriever-plugin"
+		pluginPk  = workspacePrefix + "libs/retriever-plugin"
 		replayPk  = workspacePrefix + "libs/retriever-engine/engine/replay"
 	)
 	cases := []struct {
@@ -65,6 +67,21 @@ func TestImportRulesByKind(t *testing.T) {
 		{"an engine imports a connector", engine, false, kiwiPk, true},
 		{"an engine imports a runtime", engine, false, runtimePk, true},
 		{"an engine imports the test kit in production code", engine, false, kitPkg, true},
+		{"a plugin imports the contract", plugin, false, domainPkg, false},
+		{"a plugin imports a runtime", plugin, false, runtimePk, true},
+		{"a plugin imports a connector", plugin, false, kiwiPk, true},
+		{"a plugin imports the spec module", plugin, false, specPk, true},
+		{"a plugin imports an engine", plugin, false, enginePk, true},
+		{"a plugin imports the test kit in production code", plugin, false, kitPkg, true},
+		{"a plugin test imports the test kit", plugin, true, kitPkg, false},
+		{"a plugin test imports a runtime", plugin, true, runtimePk, true},
+		{"a plugin imports the app", plugin, false, appPkg, true},
+		{"the app imports the plugin", app, false, pluginPk, false},
+		{"a spec imports the plugin", spec, false, pluginPk, true},
+		{"an engine imports the plugin", engine, false, pluginPk, true},
+		{"a runtime imports the plugin", runtime, false, pluginPk, true},
+		{"a connector imports the plugin", kiwi, false, pluginPk, true},
+		{"the contract imports the plugin", contract, false, pluginPk, true},
 		{"an engine test imports the test kit", engine, true, kitPkg, false},
 		{"an engine test imports the spec module", engine, true, specPk, false},
 		{"an engine imports the app", engine, false, appPkg, true},
