@@ -21,12 +21,17 @@ import (
 // generic engine. main passes realHost; a unit test passes fakes, so the wiring runs without a real stream, file, folder,
 // or socket.
 type host struct {
-	stdin          io.Reader
-	stdout         io.Writer
-	stderr         io.Writer
-	getwd          func() (string, error)
-	now            func() time.Time
-	exists         func(path string) bool
+	stdin  io.Reader
+	stdout io.Writer
+	stderr io.Writer
+	getwd  func() (string, error)
+	now    func() time.Time
+	exists func(path string) bool
+	// isDir reports whether a path is a real folder, following no symbolic link. A nil check reports no folder, so the
+	// run reads the single catalog. A unit test passes a fake, so no real folder is checked.
+	isDir func(path string) bool
+	// isSymlink reports whether a path is a symbolic link. A nil check reports none.
+	isSymlink      func(path string) bool
 	openEnvFile    func(path string) (*envfile.Credentials, error)
 	openCatalog    func(path string, kinds domain.KindSet) (*catalog.Loader, error)
 	openConnectors func(dir string) fs.FS
@@ -56,6 +61,8 @@ var realHost = host{
 	getwd:          os.Getwd,
 	now:            time.Now,
 	exists:         regularFileExists,
+	isDir:          realDirExists,
+	isSymlink:      realSymlinkExists,
 	openEnvFile:    openEnvFile,
 	openCatalog:    openCatalog,
 	openConnectors: openConnectorsFolder,

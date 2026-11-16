@@ -258,12 +258,14 @@ type Globals struct {
 	EnvFile string
 	// ConnectorsDir holds the value of --connectors-dir, or "" when the flag is absent.
 	ConnectorsDir string
+	// Profile holds the value of --profile, or "" when the flag is absent.
+	Profile string
 }
 
 // ParseGlobals returns the path options of argv. A malformed command line returns the error that Run would report.
 func ParseGlobals(argv []string) (Globals, error) {
 	g, _, err := splitGlobals(argv)
-	return Globals{Catalog: g.catalog, EnvFile: g.envFile, ConnectorsDir: g.connectors}, err
+	return Globals{Catalog: g.catalog, EnvFile: g.envFile, ConnectorsDir: g.connectors, Profile: g.profile}, err
 }
 
 // outputFormat returns the format named by --output in argv, text when it is absent or malformed. It chooses the stream

@@ -157,7 +157,7 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 	if err != nil {
 		return sourceWiring{}, err
 	}
-	cat, err := loader.WithSpecDigests(set.Digests).Load()
+	cat, err := loader.WithSpecDigests(set.Digests).WithProfile(paths.Profile).Load()
 	if err != nil {
 		return sourceWiring{}, err
 	}
@@ -196,7 +196,7 @@ func wireSourcesWith(paths configpaths.Paths, seams seamSet, h host, set connect
 	}
 	resolver := registry.New(builders)
 	ops := set.Operations
-	svc := sources.Service{Catalog: cat, Gateways: resolver, Operations: &ops}
+	svc := sources.Service{Catalog: cat, Gateways: resolver, Operations: &ops, Profile: paths.Profile}
 	// The GraphQL server serves the reads of the catalog only: its schema has no mutation.
 	return sourceWiring{
 		service: svc,

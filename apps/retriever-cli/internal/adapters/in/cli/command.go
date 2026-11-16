@@ -142,8 +142,12 @@ type globals struct {
 	catalog    string
 	envFile    string
 	connectors string
-	version    bool
-	help       bool
+	profile    string
+	// profileGiven reports whether --profile was passed, so a repeated flag is a usage error even when the values
+	// match: one run takes exactly one profile.
+	profileGiven bool
+	version      bool
+	help         bool
 }
 
 // format returns the output format the --output flag selects. Text is the default, and json is the machine-readable mode.
@@ -165,7 +169,7 @@ func splitGlobals(argv []string) (globals, []string, error) {
 
 		name, value, hasValue := strings.Cut(tok, "=")
 		switch name {
-		case "-o", "--output", "--color", "--catalog", "--env-file", "--connectors-dir":
+		case "-o", "--output", "--color", "--catalog", "--env-file", "--connectors-dir", "--profile":
 			if !hasValue {
 				if i+1 >= len(argv) {
 					return g, nil, fmt.Errorf("missing value for %s", name)
@@ -182,6 +186,12 @@ func splitGlobals(argv []string) (globals, []string, error) {
 				g.envFile = value
 			case "--connectors-dir":
 				g.connectors = value
+			case "--profile":
+				if g.profileGiven {
+					return g, nil, fmt.Errorf("the --profile flag takes one value")
+				}
+				g.profileGiven = true
+				g.profile = value
 			default:
 				g.output = value
 			}
@@ -257,6 +267,7 @@ func globalOptionRows() [][2]string {
 		{"--catalog <path>", "sources catalog file (default: RETRIEVER_CATALOG, ./sources.yml, or the user configuration folder)"},
 		{"--env-file <path>", "local env file holding source keys (default: RETRIEVER_ENV_FILE, ./.env.local, or the user configuration folder)"},
 		{"--connectors-dir <path>", "folder of connector spec files (default: the connectors folder of the user configuration folder)"},
+		{"--profile <name>", "active profile (default: RETRIEVER_PROFILE); with a profiles folder one profile is required, and explicit paths are refused"},
 		{"-V, --version", "print the retriever version and the alpha notice, then exit"},
 		{"-h, --help", "show help"},
 	}
