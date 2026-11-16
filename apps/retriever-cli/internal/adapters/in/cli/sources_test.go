@@ -145,7 +145,7 @@ func TestWriteSourceRowsPadsColumnsAndShowsADashForNoTags(t *testing.T) {
 	writeSourceRows(&b, []domain.SourceSummary{
 		{ID: "outline", Kind: "outline"},
 		{ID: "outline-engineering", Kind: "outline", Tags: []string{"engineering", "wiki"}},
-	})
+	}, "")
 
 	want := "2 sources\n" +
 		"  outline              outline  -\n" +
@@ -157,7 +157,7 @@ func TestWriteSourceRowsPadsColumnsAndShowsADashForNoTags(t *testing.T) {
 
 func TestWriteSourceRowsUsesTheSingularForOneSource(t *testing.T) {
 	var b strings.Builder
-	writeSourceRows(&b, []domain.SourceSummary{{ID: "outline", Kind: "outline"}})
+	writeSourceRows(&b, []domain.SourceSummary{{ID: "outline", Kind: "outline"}}, "")
 
 	if !strings.HasPrefix(b.String(), "1 source\n") {
 		t.Fatalf("rows = %q, want the singular count", b.String())
@@ -166,7 +166,7 @@ func TestWriteSourceRowsUsesTheSingularForOneSource(t *testing.T) {
 
 func TestWriteSourceRowsOfNoSourcesPrintsZero(t *testing.T) {
 	var b strings.Builder
-	writeSourceRows(&b, nil)
+	writeSourceRows(&b, nil, "")
 
 	if b.String() != "0 sources\n" {
 		t.Fatalf("rows = %q, want the zero count and no row", b.String())

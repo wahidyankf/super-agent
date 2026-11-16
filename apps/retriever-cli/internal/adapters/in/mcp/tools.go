@@ -33,10 +33,10 @@ type tool struct {
 var handWrittenTools = []tool{
 	{
 		name:        "list_sources",
-		description: "Lists the configured wiki sources with their kind and tags. Filter by kind and by tags; a source must have every tag given. The endpoint and the credential name are never shown.",
+		description: "Lists the configured wiki sources with their kind and tags. Filter by kind and by tags; a source must have every tag given. The endpoint and the credential name are never shown. The answer names the active profile.",
 		effect:      domain.EffectRead,
 		opensWorld:  false,
-		bind:        bind(listSources),
+		bind:        bindListSources,
 	},
 }
 
@@ -188,6 +188,7 @@ type listSourcesIn struct {
 }
 
 type listSourcesOut struct {
+	Profile   string      `json:"profile"`
 	Sources   []sourceOut `json:"sources"`
 	Count     int         `json:"count"`
 	Truncated bool        `json:"truncated"`
@@ -207,7 +208,47 @@ func tagsOrEmpty(tags []string) []string {
 	return tags
 }
 
-// listSources returns the catalog rows that match the filter. It reads the catalog only.
+// bindListSources adds the list_sources tool to the server. It refuses a profile argument as an unknown input, like
+// the generated tools refuse undeclared inputs: a run has one profile from its process, and no tool call selects
+// another. The kind and tags inputs pass through to the use case.
+func bindListSources(server *sdk.Server, meta *sdk.Tool, c caller) {
+	inner := handler(c, meta.Name, listSources)
+	sdk.AddTool(server, meta, func(ctx context.Context, req *sdk.CallToolRequest, in listSourcesIn) (*sdk.CallToolResult, listSourcesOut, error) {
+		start := time.Now()
+		if _, err := checkListArgs(req); err != nil {
+			c.record(meta.Name, "", "bad arguments", start)
+			return nil, listSourcesOut{}, err
+		}
+		return inner(ctx, req, in)
+	})
+}
+
+// checkListArgs decodes the raw arguments of a list_sources call and refuses inputs the tool does not list, before
+// anything is bound. A malformed object and an unlisted input are both bad arguments, like the generated tools report.
+func checkListArgs(req *sdk.CallToolRequest) (map[string]any, error) {
+	args, err := decodeArgs(req)
+	if err != nil {
+		return nil, errors.New("arguments must be a JSON object")
+	}
+	if err := refuseUnknownListArgs(args); err != nil {
+		return nil, err
+	}
+	return args, nil
+}
+
+// refuseUnknownListArgs refuses a list_sources call that names an input the tool does not list, before anything is
+// bound. The tool lists only kind and tags: a profile argument is an unknown argument, even though the SDK schema
+// usually refuses it first.
+func refuseUnknownListArgs(args map[string]any) error {
+	for key := range args {
+		if key != "kind" && key != "tags" {
+			return errUnknownInput
+		}
+	}
+	return nil
+}
+
+// listSources returns the catalog rows that match the filter, with the active profile. It reads the catalog only.
 func listSources(_ context.Context, svc sources.Service, in listSourcesIn) (listSourcesOut, string, error) {
 	filter, err := domain.NewSourceFilter(in.Kind, in.Tags...)
 	if err != nil {
@@ -219,9 +260,9 @@ func listSources(_ context.Context, svc sources.Service, in listSourcesIn) (list
 		rows = append(rows, sourceOut{ID: r.ID, Kind: r.Kind, Tags: tagsOrEmpty(r.Tags)})
 	}
 	kept, truncated := fitPlainRows(rows, func(kept []sourceOut, tr bool) any {
-		return listSourcesOut{Sources: kept, Count: len(kept), Truncated: tr}
+		return listSourcesOut{Profile: svc.Profile, Sources: kept, Count: len(kept), Truncated: tr}
 	})
-	return listSourcesOut{Sources: kept, Count: len(kept), Truncated: truncated}, "", nil
+	return listSourcesOut{Profile: svc.Profile, Sources: kept, Count: len(kept), Truncated: truncated}, "", nil
 }
 
 // errors the adapter adds to the public set. Their texts are fixed and carry no value.

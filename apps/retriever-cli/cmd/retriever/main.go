@@ -62,9 +62,12 @@ func attachSourcesFrom(deps *cli.Deps, g cli.Globals, seams seamSet, getenv func
 		CatalogFlag:    g.Catalog,
 		EnvFileFlag:    g.EnvFile,
 		ConnectorsFlag: g.ConnectorsDir,
+		ProfileFlag:    g.Profile,
 		Getenv:         getenv,
 		Getwd:          h.getwd,
 		Exists:         h.exists,
+		IsDir:          h.isDir,
+		IsSymlink:      h.isSymlink,
 	})
 	if err != nil {
 		return err
@@ -88,4 +91,17 @@ func attachSourcesFrom(deps *cli.Deps, g cli.Globals, seams seamSet, getenv func
 func regularFileExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.Mode().IsRegular()
+}
+
+// realDirExists reports whether path is a real folder. The link itself is described, never followed, so a symbolic
+// link to a folder is not a folder.
+func realDirExists(path string) bool {
+	info, err := os.Lstat(path)
+	return err == nil && info.IsDir() && info.Mode()&os.ModeSymlink == 0
+}
+
+// realSymlinkExists reports whether path is a symbolic link. The link itself is described, never followed.
+func realSymlinkExists(path string) bool {
+	info, err := os.Lstat(path)
+	return err == nil && info.Mode()&os.ModeSymlink != 0
 }

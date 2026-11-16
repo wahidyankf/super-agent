@@ -19,6 +19,9 @@ type Service struct {
 	// Operations is the operation catalog the calls read, with the rows of every kind the run registers. Nil means the
 	// built-in catalog.
 	Operations *operations.Catalog
+	// Profile is the active profile name, or "" when the run has no profiles folder. Inbound adapters name it in the
+	// sources list, so a caller sees which profile answered.
+	Profile string
 }
 
 // ListCollections returns the collections of the selected source of the kind. A nil source applies the default rule.

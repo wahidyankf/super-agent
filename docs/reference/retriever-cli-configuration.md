@@ -14,6 +14,9 @@ tags:
 `retriever` reads two files. The **sources catalog** names the sources and their endpoints. The **env file** holds the
 keys of those sources. Neither file is part of the repository, and the repository ignores both by name.
 
+With no profiles folder, the precedence below applies. With a profiles folder, the
+[profiles](#profiles) rules apply instead.
+
 ## Precedence
 
 For each file, the first rule that applies wins:
@@ -51,6 +54,22 @@ The env file follows the same order with `--env-file`, `RETRIEVER_ENV_FILE`, `./
 Only the working directory is checked for rule 3. Parent folders are never searched, so a `sources.yml` in a folder
 above the working directory is not found. The rule is the same from any folder, and a file found by walking up the tree
 could belong to another project.
+
+## Profiles
+
+A profile is a folder under the user configuration folder that holds one catalog, one env file, and one connectors
+folder. See [profile layout](./profile-layout.md). With a profiles folder present, the run has one active profile and
+reads only its folder:
+
+1. The `--profile <name>` flag.
+2. The `RETRIEVER_PROFILE` environment variable, when it is set and not empty.
+
+The flag wins over the variable. With a profiles folder and no choice, every source command exits `2` with
+`retriever.usage.profile_required` and reads no catalog. `--profile` together with `--catalog`, `--env-file`, or
+`--connectors-dir`, or with those environment variables set, is a usage error that exits `2`: an explicit path would
+bypass the profile. Tags never select a profile. A repeated `--profile` flag is a usage error. A profile name holds
+lowercase letters, digits, and single hyphens only, and a name that escapes its folder, such as `../other`, exits `2`.
+A symbolic link as the profile folder is refused.
 
 ## Connector specs
 

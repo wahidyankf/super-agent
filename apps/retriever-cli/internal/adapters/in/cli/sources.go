@@ -11,7 +11,8 @@ import (
 
 // sourcesList prints the configured sources that match --kind and --tag. The tag filter is one comma-separated
 // value, and every tag given must be on a source. Each row shows the id, kind, and tags, and never an
-// endpoint or a credential name. JSON mode prints the same fields as one document.
+// endpoint or a credential name. The active profile is named in both modes, so a caller sees which profile answered.
+// JSON mode prints the same fields as one document.
 func sourcesList(inv *invocation) error {
 	rt := inv.rt
 	if rt.setupErr != nil {
@@ -23,9 +24,9 @@ func sourcesList(inv *invocation) error {
 	}
 	rows := sources.ListSources(rt.service.Catalog, filter)
 	if rt.format == domain.FormatJSON {
-		return writeJSON(rt.out, sourcesJSON{SchemaVersion: sourcesSchemaVersion, Sources: sourceRowsJSON(rows)})
+		return writeJSON(rt.out, sourcesJSON{SchemaVersion: sourcesSchemaVersion, Profile: rt.service.Profile, Sources: sourceRowsJSON(rows)})
 	}
-	writeSourceRows(rt.out, rows)
+	writeSourceRows(rt.out, rows, rt.service.Profile)
 	return nil
 }
 
@@ -33,9 +34,11 @@ func sourcesList(inv *invocation) error {
 // removed field raises the version of its document. The other documents keep schemaVersion.
 const sourcesSchemaVersion = 2
 
-// sourcesJSON is the document of sources list in JSON mode. Its field order is fixed.
+// sourcesJSON is the document of sources list in JSON mode. Its field order is fixed. The profile field is present
+// only for a run with a profiles folder, so the single-catalog document keeps its shape.
 type sourcesJSON struct {
 	SchemaVersion int             `json:"schemaVersion"`
+	Profile       string          `json:"profile,omitempty"`
 	Sources       []sourceRowJSON `json:"sources"`
 }
 
@@ -74,13 +77,18 @@ func sourceFilter(inv *invocation) (domain.SourceFilter, error) {
 }
 
 // writeSourceRows prints the count line, then one row per source. The first three columns are padded to their
-// widest value and separated by two spaces. Tags come last, comma-joined, or "-" when there are none.
-func writeSourceRows(w io.Writer, rows []domain.SourceSummary) {
+// widest value and separated by two spaces. Tags come last, comma-joined, or "-" when there are none. A non-empty
+// profile is named in the count line, so the text names the profile that answered.
+func writeSourceRows(w io.Writer, rows []domain.SourceSummary, profile string) {
+	suffix := ""
+	if profile != "" {
+		suffix = " (profile: " + profile + ")"
+	}
 	switch len(rows) {
 	case 1:
-		fmt.Fprintln(w, "1 source")
+		fmt.Fprintf(w, "1 source%s\n", suffix)
 	default:
-		fmt.Fprintf(w, "%d sources\n", len(rows))
+		fmt.Fprintf(w, "%d sources%s\n", len(rows), suffix)
 	}
 	idW, kindW := 0, 0
 	for _, r := range rows {

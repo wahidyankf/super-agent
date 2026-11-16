@@ -54,6 +54,9 @@ file that is refused stops the sources commands with `retriever.connector.spec_i
 field, never a value. A catalog pin that does not match its spec file fails with
 `retriever.connector.spec_pin_mismatch`, and no request goes out. An explicit `--connectors-dir` that does not exist or
 cannot be read fails with `retriever.connector.folder_unavailable`. A missing default connectors folder is not an error.
+With a profiles folder and no selected profile, every source command exits `2` with
+`retriever.usage.profile_required` and reads no catalog; a refused profile selection exits `2` with
+`retriever.usage.profile_invalid`. Both keep standard output empty.
 `connector validate <spec>` and `connector test <spec>` check one spec file: an unreadable or oversized file fails
 with `retriever.connector.spec_unreadable`, a refused spec with `retriever.connector.spec_invalid`, and a failed
 replay with `retriever.connector.test_failed`. A source with a `plugin` block is served by its pinned plugin: a
