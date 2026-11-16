@@ -190,6 +190,18 @@ type sourceEntry struct {
 	// SpecSHA256 is the optional pin of the spec file of a spec kind. A nil pointer means the field is absent. The
 	// loader accepts it only for a kind with a loaded spec, and it must match that spec's digest.
 	SpecSHA256 *string `yaml:"spec_sha256"`
+	// Plugin is the optional pinned out-of-process program that serves the source. A nil pointer means the field is
+	// absent, and the source is served by its kind's gateway with no process. A plugin is opt-in per source: only a
+	// catalog source enables one, for that source only (threat P2).
+	Plugin *pluginEntry `yaml:"plugin"`
+}
+
+// pluginEntry is the plugin block of one source as written: the absolute path of the program and the SHA-256 pin of
+// the bytes the user approved. The host copies the file, hashes the copy, and runs the copy only when the hash
+// equals the pin (threat P1).
+type pluginEntry struct {
+	Path   string `yaml:"path"`
+	SHA256 string `yaml:"sha256"`
 }
 
 // parse decodes data strictly and maps it onto a domain.Catalog. Each source kind is resolved through kinds, and each
@@ -274,6 +286,13 @@ func toSource(position int, e sourceEntry, kinds domain.KindSet, digests map[str
 			return domain.Source{}, fieldErr(position, "spec_sha256", err)
 		}
 	}
+	if e.Plugin != nil {
+		ref, err := domain.NewPluginRef(e.Plugin.Path, e.Plugin.SHA256)
+		if err != nil {
+			return domain.Source{}, fieldErr(position, "plugin", err)
+		}
+		src = src.WithPlugin(ref)
+	}
 	return src, nil
 }
 
@@ -334,6 +353,10 @@ func fieldRule(err error) string {
 		return errPinFormat.Error()
 	case errors.As(err, &PinMismatchError{}):
 		return PinMismatchError{}.Error()
+	case errors.Is(err, domain.ErrInvalidPluginPath):
+		return domain.ErrInvalidPluginPath.Error()
+	case errors.Is(err, domain.ErrInvalidPluginPin):
+		return domain.ErrInvalidPluginPin.Error()
 	}
 	return "invalid"
 }
