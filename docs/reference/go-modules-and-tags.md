@@ -1,7 +1,7 @@
 ---
 title: Go modules and tags
 description: >-
-  Module paths, Nx projects and tags, requirements, versions, and the tag format of the app and the six libraries.
+  Module paths, Nx projects and tags, requirements, versions, and the tag format of the app and the seven libraries.
 category: reference
 tags:
   - reference
@@ -39,7 +39,8 @@ an affected project.
 
 ## Requirements
 
-Each module names its sibling modules in its `go.mod`, at `v0.4.0`. Each requirement has a `replace` directive to the
+Each module names its sibling modules in its `go.mod`, at `v0.4.0`, except `retriever-spec` and `retriever-engine`,
+which sit at `v0.6.0`. Each requirement has a `replace` directive to the
 sibling's folder, so a build in this repository uses the working tree.
 
 - `apps/retriever-cli` requires the libraries that it builds on, including `libs/retriever-spec` and
@@ -59,13 +60,13 @@ architecture test checks that each list is complete.
 
 ## Versions
 
-- Each library is at `v0.4.0`. The six libraries are released in lockstep, so one version applies to all of them.
-  `libs/retriever-spec` and `libs/retriever-engine` have no tag yet, and they take the lockstep version when the
-  libraries are next released.
+- The libraries sit at `v0.4.0`, except `libs/retriever-spec` and `libs/retriever-engine`, which sit at `v0.6.0`.
+  The seven libraries are released in lockstep, so the next library release aligns them on one version. No `libs/` tag
+  exists yet.
 - `ContractVersion` in [contract.go](../../libs/retriever-contract/contract.go) is `0.4.0`. Its comment says that the
   value matches the release tag of the libraries.
 - The app module has no version of its own. The app is released with the repository tag, and the latest tag is
-  `v0.2.0`.
+  `v0.3.0`.
 
 A contract change bumps the minor version in v0.x, because the project is alpha. The [changelog](../../CHANGELOG.md)
 lists each change under the release that makes it.
@@ -74,7 +75,7 @@ lists each change under the release that makes it.
 
 | Module  | Tag form             | Example                          |
 | ------- | -------------------- | -------------------------------- |
-| app     | `vX.Y.Z`             | `v0.2.0`                         |
+| app     | `vX.Y.Z`             | `v0.3.0`                         |
 | library | `libs/<name>/vX.Y.Z` | `libs/retriever-contract/v0.4.0` |
 
 The library tag has the module's folder as its prefix. Go reads a tag with a path prefix as a version of the module in

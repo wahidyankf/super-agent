@@ -41,7 +41,7 @@ own `go.mod`, and each library has its own tag format, `libs/<name>/vX.Y.Z`. Rea
 
 ## Status
 
-The latest release is `v0.2.0`, an alpha pre-release. It follows `v0.1.0`. The archives and checksum lists are on the
+The latest release is `v0.3.0`, an alpha pre-release. It follows `v0.2.0`. The archives and checksum lists are on the
 GitHub Releases page. Each release names its breaking changes in [CHANGELOG.md](./CHANGELOG.md).
 
 ## Repository
