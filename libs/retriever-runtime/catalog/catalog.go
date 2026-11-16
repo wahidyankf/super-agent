@@ -48,6 +48,9 @@ type Loader struct {
 	kinds   domain.KindSet
 	digests map[string]string
 	pinned  map[string]bool
+	// profile is the active profile name, or "" for the single catalog. A profile run refuses a credential or
+	// identity name that does not start with the profile prefix, so two profiles cannot name one variable.
+	profile string
 }
 
 var _ ports.CatalogLoader = (*Loader)(nil)
@@ -75,6 +78,16 @@ var errPinNotSpecKind = errors.New("only for a spec kind")
 // errPinFormat reports a pin that is not 64 lower-case hexadecimal characters.
 var errPinFormat = errors.New("must be 64 lower-case hex characters")
 
+// errProfilePrefix reports a credential or identity name of a profile catalog that does not start with the profile
+// prefix. The text states the rule and never the name, because a name may sit beside a pasted key.
+var errProfilePrefix = errors.New("must start with the profile prefix")
+
+// profilePrefix returns the required prefix of a credential or identity name of the profile: the profile name in upper
+// case, with hyphens as underscores, followed by an underscore. The profile work uses WORK_.
+func profilePrefix(profile string) string {
+	return strings.ToUpper(strings.ReplaceAll(profile, "-", "_")) + "_"
+}
+
 // sha256Hex is the shape of a SHA-256 digest in lower-case hexadecimal.
 var sha256Hex = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
@@ -83,6 +96,14 @@ var sha256Hex = regexp.MustCompile(`^[0-9a-f]{64}$`)
 // must equal that digest. The map is read, never changed, and a nil map means no spec kind is loaded.
 func (l *Loader) WithSpecDigests(digests map[string]string) *Loader {
 	l.digests = digests
+	return l
+}
+
+// WithProfile returns the loader for a run of the named profile. A profile run refuses a credential_env or identity_env
+// name that does not start with the upper-case profile prefix, such as WORK_ for the work profile, with hyphens as
+// underscores. The empty name keeps the single-catalog behavior: no prefix is required.
+func (l *Loader) WithProfile(name string) *Loader {
+	l.profile = name
 	return l
 }
 
@@ -121,7 +142,7 @@ func (l *Loader) Load() (domain.Catalog, error) {
 	if !found {
 		return domain.Catalog{}, catalogCause("not found: set --catalog or RETRIEVER_CATALOG, or create ./sources.yml", domain.ErrCatalogMissing)
 	}
-	return parse(data, l.kinds, l.digests, l.pinned)
+	return parse(data, l.kinds, l.digests, l.pinned, l.profile)
 }
 
 // PinnedKinds returns the spec kinds that the last Load found pinned: a kind counts only when every source of that kind
@@ -206,7 +227,9 @@ type pluginEntry struct {
 
 // parse decodes data strictly and maps it onto a domain.Catalog. Each source kind is resolved through kinds, and each
 // spec_sha256 pin is checked against digests. pinned receives, for each kind, whether every source of that kind pins it.
-func parse(data []byte, kinds domain.KindSet, digests map[string]string, pinned map[string]bool) (domain.Catalog, error) {
+// profile is the active profile name, or "" for the single catalog: a profile run refuses a credential or identity name
+// that does not start with the profile prefix.
+func parse(data []byte, kinds domain.KindSet, digests map[string]string, pinned map[string]bool, profile string) (domain.Catalog, error) {
 	dec := yaml.NewDecoder(bytes.NewReader(data))
 	dec.KnownFields(true)
 	var doc fileDoc
@@ -225,7 +248,7 @@ func parse(data []byte, kinds domain.KindSet, digests map[string]string, pinned 
 	}
 	list := make([]domain.Source, 0, len(doc.Sources))
 	for i, entry := range doc.Sources {
-		src, err := toSource(i+1, entry, kinds, digests)
+		src, err := toSource(i+1, entry, kinds, digests, profile)
 		if err != nil {
 			return domain.Catalog{}, err
 		}
@@ -244,9 +267,9 @@ func parse(data []byte, kinds domain.KindSet, digests map[string]string, pinned 
 	return cat, nil
 }
 
-// toSource maps one entry onto the value objects. position is the 1-based source number used in the error text, and kind
-// is resolved through kinds.
-func toSource(position int, e sourceEntry, kinds domain.KindSet, digests map[string]string) (domain.Source, error) {
+// toSource maps one entry onto the value objects. position is the 1-based source number used in the error text, kind
+// is resolved through kinds, and profile is the active profile name, or "" for the single catalog.
+func toSource(position int, e sourceEntry, kinds domain.KindSet, digests map[string]string, profile string) (domain.Source, error) {
 	id, err := domain.NewSourceID(e.ID)
 	if err != nil {
 		return domain.Source{}, fieldErr(position, "id", err)
@@ -271,6 +294,9 @@ func toSource(position int, e sourceEntry, kinds domain.KindSet, digests map[str
 	if err != nil {
 		return domain.Source{}, fieldErr(position, "credential_env", err)
 	}
+	if profile != "" && !strings.HasPrefix(e.CredentialEnv, profilePrefix(profile)) {
+		return domain.Source{}, fieldErr(position, "credential_env", errProfilePrefix)
+	}
 	src := domain.NewSource(id, kind, tags, endpoint, credential)
 	// A nil pointer means the field is absent, so the source has no identity. An empty value is a name that fails the
 	// rule.
@@ -278,6 +304,9 @@ func toSource(position int, e sourceEntry, kinds domain.KindSet, digests map[str
 		identity, err := domain.NewIdentityRef(*e.IdentityEnv)
 		if err != nil {
 			return domain.Source{}, fieldErr(position, "identity_env", err)
+		}
+		if profile != "" && !strings.HasPrefix(*e.IdentityEnv, profilePrefix(profile)) {
+			return domain.Source{}, fieldErr(position, "identity_env", errProfilePrefix)
 		}
 		src = src.WithIdentity(identity)
 	}
@@ -351,6 +380,8 @@ func fieldRule(err error) string {
 		return errPinNotSpecKind.Error()
 	case errors.Is(err, errPinFormat):
 		return errPinFormat.Error()
+	case errors.Is(err, errProfilePrefix):
+		return errProfilePrefix.Error()
 	case errors.As(err, &PinMismatchError{}):
 		return PinMismatchError{}.Error()
 	case errors.Is(err, domain.ErrInvalidPluginPath):

@@ -8,4 +8,4 @@ rule of the catalog format. The rules are in
 - `catalog.go` reads the file through the file system that it is given, validates each source, and returns the catalog.
   Its error text never includes the file path.
 - `catalog_integration_test.go` reads a real file, so it carries the `integration` build tag. The other tests run
-  without a tag.
+  without a tag. `profile_test.go` tests the profile prefix rule of a profile catalog.
