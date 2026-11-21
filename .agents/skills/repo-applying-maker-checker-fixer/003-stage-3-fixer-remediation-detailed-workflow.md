@@ -75,39 +75,20 @@ The fixer reads a finding, re-executes the validation check, assesses confidence
 (HIGH_CONFIDENCE), skips it and flags it for manual review (MEDIUM_CONFIDENCE), or skips it, reports it to the user, and
 suggests a checker improvement (FALSE_POSITIVE).
 
-```text
-+--------------+
-| Read finding |
-+--------------+
-    |
-    v
-+-----------------------------+
-| Re-execute validation check |
-+-----------------------------+
-    |
-    v
-+-------------------------+
-| Assess confidence level |
-+-------------------------+
-  |
-  |                         +------------------------+     +-------------------------+
-  +-- HIGH_CONFIDENCE ----> | Re-validation confirms |---->| Apply fix automatically |
-  |                         | issue exists           |     +-------------------------+
-  |                         | Issue is objective     |
-  |                         | and verifiable         |
-  |                         +------------------------+
-  |
-  |                         +------------------------+     +-----------------------+
-  +-- MEDIUM_CONFIDENCE --> | Re-validation unclear  |---->| Skip fix, flag as     |
-  |                         | or ambiguous           |     | 'needs manual review' |
-  |                         | Issue is subjective or |     +-----------------------+
-  |                         | context-dependent      |
-  |                         +------------------------+
-  |
-  |                         +-----------------+     +-----------------------------+
-  +-- FALSE_POSITIVE -----> | Re-validation   |---->| Skip fix, report to user    |
-                            | disproves issue |     | Suggest checker improvement |
-                            +-----------------+     +-----------------------------+
+```mermaid
+flowchart TD
+    accTitle: Fixer decision flow for each finding
+    accDescr: The fixer reads a finding, re-executes its check, assesses confidence, then applies, flags, or skips it.
+    read["Read finding"] --> recheck["Re-execute validation check"]
+    recheck --> conf{"Assess confidence level"}
+    conf -->|HIGH_CONFIDENCE| hc["Re-validation confirms<br/>issue exists. Issue is<br/>objective and verifiable"]
+    hc --> apply["Apply fix automatically"]
+    mc["Re-validation unclear<br/>or ambiguous. Issue is<br/>subjective or<br/>context-dependent"]
+    conf -->|MEDIUM_CONFIDENCE| mc
+    mc --> flag["Skip fix, flag as<br/>'needs manual review'"]
+    conf -->|FALSE_POSITIVE| fp["Re-validation disproves issue"]
+    fp --> report["Skip fix, report to user.<br/>Suggest checker improvement"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 ### 3. Mode Parameter Handling

@@ -19,7 +19,7 @@ A stack pack governs one language or tool. It has three parts:
 ## Rules
 
 - A standard states only what is specific to its stack. For everything else it links the shared rules: test-driven
-  development, the three-level testing standard, and the Nx target standard.
+  development, the test boundaries and gates, and the Nx target standard.
 - A stack with no standard is built under the language-neutral rules alone, and the hand-off says so.
 - A pack is added in the same change that first adds the stack's code. A pack with no code is not added.
 - The [repository adapter](../../development/quality/stacks/repository-adapter.md) states how the repository applies the

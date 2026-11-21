@@ -24,10 +24,16 @@ and B5 stand as they are. Everything on this page is planned.
 
 Boundary B2 splits in two, because a spec now reaches the engine by two roads.
 
-```text
-  user spec file --B2u--> Parse (refuses built-in kinds and catalog_id) --+
-                                                                          +--> engine --B3--> source
-  embedded spec  --B2e--> ParseBundled (called by the embed loader only) -+
+```mermaid
+flowchart LR
+    accTitle: Spec parsing paths to the engine
+    accDescr: A user spec and an embedded spec reach the engine by two parsing roads, then the engine calls a source.
+    userspec["user spec file"] -->|B2u| parse["Parse (refuses built-in<br/>kinds and catalog_id)"]
+    embedded["embedded spec"] -->|B2e| bundled["ParseBundled (called<br/>by the embed loader only)"]
+    parse --> engine["engine"]
+    bundled --> engine
+    engine -->|B3| source["source"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 - **B2u. User spec to engine.** Untrusted input, as in ADR 001. This holds for all of E1 to E8, because any user spec

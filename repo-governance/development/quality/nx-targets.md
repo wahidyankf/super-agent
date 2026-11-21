@@ -11,7 +11,7 @@ when_to_use: >-
 The workspace uses Nx to run tasks across projects. Every project exposes the same target names with the same meaning,
 so a gate can run one name across all of them. The one exception is `test:e2e`, which only a project that builds a
 binary declares. The first project, `apps/retriever-cli`, exposes the required names. It also exposes
-`test:conformance`, `bdd:check`, and `deps:audit`, which are listed in its
+`test:conformance`, `test:behaviour:coverage`, and `deps:audit`, which are listed in its
 [test gates reference](../../../docs/reference/retriever-cli-test-gates.md).
 
 ## Required Targets

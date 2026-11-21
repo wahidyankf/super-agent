@@ -34,8 +34,14 @@ live in the engine and are reviewed once; no spec field changes them.
 4. The guard read before a write, with its own params from the write's args.
 5. The pacing delay, per source, and the cleaned text that reaches the output.
 
-```text
-reply --> envelope check (E18: id echo) --> error object? (E10: fixed table) --> result mapping (E11-E17, clean-text)
+```mermaid
+flowchart LR
+    accTitle: Reply check pipeline
+    accDescr: A reply passes the envelope check, then the error-object check, then result mapping.
+    reply["reply"] --> envelope["envelope check<br/>(E18: id echo)"]
+    envelope --> errobj["error object?<br/>(E10: fixed table)"]
+    errobj --> mapping["result mapping<br/>(E11-E17, clean-text)"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 ## New threats

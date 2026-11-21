@@ -15,9 +15,15 @@ This page belongs to [ADR 003](../003-kiwi-gaps.md). E12 is built by pull reques
 reads the plans of a product, then the cases and the sort-key table of each plan, and builds the tree from parent
 links. E7 flattens one nested reply and can never join several.
 
-```text
-plans (1 call) --+--> cases of plan (1 call each) --+
-                 +--> sortkeys of plan (1 call each) -+--> assemble by parent link, cases ordered by sortkey
+```mermaid
+flowchart LR
+    accTitle: Fan-out of calls and assembly
+    accDescr: One plans call fans out to case and sort-key calls per plan, and both feed the assembly step.
+    plans["plans (1 call)"] --> cases["cases of plan (1 call each)"]
+    plans --> sortkeys["sortkeys of plan (1 call each)"]
+    cases --> assemble["assemble by parent link,<br/>cases ordered by sortkey"]
+    sortkeys --> assemble
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 ```yaml

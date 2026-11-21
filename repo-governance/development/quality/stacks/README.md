@@ -11,7 +11,7 @@ when_to_use: >-
 
 - [Repository Adapter](./repository-adapter.md): how stacks, projects, and gates fit together.
 - [Golang Standards](./golang-standards.md): the Go version, module paths, tools, layering, errors, and tests for the
-  CLI and its six libraries.
+  CLI and its seven libraries.
 - [Shell Standards](./shell-standards.md): the prologue, checks, exit status, and portability rules for scripts and
   hooks.
 

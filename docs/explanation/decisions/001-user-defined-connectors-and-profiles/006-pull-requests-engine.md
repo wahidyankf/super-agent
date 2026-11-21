@@ -18,7 +18,7 @@ code such as S3 points to the [threat model](./001-threat-model.md).
 
 - The pull-request gate surface.
 - For each Go module touched: `lint`, `typecheck`, hermetic `test:unit` at the 99 percent floor, and `test:integration`.
-- For the app: `test:conformance`, `bdd:check`, and `test:e2e` when behaviour changes.
+- For the app: `test:conformance`, `test:behaviour:coverage`, and `test:e2e` when behaviour changes.
 - A changelog entry, plus the docs and `repo-config.yml` entries of any new module.
 
 ## 1. Contract: open the kind set

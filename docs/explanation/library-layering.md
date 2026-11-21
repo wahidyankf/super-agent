@@ -13,7 +13,7 @@ tags:
 
 # Library layering
 
-The Go code of super-agent is one app and six libraries. Each library is its own Go module, so an import rule is
+The Go code of super-agent is one app and seven libraries. Each library is its own Go module, so an import rule is
 also a rule between modules. This page explains the layers, the rules between them, and why the rules exist. The module
 paths, versions, and tags are in [Go modules and tags](../reference/go-modules-and-tags.md).
 
@@ -22,19 +22,17 @@ paths, versions, and tags are in [Go modules and tags](../reference/go-modules-a
 The contract is the bottom layer. Every other module depends on it, and it depends on no other module of this
 repository. An arrow in the diagram points from the importer to the module it imports.
 
-```text
-                       retriever-cli (the app)
-                        |           |
-                        |           +----------------+
-                        v                            v
-                 retriever-runtime  retriever-connector-kiwi
-                        |                 |
-                        +--------+--------+
-                                 v
-                        retriever-contract
-
-    retriever-testkit ----> retriever-contract        (production code of the testkit)
-    tests of the app, the runtime, and the connectors ----> retriever-testkit   (test code only)
+```mermaid
+flowchart TD
+    accTitle: Library layers and import arrows
+    accDescr: The app imports the runtime and Kiwi connector, which import the contract. Tests import the testkit.
+    cli["retriever-cli (the app)"] --> runtime["retriever-runtime"]
+    cli --> kiwi["retriever-connector-kiwi"]
+    runtime --> contract["retriever-contract"]
+    kiwi --> contract
+    testkit["retriever-testkit"] -->|production code| contract
+    tests["tests of the app, the runtime,<br/>and the connectors"] -->|test code only| testkit
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 Pull request 17 retired `retriever-connector-outline`: the bundled-spec engine serves every Outline operation, so

@@ -25,13 +25,17 @@ without a proving scenario is not accepted.
 
 ## Trust boundaries
 
-```text
-  caller (agent, script) --B1--> retriever CLI / MCP
-                                      |
-   spec files (untrusted) --B2--> spec model --> engine --B3--> remote source
-                                      |
-                                      +--B4--> plugin process (code)
-   profile A  ===== B5 =====  profile B
+```mermaid
+flowchart LR
+    accTitle: Trust boundaries B1 to B5
+    accDescr: Five trust boundaries separate the caller, spec files, engine, remote source, plugins, and profiles.
+    caller["caller (agent, script)"] -->|B1| cli["retriever CLI / MCP"]
+    spec["spec files (untrusted)"] -->|B2| model["spec model"]
+    model --> engine["engine"]
+    engine -->|B3| source["remote source"]
+    cli -->|B4| plugin["plugin process (code)"]
+    profileA["profile A"] ---|B5: nothing crosses| profileB["profile B"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 - **B1. Caller to retriever.** Arguments from an agent are untrusted input.

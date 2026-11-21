@@ -36,11 +36,22 @@ The replay stub is the package `engine/replay`. It answers requests from canned 
 | `retriever-plugin`      | `retriever-contract`                   | `retriever-testkit`       |
 | `retriever-conformance` | contract, spec, and engine             | `retriever-testkit`       |
 
-```text
-  retriever-cli (app) --> runtime, spec, engine, plugin, conformance, contract
-  retriever-conformance --> engine --> spec --> contract
-  retriever-plugin --------------------------> contract
-  retriever-runtime -------------------------> contract
+```mermaid
+flowchart LR
+    accTitle: Module dependencies
+    accDescr: Each arrow points from the importing module to the module it imports.
+    cli["retriever-cli (app)"] --> runtime["retriever-runtime"]
+    cli --> spec["retriever-spec"]
+    cli --> engine["retriever-engine"]
+    cli --> plugin["retriever-plugin"]
+    cli --> conformance["retriever-conformance"]
+    cli --> contract["retriever-contract"]
+    conformance --> engine
+    engine --> spec
+    spec --> contract
+    plugin --> contract
+    runtime --> contract
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 Each arrow points from the importer to the module it imports. The app also names the testkit in its tests.

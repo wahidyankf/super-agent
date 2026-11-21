@@ -9,37 +9,26 @@
 Four yes-or-no questions are asked in order, and the first YES sets the finding's criticality to CRITICAL, HIGH, MEDIUM,
 or LOW.
 
-```text
-+------------------------------+          +----------+
-| 1. Does it BREAK             |-- YES -->| CRITICAL |
-| functionality or             |          +----------+
-| BLOCK users?                 |
-+------------------------------+
-    |
-    | NO, continue
-    v
-+------------------------------+          +------+
-| 2. Does it cause SIGNIFICANT |-- YES -->| HIGH |
-| quality degradation or       |          +------+
-| violate DOCUMENTED           |
-| conventions?                 |
-+------------------------------+
-    |
-    | NO, continue
-    v
-+------------------------------+          +--------+
-| 3. Is it a MINOR             |-- YES -->| MEDIUM |
-| quality issue or             |          +--------+
-| style inconsistency?         |
-+------------------------------+
-    |
-    | NO, continue
-    v
-+------------------------------+          +-----+
-| 4. Is it a suggestion,       |-- YES -->| LOW |
-| optimization, or             |          +-----+
-| future consideration?        |
-+------------------------------+
+```mermaid
+flowchart TD
+    accTitle: Criticality decision tree
+    accDescr: Four yes-or-no questions run in order, and the first YES sets the criticality of the finding.
+    q1{"1. Does it BREAK<br/>functionality or<br/>BLOCK users?"}
+    q2{"2. Does it cause SIGNIFICANT<br/>quality degradation or<br/>violate DOCUMENTED conventions?"}
+    q3{"3. Is it a MINOR<br/>quality issue or<br/>style inconsistency?"}
+    q4{"4. Is it a suggestion,<br/>optimization, or<br/>future consideration?"}
+    critical["CRITICAL"]
+    high["HIGH"]
+    medium["MEDIUM"]
+    low["LOW"]
+    q1 -->|YES| critical
+    q1 -->|NO| q2
+    q2 -->|YES| high
+    q2 -->|NO| q3
+    q3 -->|YES| medium
+    q3 -->|NO| q4
+    q4 -->|YES| low
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 ### Standardized Report Format

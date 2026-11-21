@@ -24,7 +24,7 @@ it.
 - [Agents](./agents/README.md): when coding work is delegated to a swe agent, and the procedures those agents follow.
 - [Pattern](./pattern/README.md): hexagonal architecture and the functional core, imperative shell practice.
 - [Practice](./practice/README.md): resource-aware development for local compute, and task tracking.
-- [Quality](./quality/README.md): the three-level testing standard, coverage, current evidence over past proof, Nx
-  target names, and the stack standards.
+- [Quality](./quality/README.md): the test boundaries and gates, the test and gate contract, coverage, current evidence
+  over past proof, Nx target names, and the stack standards.
 - [Workflow](./workflow/README.md): test-driven development, implementation order, dependencies, git identity, and
   gates.

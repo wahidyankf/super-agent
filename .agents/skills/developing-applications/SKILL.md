@@ -15,7 +15,7 @@ The standards own the rules.
 [Hexagonal Architecture](../../../repo-governance/development/pattern/hexagonal-architecture.md) and
 [Functional Core, Imperative Shell](../../../repo-governance/development/pattern/best-practices.md) place code;
 [Test-Driven Development](../../../repo-governance/development/workflow/test-driven-development.md) and
-[Three-Level Testing Standard](../../../repo-governance/development/quality/three-level-testing-standard.md) govern
+[Test Boundaries and Gates](../../../repo-governance/development/quality/testing/test-boundaries-and-gates.md) govern
 tests; [Dependency Bump Policy](../../../repo-governance/development/workflow/dependency-bump-policy.md) governs what is
 added; and [Implementation Workflow](../../../repo-governance/development/workflow/implementation.md) orders the work. A
 language's stack standard adds its own choices, as [Stack Packs](../../../repo-governance/conventions/structure/stack-packs.md)

@@ -12,7 +12,7 @@ compatibility: Requires a Go module with the Go toolchain on the path.
 
 Every Go rule is owned by [Go Standards](../../../repo-governance/development/quality/stacks/golang-standards.md).
 [Test-Driven Development](../../../repo-governance/development/workflow/test-driven-development.md) and
-[Three-Level Testing Standard](../../../repo-governance/development/quality/three-level-testing-standard.md) govern
+[Test Boundaries and Gates](../../../repo-governance/development/quality/testing/test-boundaries-and-gates.md) govern
 tests and gates, [Red, Green, Refactor](../../../repo-governance/development/workflow/test-driven-development.md) runs
 each cycle, and [Developing Applications](../developing-applications/SKILL.md) carries the judgement on layers, errors,
 logs, and input that holds in every language. This skill adds only the procedure and judgement of applying them in Go.

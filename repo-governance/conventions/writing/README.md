@@ -16,7 +16,8 @@ Read the content quality rule before writing any markdown. Read the others when 
   in plans.
 - [Word Limit](./word-limit.md): the word budgets for governance, instruction, and README files, and how to fix a file
   over budget.
-- [Diagrams](./diagrams.md): ASCII art inside `text` blocks, and the prose that goes with each diagram.
+- [Diagrams](./diagrams.md): Mermaid for conceptual diagrams, `text` blocks for trees, output, and literal code, and
+  the prose that goes with each diagram.
 - [Markdown Line Length](./markdown-line-length.md): the 120-column limit for markdown lines, tables included.
 - [File Naming](./file-naming.md): kebab-case names, numbered companion sets, and fixed tool names.
 - [Diataxis Framework](./diataxis-framework.md): the four documentation categories and the layout of `docs/`.

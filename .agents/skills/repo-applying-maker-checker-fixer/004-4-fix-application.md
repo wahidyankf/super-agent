@@ -43,44 +43,17 @@ The user asks for a new plan, the maker creates content and dependencies, the us
 finds minor issues, the user reviews the audit and approves fixes, and the fixer applies validated fixes, leaving the
 content production-ready.
 
-```text
-+----------------------------+
-| 1. User: 'Create new plan' |
-+----------------------------+
-    |
-    v
-+---------------------------+
-| 2. Maker: Creates content |
-| + dependencies            |
-+---------------------------+
-    |
-    v
-+------------------------------+
-| 3. User: Reviews, looks good |
-+------------------------------+
-    |
-    v
-+------------------------+
-| 4. Checker: Validates, |
-| finds minor issues     |
-+------------------------+
-    |
-    v
-+-------------------------+
-| 5. User: Reviews audit, |
-| approves fixes          |
-+-------------------------+
-    |
-    v
-+-------------------+
-| 6. Fixer: Applies |
-| validated fixes   |
-+-------------------+
-    |
-    v
-+---------------------------+
-| 7. Done: Production-ready |
-+---------------------------+
+```mermaid
+flowchart TD
+    accTitle: Create, validate, and fix flow
+    accDescr: The maker creates a plan, the checker validates it, and the fixer applies the approved fixes.
+    s1["1. User: 'Create new plan'"] --> s2["2. Maker: Creates content<br/>+ dependencies"]
+    s2 --> s3["3. User: Reviews,<br/>looks good"]
+    s3 --> s4["4. Checker: Validates,<br/>finds minor issues"]
+    s4 --> s5["5. User: Reviews audit,<br/>approves fixes"]
+    s5 --> s6["6. Fixer: Applies<br/>validated fixes"]
+    s6 --> s7["7. Done: Production-ready"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 ### Iterative: Maker → Checker → Fixer → Checker
@@ -89,46 +62,17 @@ The user asks to update existing content, the maker updates content and dependen
 reviews the audit and approves fixes, the fixer applies them, and the checker re-validates to confirm the content is
 verified clean.
 
-```text
-+---------------------------+
-| 1. User: 'Update existing |
-| content'                  |
-+---------------------------+
-    |
-    v
-+---------------------------+
-| 2. Maker: Updates content |
-| + dependencies            |
-+---------------------------+
-    |
-    v
-+------------------------+
-| 3. Checker: Validates, |
-| finds issues           |
-+------------------------+
-    |
-    v
-+-------------------------+
-| 4. User: Reviews audit, |
-| approves fixes          |
-+-------------------------+
-    |
-    v
-+-------------------------+
-| 5. Fixer: Applies fixes |
-+-------------------------+
-    |
-    v
-+--------------------------+
-| 6. Checker: Re-validates |
-| to confirm               |
-+--------------------------+
-    |
-    v
-+---------------------------+
-| 7. Done: Content verified |
-| clean                     |
-+---------------------------+
+```mermaid
+flowchart TD
+    accTitle: Iterative maker, checker, and fixer flow
+    accDescr: The maker updates content, the checker finds issues, the fixer fixes them, and the checker re-checks.
+    i1["1. User: 'Update<br/>existing content'"] --> i2["2. Maker: Updates content<br/>+ dependencies"]
+    i2 --> i3["3. Checker: Validates,<br/>finds issues"]
+    i3 --> i4["4. User: Reviews audit,<br/>approves fixes"]
+    i4 --> i5["5. Fixer: Applies fixes"]
+    i5 --> i6["6. Checker: Re-validates<br/>to confirm"]
+    i6 --> i7["7. Done: Content verified<br/>clean"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 **When to use**: Critical content, major refactoring, uncertain fixer confidence

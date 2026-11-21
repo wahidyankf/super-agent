@@ -45,7 +45,7 @@ to let one file pass. Record the reason as a YAML comment beside the value in `r
 
 ## Enforcement
 
-The `word-budget` gate runs at pre-commit and on the pull-request surface. Run it locally through HIPPO:
+The `word-budget` gate runs on the pull-request surface. Run it locally through HIPPO:
 
 ```text
 ./hippo run --class ephemeral --resource-tier light --disk-path . -- ./rhino governance word-budget validate

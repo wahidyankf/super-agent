@@ -21,9 +21,9 @@ them. HIPPO admits the local compute that they need.
 
 ## Surfaces
 
-- **pre-commit:** the staged files, before each commit.
-- **commit-msg:** the commit message, checked for the public-safety rules.
-- **pre-push:** the pushed range, before a push.
+- **pre-commit:** formatting of the staged files, applied to the index, before each commit.
+- **commit-msg:** the commit message format lint, before the commit is recorded.
+- **pre-push:** the leak scan over the pushed range, before a push.
 - **pull-request:** the whole pull request, in CI and locally before merge.
 
 ## Results
@@ -34,8 +34,8 @@ them. HIPPO admits the local compute that they need.
 
 ## Quick and Full Gates
 
-- The quick gate runs at pre-commit. It covers formatting, governance checks, and the public-safety checks on the staged
-  tree.
+- No quick gate runs at pre-commit. Each local surface holds only the entries that the surface placement of the test
+  and gate contract allows, so a commit or a push never waits on a test or a governance check.
 - The full gate runs on the pull request. It covers every check, the leak scan over the diff, the conformance runner for
   the command-line tool, and the tests at each level.
 - The conformance runner runs before merge, not after release. A contract break therefore cannot land unnoticed. See the
@@ -46,7 +46,7 @@ them. HIPPO admits the local compute that they need.
 Run the gates from the worktree through HIPPO, for example:
 
 ```text
-./hippo run --class ephemeral --resource-tier standard --disk-path . -- ./rhino gate run --surface pull-request
+./hippo run --class ephemeral --resource-tier standard --disk-path . -- ./rhino gate run --surface pull-request --base <origin/main sha> --head HEAD
 ```
 
 ## Changing a Gate

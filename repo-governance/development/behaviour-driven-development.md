@@ -48,7 +48,7 @@ own, so a behaviour never has two competing statements.
 - **Integration.** The scenario exercises an adapter against a real local resource, such as a temporary directory or a
   local stub server. It runs on every pull request.
 - **End-to-end.** The scenario exercises the built binary through its public boundary. Keep these few. They run in the
-  quality gate before merge.
+  scheduled or main workflow, not on each pull request. A case that a narrower level can prove moves down to it.
 
 A scenario carries a tag for each level it must run at. A scenario that runs at every level needs no exemption.
 
@@ -72,5 +72,5 @@ A scenario carries a tag for each level it must run at. A scenario that runs at 
 - [Bindings and Exemptions](behaviour-driven-development/001-bindings-and-exemptions.md) and
   [Compliance](behaviour-driven-development/002-compliance.md) hold the binding and exemption limits and the check.
 - [Test-Driven Development](workflow/test-driven-development.md) sets the cycle that writes each scenario's test first.
-- [Three-Level Testing Standard](quality/three-level-testing-standard.md) sets what each level may touch.
+- [Test Boundaries and Gates](quality/testing/test-boundaries-and-gates.md) sets what each level may touch.
 - [Specs Directory Structure](../conventions/structure/specs-directory-structure.md) places the feature files.

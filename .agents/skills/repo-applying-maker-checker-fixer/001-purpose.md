@@ -96,21 +96,13 @@ Checker agents follow a consistent 5-step workflow:
 A checker initializes its report at Step 0, runs domain-specific validation in Steps 1 to N, and ends by finalizing the
 report.
 
-```text
-+---------------------------+
-| Step 0: Initialize Report |
-+---------------------------+
-    |
-    v
-+----------------------------+
-| Step 1-N: Validate Content |
-| (domain-specific)          |
-+----------------------------+
-    |
-    v
-+-----------------------------+
-| Final Step: Finalize Report |
-+-----------------------------+
+```mermaid
+flowchart TD
+    accTitle: Checker workflow steps
+    accDescr: A checker starts its report at Step 0, validates content in Steps 1 to N, then finalizes it.
+    s0["Step 0: Initialize Report"] --> s1["Step 1-N: Validate Content<br/>(domain-specific)"]
+    s1 --> sf["Final Step: Finalize Report"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 ### Step 0: Initialize Report File

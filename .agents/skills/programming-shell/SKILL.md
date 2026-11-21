@@ -13,7 +13,7 @@ compatibility: Requires a shell script with a declared interpreter and the repos
 [Shell Scripts](../../../repo-governance/development/quality/stacks/shell-standards.md) owns script mechanics, and
 [Shell Standards](../../../repo-governance/development/quality/stacks/shell-standards.md) owns every shell stack rule.
 [Test-Driven Development](../../../repo-governance/development/workflow/test-driven-development.md) and
-[Three-Level Testing Standard](../../../repo-governance/development/quality/three-level-testing-standard.md) govern
+[Test Boundaries and Gates](../../../repo-governance/development/quality/testing/test-boundaries-and-gates.md) govern
 tests and gates, [Red, Green, Refactor](../../../repo-governance/development/workflow/test-driven-development.md) runs
 each cycle, and [Developing Applications](../developing-applications/SKILL.md) carries the judgement that holds in every
 language. This skill adds only the procedure and judgement of applying them in shell. Where a sentence here seems to

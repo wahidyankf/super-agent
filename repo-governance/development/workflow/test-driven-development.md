@@ -22,7 +22,7 @@ it passes.
 ## Rules
 
 - Start at the narrowest level that can prove the behaviour: unit for a decision, integration for an adapter, and
-  end-to-end for a journey. The [three-level testing standard](../quality/three-level-testing-standard.md) sets the
+  end-to-end for a journey. The [test boundaries and gates](../quality/testing/test-boundaries-and-gates.md) sets the
   levels.
 - A defect fix starts with a test that reproduces the defect and fails on the current code.
 - Do not weaken, skip, or delete a failing test to reach green. A test that is wrong is corrected, and the change says
