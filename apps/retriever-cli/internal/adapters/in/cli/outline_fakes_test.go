@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -90,6 +91,11 @@ type outlineSetup struct {
 	// ctx is the parent context of serve and mcp. A test ends a serve command as a signal would, by cancelling it with
 	// SignalCause. Nil means Background.
 	ctx context.Context
+	// notify and stop are the signal source of serve and mcp. Nil means the hermetic noSignals and noStop, which register
+	// nothing, so a unit test never touches the process's own signal handling. An integration test that sends a real
+	// signal sets both to os/signal.
+	notify func(chan<- os.Signal, ...os.Signal)
+	stop   func(chan<- os.Signal)
 }
 
 // wikiWith returns a setup whose Outline gateway serves dataset and whose export sink is empty.
@@ -117,6 +123,9 @@ func runRetriever(t *testing.T, argv []string, setup outlineSetup) (int, string,
 		Serve:    setup.serve,
 		SetupErr: setup.setupErr,
 		Context:  setup.ctx,
+	}
+	if setup.notify != nil {
+		deps.Notify, deps.Stop = setup.notify, setup.stop
 	}
 	if setup.sink != nil {
 		deps.Sink = func(dir string) ports.ExportSink {

@@ -5,6 +5,7 @@ package cli
 import (
 	"context"
 	"errors"
+	"os/signal"
 	"syscall"
 	"testing"
 	"time"
@@ -28,9 +29,17 @@ func serveSignalled(sig syscall.Signal) func(ctx context.Context, _ int, ready f
 	}
 }
 
+// signalSetup returns the wiring of a test that sends a real sig. The signal source is os/signal, the process's own
+// handler. runRetriever would otherwise give serve the hermetic source that registers nothing, and then the signal would
+// find no handler and end the whole test process. serve registers the handler before it calls the serve function, and the
+// function signals only after it reports ready, so the handler is always in place when the signal arrives.
+func signalSetup(sig syscall.Signal) outlineSetup {
+	return outlineSetup{serve: serveSignalled(sig), notify: signal.Notify, stop: signal.Stop}
+}
+
 // TestServeStopsOnSIGTERMWithStatus143Sent proves, with a real signal, that SIGTERM ends serve with 143, as retriever mcp does.
 func TestServeStopsOnSIGTERMWithStatus143Sent(t *testing.T) {
-	code, _, errOut := runRetriever(t, []string{"serve"}, outlineSetup{serve: serveSignalled(syscall.SIGTERM)})
+	code, _, errOut := runRetriever(t, []string{"serve"}, signalSetup(syscall.SIGTERM))
 	if code != 143 {
 		t.Fatalf("SIGTERM must end serve with exit 143, got exit %d (stderr %q)", code, errOut)
 	}
@@ -38,7 +47,7 @@ func TestServeStopsOnSIGTERMWithStatus143Sent(t *testing.T) {
 
 // TestServeStopsOnSIGINTWithStatus130Sent proves, with a real signal, that an interrupt ends serve with 130, as retriever mcp does.
 func TestServeStopsOnSIGINTWithStatus130Sent(t *testing.T) {
-	code, _, errOut := runRetriever(t, []string{"serve"}, outlineSetup{serve: serveSignalled(syscall.SIGINT)})
+	code, _, errOut := runRetriever(t, []string{"serve"}, signalSetup(syscall.SIGINT))
 	if code != 130 {
 		t.Fatalf("SIGINT must end serve with exit 130, got exit %d (stderr %q)", code, errOut)
 	}
