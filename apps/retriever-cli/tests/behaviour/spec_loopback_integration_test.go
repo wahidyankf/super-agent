@@ -19,6 +19,7 @@ import (
 // only the address the engine checked. The engine's own address checks run unchanged, and the private-network option lets
 // the loopback address through, as the composition root's test wiring does.
 func init() {
+	timeLimit = context.WithTimeout
 	loopbackSpecRuntime = func(t *testing.T, model *spec.Spec) (specRuntime, error) {
 		srv := specstub.Start(t, model)
 		var dialer net.Dialer

@@ -87,21 +87,28 @@ func attachSourcesFrom(deps *cli.Deps, g cli.Globals, seams seamSet, getenv func
 	return nil
 }
 
+// statPath and lstatPath are the file-system reads of the path checks. The defaults are the real calls, and a unit test
+// replaces them with a file tree.
+var (
+	statPath  = os.Stat
+	lstatPath = os.Lstat
+)
+
 // regularFileExists reports whether a regular file exists at path.
 func regularFileExists(path string) bool {
-	info, err := os.Stat(path)
+	info, err := statPath(path)
 	return err == nil && info.Mode().IsRegular()
 }
 
 // realDirExists reports whether path is a real folder. The link itself is described, never followed, so a symbolic
 // link to a folder is not a folder.
 func realDirExists(path string) bool {
-	info, err := os.Lstat(path)
+	info, err := lstatPath(path)
 	return err == nil && info.IsDir() && info.Mode()&os.ModeSymlink == 0
 }
 
 // realSymlinkExists reports whether path is a symbolic link. The link itself is described, never followed.
 func realSymlinkExists(path string) bool {
-	info, err := os.Lstat(path)
+	info, err := lstatPath(path)
 	return err == nil && info.Mode()&os.ModeSymlink != 0
 }

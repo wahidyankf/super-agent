@@ -16,7 +16,7 @@ import (
 // env file, the output folder, and the secret scan. cur returns the world of the running scenario.
 func registerCLISteps(ctx *godog.ScenarioContext, cur func() *world) {
 	ctx.Step(`^I run "([^"]*)"$`, func(line string) error {
-		argv, err := commandArgs(line)
+		argv, err := commandArgs(substituteHeldPort(cur(), line))
 		if err != nil {
 			return err
 		}

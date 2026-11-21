@@ -97,8 +97,8 @@ type rig struct {
 // newRig builds a gateway over the dataset. The pacing delay is zero unless a test passes WithMinDelay.
 func newRig(t *testing.T, d kiwistub.Dataset, opts ...Option) rig {
 	t.Helper()
-	stub := kiwistub.New(sentinelKey, kiwistub.WithDataset(d))
 	clock := newFakeClock()
+	stub := kiwistub.New(sentinelKey, kiwistub.WithDataset(d), kiwistub.WithClock(clock.Now))
 	creds := &staticCreds{}
 	client := &http.Client{Transport: stub.RoundTripper()}
 	all := append([]Option{WithMinDelay(0), WithClock(clock.Now), WithSleep(clock.Sleep)}, opts...)

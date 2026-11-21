@@ -7,7 +7,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go vet -tags 'integration e2e' ./... && test -z \"$(gofmt -l .)\"",
+        "command": "go vet -tags 'integration e2e' ./... && test -z \"$(gofmt -l .)\" && go tool golangci-lint run ./... && sh ../../scripts/go-placeholder-check.sh",
         "cwd": "libs/retriever-plugin"
       },
       "cache": true,
@@ -42,7 +42,7 @@
     "test:unit": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "if grep -rn --include='*_test.go' -E '\\\\.Skip\\\\(' . ; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; COVERAGE_PACKAGES='./...' sh ../../scripts/go-coverage-gate.sh",
+        "command": "if grep -rn --include='*_test.go' -E '\\.Skip\\(' . ; then echo 'test:unit forbids skipped tests' >&2; exit 1; fi; COVERAGE_PACKAGES='./...' sh ../../scripts/go-coverage-gate.sh",
         "cwd": "libs/retriever-plugin"
       },
       "cache": true,
@@ -87,13 +87,22 @@
       "cache": true,
       "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
     },
+    "test:behaviour:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./rhino behaviour coverage validate",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": false
+    },
     "test:quick": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          { "command": "npm exec -- nx run retriever-plugin:lint", "forwardAllArgs": false },
           { "command": "npm exec -- nx run retriever-plugin:typecheck", "forwardAllArgs": false },
-          { "command": "npm exec -- nx run retriever-plugin:test:unit", "forwardAllArgs": false }
+          { "command": "npm exec -- nx run retriever-plugin:lint", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-plugin:test:unit", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-plugin:test:behaviour:coverage", "forwardAllArgs": false }
         ],
         "parallel": false,
         "forwardAllArgs": false

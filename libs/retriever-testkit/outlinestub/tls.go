@@ -63,6 +63,14 @@ func makeStubCertificate(now time.Time, random io.Reader) (tls.Certificate, erro
 	return tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key}, nil
 }
 
+// entropy returns the entropy source of the certificate that Start makes: the one WithCertificateRandom sets, or crypto/rand.
+func (s *Stub) entropy() io.Reader {
+	if s.certRandom != nil {
+		return s.certRandom
+	}
+	return rand.Reader
+}
+
 // NewTLSServer serves h over TLS on a loopback port with the stub certificate. The caller closes the server. It is
 // the TLS server of Start, and of the engines that have no testing.TB.
 func NewTLSServer(h http.Handler) (*httptest.Server, error) {

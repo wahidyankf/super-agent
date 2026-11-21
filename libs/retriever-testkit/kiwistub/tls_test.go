@@ -55,7 +55,7 @@ func verifyHost(leaf *x509.Certificate, roots *x509.CertPool, host string) error
 func TestStartListensOnTheLoopbackAndCertifiesTheCatalog(t *testing.T) {
 	var network, address string
 	ln := newFakeListener(4321)
-	s := New(testKey, WithClock(fixedClock), WithDataset(fixture()), WithListener(func(n, a string) (net.Listener, error) {
+	s := New(testKey, WithClock(fixedClock), WithDataset(fixture()), WithRandom(&detReader{}), WithListener(func(n, a string) (net.Listener, error) {
 		network, address = n, a
 		return ln, nil
 	}))
@@ -120,7 +120,7 @@ func TestStartRefusesWhenAStepFails(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := newStub(WithDataset(fixture()))
+			s := newStub(WithDataset(fixture()), WithRandom(&detReader{}))
 			listens := 0
 			s.sys.listen = func(string, string) (net.Listener, error) {
 				listens++

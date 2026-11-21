@@ -3,7 +3,6 @@ package kiwi
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -35,7 +34,7 @@ func failingRead(t *testing.T) func(string) ([]byte, error) {
 // host and touches no network.
 func selfSignedPEM(t *testing.T) []byte {
 	t.Helper()
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), &detReader{})
 	if err != nil {
 		t.Fatalf("GenerateKey: %v", err)
 	}
@@ -45,7 +44,7 @@ func selfSignedPEM(t *testing.T) []byte {
 		NotBefore:    time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC),
 		NotAfter:     time.Date(2100, time.January, 1, 0, 0, 0, 0, time.UTC),
 	}
-	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	der, err := x509.CreateCertificate(&detReader{}, tmpl, tmpl, &key.PublicKey, key)
 	if err != nil {
 		t.Fatalf("CreateCertificate: %v", err)
 	}

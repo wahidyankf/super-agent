@@ -24,6 +24,8 @@ operation that needs it fails before any request is sent.
 - `Ports` supplies the clock, the credentials, the identities, and the network. `AllowPrivateNetwork()` is the only
   option.
 - `Code(kind, err)` returns the stable `retriever.<kind>.<reason>` code, and `ExitStatus(err)` returns the exit status.
+- `GuardedTransport(network, allowPrivate, roots)` returns the `*http.Transport` that the engine builds for its own
+  requests, so a caller can check the network guard without a read. The engine uses the same constructor.
 
 ## What it may import
 

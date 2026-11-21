@@ -17,6 +17,8 @@ Production files:
 - `errors.go` maps a server error to a source error.
 - `seam.go` holds the test-only base URL seam, which accepts a loopback host only. Its entry point reads the CA file
   with `os.ReadFile`, and the composition root calls it for tests only.
+- `seam_methods.go` holds the test-only exports that the behaviour bindings reach: the closed method list, the write list,
+  the argument guard, and one call through the same path as the adapter's own calls.
 
 Tests sit beside the code. `transport_integration_test.go` and `seam_test.go` carry the `integration` build tag.
 `transport_integration_test.go` runs the source against a stub server. `contract_test.go` checks the reply contract with

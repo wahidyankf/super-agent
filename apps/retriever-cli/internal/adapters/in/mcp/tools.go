@@ -40,16 +40,17 @@ var handWrittenTools = []tool{
 	},
 }
 
-// caller carries what every handler needs: the source service and the logger.
+// caller carries what every handler needs: the source service, the logger, and the clock that times each call.
 type caller struct {
 	svc sources.Service
 	log *slog.Logger
+	now func() time.Time
 }
 
 // register adds every hand-written tool of the table. A table that names one tool twice is an error. It returns the names
 // it added.
-func register(server *sdk.Server, svc sources.Service, log *slog.Logger, table []tool) ([]string, error) {
-	c := caller{svc: svc, log: log}
+func register(server *sdk.Server, svc sources.Service, log *slog.Logger, now func() time.Time, table []tool) ([]string, error) {
+	c := caller{svc: svc, log: log, now: now}
 	seen := map[string]bool{}
 	var names []string
 	for _, t := range table {
@@ -78,11 +79,11 @@ func RegisteredTools(svc sources.Service, resources []string) ([]string, error) 
 // one never is, such as one that names a tool twice.
 func registeredTools(svc sources.Service, resources []string, table []tool) ([]string, error) {
 	server := sdk.NewServer(&sdk.Implementation{Name: "retriever"}, nil)
-	names, err := register(server, svc, slog.New(slog.DiscardHandler), table)
+	names, err := register(server, svc, slog.New(slog.DiscardHandler), time.Now, table)
 	if err != nil {
 		return nil, err
 	}
-	return append(names, registerOperations(server, svc, slog.New(slog.DiscardHandler), newResourceSet(resources))...), nil
+	return append(names, registerOperations(server, svc, slog.New(slog.DiscardHandler), time.Now, newResourceSet(resources))...), nil
 }
 
 // describe ends a tool description with the untrusted-data sentence.
@@ -129,7 +130,7 @@ func bind[In, Out any](use func(context.Context, sources.Service, In) (Out, stri
 // case becomes the unexpected error, so no panic value reaches the model, the log, or the process exit.
 func handler[In, Out any](c caller, name string, use func(context.Context, sources.Service, In) (Out, string, error)) sdk.ToolHandlerFor[In, Out] {
 	return func(ctx context.Context, _ *sdk.CallToolRequest, in In) (*sdk.CallToolResult, Out, error) {
-		start := time.Now()
+		start := c.now()
 		out, source, panicType, err := guarded(ctx, c.svc, in, use)
 		if panicType != "" {
 			var zero Out
@@ -175,7 +176,7 @@ func (c caller) record(name, source, outcome string, start time.Time, extra ...a
 	if source != "" {
 		attrs = append(attrs, "source", source)
 	}
-	attrs = append(attrs, "outcome", outcome, "duration_ms", time.Since(start).Milliseconds())
+	attrs = append(attrs, "outcome", outcome, "duration_ms", c.now().Sub(start).Milliseconds())
 	attrs = append(attrs, extra...)
 	c.log.Info("tool call", attrs...)
 }
@@ -214,7 +215,7 @@ func tagsOrEmpty(tags []string) []string {
 func bindListSources(server *sdk.Server, meta *sdk.Tool, c caller) {
 	inner := handler(c, meta.Name, listSources)
 	sdk.AddTool(server, meta, func(ctx context.Context, req *sdk.CallToolRequest, in listSourcesIn) (*sdk.CallToolResult, listSourcesOut, error) {
-		start := time.Now()
+		start := c.now()
 		if _, err := checkListArgs(req); err != nil {
 			c.record(meta.Name, "", "bad arguments", start)
 			return nil, listSourcesOut{}, err

@@ -106,6 +106,7 @@ type Stub struct {
 	now       func() time.Time
 	done      chan struct{}
 	closeOnce sync.Once
+	holdHook  func() // runs once for each held socket request, before the wait; nil means none
 }
 
 // New returns a stub that accepts the synthetic email and token and nothing else.
@@ -146,6 +147,24 @@ func (s *Stub) SetClock(now func() time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.now = now
+}
+
+// SetHoldHook sets a function that a held socket request calls once, before its wait for the caller or the stub's close.
+// A test sets it to end the hold on its own clock. Nil clears it.
+func (s *Stub) SetHoldHook(f func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.holdHook = f
+}
+
+// runHoldHook calls the hold hook, when one is set, before a held request waits.
+func (s *Stub) runHoldHook() {
+	s.mu.Lock()
+	f := s.holdHook
+	s.mu.Unlock()
+	if f != nil {
+		f()
+	}
 }
 
 // SetFault makes the stub answer with f until ClearFault is called. A fault with a Path applies only to that path prefix.
@@ -295,6 +314,7 @@ func (s *Stub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if ctl := controlFrom(r.Context()); ctl != nil {
 			ctl.hung = true
 		} else {
+			s.runHoldHook()
 			select {
 			case <-r.Context().Done():
 			case <-s.done:

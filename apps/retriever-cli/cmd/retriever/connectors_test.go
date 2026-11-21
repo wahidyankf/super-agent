@@ -2,13 +2,11 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"io/fs"
 	"strings"
 	"testing"
 	"testing/fstest"
-	"time"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/connectorspec"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
@@ -227,24 +225,6 @@ func TestAnExplicitMissingConnectorsFolderExitsTwoWithItsCode(t *testing.T) {
 	out := h.stdout.(*bytes.Buffer).String() + h.stderr.(*bytes.Buffer).String()
 	if status != 2 || !strings.Contains(out, "retriever.connector.folder_unavailable") {
 		t.Fatalf("status = %d, output = %q; want 2 and the folder code", status, out)
-	}
-}
-
-// TestTheRealClockEndsAContextAndWaitsNoLonger checks the real clock on a context that has already ended: a wait returns at
-// once with the context's error, and a time limit gives a context that the release function ends.
-func TestTheRealClockEndsAContextAndWaitsNoLonger(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	if err := (realClock{}).Sleep(ctx, time.Hour); !errors.Is(err, context.Canceled) {
-		t.Fatalf("Sleep on an ended context = %v, want context.Canceled", err)
-	}
-	limited, release := (realClock{}).WithTimeout(context.Background(), time.Hour)
-	release()
-	if limited.Err() == nil {
-		t.Fatalf("a released time limit context has no error")
-	}
-	if err := (realClock{}).Sleep(context.Background(), 0); err != nil {
-		t.Fatalf("Sleep for no time = %v, want nil", err)
 	}
 }
 

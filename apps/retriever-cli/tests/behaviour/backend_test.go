@@ -44,6 +44,8 @@ type backend interface {
 	readFile(path string) ([]byte, error)
 	// regularFile reports whether a regular file exists at path.
 	regularFile(path string) bool
+	// dirExists reports whether a real folder exists at path, following no symbolic link.
+	dirExists(path string) bool
 	// walk returns the regular files under root, keyed by slash path relative to root.
 	walk(root string) (map[string]string, error)
 	// dirFiles returns the regular files directly inside the folder at path. A missing folder holds none.
@@ -51,8 +53,8 @@ type backend interface {
 	// credentials returns the env-file reader of the file at path, which reads the environment through getenv.
 	credentials(path string, getenv func(string) string) (*envfile.Credentials, error)
 	// loadCatalog reads the sources catalog at path, and accepts the kinds of the set given. Each spec_sha256 pin is checked
-	// against digests, the digests of the loaded spec files.
-	loadCatalog(path string, kinds domain.KindSet, digests map[string]string) (domain.Catalog, error)
+	// against digests, the digests of the loaded spec files. An empty profile applies no profile rule.
+	loadCatalog(path string, kinds domain.KindSet, digests map[string]string, profile string) (domain.Catalog, error)
 	// connectorsFolder returns the connector spec folder at dir as a file system. A missing folder fails when it is listed.
 	connectorsFolder(dir string) fs.FS
 	// sink returns the export sink that writes into dir.
@@ -130,6 +132,12 @@ func (m *memoryBackend) readFile(name string) ([]byte, error) { return m.files.R
 // regularFile reports whether a regular file is stored at name.
 func (m *memoryBackend) regularFile(name string) bool { return m.files.IsRegular(name) }
 
+// dirExists reports whether a folder is stored at name. The description comes from Lstat, so a link never counts.
+func (m *memoryBackend) dirExists(name string) bool {
+	info, err := m.files.Lstat(name)
+	return err == nil && info.IsDir()
+}
+
 // walk returns every file under root.
 func (m *memoryBackend) walk(root string) (map[string]string, error) {
 	files, err := m.files.Walk(root)
@@ -163,7 +171,7 @@ func (m *memoryBackend) credentials(name string, getenv func(string) string) (*e
 }
 
 // loadCatalog reads the catalog from the in-memory tree, as catalog.NewWithFiles does, through the folder of the file.
-func (m *memoryBackend) loadCatalog(name string, kinds domain.KindSet, digests map[string]string) (domain.Catalog, error) {
+func (m *memoryBackend) loadCatalog(name string, kinds domain.KindSet, digests map[string]string, profile string) (domain.Catalog, error) {
 	loader, err := catalog.NewWithFiles(name, catalog.Files{
 		FS:       m.files.Folder(path.Dir(name)),
 		SameFile: m.files.SameFile,
@@ -171,7 +179,7 @@ func (m *memoryBackend) loadCatalog(name string, kinds domain.KindSet, digests m
 	if err != nil {
 		return domain.Catalog{}, err
 	}
-	return loader.WithSpecDigests(digests).Load()
+	return loader.WithSpecDigests(digests).WithProfile(profile).Load()
 }
 
 // connectorsFolder returns the in-memory spec folder at dir, which lists and reads its files as a disk folder does.

@@ -118,6 +118,12 @@ func (d *diskBackend) regularFile(name string) bool {
 	return err == nil && info.Mode().IsRegular()
 }
 
+// dirExists reports whether a real folder exists at name. Lstat is used so a symbolic link never counts as a folder.
+func (d *diskBackend) dirExists(name string) bool {
+	info, err := os.Lstat(name)
+	return err == nil && info.IsDir()
+}
+
 // walk returns every regular file under root, keyed by slash path relative to root.
 func (d *diskBackend) walk(root string) (map[string]string, error) {
 	files := map[string]string{}
@@ -172,12 +178,12 @@ func (d *diskBackend) credentials(name string, _ func(string) string) (*envfile.
 }
 
 // loadCatalog reads the catalog from the real disk, as the composition root does.
-func (d *diskBackend) loadCatalog(name string, kinds domain.KindSet, digests map[string]string) (domain.Catalog, error) {
+func (d *diskBackend) loadCatalog(name string, kinds domain.KindSet, digests map[string]string, profile string) (domain.Catalog, error) {
 	loader, err := catalog.NewWithFiles(name, catalog.Files{FS: os.DirFS(filepath.Dir(name)), SameFile: os.SameFile}, kinds)
 	if err != nil {
 		return domain.Catalog{}, err
 	}
-	return loader.WithSpecDigests(digests).Load()
+	return loader.WithSpecDigests(digests).WithProfile(profile).Load()
 }
 
 // connectorsFolder returns the connector spec folder on the real disk, as the composition root opens it.

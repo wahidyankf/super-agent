@@ -864,9 +864,11 @@ func TestKiwiBaseURLRules(t *testing.T) {
 // TestKiwiProductionTransportSurvivesAReplacedDefault checks productionTransport: when the process default transport is
 // not an HTTP transport, the production transport is built from its own settings, still with no proxy.
 func TestKiwiProductionTransportSurvivesAReplacedDefault(t *testing.T) {
-	old := http.DefaultTransport
-	http.DefaultTransport = roundTripFunc(func(*http.Request) (*http.Response, error) { return nil, errScripted })
-	t.Cleanup(func() { http.DefaultTransport = old })
+	old := defaultTransport
+	defaultTransport = func() http.RoundTripper {
+		return roundTripFunc(func(*http.Request) (*http.Response, error) { return nil, errScripted })
+	}
+	t.Cleanup(func() { defaultTransport = old })
 	tr := productionTransport()
 	if tr.Proxy != nil || tr.DialContext == nil || tr.TLSHandshakeTimeout == 0 {
 		t.Fatalf("productionTransport with a replaced default = proxy set %v, dial set %v, TLS timeout %v", tr.Proxy != nil, tr.DialContext != nil, tr.TLSHandshakeTimeout)

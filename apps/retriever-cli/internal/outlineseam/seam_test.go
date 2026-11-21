@@ -3,9 +3,10 @@ package outlineseam
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/binary"
 	"encoding/pem"
 	"errors"
 	"math/big"
@@ -15,6 +16,22 @@ import (
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 )
+
+// detReader is a deterministic io.Reader for test key material. Its bytes are the SHA-256 of a counter, so a test that
+// makes a key gets the same bytes each run and reads no random source.
+type detReader struct{ n uint64 }
+
+// Read fills p with the next bytes of the counter stream.
+func (r *detReader) Read(p []byte) (int, error) {
+	for filled := 0; filled < len(p); {
+		var counter [8]byte
+		binary.BigEndian.PutUint64(counter[:], r.n)
+		r.n++
+		sum := sha256.Sum256(counter[:])
+		filled += copy(p[filled:], sum[:])
+	}
+	return len(p), nil
+}
 
 // seamEnv returns a getenv that reads only the given variables.
 func seamEnv(vars map[string]string) func(string) string {
@@ -155,11 +172,11 @@ func TestSeamRefusesATimeoutThatIsNotAPositiveDuration(t *testing.T) {
 // file either.
 func testCAPEM(t *testing.T) []byte {
 	t.Helper()
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), &detReader{})
 	if err != nil {
 		t.Fatalf("generate a test key: %v", err)
 	}
-	der, err := x509.CreateCertificate(rand.Reader, &x509.Certificate{
+	der, err := x509.CreateCertificate(&detReader{}, &x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject:      pkix.Name{CommonName: "stub"},
 	}, &x509.Certificate{

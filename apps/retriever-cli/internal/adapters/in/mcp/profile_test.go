@@ -97,7 +97,7 @@ func TestResourceListHoldsEveryToolOnlyOnceAcrossResources(t *testing.T) {
 // TestNewServerOffersOnlyTheNamedResources checks the same narrowing through the production server and an SDK client,
 // so the option reaches the tools a client lists and not only the table the test calls.
 func TestNewServerOffersOnlyTheNamedResources(t *testing.T) {
-	server, err := NewServer(outlineService(t), Options{Version: "test", Resources: []string{"documents"}})
+	server, err := NewServer(outlineService(t), Options{Version: "test", Resources: []string{"documents"}, Now: frozenClock})
 	if err != nil {
 		t.Fatal(err)
 	}

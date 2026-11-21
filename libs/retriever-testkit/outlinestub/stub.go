@@ -187,6 +187,10 @@ type Stub struct {
 	listen func(network, address string) (net.Listener, error)
 	// certNow dates the certificate of Start. Nil means the package clock, tlsNow.
 	certNow func() time.Time
+	// certRandom is the entropy source of the certificate of Start. Nil means crypto/rand.
+	certRandom io.Reader
+	// writeCA writes the CA file of WriteCAFile. Nil means the package writer, writeFile.
+	writeCA func(name string, data []byte, perm os.FileMode) error
 
 	// unoffered names the methods the server does not offer: each answers 404 "Endpoint not found", as the router does.
 	unoffered map[string]bool
@@ -200,6 +204,8 @@ type Stub struct {
 	// refused counts the in-process requests whose host was neither a loopback address nor a .invalid name. Such a
 	// request is never answered and never recorded, so a test can prove that nothing reached a real host.
 	refused int
+	// holdHook runs once for each held request, before the wait. Nil means no hook.
+	holdHook func()
 }
 
 // Refused returns how many in-process requests the stub refused because their host was not a loopback address or a
@@ -234,7 +240,7 @@ func Start(tb testing.TB, opts ...Option) *Stub {
 	if s.certNow != nil {
 		now = s.certNow
 	}
-	srv, err := NewTLSServerWith(s, listen, now)
+	srv, err := newTLSServer(s, listen, now, s.entropy())
 	if err != nil {
 		tb.Fatalf("outlinestub: start the TLS server: %v", err)
 	}
@@ -253,6 +259,18 @@ func WithListener(listen func(network, address string) (net.Listener, error)) Op
 // accepts it. Without the option the certificate is dated by the package clock.
 func WithCertificateClock(now func() time.Time) Option {
 	return func(s *Stub) { s.certNow = now }
+}
+
+// WithCertificateRandom sets the entropy source of the certificate of Start. The default is crypto/rand. A unit test passes
+// a fixed source, so the certificate it makes does not depend on real entropy.
+func WithCertificateRandom(random io.Reader) Option {
+	return func(s *Stub) { s.certRandom = random }
+}
+
+// WithCAWriter sets the writer of the CA file of WriteCAFile. The default writes the real file. A unit test passes a writer
+// that records the name, the bytes, and the mode, so it writes no file.
+func WithCAWriter(write func(name string, data []byte, perm os.FileMode) error) Option {
+	return func(s *Stub) { s.writeCA = write }
 }
 
 // URL returns the base URL of a started Stub, or "" for an in-process Stub.
@@ -282,7 +300,11 @@ func (s *Stub) WriteCAFile(dir string) (string, error) {
 		return "", err
 	}
 	path := filepath.Join(dir, "outline-stub-ca.pem")
-	if err := writeFile(path, data, 0o600); err != nil {
+	write := writeFile
+	if s.writeCA != nil {
+		write = s.writeCA
+	}
+	if err := write(path, data, 0o600); err != nil {
 		return "", fmt.Errorf("outlinestub: write CA file: %w", err)
 	}
 	return path, nil
@@ -413,6 +435,24 @@ func (s *Stub) PeakInFlight() int {
 	return s.peak
 }
 
+// SetHoldHook sets a function that a held request calls once, before its wait for the request's end or the stub's close.
+// A test sets it to end the hold on its own clock. Nil clears it.
+func (s *Stub) SetHoldHook(f func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.holdHook = f
+}
+
+// runHoldHook calls the hold hook, when one is set, before a held request waits.
+func (s *Stub) runHoldHook() {
+	s.mu.Lock()
+	f := s.holdHook
+	s.mu.Unlock()
+	if f != nil {
+		f()
+	}
+}
+
 // Close stops a started Stub and releases any request that is still hanging.
 // It is safe to call more than once, and it does nothing for an in-process Stub.
 func (s *Stub) Close() {
@@ -429,6 +469,7 @@ func (s *Stub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rep := s.handle(r, r.TLS != nil)
 	switch {
 	case rep.hang:
+		s.runHoldHook()
 		select {
 		case <-r.Context().Done():
 		case <-s.done:

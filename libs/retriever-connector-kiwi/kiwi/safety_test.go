@@ -142,10 +142,11 @@ func TestACookieIsNeverSentBack(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cookiejar.New: %v", err)
 	}
-	stub := kiwistub.New(sentinelKey, kiwistub.WithDataset(sampleDataset()))
+	clock := newFakeClock()
+	stub := kiwistub.New(sentinelKey, kiwistub.WithDataset(sampleDataset()), kiwistub.WithClock(clock.Now))
 	echo := &cookieEcho{inner: stub.RoundTripper()}
 	caller := &http.Client{Transport: echo, Jar: jar}
-	gw, err := NewWithBase(testSourceAt(t), testBase, caller, &staticCreds{}, WithMinDelay(0))
+	gw, err := NewWithBase(testSourceAt(t), testBase, caller, &staticCreds{}, WithMinDelay(0), WithClock(clock.Now))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}
@@ -161,7 +162,9 @@ func TestACookieIsNeverSentBack(t *testing.T) {
 
 // TestTimeoutIsATimedOutReadAndAnUnknownWrite checks the timeout: a read times out, and a write has an unknown outcome.
 func TestTimeoutIsATimedOutReadAndAnUnknownWrite(t *testing.T) {
-	r := newRig(t, sampleDataset(), WithTimeout(20*time.Millisecond))
+	limit := &handLimit{}
+	r := newRig(t, sampleDataset(), WithTimeout(20*time.Millisecond), WithLimit(limit.start))
+	r.stub.SetHoldHook(limit.expire)
 	r.stub.SetFault(kiwistub.Fault{Never: true})
 	if _, err := r.gw.ListCollections(context.Background()); !errors.Is(err, domain.ErrTimedOut) {
 		t.Fatalf("read timeout = %v, want ErrTimedOut", err)

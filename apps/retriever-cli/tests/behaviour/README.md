@@ -1,14 +1,22 @@
 # Behaviour runner
 
 Runs the Gherkin specs in [specs/behaviours](../../../../specs/behaviours/README.md) with godog v0.16.0, in strict mode,
-so an undefined or pending step fails the run. Each level has its own entry point and tag:
+so an undefined or pending step fails the run. Each level has its own entry point. Every scenario runs at the unit
+level. The integration level runs every scenario except those tagged `@integration-exempt`, and the end-to-end level
+runs every scenario except those tagged `@e2e-exempt`. Each run fails when it executes a different number of scenarios
+from the corpus count for its level.
 
-- Unit (`go test ./tests/behaviour/ -run TestUnitBehaviours`): the `@unit` scenarios. The CLI runs in process with no
-  source, so nothing reaches a gateway, a stub, or the network.
-- Integration (`go test -tags integration ./tests/behaviour/ -run TestIntegrationBehaviours`): the `@integration`
-  scenarios. The real adapters run in process, wired the way the composition root wires them, against loopback stubs.
-- End-to-end (`go test -tags e2e ./tests/behaviour/ -run TestE2EBehaviours`): the `@e2e` scenarios. The test builds the
-  binary once from the module root and runs it as a process, with the scenario's environment only.
+- Unit (`go test ./tests/behaviour/ -run TestUnitBehaviours`): every scenario. The CLI runs in process with no source,
+  so nothing reaches a gateway, a stub, or the network.
+- Integration (`go test -tags integration ./tests/behaviour/ -run TestIntegrationBehaviours`): every scenario that is
+  not `@integration-exempt`. The real adapters run in process, wired the way the composition root wires them, against
+  loopback stubs.
+- End-to-end (`go test -tags e2e ./tests/behaviour/ -run TestE2EBehaviours`): every scenario that is not
+  `@e2e-exempt`. The test builds the binary once from the module root and runs it as a process, with the scenario's
+  environment only.
+
+The bindings of each scenario (which suite file names it) and the exemptions are checked by
+`./rhino behaviour coverage validate`, which the `test:behaviour:coverage` target runs.
 
 All levels share one set of step definitions. Scenarios run one at a time, because the integration level changes the
 working directory and the process environment.

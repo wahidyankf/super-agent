@@ -101,10 +101,23 @@ func CertificatePEM() ([]byte, error) {
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Certificate[0]}), nil
 }
 
+// NewCertificate makes the certificate that every TLS stub serves, dated by now and keyed from random. A unit test passes
+// a fixed clock and a fixed entropy source, so it checks the certificate the stub would serve without the process clock.
+func NewCertificate(now time.Time, random io.Reader) (tls.Certificate, error) {
+	return makeStubCertificate(now, random, realCertificateSteps)
+}
+
 // NewTLSServerWith is NewTLSServer with its listener and its certificate clock supplied by the caller. A caller that must
 // not open a socket, such as a unit test, passes its own listener, and the clock that dates the certificate.
 func NewTLSServerWith(h http.Handler, listen func(network, address string) (net.Listener, error), now func() time.Time) (*httptest.Server, error) {
-	cert, err := makeStubCertificate(now(), rand.Reader, realCertificateSteps)
+	return NewTLSServerRandom(h, listen, now, rand.Reader)
+}
+
+// NewTLSServerRandom is NewTLSServerWith with the entropy source of the certificate supplied too. A unit test passes a
+// deterministic source, so the certificate draws no real entropy. The certificate is made before the listener opens.
+func NewTLSServerRandom(h http.Handler, listen func(network, address string) (net.Listener, error), now func() time.Time,
+	random io.Reader) (*httptest.Server, error) {
+	cert, err := makeStubCertificate(now(), random, realCertificateSteps)
 	if err != nil {
 		return nil, err
 	}

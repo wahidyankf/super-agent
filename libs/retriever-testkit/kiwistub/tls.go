@@ -3,7 +3,6 @@ package kiwistub
 import (
 	"bytes"
 	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -38,7 +37,7 @@ func WithListener(listen func(network, address string) (net.Listener, error)) Op
 // the leaf is the CA that a client trusts. The serial is fixed because the stub makes one certificate with its own key,
 // and only that stub trusts it.
 func (s *Stub) makeCertificate() (tls.Certificate, *x509.Certificate, error) {
-	key, err := s.sys.genKey(elliptic.P256(), rand.Reader)
+	key, err := s.sys.genKey(elliptic.P256(), s.sys.random)
 	if err != nil {
 		return tls.Certificate{}, nil, err
 	}
@@ -55,7 +54,7 @@ func (s *Stub) makeCertificate() (tls.Certificate, *x509.Certificate, error) {
 		DNSNames:              CatalogHosts,
 		IPAddresses:           []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
 	}
-	der, err := s.sys.sign(rand.Reader, template, template, &key.PublicKey, key)
+	der, err := s.sys.sign(s.sys.random, template, template, &key.PublicKey, key)
 	if err != nil {
 		return tls.Certificate{}, nil, err
 	}
@@ -64,6 +63,12 @@ func (s *Stub) makeCertificate() (tls.Certificate, *x509.Certificate, error) {
 		return tls.Certificate{}, nil, err
 	}
 	return tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key, Leaf: leaf}, leaf, nil
+}
+
+// WithRandom sets the entropy source of the TLS key and of the certificate signature. The default is crypto/rand. A unit
+// test passes a fixed source, so the certificate it makes does not depend on real entropy.
+func WithRandom(random io.Reader) Option {
+	return func(s *Stub) { s.sys.random = random }
 }
 
 // Start serves the stub over TLS on a loopback port. The caller calls Close. It returns an error when the certificate
@@ -143,6 +148,7 @@ func (s *Stub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		contentType: r.Header.Get("Content-Type"), secure: r.TLS != nil, body: body,
 	})
 	if rep.hold {
+		s.runHoldHook()
 		<-r.Context().Done()
 		return
 	}
@@ -189,6 +195,7 @@ func (p inProcess) RoundTrip(req *http.Request) (*http.Response, error) {
 		contentType: req.Header.Get("Content-Type"), secure: req.URL.Scheme == "https", body: body,
 	})
 	if rep.hold {
+		p.s.runHoldHook()
 		<-req.Context().Done()
 		return nil, req.Context().Err()
 	}

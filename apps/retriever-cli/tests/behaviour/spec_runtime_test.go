@@ -102,16 +102,24 @@ func refusingNetwork() engine.Network {
 	}
 }
 
+// timeLimit starts the time limit of one engine request. The unit build leaves it nil, so the limit runs on the scenario
+// clock: a stub that answers at once never reaches the bound, and a stub that never answers ends the request when the
+// scenario clock passes the bound. The integration build sets it to a real deadline in spec_loopback_integration_test.go,
+// because a loopback stub holds its socket until a real bound ends the request.
+var timeLimit func(parent context.Context, d time.Duration) (context.Context, context.CancelFunc)
+
 // engineClock is the engine's clock over the scenario clock. A wait moves the scenario clock, so no test waits on a
-// timer for a retry. A time limit is a bound on real I/O, as on the Go gateway, so it runs on the real clock: a stub
-// that answers at once never sees it fire, and a stub that never answers ends the request at the bound.
+// timer for a retry, and a time limit ends on the scenario clock unless the integration build sets timeLimit.
 type engineClock struct {
 	clk *fakeClock
 }
 
 // WithTimeout returns a context that ends at the bound, with its parent, or when the release function runs.
 func (c engineClock) WithTimeout(parent context.Context, d time.Duration) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(parent, d)
+	if timeLimit != nil {
+		return timeLimit(parent, d)
+	}
+	return c.clk.limit(parent, d)
 }
 
 // Sleep is the scenario clock's wait.

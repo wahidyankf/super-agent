@@ -33,7 +33,7 @@ func serveGraphQL(inv *invocation) error {
 		return errNotConfigured
 	}
 
-	ctx, stop := withSignals(rt.ctx)
+	ctx, stop := withSignals(rt.ctx, rt.notify, rt.stop)
 	defer stop()
 	listening := false
 	err := rt.serve(ctx, port, func(addr string) {

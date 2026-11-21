@@ -1,7 +1,8 @@
 #!/bin/sh
-# Self-test for scripts/go-coverage-gate.sh. It runs the gate's --check-only mode, which validates the exclusions and the
-# package list without running any test, against small fixture modules. Each case names the status and the message the
-# gate must give. No test of the real module runs here.
+# Self-test for scripts/go-coverage-gate.sh. Most cases run the gate's --check-only mode, which validates the exclusions
+# and the package list without running any test, against small fixture modules. Each case names the status and the
+# message the gate must give. One case runs the full gate on a fixture whose test outlives GO_TEST_TIMEOUT, to prove the
+# timeout reaches go test. No test of the real module runs here.
 set -eu
 
 here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
@@ -98,6 +99,21 @@ if [ "$got" -ne 1 ] || ! grep -F -q -- "is missing" "$work/out"; then
 	echo "FAIL a missing exclusion file fails: got status $got" >&2
 else
 	echo "ok   a missing exclusion file fails"
+fi
+
+make_fixture slow-test
+printf '%b' "$valid" >"$dir/scripts/coverage-exclusions.tsv"
+printf 'package domain\n\nimport (\n\t"testing"\n\t"time"\n)\n\nfunc TestSlow(t *testing.T) { time.Sleep(3 * time.Second) }\n' \
+	>"$dir/internal/core/domain/domain_test.go"
+cases=$((cases + 1))
+got=0
+COVERAGE_ROOT="$dir" GO_TEST_TIMEOUT=1s sh "$gate" >"$work/out" 2>&1 || got=$?
+if [ "$got" -ne 1 ] || ! grep -F -q -- "timed out after 1s" "$work/out"; then
+	failed=$((failed + 1))
+	echo "FAIL a test that outlives GO_TEST_TIMEOUT fails the run: got status $got:" >&2
+	sed 's/^/  /' "$work/out" >&2
+else
+	echo "ok   a test that outlives GO_TEST_TIMEOUT fails the run"
 fi
 
 if [ "$failed" -ne 0 ]; then

@@ -61,6 +61,7 @@ func startFake(t *testing.T, s *Stub) *fakeListener {
 	t.Helper()
 	ln := newFakeListener(4321)
 	s.sys.listen = func(string, string) (net.Listener, error) { return ln, nil }
+	s.sys.random = &detReader{}
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start: %v", err)
 	}

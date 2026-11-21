@@ -4,8 +4,9 @@
 #
 # Usage: run from the module root, as `sh ../../scripts/go-coverage-gate.sh [--check-only]`. COVERAGE_ROOT overrides the
 # module root (the self-test uses it), COVERAGE_PACKAGES lists the production packages to measure (default
-# "./internal/... ./cmd/...", the app's layout; a library uses "./..."), and COVERAGE_EXCLUSIONS overrides the exclusion
-# file.
+# "./internal/... ./cmd/...", the app's layout; a library uses "./..."), COVERAGE_EXCLUSIONS overrides the exclusion
+# file, and GO_TEST_TIMEOUT sets the go test timeout (default 20m; Go's own default of 10m is too short for the app's
+# behaviour suite under load).
 #
 # What is measured. One instrumented run of the untagged tests (-race), with -coverpkg over the production packages. A
 # test in one package counts the statements it runs in another, and the Gherkin unit binding (TestUnitBehaviours) is one
@@ -24,6 +25,7 @@
 set -eu
 
 minimum="${COVERAGE_MINIMUM:-99}"
+test_timeout="${GO_TEST_TIMEOUT:-20m}"
 root="${COVERAGE_ROOT:-$(pwd)}"
 packages="${COVERAGE_PACKAGES:-./internal/... ./cmd/...}"
 exclusions="${COVERAGE_EXCLUSIONS:-$root/scripts/coverage-exclusions.tsv}"
@@ -132,7 +134,7 @@ while IFS='	' read -r kind path reason _; do
 done <"$exclusions"
 
 coverpkg=$(printf '%s' "$packages" | tr ' ' ',')
-go test -race -count=1 -coverpkg="$coverpkg" -coverprofile="$profile" ./...
+go test -race -count=1 -timeout "$test_timeout" -coverpkg="$coverpkg" -coverprofile="$profile" ./...
 
 awk -v minimum="$minimum" -v needles="$needles" '
   FILENAME == needles { needle[++n] = $0; next }

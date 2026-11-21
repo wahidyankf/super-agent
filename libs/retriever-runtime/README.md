@@ -23,3 +23,8 @@ It imports the contract only.
 
 The packages take the file system, the environment, and the clock as parameters or fields. The app's composition root
 passes the real ones, and a unit test passes fakes. See [test gates](../../docs/reference/retriever-cli-test-gates.md).
+
+## Tests
+
+- `behaviour/` binds every scenario of [the runtime specs](../../specs/libs/retriever-runtime/behaviours/): `unit/` with
+  injected fakes, and `integration/` with real temporary files and folders. See [behaviour](./behaviour/README.md).

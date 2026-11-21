@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"os/signal"
 	"syscall"
 )
 
@@ -21,18 +20,19 @@ func (c signalCause) Error() string { return "received " + c.sig.String() }
 func SignalCause(sig os.Signal) error { return signalCause{sig: sig} }
 
 // withSignals returns a context that ends when parent ends, or when SIGINT or SIGTERM arrives. A signal cancels the
-// context with its SignalCause. The returned stop function cancels the context and releases the signal handler.
-func withSignals(parent context.Context) (context.Context, func()) {
+// context with its SignalCause. The notify and stop functions are the signal source (os/signal in the process, a double
+// in a unit test). The returned stop function cancels the context and releases the channel.
+func withSignals(parent context.Context, notify func(chan<- os.Signal, ...os.Signal), stop func(chan<- os.Signal)) (context.Context, func()) {
 	ctx, cancel := context.WithCancelCause(parent)
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+	notify(sigs, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		select {
 		case s := <-sigs:
 			cancel(SignalCause(s))
 		case <-ctx.Done():
 		}
-		signal.Stop(sigs)
+		stop(sigs)
 	}()
 	return ctx, func() { cancel(nil) }
 }

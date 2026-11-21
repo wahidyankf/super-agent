@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/ecdsa"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -44,7 +43,7 @@ func withListener(t *testing.T, fn func() (net.Listener, error)) {
 // cannedCertificate returns the certificate that makeStubCertificate makes for fixedNow.
 func cannedCertificate(t *testing.T) tls.Certificate {
 	t.Helper()
-	cert, err := makeStubCertificate(fixedNow, rand.Reader, realCertificateSteps)
+	cert, err := makeStubCertificate(fixedNow, &detReader{}, realCertificateSteps)
 	if err != nil {
 		t.Fatalf("makeStubCertificate: %v", err)
 	}
@@ -133,7 +132,7 @@ func TestMakeStubCertificateReportsTheStepThatFails(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			steps := realCertificateSteps
 			tt.injure(&steps)
-			cert, err := makeStubCertificate(fixedNow, rand.Reader, steps)
+			cert, err := makeStubCertificate(fixedNow, &detReader{}, steps)
 			if !errors.Is(err, errBoom) {
 				t.Fatalf("error = %v, want the injected failure", err)
 			}

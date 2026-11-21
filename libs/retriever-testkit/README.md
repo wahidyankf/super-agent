@@ -12,6 +12,7 @@ Only tests import this module, and no production code does. Its own production c
 - [memfs/](memfs/README.md): an in-memory file tree that the unit level runs the file loaders on, with no disk.
 - [synthetic/](synthetic/README.md): the embedded synthetic Outline replies that the behaviour harness serves.
 - [sourcecontract/](sourcecontract/README.md): one behaviour suite that every source gateway must pass.
+- [stubcmd/](stubcmd/README.md): the importable logic of the test-only stub commands, with injected seams.
 - [outlinestubcmd/](outlinestubcmd/README.md), [kiwistubcmd/](kiwistubcmd/README.md),
-  [jirastubcmd/](jirastubcmd/README.md): test-only commands that serve one stub as a process.
+  [jirastubcmd/](jirastubcmd/README.md): the `main` packages that serve one stub as a process.
 - [scripts/](scripts/README.md) holds the coverage exclusions that this module's gate reads.

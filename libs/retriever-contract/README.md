@@ -15,6 +15,8 @@ production code imports none of the packages that reach outside the process, suc
   `Credentials`.
 - [operations/](./operations/README.md) holds the operation catalog, with one row for each operation.
 - [scripts/](./scripts/README.md) holds the coverage exclusions that this module's gate reads.
+- [behaviour/](./behaviour/README.md) holds the unit and integration bindings of the behaviour scenarios in
+  `specs/libs/retriever-contract/behaviours`.
 
 ## Files
 

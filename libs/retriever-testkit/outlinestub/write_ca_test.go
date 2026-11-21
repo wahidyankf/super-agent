@@ -18,7 +18,7 @@ func useWriteFile(t *testing.T, f func(name string, data []byte, perm fs.FileMod
 
 func TestWriteCAFileWritesTheStubCertificateToItsOwnFileNameWithOwnerOnlyAccess(t *testing.T) {
 	useMemListener(t, newMemListener())
-	stub := Start(t)
+	stub := startDet(t)
 	var gotName string
 	var gotData []byte
 	var gotPerm fs.FileMode
@@ -45,7 +45,7 @@ func TestWriteCAFileWritesTheStubCertificateToItsOwnFileNameWithOwnerOnlyAccess(
 
 func TestWriteCAFileWrapsAWriteFailureWithItsCause(t *testing.T) {
 	useMemListener(t, newMemListener())
-	stub := Start(t)
+	stub := startDet(t)
 	useWriteFile(t, func(string, []byte, fs.FileMode) error { return fs.ErrPermission })
 
 	path, err := stub.WriteCAFile("ca-dir")
