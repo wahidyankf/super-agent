@@ -55,15 +55,31 @@ unit level proves it. It moves out of the corpus into a plain test beside the co
 
 ## How an Exemption Is Recorded
 
-This repository records an exemption as a tag on the scenario, with a comment directly above the tag that carries the
-reason and the alternative proof:
+An exemption is a tag on the scenario, `@integration-exempt` or `@e2e-exempt`, with a comment directly above the tag
+that carries the level, the reason, and the alternative proof:
 
 ```gherkin
-# Exemption(e2e): <why>; alternative-proof: <where>
+# Exemption(e2e): <why>; alternative-proof: <target>
 @e2e-exempt
 Scenario: <scenario name>
 ```
 
-The integration level uses `@integration-exempt` in the same way. The tag form keeps the reason beside the scenario it
-excuses, at the cost of test-level vocabulary in the corpus. The binding check in
-[Compliance](002-compliance.md) enforces the format and these limits.
+The reason and the target must not be empty. A tag without a valid comment fails, and so does a stale exemption: one
+whose scenario already has a binding at the exempted level. There is no unit exemption tag, and `@unit-exempt` is
+unknown and fails. The tag form keeps the reason beside the scenario it excuses, at the cost of test-level vocabulary in
+the corpus.
+
+## How a Binding Is Recorded
+
+A test covers a scenario with a comment line in its own language's comment syntax:
+
+```text
+@scenario <feature-path>: <scenario name>
+```
+
+The feature path ends in `.feature` or `.feature.md`, and the name is the scenario's name, verbatim. A scenario outline
+is one scenario, and the runner proves each row. The level of a binding comes from the test file's location, never from
+the comment line. A whole-file form, `<feature-path>: *`, is allowed only for a runner that executes whole feature files
+and fails on an undefined or ambiguous step, and only in a test file that a declared glob matches. That list is empty by
+default, so each test names its scenarios one by one. The rules that check both forms are in
+[Compliance](002-compliance.md).

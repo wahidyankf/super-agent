@@ -16,28 +16,46 @@ super-agent runs its checks through two tools:
   without overloading it. It runs the command under supervision.
 - **RHINO** runs the gates declared in `repo-config.yml` and reports every violation it finds.
 
-## Install the dependencies first
+## Bootstrap a checkout
 
-The Markdown gate needs the npm packages. Install them once, through HIPPO:
+Install the npm packages once, through HIPPO. The Markdown and formatting gates need them:
 
 ```sh
 ./hippo run --class ephemeral --resource-tier standard --disk-path . -- npm install
 ```
 
-The `prepare` script then installs the Husky Git hooks.
+The `prepare` script then installs the Husky Git hooks. Check the install with the hook health check:
+
+```sh
+scripts/check-hooks-installed.sh
+```
+
+The check prints `Git hooks: installed` and exits `0` when `core.hooksPath` names `.husky/_` and the three hook files
+are present and executable. Otherwise it prints one line per failed condition and exits `1`. Run `npm install` again to
+repair a failed install. CI runs `npm ci --ignore-scripts`, which installs no hooks, so the check is for a contributor's
+checkout only.
 
 ## Run the pull-request surface
 
-From the root of your worktree, run every gate that applies to a pull request:
+From the root of your worktree, run every gate that applies to a pull request. Pass the explicit commit range that the
+pull request adds. The `--base` value is the commit `origin/main` points to, and `--head` is the commit under review:
 
 ```sh
-./hippo run --class ephemeral --resource-tier standard --disk-path . -- ./rhino gate run --surface pull-request
+./hippo run --class ephemeral --resource-tier standard --disk-path . -- ./rhino gate run --surface pull-request --base <origin/main sha> --head HEAD
 ```
 
-Exit status `0` means every gate passed. The pull-request surface is the one that a merge depends on. See [Deliver a
-change with a pull request](./deliver-a-change-with-a-pull-request.md).
+The gates that compare commits, such as the commit-history and public-safety range screens, need both values. Without
+them the run exits `2`. Exit status `0` means every gate passed. The pull-request surface is the one that a merge
+depends on. See [Deliver a change with a pull request](./deliver-a-change-with-a-pull-request.md).
 
-## Run one check
+## Run one gate or one check
+
+Run only some gates of a surface with `--entry`, repeated for each id. For example, to run the Markdown lint and the
+word budget:
+
+```sh
+./hippo run --class ephemeral --resource-tier light --disk-path . -- ./rhino gate run --surface pull-request --base <origin/main sha> --head HEAD --entry markdownlint --entry word-budget
+```
 
 Run a single RHINO command the same way. For example, to check the README indexes only:
 
@@ -49,7 +67,8 @@ Run `./rhino help` to list every command.
 
 ## Which hook runs which surface
 
-Git hooks run the gates automatically. Each hook passes its own surface to RHINO.
+Git hooks run the gates automatically. Each hook passes its own surface to RHINO. Every other check runs on the
+`pull-request` surface, so a commit or a push never waits on it.
 
 | Git hook   | RHINO surface | HIPPO class and tier        |
 | ---------- | ------------- | --------------------------- |
@@ -57,7 +76,8 @@ Git hooks run the gates automatically. Each hook passes its own surface to RHINO
 | commit-msg | `commit-msg`  | `ephemeral`, `light`        |
 | pre-push   | `pre-push`    | `ephemeral`, `heavy`        |
 
-The gate ids and the surfaces they run on are listed in [Quality gates](../reference/quality-gates.md).
+The gate ids, their surfaces, scopes, and commands are listed in [Quality gates](../reference/quality-gates.md). The
+test levels that run in the workflows are in [Retriever test gates](../reference/retriever-cli-test-gates.md).
 
 ## When a gate fails
 

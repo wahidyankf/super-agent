@@ -3,9 +3,10 @@ package jiraseam
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/binary"
 	"encoding/pem"
 	"errors"
 	"math/big"
@@ -19,6 +20,22 @@ import (
 
 // seamFault is the fault a test makes the CA file read return.
 var seamFault = errors.New("injected CA read fault")
+
+// detReader is a deterministic io.Reader for test key material. Its bytes are the SHA-256 of a counter, so a test that
+// makes a key gets the same bytes each run and reads no random source.
+type detReader struct{ n uint64 }
+
+// Read fills p with the next bytes of the counter stream.
+func (r *detReader) Read(p []byte) (int, error) {
+	for filled := 0; filled < len(p); {
+		var counter [8]byte
+		binary.BigEndian.PutUint64(counter[:], r.n)
+		r.n++
+		sum := sha256.Sum256(counter[:])
+		filled += copy(p[filled:], sum[:])
+	}
+	return len(p), nil
+}
 
 // seamSettings returns an environment that reads the three seam variables from values.
 func seamSettings(values map[string]string) func(string) string {
@@ -36,7 +53,7 @@ func seamNoRead(t *testing.T) func(string) ([]byte, error) {
 // seamPEM returns one self-signed certificate in PEM form. It names no host and touches no network.
 func seamPEM(t *testing.T) []byte {
 	t.Helper()
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), &detReader{})
 	if err != nil {
 		t.Fatalf("GenerateKey: %v", err)
 	}
@@ -46,7 +63,7 @@ func seamPEM(t *testing.T) []byte {
 		NotBefore:    time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC),
 		NotAfter:     time.Date(2100, time.January, 1, 0, 0, 0, 0, time.UTC),
 	}
-	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	der, err := x509.CreateCertificate(&detReader{}, tmpl, tmpl, &key.PublicKey, key)
 	if err != nil {
 		t.Fatalf("CreateCertificate: %v", err)
 	}

@@ -1,0 +1,94 @@
+# golangci-lint configuration shared by every Go module that has no .golangci.yml of its own (the seven libraries
+# under libs/). The modules pin golangci-lint v2.15.0 as a go tool directive, and the lint target runs
+# `go tool golangci-lint run ./...` from the module root, which finds this file by walking up to the repository root.
+#
+# Hermetic unit tests (C21, the Go stack standard): forbidigo bans the clock, environment, file system, host, process,
+# signal, randomness, and network identifiers, and depguard bans os/exec and database/sql, in unit-test files only. A
+# unit-test file is a _test.go file with no build tag: the default run compiles no tagged file, so integration and
+# end-to-end files are outside this rule without a path exclusion.
+#
+# Placeholders (C18): a skip is a placeholder, so forbidigo bans the testing skip methods in every unit-test file.
+#
+# Lint Strictness: every finding fails the gate. golangci-lint exits non-zero on any reported issue, so the severity
+# below is a label in the report, never a second threshold. Both linters report at error severity.
+#
+# The apps/retriever-cli/.golangci.yml file carries the same two rules; keep the two files in step.
+version: "2"
+
+issues:
+  # No cap: every finding is reported, so a backlog is never hidden by a limit.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+severity:
+  default: error
+
+linters:
+  default: none
+  enable:
+    - depguard
+    - forbidigo
+  settings:
+    depguard:
+      rules:
+        unit-tests-hermetic:
+          files:
+            - "$test"
+          deny:
+            - pkg: "os/exec"
+              desc: a unit test starts no child process; inject a runner double instead
+            - pkg: "database/sql$"
+              desc: a unit test opens no database; inject a double instead
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: '^time\.(Now|Since|Until|Sleep|After|AfterFunc|NewTimer|NewTicker|Tick)$'
+          msg: a unit test reads no clock and waits on no timer; inject a clock double
+        - pattern: '^context\.(WithTimeout|WithDeadline|WithTimeoutCause|WithDeadlineCause)$'
+          msg: a unit test starts no real deadline; bound the call with t.Context() or an injected clock
+        - pattern: '^os\.(Getenv|Setenv|LookupEnv|Unsetenv|Clearenv|Environ|ExpandEnv)$'
+          msg: a unit test reads no environment; inject the value
+        - pattern: '^os\.(MkdirTemp|CreateTemp|MkdirAll|Mkdir|WriteFile|ReadFile|ReadDir|Stat|Lstat|Symlink|Link|Readlink|Remove|RemoveAll|Rename|Chmod|Chown|Lchown|Chtimes|OpenFile|Create|Open|Truncate|DirFS|CopyFS)$'
+          msg: a unit test touches no file system; inject a double
+        - pattern: '^filepath\.(Walk|WalkDir|Glob|Abs|EvalSymlinks)$'
+          msg: a unit test walks no file system; inject a double
+        - pattern: '^ioutil\.'
+          pkg: "^io/ioutil$"
+          msg: a unit test touches no file system; inject a double
+        - pattern: '^os\.(Chdir|Getwd|TempDir|Executable|Hostname|Getpid|Getppid|Getuid|Getgid|UserHomeDir|UserConfigDir|UserCacheDir)$'
+          msg: a unit test reads no host state; inject the value
+        - pattern: '^testing\.(T|B|F|TB)\.(Setenv|TempDir|Chdir)$'
+          msg: a unit test uses no environment, temporary directory, or working directory; inject a double
+        - pattern: '^testing\.(T|B|F|TB)\.(Skip|Skipf|SkipNow)$'
+          msg: a skipped test reports a pass over work that did not run (C18); remove the skip
+        - pattern: '^os\.(FindProcess|Kill|StartProcess|Pipe)$'
+          msg: a unit test signals and starts no process; inject a double
+        - pattern: '^exec\.(Command|CommandContext|LookPath)$'
+          pkg: "^os/exec$"
+          msg: a unit test starts no process; inject a runner double
+        - pattern: '^signal\.(Notify|NotifyContext|Stop|Ignore|Reset)$'
+          pkg: "^os/signal$"
+          msg: a unit test registers no signal handler; inject the signal source
+        - pattern: '^syscall\.(Kill|Exec|ForkExec|Getpid)$'
+          msg: a unit test signals no process; inject a double
+        - pattern: '^rand\.'
+          pkg: "^(math/rand|math/rand/v2|crypto/rand)$"
+          msg: a unit test reads no randomness; inject a deterministic source
+        - pattern: '^net\.(Listen|ListenPacket|ListenConfig|ListenTCP|ListenUDP|ListenUnix|ListenUnixgram|ListenMulticastUDP|ListenIP|Dial|DialTimeout|DialTCP|DialUDP|DialIP|DialUnix|Dialer|Lookup.*|Resolver|DefaultResolver|Interfaces|InterfaceAddrs)$'
+          pkg: "^net$"
+          msg: a unit test opens no socket and makes no lookup; inject a double
+        - pattern: '^http\.(ListenAndServe|ListenAndServeTLS|Serve|ServeTLS|Get|Post|Head|PostForm|DefaultClient|DefaultTransport)$'
+          pkg: "^net/http$"
+          msg: a unit test makes no network request; inject a RoundTripper double
+        - pattern: '^httptest\.(NewServer|NewTLSServer|NewUnstartedServer)$'
+          pkg: "^net/http/httptest$"
+          msg: a unit test starts no listening server; inject an in-memory transport
+        - pattern: '^(fmt\.Print(|f|ln)|print|println)$'
+          msg: the default forbidigo ban, kept with the rule set
+  exclusions:
+    rules:
+      # Production code legitimately uses the file system, the environment, and processes behind its adapters.
+      - linters:
+          - forbidigo
+          - depguard
+        path-except: '_test\.go$'

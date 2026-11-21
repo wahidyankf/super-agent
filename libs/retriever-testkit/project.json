@@ -7,7 +7,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go vet -tags 'integration e2e' ./... && test -z \"$(gofmt -l .)\"",
+        "command": "go vet -tags 'integration e2e' ./... && test -z \"$(gofmt -l .)\" && go tool golangci-lint run ./... && sh ../../scripts/go-placeholder-check.sh",
         "cwd": "libs/retriever-testkit"
       },
       "cache": true,
@@ -62,6 +62,14 @@
       },
       "cache": false
     },
+    "test:e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go test -tags e2e -count=1 ./behaviour/e2e/",
+        "cwd": "libs/retriever-testkit"
+      },
+      "cache": false
+    },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
@@ -87,13 +95,22 @@
       "cache": true,
       "inputs": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
     },
+    "test:behaviour:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./rhino behaviour coverage validate",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": false
+    },
     "test:quick": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          { "command": "npm exec -- nx run retriever-testkit:lint", "forwardAllArgs": false },
           { "command": "npm exec -- nx run retriever-testkit:typecheck", "forwardAllArgs": false },
-          { "command": "npm exec -- nx run retriever-testkit:test:unit", "forwardAllArgs": false }
+          { "command": "npm exec -- nx run retriever-testkit:lint", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-testkit:test:unit", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-testkit:test:behaviour:coverage", "forwardAllArgs": false }
         ],
         "parallel": false,
         "forwardAllArgs": false

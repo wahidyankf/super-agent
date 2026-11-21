@@ -18,7 +18,7 @@ Feature: MCP tool server
       | id    | collection | parent | title | markdown           |
       | d0c1d0c1-0000-4000-8000-000000000001 | 1c1c1c1c-0000-4000-8000-000000000001         |        | Setup | Synthetic body one |
 
-  @unit @integration @e2e
+  # Behaviour: CLI-188
   Scenario: The tool list always offers list_sources, even when --tools names other resources
     Given an MCP client starts "retriever mcp --tools comments"
     When the client lists the tools
@@ -26,7 +26,7 @@ Feature: MCP tool server
     And the tool list has the tool "list_comments"
     And the tool list has no tool named "list_collections"
 
-  @unit @integration @e2e
+  # Behaviour: CLI-189
   Scenario: The default tool list offers the write tools with their hints
     Given an MCP client starts "retriever mcp"
     When the client lists the tools
@@ -34,14 +34,14 @@ Feature: MCP tool server
     And the tool "list_documents" is marked read-only
     And the tool "delete_document" is marked destructive
 
-  @unit @integration @e2e
-  Scenario: A user deletion has an MCP tool like any other tool
+  # Behaviour: CLI-190
+  Scenario: The default tool list marks the user deletion tool as destructive
     Given an MCP client starts "retriever mcp"
     When the client lists the tools
     Then the tool list has the tool "delete_user"
     And the tool "delete_user" is marked destructive
 
-  @unit @integration @e2e
+  # Behaviour: CLI-191
   Scenario: A write tool call sends its one request to the wiki
     Given an MCP client starts "retriever mcp"
     When the client calls the tool "create_pin" with these arguments:
@@ -51,7 +51,7 @@ Feature: MCP tool server
     Then the tool result is not an error
     And the stub Outline server received 1 request to "pins.create"
 
-  @unit @integration @e2e
+  # Behaviour: CLI-192
   Scenario: A read tool returns its result as text
     Given an MCP client starts "retriever mcp"
     When the client calls the tool "search_documents" with these arguments:
@@ -61,7 +61,7 @@ Feature: MCP tool server
     Then the tool result is not an error
     And the tool result text contains "d0c1d0c1-0000-4000-8000-000000000001"
 
-  @unit @integration @e2e
+  # Behaviour: CLI-193
   Scenario: The source list tool omits each source's endpoint and credential name
     Given an MCP client starts "retriever mcp"
     When the client calls the tool "list_sources" with no arguments
@@ -70,7 +70,7 @@ Feature: MCP tool server
     And the tool result text does not contain "docs.example.test"
     And the tool result text does not contain "EXAMPLE_OUTLINE_API_KEY"
 
-  @unit @integration @e2e
+  # Behaviour: CLI-194
   Scenario: A hostile title with a terminal escape never reaches a tool result as a control byte
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -84,7 +84,7 @@ Feature: MCP tool server
     Then the tool result is not an error
     And the tool result text contains no control characters except line breaks
 
-  @unit @integration @e2e
+  # Behaviour: CLI-195
   Scenario: An oversized reply becomes a bounded tool error rather than a large tool result
     Given the stub Outline server answers "documents.info" with a body of 11 MiB
     And an MCP client starts "retriever mcp"
@@ -95,20 +95,43 @@ Feature: MCP tool server
     Then the tool result is an error
     And the whole tool result is at most 1048576 bytes
 
-  @unit @integration @e2e
+  # Behaviour: CLI-196
   Scenario: The server ends with status 0 when its client closes the input
     Given an MCP client starts "retriever mcp"
     When the client lists the tools
     Then the MCP server exits with status 0
 
-  @unit @integration @e2e
+  # Behaviour: CLI-197
   Scenario: An interrupt ends the server with status 130
     Given an MCP client starts "retriever mcp"
     When the interrupt reaches the running server
     Then the MCP server exits with status 130
 
-  @unit @integration @e2e
+  # Behaviour: CLI-198
   Scenario: A termination signal ends the server with status 143
     Given an MCP client starts "retriever mcp"
     When the termination signal reaches the running server
     Then the MCP server exits with status 143
+
+  # Behaviour: CLI-199
+  Scenario: The list_sources result names the active profile
+    Given the profile "personal" holds these sources:
+      | id              | kind    | tags | endpoint                  | credential_env           | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | PERSONAL_OUTLINE_API_KEY |              |
+    And the profile "personal" holds these lines in its env file:
+      """
+      PERSONAL_OUTLINE_API_KEY=synthetic-outline-key
+      """
+    And an MCP client starts "retriever --profile personal mcp"
+    When the client calls the tool "list_sources" with no arguments
+    Then the tool result is not an error
+    And the tool result text contains "personal"
+
+  # Behaviour: CLI-200
+  Scenario: A tool call with a profile argument is refused as an error result
+    Given an MCP client starts "retriever mcp"
+    When the client calls the tool "list_sources" with these arguments:
+      """
+      {"profile": "personal"}
+      """
+    Then the tool result is an error

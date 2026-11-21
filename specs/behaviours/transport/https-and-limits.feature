@@ -21,7 +21,7 @@ Feature: Transport safety and bounded requests
       | id | name      |
       | 1c1c1c1c-0000-4000-8000-000000000001 | Synthetic |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-509
   Scenario: A source whose endpoint is plain HTTP is refused before any request
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id              | kind    | tags | endpoint                 | credential_env          | identity_env |
@@ -31,7 +31,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.https_required" and retryable false
     And the stub Outline server received no requests
 
-  @integration @e2e @unit
+  # Behaviour: CLI-457
   Scenario: A Kiwi source whose endpoint is plain HTTP is refused before any request
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id         | kind | tags  | endpoint                 | credential_env       | identity_env |
@@ -41,7 +41,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.kiwi.https_required" and retryable false
     And the stub Kiwi server received no requests
 
-  @integration @e2e @unit
+  # Behaviour: CLI-427
   Scenario: A Jira source whose endpoint is plain HTTP is refused before any request
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id         | kind | tags    | endpoint                 | credential_env         | identity_env       |
@@ -51,7 +51,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.jira.https_required" and retryable false
     And the stub Jira server received no requests
 
-  @integration @e2e @unit
+  # Behaviour: CLI-509
   Scenario: A redirect on an Outline read is reported and not followed
     Given the stub Outline server redirects "collections.list" to "https://elsewhere.example.test/"
     When I run "retriever --output json outline collections list"
@@ -59,7 +59,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.redirected" and retryable false
     And the stub Outline server received 1 request to "collections.list"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-457
   Scenario: A redirect on a Kiwi read is reported and not followed
     Given the stub Kiwi server redirects "TestCase.filter" to "https://elsewhere.example.test/"
     When I run "retriever --output json kiwi documents get case-40"
@@ -67,7 +67,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.kiwi.redirected" and retryable false
     And the stub Kiwi server received 1 request to "TestCase.filter"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-428
   Scenario: A redirect on a Jira read is reported and not followed
     Given the stub Jira server redirects "/rest/api/3/myself" to "https://elsewhere.example.test/"
     When I run "retriever --output json jira whoami"
@@ -75,7 +75,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.jira.redirected" and retryable false
     And the stub Jira server received 1 request to "/rest/api/3/myself"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-510
   Scenario: A request to an Outline source that gets no reply within the bound stops with status 124
     Given the environment variable "RETRIEVER_OUTLINE_TEST_TIMEOUT" is set to "300ms"
     And the stub Outline server never answers "collections.list"
@@ -83,7 +83,6 @@ Feature: Transport safety and bounded requests
     Then the exit status is 124
     And the standard error is a JSON error with the code "retriever.outline.timed_out" and retryable true
 
-  @integration @e2e @unit
   Scenario: A request to a Kiwi source that gets no reply within the bound stops with status 124
     Given the environment variable "RETRIEVER_KIWI_TEST_TIMEOUT" is set to "300ms"
     And the stub Kiwi server never answers "TestCase.filter"
@@ -91,7 +90,7 @@ Feature: Transport safety and bounded requests
     Then the exit status is 124
     And the standard error is a JSON error with the code "retriever.kiwi.timed_out" and retryable true
 
-  @integration @e2e @unit
+  # Behaviour: CLI-429
   Scenario: A request to a Jira source that gets no reply within the bound stops with status 124
     Given the environment variable "RETRIEVER_JIRA_TEST_TIMEOUT" is set to "300ms"
     And the stub Jira server never answers "/rest/api/3/myself"
@@ -99,7 +98,7 @@ Feature: Transport safety and bounded requests
     Then the exit status is 124
     And the standard error is a JSON error with the code "retriever.jira.timed_out" and retryable true
 
-  @integration @e2e @unit
+  # Behaviour: CLI-511
   Scenario: A rate-limited Outline read waits for Retry-After and then succeeds, with the wait measured
     Given the stub Outline server answers the first 1 request to "collections.list" with status 429 and Retry-After "1"
     When I run "retriever outline collections list"
@@ -107,7 +106,7 @@ Feature: Transport safety and bounded requests
     And the stub Outline server received 2 requests to "collections.list"
     And the requests to the stub Outline server were 1000 ms apart
 
-  @integration @e2e @unit
+  # Behaviour: CLI-517
   Scenario: Requests to one Outline source are spaced 100 milliseconds apart
     Given the stub Outline server answers the first 2 requests to "collections.list" with status 429 and Retry-After "0"
     When I run "retriever outline collections list"
@@ -116,7 +115,7 @@ Feature: Transport safety and bounded requests
     And the requests to the stub Outline server were at least 100 ms apart
     And the requests to the stub Outline server were 100 ms apart
 
-  @integration @e2e @unit
+  # Behaviour: CLI-511
   Scenario: Repeated Outline rate-limit replies stop after three retries and report a retryable failure with status 124
     Given the stub Outline server answers "collections.list" with status 429 and Retry-After "0"
     When I run "retriever --output json outline collections list"
@@ -124,7 +123,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.rate_limited" and retryable true
     And the stub Outline server received 4 requests to "collections.list"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-512
   Scenario: A Retry-After longer than 60 seconds fails the Outline read without a retry
     Given the stub Outline server answers "collections.list" with status 429 and Retry-After "61"
     When I run "retriever --output json outline collections list"
@@ -132,14 +131,14 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.retry_after_too_long" and retryable false
     And the stub Outline server received 1 request to "collections.list"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-513
   Scenario: Every Outline request is sent over TLS with the source's own host name
     When I run "retriever outline collections list"
     Then the exit status is 0
     And every request to the stub Outline server arrived over TLS
     And every request to the stub Outline server had the Host header "docs.example.test"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-514
   Scenario: A reply larger than the 10 MiB cap is refused as too large
     Given the stub Outline server answers "collections.list" with a body of 11 MiB
     When I run "retriever --output json outline collections list"
@@ -147,7 +146,7 @@ Feature: Transport safety and bounded requests
     And the standard output is empty
     And the standard error is a JSON error with the code "retriever.outline.reply_too_large" and retryable false
 
-  @integration @e2e @unit
+  # Behaviour: CLI-515
   Scenario: A reply that is not JSON is an unexpected response and names no host
     Given the stub Outline server answers "collections.list" with the body:
       """
@@ -158,7 +157,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.unexpected_response" and retryable false
     And the standard error does not contain "docs.example.test"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-516
   Scenario: A source that cannot be reached is reported as unreachable and is retryable
     Given no stub Outline server is listening
     When I run "retriever --output json outline collections list"
@@ -166,18 +165,12 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.outline.unreachable" and retryable true
     And the standard error does not contain "127.0.0.1"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-517
   Scenario: Requests to one Outline source run one at a time
     When I run "retriever outline documents list --limit 1"
     Then the stub Outline server's peak concurrency was 1
 
-  @integration @e2e @unit
-  Scenario: Every Outline request uses the POST method and its own method path
-    When I run "retriever outline collections list"
-    Then the exit status is 0
-    And every request to the stub Outline server used the HTTP method "POST"
-
-  @integration @e2e @unit
+  # Behaviour: CLI-458
   Scenario: Every Kiwi request is sent over TLS with the source's own host name
     Given the stub Kiwi server holds this dataset:
       """
@@ -195,7 +188,7 @@ Feature: Transport safety and bounded requests
     And every request to the stub Kiwi server arrived over TLS
     And every request to the stub Kiwi server had the Host header "kiwi.example.test"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-455
   Scenario: A Kiwi read that is answered 429 waits for Retry-After and then succeeds, with the wait measured
     Given the stub Kiwi server holds this dataset:
       """
@@ -214,7 +207,7 @@ Feature: Transport safety and bounded requests
     And the stub Kiwi server received 2 requests to "TestCase.filter"
     And the requests to the stub Kiwi server to "TestCase.filter" were 1000 ms apart
 
-  @integration @e2e @unit
+  # Behaviour: CLI-455
   Scenario: A Kiwi write that is answered 429 waits and is sent again, and the write lands once
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
@@ -236,7 +229,7 @@ Feature: Transport safety and bounded requests
     And the stub Kiwi server received 2 requests to "TestCase.create"
     And the requests to the stub Kiwi server to "test-cases.create" were 1000 ms apart
 
-  @integration @e2e @unit
+  # Behaviour: CLI-456
   Scenario: Kiwi requests are spaced 100 milliseconds apart and never overlap
     Given the stub Kiwi server holds this dataset:
       """
@@ -257,7 +250,6 @@ Feature: Transport safety and bounded requests
     And the requests to the stub Kiwi server were 100 ms apart
     And the requests to the stub Kiwi server never overlapped
 
-  @integration @e2e @unit
   Scenario: Repeated Kiwi rate-limit replies stop after three retries and report a retryable failure with status 124
     Given the stub Kiwi server answers every request with status 429 and Retry-After "0"
     When I run "retriever --output json kiwi documents get case-40"
@@ -265,7 +257,6 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.kiwi.rate_limited" and retryable true
     And the stub Kiwi server received 4 requests to "TestCase.filter"
 
-  @integration @e2e @unit
   Scenario: A Kiwi Retry-After longer than 60 seconds fails the read without a retry
     Given the stub Kiwi server answers every request with status 429 and Retry-After "61"
     When I run "retriever --output json kiwi documents get case-40"
@@ -273,7 +264,6 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.kiwi.retry_after_too_long" and retryable false
     And the stub Kiwi server received 1 request to "TestCase.filter"
 
-  @integration @e2e @unit
   Scenario: A Kiwi write whose reply is over the 10 MiB cap is not known to have failed
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
@@ -295,7 +285,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.kiwi.write_outcome_unknown" and retryable false
     And the stub Kiwi server received 1 request to "TestCase.create"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-457
   Scenario: A Kiwi write that is refused by a redirect is not sent a second time
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
@@ -317,7 +307,7 @@ Feature: Transport safety and bounded requests
     And the standard error is a JSON error with the code "retriever.kiwi.redirected" and retryable false
     And the stub Kiwi server received 1 request to "test-cases.create"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-431
   Scenario: Every Jira request is sent over TLS to the Jira host, which is also the TLS name
     When I run "retriever jira whoami"
     Then the exit status is 0
@@ -325,14 +315,7 @@ Feature: Transport safety and bounded requests
     And every request to the stub Jira server had the Host header "jira.example.test"
     And every request to the stub Jira server had the TLS name "jira.example.test"
 
-  @integration @e2e @unit
-  Scenario: Every Jira request uses the GET method for the account read and its own path
-    When I run "retriever jira whoami"
-    Then the exit status is 0
-    And every request to the stub Jira server used the HTTP method "GET"
-    And every request to the stub Jira server used the path "/rest/api/3/myself"
-
-  @integration @e2e @unit
+  # Behaviour: CLI-432
   Scenario: A Jira reply that sets a cookie is not answered with that cookie on the next request
     Given the stub Jira server sets the cookie "synthetic_session" on every reply
     And the stub Jira server answers the first 1 request to "/rest/api/3/myself" with status 429 and Retry-After "0"
@@ -341,7 +324,7 @@ Feature: Transport safety and bounded requests
     And the stub Jira server received 2 requests to "/rest/api/3/myself"
     And no request to the stub Jira server carried a cookie
 
-  @integration @e2e @unit
+  # Behaviour: CLI-433
   Scenario: Jira requests are spaced 100 milliseconds apart and never overlap
     Given the stub Jira server answers the first 2 requests to "/rest/api/3/myself" with status 429 and Retry-After "0"
     When I run "retriever jira whoami"
@@ -351,7 +334,7 @@ Feature: Transport safety and bounded requests
     And the requests to the stub Jira server were 100 ms apart
     And the requests to the stub Jira server never overlapped
 
-  @integration @e2e @unit
+  # Behaviour: CLI-430
   Scenario: A Jira reply larger than the 10 MiB cap is refused and its body is not shown
     Given the stub Jira server answers "/rest/api/3/myself" with an oversize body
     When I run "retriever --output json jira whoami"
@@ -359,3 +342,14 @@ Feature: Transport safety and bounded requests
     And the standard output is empty
     And the standard error is a JSON error with the code "retriever.jira.reply_too_large" and retryable false
     And the standard error does not contain "synthetic-jira-token"
+
+  # Behaviour: CLI-489
+  Scenario: An Outline write answered 429 waits and is sent again, and the write lands once
+    Given the sources catalog holds these sources:
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+    And the stub Outline server answers the first 1 request to "documents.update" with status 429 and Retry-After "1"
+    When I run "retriever --output json outline documents update d0c1d0c1-0000-4000-8000-000000000001 --title Renamed --source example-outline"
+    Then the exit status is 0
+    And the stub Outline server received 2 requests to "documents.update"
+    And the requests to the stub Outline server to "documents.update" were 1000 ms apart

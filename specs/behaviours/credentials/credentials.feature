@@ -15,7 +15,7 @@ Feature: Source credentials
       | id | name       |
       | 1c1c1c1c-0000-4000-8000-000000000001 | Synthetic  |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-101
   Scenario: The Outline key is read from the process environment and sent as a Bearer header
     Given the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
     When I run "retriever outline collections list"
@@ -23,7 +23,7 @@ Feature: Source credentials
     And the stub Outline server received at least 1 request
     And every request to the stub Outline server carried the Authorization header "Bearer synthetic-outline-key"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-102
   Scenario: The Outline key is read from the env file in the current directory
     Given the env file ".env.local" holds these lines:
       """
@@ -33,7 +33,7 @@ Feature: Source credentials
     Then the exit status is 0
     And every request to the stub Outline server carried the Authorization header "Bearer synthetic-outline-key"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-103
   Scenario: The process environment wins over the env file for the same variable
     Given the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-from-env"
     And the env file ".env.local" holds these lines:
@@ -44,7 +44,7 @@ Feature: Source credentials
     Then the exit status is 0
     And every request to the stub Outline server carried the Authorization header "Bearer synthetic-from-env"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-104
   Scenario: A Kiwi key is sent only to the Kiwi source and never to the Outline source
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
@@ -53,40 +53,27 @@ Feature: Source credentials
     And every request to the stub Kiwi server carried the Authorization header "Bearer synthetic-kiwi-key"
     And the stub Outline server received no requests
 
-  @integration @e2e @unit
-  Scenario Outline: A missing key stops the command before any request is sent
+  # Behaviour: CLI-105
+  # Behaviour: CLI-106
+  # Behaviour: CLI-107
+  # Behaviour: CLI-143
+  Scenario Outline: A missing key stops the command before any request is sent and names its variable
     Given the environment variable "<variable>" is not set
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
     When I run "retriever --output json <command>"
     Then the exit status is 2
     And the standard output is empty
     And the standard error is a JSON error with the code "<code>" and retryable false
+    And the JSON field "error.message" of the standard error is "<message>"
     And the stub <kind> server received no requests
 
     Examples:
-      | variable                | command                  | code                         | kind    |
-      | EXAMPLE_OUTLINE_API_KEY | outline collections list | retriever.outline.key_missing | Outline |
-      | EXAMPLE_KIWI_API_KEY    | kiwi products list       | retriever.kiwi.key_missing    | Kiwi    |
-      | EXAMPLE_JIRA_API_TOKEN  | jira whoami              | retriever.jira.key_missing    | Jira    |
+      | variable                | command                  | code                          | kind    | message                                 |
+      | EXAMPLE_OUTLINE_API_KEY | outline collections list | retriever.outline.key_missing | Outline | EXAMPLE_OUTLINE_API_KEY is not set      |
+      | EXAMPLE_KIWI_API_KEY    | kiwi products list       | retriever.kiwi.key_missing    | Kiwi    | EXAMPLE_KIWI_API_KEY is not set         |
+      | EXAMPLE_JIRA_API_TOKEN  | jira whoami              | retriever.jira.key_missing    | Jira    | EXAMPLE_JIRA_API_TOKEN is not set       |
 
-  @integration @e2e @unit
-  Scenario: An empty key counts as a missing key
-    Given the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to ""
-    When I run "retriever --output json outline collections list"
-    Then the exit status is 2
-    And the standard error is a JSON error with the code "retriever.outline.key_missing" and retryable false
-    And the stub Outline server received no requests
-
-  @integration @e2e @unit
-  Scenario: A missing Outline key names its variable and sends no request
-    When I run "retriever --output json outline collections list"
-    Then the exit status is 2
-    And the standard output is empty
-    And the standard error is a JSON error with the code "retriever.outline.key_missing" and retryable false
-    And the JSON field "error.message" of the standard error is "EXAMPLE_OUTLINE_API_KEY is not set"
-    And the stub Outline server received no requests
-
-  @integration @e2e @unit
+  # Behaviour: CLI-108
   Scenario Outline: A source key that is set but empty names its variable and sends no request
     Given the environment variable "<variable>" is set to ""
     When I run "retriever --output json <command>"
@@ -101,16 +88,7 @@ Feature: Source credentials
       | EXAMPLE_KIWI_API_KEY    | kiwi products list | retriever.kiwi.key_missing    | Kiwi    |
       | EXAMPLE_OUTLINE_API_KEY | outline collections list | retriever.outline.key_missing | Outline |
 
-  @integration @e2e @unit
-  Scenario: A missing Kiwi key names its variable and sends no request
-    When I run "retriever --output json kiwi products list"
-    Then the exit status is 2
-    And the standard output is empty
-    And the standard error is a JSON error with the code "retriever.kiwi.key_missing" and retryable false
-    And the JSON field "error.message" of the standard error is "EXAMPLE_KIWI_API_KEY is not set"
-    And the stub Kiwi server received no requests
-
-  @integration @e2e @unit
+  # Behaviour: CLI-109
   Scenario: The local env file supplies the key of a second Outline source
     Given the sources catalog file "two.yml" holds these sources:
       | id                  | kind    | tags | endpoint                      | credential_env              | identity_env |
@@ -124,7 +102,7 @@ Feature: Source credentials
     Then the exit status is 0
     And every request to the stub Outline server carried the Authorization header "Bearer synthetic-second-key"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-110
   Scenario: A missing key for a second Outline source names that source's own variable
     Given the sources catalog file "two.yml" holds these sources:
       | id                  | kind    | tags | endpoint                      | credential_env              | identity_env |
@@ -137,7 +115,7 @@ Feature: Source credentials
     And the JSON field "error.message" of the standard error is "EXAMPLE_OUTLINE_TWO_API_KEY is not set"
     And the stub Outline server received no requests
 
-  @integration @e2e @unit
+  # Behaviour: CLI-111
   Scenario: A malformed Jira e-mail address stops the command before any request and is never shown
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "<address>"
@@ -152,7 +130,7 @@ Feature: Source credentials
       | no-at-sign          |
       | two@@example.test   |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-112
   Scenario: A missing Jira e-mail address stops the command before any request is sent
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     When I run "retriever --output json jira whoami"
@@ -161,7 +139,7 @@ Feature: Source credentials
     And the JSON field "error.message" of the standard error is "EXAMPLE_JIRA_EMAIL is not set"
     And the stub Jira server received no requests
 
-  @integration @e2e @unit
+  # Behaviour: CLI-113
   Scenario: An empty Jira e-mail address counts as a missing e-mail address and names its variable
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to ""
@@ -172,7 +150,7 @@ Feature: Source credentials
     And the JSON field "error.message" of the standard error is "EXAMPLE_JIRA_EMAIL is not set"
     And the stub Jira server received no requests
 
-  @integration @e2e @unit
+  # Behaviour: CLI-114
   Scenario Outline: A missing or empty Jira token names the token variable, even when the e-mail address is empty too
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "<token>"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "<email>"
@@ -188,7 +166,7 @@ Feature: Source credentials
       |       | synthetic-user@example.test |
       |       |                             |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-115
   Scenario: A Jira token that the source refuses gets the same text whichever value is wrong
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-wrong-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
@@ -205,7 +183,7 @@ Feature: Source credentials
     And the stub Jira server received 2 requests
     And the standard error is the same as the one kept as "wrong token"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-116
   Scenario: The Jira token and e-mail address are read from the env file in the current directory
     Given the env file ".env.local" holds these lines:
       """
@@ -220,7 +198,7 @@ Feature: Source credentials
     Then the exit status is 0
     And every request to the stub Jira server carried the credentials of the synthetic e-mail address and token
 
-  @integration @e2e @unit
+  # Behaviour: CLI-117
   Scenario: The process environment wins over the env file for the Jira e-mail address
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
@@ -236,7 +214,7 @@ Feature: Source credentials
     Then the exit status is 0
     And every request to the stub Jira server carried the credentials of the synthetic e-mail address and token
 
-  @integration @e2e @unit
+  # Behaviour: CLI-118
   Scenario: The Jira credentials go only to the Jira endpoint and no other source receives a request
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
@@ -250,7 +228,7 @@ Feature: Source credentials
     And the stub Outline server received no requests
     And the stub Kiwi server received no requests
 
-  @integration @e2e @unit
+  # Behaviour: CLI-119
   Scenario: A key that the source refuses is reported with its own code and never printed
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server answers every request with status 401
@@ -259,7 +237,7 @@ Feature: Source credentials
     And the standard error is a JSON error with the code "retriever.kiwi.key_rejected" and retryable false
     And the value of "EXAMPLE_KIWI_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-120
   Scenario: An Outline key that the source refuses is reported with its own code
     Given the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
     And the stub Outline server answers "collections.list" with status 401
@@ -268,7 +246,7 @@ Feature: Source credentials
     And the standard error is a JSON error with the code "retriever.outline.key_rejected" and retryable false
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-121
   Scenario Outline: A refused Jira request never prints the token or the e-mail address, even when the source echoes them
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
@@ -285,7 +263,7 @@ Feature: Source credentials
       | 403    |
       | 500    |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-122
   Scenario Outline: A successful Jira read never prints the token or the e-mail address
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
@@ -304,7 +282,7 @@ Feature: Source credentials
       | retriever --output json jira whoami |
       | retriever jira issues get EXAMPLE-1 |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-123
   Scenario: A refused Jira export writes no file that holds the token or the e-mail address
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | tags    | endpoint                  | credential_env         | identity_env       |
@@ -318,7 +296,7 @@ Feature: Source credentials
     And the value of "EXAMPLE_JIRA_API_TOKEN" never appears in the standard output, the standard error, or the output folder
     And the value of "EXAMPLE_JIRA_EMAIL" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-124
   Scenario: A successful Jira export writes one file that holds neither the token nor the e-mail address
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | tags    | endpoint                  | credential_env         | identity_env       |
@@ -335,7 +313,7 @@ Feature: Source credentials
     And the value of "EXAMPLE_JIRA_API_TOKEN" never appears in the standard output, the standard error, or the output folder
     And the value of "EXAMPLE_JIRA_EMAIL" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-125
   Scenario: The served sources list never shows the Jira token or the e-mail address
     Given the environment variable "EXAMPLE_JIRA_API_TOKEN" is set to "synthetic-jira-token"
     And the environment variable "EXAMPLE_JIRA_EMAIL" is set to "synthetic-user@example.test"
@@ -350,7 +328,7 @@ Feature: Source credentials
     And the GraphQL response does not contain "synthetic-jira-token"
     And the GraphQL response does not contain "synthetic-user@example.test"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-126
   Scenario: The Kiwi API key is read from the env file in the current directory
     Given the env file ".env.local" holds these lines:
       """
@@ -360,14 +338,14 @@ Feature: Source credentials
     Then the exit status is 0
     And every request to the stub Kiwi server carried the Authorization header "Bearer synthetic-kiwi-key"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-127
   Scenario: A Kiwi key is never sent in the body or the path of a request
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     When I run "retriever kiwi products list"
     Then the exit status is 0
     And no request to the stub Kiwi server carried the value of "EXAMPLE_KIWI_API_KEY" in its body or its path
 
-  @integration @e2e @unit
+  # Behaviour: CLI-128
   Scenario Outline: A successful Kiwi run never prints the key
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server holds this dataset:
@@ -383,7 +361,7 @@ Feature: Source credentials
       | retriever kiwi products list         |
       | retriever --output json kiwi products list |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-129
   Scenario: A Kiwi write never prints the key
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
@@ -405,7 +383,7 @@ Feature: Source credentials
     And the stub Kiwi server received 1 request to "TestCase.create"
     And the value of "EXAMPLE_KIWI_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-130
   Scenario Outline: A failing Kiwi response never prints the key, even when the response echoes it
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server answers every request with status <status> and echoes the key
@@ -420,7 +398,7 @@ Feature: Source credentials
       | 404    |
       | 500    |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-131
   Scenario: Kiwi rate-limit exhaustion never prints the key
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server answers every request with status 429 and Retry-After "0"
@@ -430,7 +408,7 @@ Feature: Source credentials
     And the stub Kiwi server received 4 requests
     And the value of "EXAMPLE_KIWI_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-132
   Scenario: A JSON-RPC error that echoes the key in its message never prints the key
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server answers "TestCase.filter" with a JSON-RPC error with code -32000 and message "synthetic-kiwi-key"
@@ -439,7 +417,7 @@ Feature: Source credentials
     And the standard output is empty
     And the value of "EXAMPLE_KIWI_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-133
   Scenario: A malformed Kiwi response never prints the key, even when the response echoes it
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server answers every request with a body that is not JSON and echoes the key
@@ -448,7 +426,7 @@ Feature: Source credentials
     And the standard output is empty
     And the value of "EXAMPLE_KIWI_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-134
   Scenario: A Kiwi source that cannot be reached is reported as unreachable and never prints the key
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server is not listening
@@ -457,7 +435,7 @@ Feature: Source credentials
     And the standard error is a JSON error with the code "retriever.kiwi.unreachable" and retryable true
     And the value of "EXAMPLE_KIWI_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-135
   Scenario Outline: A rejected Kiwi key is reported by every Kiwi read and never printed
     Given the environment variable "EXAMPLE_KIWI_API_KEY" is set to "synthetic-kiwi-key"
     And the stub Kiwi server answers every request with status 401 and echoes the key
@@ -472,7 +450,7 @@ Feature: Source credentials
       | retriever --output json kiwi products list       |
       | retriever --output json kiwi documents get case-40 |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-136
   Scenario Outline: A failed Kiwi write never prints the key, in text or in the JSON error body
     Given the sources catalog file "reviewed.yml" holds these sources:
       | id           | kind | tags  | endpoint                  | credential_env       | identity_env |
@@ -489,16 +467,71 @@ Feature: Source credentials
       | retriever --catalog reviewed.yml kiwi test-cases create Synthetic-case --product product-3 --category Functional --priority High --source example-kiwi |
       | retriever --output json --catalog reviewed.yml kiwi test-cases create Synthetic-case --product product-3 --category Functional --priority High --source example-kiwi |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-137
   Scenario: A key is never sent in the body or the URL of a request
     Given the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
     When I run "retriever outline collections list"
     Then the exit status is 0
     And no request to the stub Outline server carried the value of "EXAMPLE_OUTLINE_API_KEY" in its body or its URL
 
-  @integration @e2e @unit
+  # Behaviour: CLI-138
   Scenario: A successful run never prints the key in standard output, standard error, or files
     Given the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
     When I run "retriever outline collections list"
     Then the exit status is 0
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
+
+  # Behaviour: CLI-139
+  Scenario Outline: The env file reads a key from each line form the format allows
+    Given the env file ".env.local" holds the line <line>
+    When I run "retriever outline collections list"
+    Then the exit status is 0
+    And every request to the stub Outline server carried the Authorization header "Bearer synthetic-outline-key"
+
+    Examples:
+      | line                                                |
+      | export EXAMPLE_OUTLINE_API_KEY=synthetic-outline-key |
+      | EXAMPLE_OUTLINE_API_KEY="synthetic-outline-key"     |
+      | EXAMPLE_OUTLINE_API_KEY='synthetic-outline-key'     |
+      | EXAMPLE_OUTLINE_API_KEY=synthetic-outline-key # note |
+
+  # Behaviour: CLI-140
+  Scenario: A repeated key in the env file uses its last value
+    Given the env file ".env.local" holds these lines:
+      """
+      EXAMPLE_OUTLINE_API_KEY=synthetic-first-key
+      EXAMPLE_OUTLINE_API_KEY=synthetic-last-key
+      """
+    When I run "retriever outline collections list"
+    Then the exit status is 0
+    And every request to the stub Outline server carried the Authorization header "Bearer synthetic-last-key"
+
+  # Behaviour: CLI-141
+  Scenario: A malformed env file line stops the command before any request is sent and never shows its text
+    Given the env file ".env.local" holds these lines:
+      """
+      EXAMPLE_OUTLINE_API_KEY=synthetic-outline-key
+      this line has no equals sign
+      """
+    When I run "retriever --output json outline collections list"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error does not contain "this line has no equals sign"
+    And the stub Outline server received no requests
+
+  # Behaviour: CLI-142
+  Scenario: A profile env file supplies the key of its profile's source
+    Given the profile "personal" holds these sources:
+      | id           | kind | tags  | endpoint                  | credential_env        | identity_env |
+      | example-kiwi | kiwi | tests | https://kiwi.example.test | PERSONAL_KIWI_API_KEY |              |
+    And the profile "personal" holds these lines in its env file:
+      """
+      PERSONAL_KIWI_API_KEY=synthetic-kiwi-key
+      """
+    And the stub Kiwi server holds this dataset:
+      """
+      {"Products": [{"ID": 3, "Name": "Synthetic product"}], "Plans": [], "Cases": [], "Categories": [], "Priorities": [], "Statuses": []}
+      """
+    When I run "retriever --profile personal kiwi products list"
+    Then the exit status is 0
+    And every request to the stub Kiwi server carried the Authorization header "Bearer synthetic-kiwi-key"

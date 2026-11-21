@@ -32,20 +32,22 @@ A relative path given by a flag or a variable is made absolute against the worki
 themselves. A file at rule 4 is used even when it does not exist yet, and a missing catalog then fails with exit status
 `2`.
 
-```text
-  --catalog flag ---> set? --yes--> use it
-        |
-        no
-        v
-  RETRIEVER_CATALOG ---> set and not empty? --yes--> use it
-        |
-        no
-        v
-  ./sources.yml ---> regular file exists? --yes--> use it
-        |
-        no
-        v
-  $XDG_CONFIG_HOME/retriever/sources.yml, or ~/.config/retriever/sources.yml
+```mermaid
+flowchart TD
+    accTitle: Catalog lookup precedence
+    accDescr: The first rule that applies sets the catalog, and the user configuration folder is the last fallback.
+    flag{"--catalog flag set?"}
+    env{"RETRIEVER_CATALOG set<br/>and not empty?"}
+    localfile{"./sources.yml regular<br/>file exists?"}
+    fallback["$XDG_CONFIG_HOME/<br/>retriever/sources.yml, or<br/>~/.config/retriever/sources.yml"]
+    use["Use it"]
+    flag -->|yes| use
+    flag -->|no| env
+    env -->|yes| use
+    env -->|no| localfile
+    localfile -->|yes| use
+    localfile -->|no| fallback
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 The env file follows the same order with `--env-file`, `RETRIEVER_ENV_FILE`, `./.env.local`, and
@@ -74,16 +76,16 @@ A symbolic link as the profile folder is refused.
 ## Connector specs
 
 A connector spec is a YAML file that declares one source kind. The tool reads the spec files of one folder at start-up.
-That folder is the one that `--connectors-dir <path>` names, or else the default `retriever/connectors` folder of the user
-configuration folder. A spec file ends in `.yml` or `.yaml`, is at most 256 KiB, and is a regular file.
+That folder is the one that `--connectors-dir <path>` names, or else the default `retriever/connectors` folder of the
+user configuration folder. A spec file ends in `.yml` or `.yaml`, is at most 256 KiB, and is a regular file.
 
 - **A missing default folder** is not an error. The run loads no spec.
 - **A missing or unreadable `--connectors-dir`** fails with exit status `2` and the code
   `retriever.connector.folder_unavailable`. The message names no path.
-- **A refused spec** fails every sources command with exit status `2` and the code `retriever.connector.spec_invalid`. The
-  message names the file and the field.
-- **A catalog pin** of `spec_sha256` must match the bytes of the spec file, or the run fails with exit status `2` and the
-  code `retriever.connector.spec_pin_mismatch`.
+- **A refused spec** fails every sources command with exit status `2` and the code
+  `retriever.connector.spec_invalid`. The message names the file and the field.
+- **A catalog pin** of `spec_sha256` must match the bytes of the spec file, or the run fails with exit status `2`
+  and the code `retriever.connector.spec_pin_mismatch`.
 
 The [how-to](../how-to/add-a-spec-connector.md) shows the steps.
 

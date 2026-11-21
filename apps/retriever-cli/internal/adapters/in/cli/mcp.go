@@ -48,7 +48,7 @@ func runMCP(inv *invocation) error {
 		return exitStatus{code: mcpExitNotDone, err: errNotConfigured}
 	}
 
-	ctx, stop := withSignals(rt.ctx)
+	ctx, stop := withSignals(rt.ctx, rt.notify, rt.stop)
 	defer stop()
 
 	done := make(chan error, 1)

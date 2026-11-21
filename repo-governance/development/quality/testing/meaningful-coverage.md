@@ -70,4 +70,4 @@ code are review judgements that no validator makes well.
 ## Related
 
 - [Test-Driven Development](../../workflow/test-driven-development.md) writes each test before the code it checks.
-- [Three-Level Testing Standard](../three-level-testing-standard.md) defines the levels.
+- [Test Boundaries and Gates](./test-boundaries-and-gates.md) defines the levels.

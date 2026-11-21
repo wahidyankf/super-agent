@@ -32,3 +32,5 @@ the host holds it tightly: the pin, the scrubbed environment, the time limit, th
   silent plugin proves the kill and the timeout. It carries the `integration` tag.
 - `gateway_test.go` maps every reply shape with fakes; `gateway_integration_test.go` serves a source through a real
   plugin.
+- `behaviour/` binds every scenario of [the plugin specs](../../specs/libs/retriever-plugin/behaviours/): `unit/` with
+  injected seams, and `integration/` with real child processes and files. See [behaviour](./behaviour/README.md).

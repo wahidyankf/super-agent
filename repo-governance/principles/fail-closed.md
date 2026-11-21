@@ -31,8 +31,8 @@ refusal. Silence is never consent.
   classified exits `2`, never `0` or `1`.
 - [Quality Gate Contract](../development/workflow/quality-gate-contract.md): a gate with a missing input fails, and a
   gate that cannot run fails its surface.
-- [Three-Level Testing Standard](../development/quality/three-level-testing-standard.md): a skipped test level is
-  reported as skipped, never as passed.
+- [Test and Gate Contract](../development/quality/checks/test-and-gate-contract/004-test-levels-and-targets.md): a
+  skipped test level is reported as skipped, never as passed.
 - [Environment Variable Contract](../conventions/security/environment-variable-contract.md): a variable the program
   reads but the template does not declare is a defect.
 - [Multi-Harness Binding](../conventions/structure/multi-harness-binding.md): a capability a harness cannot express

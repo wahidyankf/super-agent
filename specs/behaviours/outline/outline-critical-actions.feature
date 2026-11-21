@@ -15,43 +15,44 @@ Feature: Outline critical actions
       | id | name      |
       | 1c1c1c1c-0000-4000-8000-000000000001 | Synthetic |
 
-  @integration @e2e @unit
-  Scenario: Emptying the trash sends the request once
+  # Behaviour: CLI-491
+  # Behaviour: CLI-490
+  Scenario Outline: A destructive Outline command runs its change once with no confirmation flag
     Given the sources catalog holds these sources:
       | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
       | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
-    When I run "retriever outline documents empty-trash --source example-outline"
+    When I run "retriever outline <command> --source example-outline"
     Then the exit status is 0
-    And the stub Outline server received 1 request to "documents.empty_trash"
+    And the stub Outline server received 1 request to "<method>"
 
-  @integration @e2e @unit
-  Scenario: Deleting a document for good sends the request once
-    Given the sources catalog holds these sources:
-      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
-    When I run "retriever outline documents delete d0c1d0c1-0000-4000-8000-000000000001 --permanent true --source example-outline"
-    Then the exit status is 0
-    And the stub Outline server received 1 request to "documents.delete"
+    Examples:
+      | command                                                                                              | method                    |
+      | documents empty-trash                                                                                | documents.empty_trash     |
+      | documents delete d0c1d0c1-0000-4000-8000-000000000001                                                | documents.delete          |
+      | documents delete d0c1d0c1-0000-4000-8000-000000000001 --permanent true                               | documents.delete          |
+      | documents archive d0c1d0c1-0000-4000-8000-000000000001                                               | documents.archive         |
+      | documents remove-user d0c1d0c1-0000-4000-8000-000000000001 --user-id 5e52e52e-0000-4000-8000-000000000002 | documents.remove_user |
+      | collections delete 1c1c1c1c-0000-4000-8000-000000000001                                              | collections.delete        |
+      | collections remove-user 1c1c1c1c-0000-4000-8000-000000000001 --user-id 5e52e52e-0000-4000-8000-000000000002 | collections.remove_user |
+      | users delete 5e52e52e-0000-4000-8000-000000000002                                                    | users.delete              |
+      | users suspend 5e52e52e-0000-4000-8000-000000000002                                                   | users.suspend             |
+      | groups delete 6a6a6a6a-0000-4000-8000-000000000001                                                   | groups.delete            |
+      | comments delete 44444444-4444-4444-8444-444444444444                                                 | comments.delete           |
+      | attachments delete a7a7a7a7-0000-4000-8000-000000000001                                              | attachments.delete        |
+      | emojis delete e1e1e1e1-0000-4000-8000-000000000001                                                   | emojis.delete             |
+      | file-operations delete f1f1f1f1-0000-4000-8000-000000000001                                          | fileOperations.delete     |
+      | imports delete 1a1a1a1a-0000-4000-8000-000000000001                                                  | imports.delete            |
+      | integrations delete b4000000-0000-4000-8000-000000000018                                             | integrations.delete       |
+      | oauth-clients delete 0c0c0c0c-0000-4000-8000-000000000001                                            | oauthClients.delete       |
+      | oauth-authentications delete b6000000-0000-4000-8000-000000000051                                    | oauthAuthentications.delete |
+      | revisions delete e0e0e0e0-0000-4000-8000-000000000001                                                | revisions.delete          |
+      | shares revoke 5a5a5a5a-0000-4000-8000-000000000001                                                   | shares.revoke             |
+      | templates delete 7e7e7e7e-0000-4000-8000-000000000001                                                | templates.delete          |
+      | webhook-subscriptions delete b6000000-0000-4000-8000-000000000021                                    | webhookSubscriptions.delete |
+      | authentication-providers delete 9b9b9b9b-0000-4000-8000-000000000001                                 | authenticationProviders.delete |
+      | access-requests dismiss a1000000-0000-4000-8000-000000000001                                         | accessRequests.dismiss    |
 
-  @integration @e2e @unit
-  Scenario: Moving a document to the trash sends the request once
-    Given the sources catalog holds these sources:
-      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
-    When I run "retriever outline documents delete d0c1d0c1-0000-4000-8000-000000000001 --source example-outline"
-    Then the exit status is 0
-    And the stub Outline server received 1 request to "documents.delete"
-
-  @integration @e2e @unit
-  Scenario: Deleting a user sends the request once
-    Given the sources catalog holds these sources:
-      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
-      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
-    When I run "retriever outline users delete 5e52e52e-0000-4000-8000-000000000002 --source example-outline"
-    Then the exit status is 0
-    And the stub Outline server received 1 request to "users.delete"
-
-  @integration @e2e @unit
+  # Behaviour: CLI-492
   Scenario: Creating an integration shows the host and never the path
     Given the sources catalog holds these sources:
       | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
@@ -61,7 +62,8 @@ Feature: Outline critical actions
     And the standard output does not contain "/synthetic/path"
     And the stub Outline server received 1 request to "integrations.create"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-501
+  # Behaviour: CLI-493
   Scenario: Rotating an OAuth client secret shows no secret in standard output or standard error
     Given the sources catalog holds these sources:
       | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
@@ -77,3 +79,16 @@ Feature: Outline critical actions
     When I run "retriever --output json outline oauth-clients rotate-secret 0c0c0c0c-0000-4000-8000-000000000001 --source example-outline"
     Then the exit status is 0
     And the value "synthetic-client-secret" never appears in the standard output, the standard error, or the output folder
+
+  # Behaviour: CLI-494
+  Scenario: A destructive Outline command with a rejected key sends its one request, fails, and prints no key
+    Given the sources catalog holds these sources:
+      | id              | kind    | tags | endpoint                  | credential_env          | identity_env |
+      | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
+    And the stub Outline server answers "documents.delete" with status 401
+    When I run "retriever --output json outline documents delete d0c1d0c1-0000-4000-8000-000000000001 --source example-outline"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.outline.key_rejected" and retryable false
+    And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
+    And the stub Outline server received 1 request to "documents.delete"

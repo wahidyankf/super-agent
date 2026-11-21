@@ -2,5 +2,6 @@
 set -eu
 
 # Thin lifecycle adapter. The typed registry owns every quality entry.
+# This surface holds the commit-message format lint only (C6, C10). Rhino reads the message file Git passes as $1.
 exec ./hippo run --class ephemeral --resource-tier light --disk-path . -- \
   ./rhino gate run --surface commit-msg --message-file "$1"

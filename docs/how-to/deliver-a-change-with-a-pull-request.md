@@ -35,8 +35,9 @@ gates](./run-the-quality-gates.md).
 - Use Conventional Commits: a lowercase type, an imperative subject, and no trailing period.
   Example: `docs: add explanation pages`.
 - Use the configured git identity. Never set or change git identity or git config.
-- The commit-msg and pre-commit hooks run the gates. The pre-commit hook can reformat staged files. Review those
-  changes and commit again if it changed anything.
+- The commit-msg hook checks the message, and the pre-commit hook formats the staged files. The pre-commit hook can
+  reformat them. Review those changes and commit again if it changed anything. The pre-push hook screens the pushed
+  range for leaks. Every other gate runs on the pull request.
 
 ## 4. Push and open the pull request
 

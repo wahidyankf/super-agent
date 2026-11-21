@@ -7,6 +7,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -29,6 +30,16 @@ type Options struct {
 	Version   string
 	Logger    *slog.Logger
 	Resources []string
+	// Now is the clock that times each tool call for its log line. Nil means the real clock; a unit test passes its own.
+	Now func() time.Time
+}
+
+// clock returns the clock of the options: Now when it is set, and the real clock otherwise.
+func (o Options) clock() func() time.Time {
+	if o.Now == nil {
+		return time.Now
+	}
+	return o.Now
 }
 
 // NewServer returns a server with every tool of the catalog, bound to svc, and only the tools of the
@@ -42,10 +53,10 @@ func NewServer(svc sources.Service, opts Options) (*sdk.Server, error) {
 func newServer(svc sources.Service, opts Options, table []tool) (*sdk.Server, error) {
 	impl := &sdk.Implementation{Name: "retriever", Version: opts.Version}
 	server := sdk.NewServer(impl, &sdk.ServerOptions{Instructions: instructions})
-	if _, err := register(server, svc, opts.logger(), table); err != nil {
+	if _, err := register(server, svc, opts.logger(), opts.clock(), table); err != nil {
 		return nil, err
 	}
-	registerOperations(server, svc, opts.logger(), newResourceSet(opts.Resources))
+	registerOperations(server, svc, opts.logger(), opts.clock(), newResourceSet(opts.Resources))
 	return server, nil
 }
 

@@ -104,9 +104,11 @@ and `stacks: [golang]`, as the existing entries do. RHINO accepts any `kind` val
 
 ## 10. Write the behaviour specs
 
-Add feature files under `specs/behaviours/<name>/`. Tag each scenario `@unit`, and tag it `@integration` or `@e2e`, or
-use the exempt tag with its justification. The [test gates](../reference/retriever-cli-test-gates.md) page states the
-rules. Then update `apps/retriever-cli/behaviour-coverage.json`, so that it matches the feature files.
+Add feature files under `specs/behaviours/<name>/`. Every scenario runs at the unit level, so add a `// @scenario` line
+for its file to the unit suite. Every scenario also runs at the integration and end-to-end levels, unless it carries
+`@integration-exempt` or `@e2e-exempt` with an `Exemption` comment above the tag. Each suite names the scenarios it
+binds, and `./rhino behaviour coverage validate` checks the bindings. The
+[test gates](../reference/retriever-cli-test-gates.md) page states the rules.
 
 ## 11. Run the gates
 
@@ -119,12 +121,12 @@ npx nx run retriever-connector-<name>:test:unit
 npx nx run retriever-connector-<name>:test:integration
 ```
 
-Then run the app's `test:unit`, `test:conformance`, and `bdd:check` targets, and the pull-request gate, as
+Then run the app's `test:unit`, `test:conformance`, and `test:behaviour:coverage` targets, and the pull-request gate, as
 [Run the quality gates](./run-the-quality-gates.md) describes.
 
 The continuous-integration Go job runs `lint`, `typecheck`, `test:unit`, and `test:integration` for every Go project
-on Ubuntu, so a library's targets run there too. The pre-push gate runs no Go target, so run the library targets
-yourself before you push.
+that declares them on Ubuntu, so a library's targets run there too. The pre-push gate runs no Go target, so run the
+library targets yourself before you push.
 
 ## 12. Record the change
 

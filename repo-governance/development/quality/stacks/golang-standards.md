@@ -1,6 +1,6 @@
 ---
 description: >-
-  Sets the Go standard for the repository's seven Go modules: the command-line app and its six libraries.
+  Sets the Go standard for the repository's eight Go modules: the command-line app and its seven libraries.
 when_to_use: >-
   Use when writing, reviewing, or changing Go code under apps/ or libs/, or when adding a Go dependency, tool, or
   module.
@@ -8,7 +8,7 @@ when_to_use: >-
 
 # Golang Standards
 
-These rules apply to the Go code in `apps/retriever-cli` and the six `libs/retriever-*` modules, and to any Go module
+These rules apply to the Go code in `apps/retriever-cli` and the seven `libs/retriever-*` modules, and to any Go module
 the repository adds later.
 
 ## Version and Module
@@ -59,9 +59,11 @@ stack trace. The [tiers record](../../../conventions/command-line-interface/009-
 
 - Decisions have plain Go unit tests beside their package. They carry no build tag and run in process under `-race`.
 - Unit tests are hermetic: no file system, no environment reads, no real network or listener, and no real clock. A test
-  that uses `t.TempDir`, `t.Setenv`, a real listener, a child process, or the real clock is integration under the
-  [three-level testing standard](../three-level-testing-standard.md). The architecture guard enforces the file-system,
-  environment, and process parts; review enforces the rest.
+  that uses `t.TempDir`, `t.Setenv`, a real listener, a child process, or the real clock is integration under the [test
+  levels](../checks/test-and-gate-contract/004-test-levels-and-targets.md). The architecture guard checks the calls it
+  lists; review covers the rest.
+- An integration test creates the resource it uses, such as a temporary directory or a local stub server, and
+  removes it afterwards. It never calls a live external service.
 - Real `os` calls sit in the thinnest composition root, `apps/retriever-cli/cmd/retriever` for the app. Each wrapper is
   tested under the `integration` tag. The [retriever test gates](../../../../docs/reference/retriever-cli-test-gates.md)
   list the known departures.
@@ -69,7 +71,7 @@ stack trace. The [tiers record](../../../conventions/command-line-interface/009-
   states the gate and its only exclusion.
 - For the app, unit coverage counts the scenarios that run at unit level and the plain unit tests outside the behaviour
   suite. For a library, it counts its plain unit tests. Go coverage counts statements, so no branch figure is claimed.
-- Integration and end-to-end runs produce no coverage figure, and the pre-push gate runs no Go target.
+- Integration and end-to-end runs produce no coverage figure.
 - Only the app has Gherkin. It runs its behaviour scenarios with godog, pinned at v0.16.0, and chooses scenario or plain
   test as [Behaviour-Driven Development](../../behaviour-driven-development.md) states. A library keeps plain tests and
   no scenarios.

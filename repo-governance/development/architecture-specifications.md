@@ -1,7 +1,7 @@
 ---
 description: >-
   Requires super-agent's architecture to be recorded as C4 specifications in specs/architecture, describing what has
-  been built, drawn as ASCII diagrams with prose.
+  been built, drawn as Mermaid diagrams with prose.
 when_to_use: >-
   Use when a change alters a container, a component, a boundary, or how one part relates to another, and when reviewing
   an architecture description.
@@ -16,7 +16,7 @@ components. The model says what exists now.
 
 - Describe what has been built. A boundary drawn because it was planned, and never built, misleads the next design
   decision. Label a planned item as planned, or leave it out.
-- Draw each diagram as an ASCII block in a `text` fence, as the [diagrams
+- Draw each conceptual diagram as a Mermaid block, as the [diagrams
   convention](../conventions/writing/diagrams.md) requires.
 - Put every relationship a diagram shows in the prose beneath it.
 - Record each constraint that shapes the design in the model, not only in code. Examples are "the core never reads the

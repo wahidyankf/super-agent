@@ -197,8 +197,8 @@ func (s resourceSet) offers(resource string) bool {
 }
 
 // registerOperations adds the generated tools whose resource the set offers. It returns the names it added.
-func registerOperations(server *sdk.Server, svc sources.Service, log *slog.Logger, offers resourceSet) []string {
-	c := caller{svc: svc, log: log}
+func registerOperations(server *sdk.Server, svc sources.Service, log *slog.Logger, now func() time.Time, offers resourceSet) []string {
+	c := caller{svc: svc, log: log, now: now}
 	var names []string
 	for _, row := range operationTools(svc) {
 		if !offers.offers(row.Resource()) {
@@ -215,7 +215,7 @@ func registerOperations(server *sdk.Server, svc sources.Service, log *slog.Logge
 // typed tools write.
 func operationHandler(c caller, row operations.Row) sdk.ToolHandler {
 	return func(ctx context.Context, req *sdk.CallToolRequest) (result *sdk.CallToolResult, err error) {
-		start := time.Now()
+		start := c.now()
 		out, source, class, public := runOperation(ctx, c.svc, row, req)
 		if class == outcomeUnexpected {
 			c.record(row.Tool, source, outcomeUnexpected, start)

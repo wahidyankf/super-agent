@@ -225,10 +225,15 @@ type Proc interface {
 
 // Seams are the file, process, and clock calls a Call makes. The zero value is production: the real file calls,
 // the real process start, and time.After. A unit test passes fakes, so no real file, process, or wait is touched.
+//
+// NewCommand builds the command that a start runs when Start is nil. The pipes, the start, and the group kill of that
+// command go through the command it returns, so a unit test measures every wiring path with a fake command and no
+// real process. A nil NewCommand reads as the production command.
 type Seams struct {
-	Files Files
-	Start Starter
-	After func(d time.Duration) <-chan time.Time
+	Files      Files
+	Start      Starter
+	NewCommand func(path, dir string, env []string) Command
+	After      func(d time.Duration) <-chan time.Time
 }
 
 // withDefaults returns the seams with production in every unset slot.
@@ -237,7 +242,12 @@ func (s Seams) withDefaults() Seams {
 		s.Files = osFiles{}
 	}
 	if s.Start == nil {
-		s.Start = startProcess
+		s.Start = func(path, dir string, env []string) (Proc, error) {
+			if s.NewCommand == nil {
+				return startProcess(path, dir, env)
+			}
+			return startCommand(s.NewCommand(path, dir, env))
+		}
 	}
 	if s.After == nil {
 		s.After = time.After
@@ -293,6 +303,10 @@ type command interface {
 	Wait() error
 	KillGroup() error
 }
+
+// Command is the process command a Seams.NewCommand factory returns: the subset of exec.Cmd the host drives, with the
+// group kill. Production builds the real one, and a unit test returns a fake.
+type Command = command
 
 // execGroup is an exec.Cmd that kills its process group. The host starts every plugin as a group leader, so the
 // kill ends the plugin and the work it spawned (P4).

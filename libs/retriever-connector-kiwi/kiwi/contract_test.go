@@ -104,7 +104,7 @@ func kiwiProfile() sourcecontract.Profile {
 // kiwiContractGateway builds the Kiwi gateway for the shared contract suite, served by an in-process stub.
 func kiwiContractGateway(t *testing.T, w sourcecontract.Wiring) ports.SourceGateway {
 	t.Helper()
-	stub := kiwistub.New(sentinelKey, kiwistub.WithDataset(kiwiDataset(w.Dataset)))
+	stub := kiwistub.New(sentinelKey, kiwistub.WithDataset(kiwiDataset(w.Dataset)), kiwistub.WithClock(newFakeClock().Now))
 	switch w.Fault {
 	case sourcecontract.FaultKeyRejected:
 		stub.SetFault(kiwistub.Fault{Status: http.StatusUnauthorized})
@@ -118,7 +118,8 @@ func kiwiContractGateway(t *testing.T, w sourcecontract.Wiring) ports.SourceGate
 		creds = missingCreds{}
 	}
 	client := &http.Client{Transport: stub.RoundTripper()}
-	gw, err := NewWithBase(testSourceAt(t), testBase, client, creds, WithMinDelay(0), WithSleep(noSleep))
+	gw, err := NewWithBase(testSourceAt(t), testBase, client, creds, WithMinDelay(0), WithSleep(noSleep),
+		WithClock(newFakeClock().Now))
 	if err != nil {
 		t.Fatalf("NewWithBase: %v", err)
 	}

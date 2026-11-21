@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/tests/specstub"
 	"github.com/wahidyankf/super-agent/libs/retriever-engine/engine"
@@ -97,6 +98,25 @@ func TestTheRealNetworkHasBothCalls(t *testing.T) {
 	n := realNetwork()
 	if n.Lookup == nil || n.Dial == nil {
 		t.Fatalf("realNetwork() has a nil call")
+	}
+}
+
+// TestTheRealClockEndsAContextAndWaitsNoLonger checks the real clock on a context that has already ended: a wait returns at
+// once with the context's error, and a time limit gives a context that the release function ends. It reads the real clock,
+// so it carries the integration tag.
+func TestTheRealClockEndsAContextAndWaitsNoLonger(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := (realClock{}).Sleep(ctx, time.Hour); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Sleep on an ended context = %v, want context.Canceled", err)
+	}
+	limited, release := (realClock{}).WithTimeout(context.Background(), time.Hour)
+	release()
+	if limited.Err() == nil {
+		t.Fatalf("a released time limit context has no error")
+	}
+	if err := (realClock{}).Sleep(context.Background(), 0); err != nil {
+		t.Fatalf("Sleep for no time = %v, want nil", err)
 	}
 }
 

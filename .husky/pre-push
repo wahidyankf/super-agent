@@ -2,6 +2,8 @@
 set -eu
 
 # Thin lifecycle adapter. Git's ref-update records remain on standard input.
+# This surface holds the leak scan over the pushed range and no tests, lint, or document checks (C6). The pull-request
+# surface runs those, so a push never waits on them.
 export RHINO_GATE_SURFACE=pre-push
 exec ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- \
   ./rhino gate run --surface pre-push --push-updates-stdin

@@ -43,13 +43,14 @@ Run each target from the repository root with `npx nx run retriever-cli:<target>
 - `format:check`: checks that `gofmt -l` reports no file.
 - `test:unit`: refuses a test that calls `.Skip(`, then runs the gate's self-test, then the coverage gate of this
   module with its 99 percent floor, then the self-test of the release build.
-- `test:integration`: runs `go test -tags integration ./...`.
-- `test:e2e`: runs the end-to-end suite in `tests/behaviour` against the binary that the suite builds.
+- `test:integration`: runs `go test -timeout 20m -tags integration ./...`.
+- `test:e2e`: runs the end-to-end suite in `tests/behaviour` against the binary that the suite builds, with a
+  `-timeout 20m`.
 - `test:conformance`: runs the conformance and architecture tests, with the `integration` tag.
-- `bdd:check`: checks that each scenario has its bindings or a justified exemption, and that `behaviour-coverage.json`
-  matches the feature files.
+- `test:behaviour:coverage`: runs `./rhino behaviour coverage validate` from the repository root, which checks that each
+  scenario of `specs/behaviours` has its bindings or a justified exemption.
 - `test:coverage`: runs the coverage gate on its own.
-- `test:quick`: runs `lint`, `typecheck`, and `test:unit`, in order.
+- `test:quick`: runs `typecheck`, `lint`, `test:unit`, and `test:behaviour:coverage`, in order.
 - `deps:audit`: runs `govulncheck`, which reads the Go vulnerability database and needs the network.
 - `build:release`: builds the release archives and `SHA256SUMS` for the annotated tag named by `RELEASE_VERSION`, into
   the empty directory named by `RELEASE_OUT`. The
@@ -73,7 +74,6 @@ The CI cross-compile check builds four platforms and publishes nothing.
 - `tests/` holds the behaviour tests, the conformance tests, and the architecture tests. See [tests](./tests/README.md).
 - `scripts/` holds the release build, its self-test, and the coverage exclusions of the app. See
   [scripts](./scripts/README.md). The shared coverage gate is `scripts/go-coverage-gate.sh` at the repository root.
-- `behaviour-coverage.json` records the scenario counts that the binding check compares with the feature files.
 - `.golangci.yml` is the lint configuration, written for a later golangci-lint adoption.
 - `.gitignore` ignores `dist/`, `sources.yml`, and the env files.
 - `go.mod` and `go.sum` pin the module and its dependencies.

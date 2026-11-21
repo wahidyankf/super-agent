@@ -35,8 +35,15 @@ reviewed once; no spec field changes them.
 4. The document layout: fixed lines, escaped values, defaults, and the rendered description.
 5. The key echo check and the endpoint-origin URLs.
 
-```text
-reply --> key echo (E23) --> page end (E20: last? cut? truncated?) --> mapping (E21, E24) --> layout (E22)
+```mermaid
+flowchart LR
+    accTitle: Reply check pipeline for Jira
+    accDescr: A reply passes the key echo, the page-end decision, the mapping, and then the document layout.
+    reply["reply"] --> echo["key echo (E23)"]
+    echo --> pageend["page end<br/>(E20: last? cut?<br/>truncated?)"]
+    pageend --> mapping["mapping (E21, E24)"]
+    mapping --> layout["layout (E22)"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 ## New threats

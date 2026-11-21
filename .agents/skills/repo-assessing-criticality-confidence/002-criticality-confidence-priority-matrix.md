@@ -38,36 +38,14 @@ Fixer agents MUST process findings in strict priority order:
 The diagram shows fixers running P0 first (CRITICAL criticality with HIGH confidence, auto-fixed and blocking if a fix
 fails), then P1 and P2, and finally P3-P4 low-priority findings, which only appear in the summary.
 
-```text
-+--------------------------+
-| 1. P0 fixes              |
-| (CRITICAL + HIGH)        |
-| Auto-fix, block if fails |
-+--------------------------+
-    |
-    v
-+----------------------+
-| 2. P1 fixes          |
-| (HIGH + HIGH OR      |
-| CRITICAL + MEDIUM)   |
-| Auto-fix HIGH+HIGH,  |
-| flag CRITICAL+MEDIUM |
-+----------------------+
-    |
-    v
-+----------------------+
-| 3. P2 fixes          |
-| (MEDIUM + HIGH OR    |
-| HIGH + MEDIUM)       |
-| Auto-fix MEDIUM+HIGH |
-| if approved,         |
-| flag HIGH+MEDIUM     |
-+----------------------+
-    |
-    v
-+-------------------------+
-| 4. P3-P4 fixes          |
-| (LOW priority)          |
-| Include in summary only |
-+-------------------------+
+```mermaid
+flowchart TD
+    accTitle: Fix order by priority
+    accDescr: Fixers run P0 first, then P1 and P2, and P3 to P4 findings appear only in the summary.
+    p0["1. P0 fixes<br/>(CRITICAL + HIGH)<br/>Auto-fix, block if fails"]
+    p1["2. P1 fixes<br/>(HIGH + HIGH OR<br/>CRITICAL + MEDIUM)<br/>Auto-fix HIGH+HIGH,<br/>flag CRITICAL+MEDIUM"]
+    p2["3. P2 fixes<br/>(MEDIUM+HIGH OR<br/>HIGH+MEDIUM)<br/>Auto-fix MEDIUM+HIGH<br/>if approved, flag HIGH+MEDIUM"]
+    p4["4. P3-P4 fixes<br/>(LOW priority)<br/>Include in summary only"]
+    p0 --> p1 --> p2 --> p4
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```

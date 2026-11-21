@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -17,11 +18,14 @@ import (
 // sentinelKey stands in for a real key or an upstream body. No result, error, or log line may hold it.
 const sentinelKey = "test-key-SENTINEL-do-not-show"
 
+// frozenClock is the clock of the unit tests: it reads one fixed instant, so a tool call is timed without the real clock.
+func frozenClock() time.Time { return time.Unix(0, 0) }
+
 // connect runs the production server over an in-memory transport and returns the SDK client end of the session.
 // The log lines the server writes go to logs.
 func connect(t *testing.T, svc sources.Service, logs *bytes.Buffer) *sdk.ClientSession {
 	t.Helper()
-	server, err := NewServer(svc, Options{Version: "test", Logger: slog.New(slog.NewTextHandler(logs, nil))})
+	server, err := NewServer(svc, Options{Version: "test", Logger: slog.New(slog.NewTextHandler(logs, nil)), Now: frozenClock})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +135,7 @@ func TestToolListHasExplicitHintsAndTheUntrustedSentence(t *testing.T) {
 func TestRegisterRefusesATableThatNamesOneToolTwice(t *testing.T) {
 	row := tool{name: "list_sources", effect: domain.EffectRead, bind: bind(listSources)}
 	server := sdk.NewServer(&sdk.Implementation{Name: "t", Version: "0"}, nil)
-	_, err := register(server, emptyService(t), slog.New(slog.DiscardHandler), []tool{row, row})
+	_, err := register(server, emptyService(t), slog.New(slog.DiscardHandler), frozenClock, []tool{row, row})
 	if err == nil {
 		t.Fatal("register accepted a duplicate tool name")
 	}
@@ -279,7 +283,7 @@ func TestPanickingUseCaseAnswersTheFixedTextAndLogsTheTypeOnly(t *testing.T) {
 	var logs bytes.Buffer
 	probe := tool{name: "panic_probe", description: "probe", effect: domain.EffectRead, bind: bind(panickingUse)}
 	server := sdk.NewServer(&sdk.Implementation{Name: "t", Version: "0"}, nil)
-	if _, err := register(server, emptyService(t), slog.New(slog.NewTextHandler(&logs, nil)), []tool{probe}); err != nil {
+	if _, err := register(server, emptyService(t), slog.New(slog.NewTextHandler(&logs, nil)), frozenClock, []tool{probe}); err != nil {
 		t.Fatal(err)
 	}
 	cs := clientOf(t, server)

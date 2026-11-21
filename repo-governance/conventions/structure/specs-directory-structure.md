@@ -17,7 +17,7 @@ starts in `specs/`, not in the code.
 specs/
   README.md           index of the tree
   behaviours/         Gherkin feature files, one folder per behaviour area
-  architecture/       C4 architecture specifications, as ASCII diagrams with prose
+  architecture/       C4 architecture specifications, as Mermaid diagrams with prose
     README.md
   fixtures/           synthetic data that tests and feature files read
     README.md

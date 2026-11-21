@@ -13,11 +13,13 @@
 The fixer starts from the checker report, reads each finding, re-executes its validation, assesses confidence, and then
 applies, skips, or reports the finding.
 
-```text
-+----------------+     +--------------+     +------------+     +------------+     +-------------------+
-| Checker Report |---->| Read Finding |---->| Re-execute |---->| Assess     |---->| Apply/Skip/Report |
-+----------------+     +--------------+     | Validation |     | Confidence |     +-------------------+
-                                            +------------+     +------------+
+```mermaid
+flowchart LR
+    accTitle: Fixer pipeline, five stages
+    accDescr: The fixer re-executes each finding's check, assesses confidence, then applies, skips, or reports it.
+    report["Checker Report"] --> read["Read Finding"] --> recheck["Re-execute Validation"]
+    recheck --> assess["Assess Confidence"] --> act["Apply/Skip/Report"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 **Re-validation methods**:

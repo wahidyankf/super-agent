@@ -14,7 +14,7 @@ HIPPO and RHINO are pinned in two lock files at the repository root.
 
 - `hippo.lock` pins `v0.13.4`, with the platform keys `darwin-amd64`, `darwin-arm64`, `linux-amd64`, and
   `linux-arm64`.
-- `rhino.lock` pins `v0.17.0`, with the platform keys `aarch64-apple-darwin`, `x86_64-apple-darwin`,
+- `rhino.lock` pins `v0.19.0`, with the platform keys `aarch64-apple-darwin`, `x86_64-apple-darwin`,
   `aarch64-unknown-linux-gnu`, and `x86_64-unknown-linux-gnu`.
 
 Each lock file holds the release `version`, the source `commit` that the release was built from, and one SHA-256

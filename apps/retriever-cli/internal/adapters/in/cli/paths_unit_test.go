@@ -167,6 +167,8 @@ func TestMCPEndedBySignalNamesTheSignal(t *testing.T) {
 		var errOut bytes.Buffer
 		code := Run([]string{"mcp"}, Deps{
 			Context: parent,
+			Notify:  noSignals,
+			Stop:    noStop,
 			Stdin:   strings.NewReader(""),
 			Stdout:  io.Discard,
 			Stderr:  &errOut,
@@ -187,6 +189,8 @@ func TestMCPCancelledWithoutASignalExitsTwo(t *testing.T) {
 	var errOut bytes.Buffer
 	code := Run([]string{"mcp"}, Deps{
 		Context: parent,
+		Notify:  noSignals,
+		Stop:    noStop,
 		Stdin:   strings.NewReader(""),
 		Stdout:  io.Discard,
 		Stderr:  &errOut,

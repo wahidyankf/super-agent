@@ -18,9 +18,9 @@ var unitCertificateInstant = time.Date(2026, time.January, 1, 0, 0, 0, 0, time.U
 // server is returned with it.
 func TestNewTLSServerWithReportsAListenerThatCannotOpen(t *testing.T) {
 	errListen := errors.New("listener refused")
-	srv, err := NewTLSServerWith(http.NotFoundHandler(),
+	srv, err := NewTLSServerRandom(http.NotFoundHandler(),
 		func(string, string) (net.Listener, error) { return nil, errListen },
-		func() time.Time { return unitCertificateInstant })
+		func() time.Time { return unitCertificateInstant }, &detReader{})
 	if !errors.Is(err, errListen) {
 		t.Fatalf("NewTLSServerWith error = %v, want the listener error", err)
 	}
@@ -33,9 +33,9 @@ func TestNewTLSServerWithReportsAListenerThatCannotOpen(t *testing.T) {
 // given, and that its certificate is dated from the clock it was given. The listener opens no socket.
 func TestNewTLSServerWithServesOnTheGivenListenerAndDatesFromTheGivenClock(t *testing.T) {
 	l := newPipeListener()
-	srv, err := NewTLSServerWith(http.NotFoundHandler(),
+	srv, err := NewTLSServerRandom(http.NotFoundHandler(),
 		func(string, string) (net.Listener, error) { return l, nil },
-		func() time.Time { return unitCertificateInstant })
+		func() time.Time { return unitCertificateInstant }, &detReader{})
 	if err != nil {
 		t.Fatalf("NewTLSServerWith: %v", err)
 	}
@@ -70,9 +70,9 @@ func TestNewTLSServerWithMakesTheCertificateBeforeItOpensTheListener(t *testing.
 	realCertificateSteps.key = func(io.Reader) (*ecdsa.PrivateKey, error) { return nil, errors.New("no key") }
 	t.Cleanup(func() { realCertificateSteps = saved })
 	opened := false
-	srv, err := NewTLSServerWith(http.NotFoundHandler(),
+	srv, err := NewTLSServerRandom(http.NotFoundHandler(),
 		func(string, string) (net.Listener, error) { opened = true; return newPipeListener(), nil },
-		func() time.Time { return unitCertificateInstant })
+		func() time.Time { return unitCertificateInstant }, &detReader{})
 	if err == nil || srv != nil {
 		t.Fatalf("NewTLSServerWith = %v, %v; want an error and no server", srv, err)
 	}

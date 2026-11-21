@@ -10,6 +10,7 @@ package kiwistub
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
@@ -150,6 +151,7 @@ type system struct {
 	listen    func(network, address string) (net.Listener, error)
 	writeFile func(name string, data []byte, perm fs.FileMode) error
 	encode    func(v any) ([]byte, error)
+	random    io.Reader
 }
 
 // wire is one request as a transport received it. The stub copies only what it keeps.
@@ -188,11 +190,31 @@ type Stub struct {
 	requests    []Request
 	inFlight    int
 	peak        int
+	// holdHook runs once for each held socket request, before the wait. Nil means no hook.
+	holdHook func()
 
 	// Start sets these three: the HTTP server, its base URL, and the leaf certificate that the CA file holds.
 	server *http.Server
 	url    string
 	leaf   *x509.Certificate
+}
+
+// SetHoldHook sets a function that a held socket request calls once, before its wait for the caller's end. A test sets it
+// to end the hold on its own clock. Nil clears it.
+func (s *Stub) SetHoldHook(f func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.holdHook = f
+}
+
+// runHoldHook calls the hold hook, when one is set, before a held request waits.
+func (s *Stub) runHoldHook() {
+	s.mu.Lock()
+	f := s.holdHook
+	s.mu.Unlock()
+	if f != nil {
+		f()
+	}
 }
 
 // Option configures a stub at construction.
@@ -233,6 +255,7 @@ func New(key string, opts ...Option) *Stub {
 			listen:    net.Listen,
 			writeFile: os.WriteFile,
 			encode:    json.Marshal,
+			random:    rand.Reader,
 		},
 		hostData:    map[string]Dataset{},
 		methodNext:  map[string]Fault{},

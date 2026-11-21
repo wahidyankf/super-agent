@@ -11,6 +11,7 @@ operations come from the operation catalog in the contract. This module makes th
 
 ## Folders
 
+- [behaviour/](./behaviour/README.md) holds the bindings of the feature corpus, at the unit and integration levels.
 - [kiwi/](./kiwi/README.md) holds the package: the source, its client, its reader, its writer, and its decoders.
 - [scripts/](./scripts/README.md) holds the coverage exclusions that this module's gate reads.
 

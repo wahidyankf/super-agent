@@ -29,7 +29,7 @@ through a pull request from a worktree. Create worktrees only at `worktrees/<tas
 Run the quality gates through HIPPO and RHINO:
 
 ```bash
-./hippo run --class ephemeral --resource-tier standard --disk-path . -- ./rhino gate run --surface pull-request
+./hippo run --class ephemeral --resource-tier standard --disk-path . -- ./rhino gate run --surface pull-request --base <origin/main sha> --head HEAD
 ```
 
 ## Remote Dispatch

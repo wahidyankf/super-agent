@@ -1,55 +1,58 @@
 # Retriever test gates
 
 This page records what each test target of the app and of each library runs, what the coverage gate measures and
-excludes, what the binding check enforces, and which targets CI runs. It states facts. The rules that govern them live
-in the repository's standards.
+excludes, what the behaviour check enforces, and which targets CI runs. It states facts. The rules that govern them live
+in the repository's standards. The repository-wide gate list is in [Quality gates](./quality-gates.md).
 
 ## Targets
 
 Each Nx project has its own targets, and each runs in its module's folder. The app is `retriever-cli`, in
-`apps/retriever-cli`. The six libraries are `retriever-contract`, `retriever-runtime`, `retriever-testkit`,
-`retriever-connector-kiwi`, `retriever-spec`, and `retriever-engine`, in their folders
-under `libs/` (pull request 17 retired `retriever-connector-outline` and removed its directory; pull request 39
-retired `retriever-connector-jira` and removed its directory). The targets below come from each `project.json`.
+`apps/retriever-cli`. The seven libraries are `retriever-contract`, `retriever-runtime`, `retriever-testkit`,
+`retriever-connector-kiwi`, `retriever-spec`, `retriever-engine`, and `retriever-plugin`, in their folders under
+`libs/`. Pull request 17 retired `retriever-connector-outline`, and pull request 39 retired `retriever-connector-jira`;
+each removed its directory. The targets below come from each `project.json`.
 
 ### App targets (`retriever-cli`)
 
-| Target             | Runs                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------- |
-| `lint`             | `go vet` with the integration and e2e tags, then a `gofmt` check                      |
-| `typecheck`        | `go build ./...`, then compiles every test package with those tags, without running   |
-| `install`          | `go mod download`                                                                     |
-| `build`            | `go build -trimpath -o dist/retriever ./cmd/retriever`                                |
-| `build:release`    | `scripts/build-release.sh`: the four platform archives and `SHA256SUMS` of one tag    |
-| `format`           | `gofmt -w .`                                                                          |
-| `format:check`     | `gofmt -l`, which fails when it lists a file                                          |
-| `test:unit`        | skip check, gate self-test, gate, release build self-test; see below                  |
-| `test:quick`       | `lint`, `typecheck`, then `test:unit`                                                 |
-| `test:integration` | `go test -count=1 -tags integration ./...`                                            |
-| `test:e2e`         | `go test -count=1 -tags e2e ./tests/behaviour/...`; the suite builds the binary first |
-| `test:conformance` | `go test -count=1 -tags integration ./tests/conformance/... ./tests/architecture/...` |
-| `bdd:check`        | the binding check of `specs/behaviours`, described below                              |
-| `test:coverage`    | `sh ../../scripts/go-coverage-gate.sh`, the gate without its self-test or skip check  |
-| `deps:audit`       | `go tool govulncheck ./...`, which reads vuln.go.dev and needs the network            |
+| Target                    | Runs                                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `lint`                    | `go vet` with the integration and e2e tags, then a `gofmt` check                         |
+| `typecheck`               | `go build ./...`, then compiles every test package with those tags, without running      |
+| `install`                 | `go mod download`                                                                        |
+| `build`                   | `go build -trimpath -o dist/retriever ./cmd/retriever`                                   |
+| `build:release`           | `scripts/build-release.sh`: the four platform archives and `SHA256SUMS` of one tag       |
+| `format`                  | `gofmt -w .`                                                                             |
+| `format:check`            | `gofmt -l`, which fails when it lists a file                                             |
+| `test:unit`               | skip check, gate self-test, gate, release build self-test; see below                     |
+| `test:quick`              | `typecheck`, `lint`, `test:unit`, then `test:behaviour:coverage`                         |
+| `test:integration`        | `go test -count=1 -timeout 20m -tags integration ./...`                                  |
+| `test:e2e`                | `go test -count=1 -timeout 20m -tags e2e ./tests/behaviour/...`; builds the binary first |
+| `test:conformance`        | `go test -count=1 -tags integration ./tests/conformance/... ./tests/architecture/...`    |
+| `test:behaviour:coverage` | `./rhino behaviour coverage validate`; see [Behaviour check](#behaviour-check)           |
+| `test:coverage`           | `sh ../../scripts/go-coverage-gate.sh`, the gate without its self-test or skip check     |
+| `deps:audit`              | `go tool govulncheck ./...`, which reads vuln.go.dev and needs the network               |
 
 The skip check fails when a `_test.go` file under `internal`, `cmd`, or `tests` calls `.Skip(`.
 
 ### Library targets
 
-Every library has the same targets. None of them runs the behaviour, conformance, or binding checks.
+Every library has the same targets, except that `retriever-contract` and `retriever-spec` declare no `test:integration`:
+they have no integration-tagged test. Each runs the static behaviour check, `test:behaviour:coverage`. None runs
+`test:conformance` or `test:e2e`.
 
-| Target             | Runs                                                                                |
-| ------------------ | ----------------------------------------------------------------------------------- |
-| `install`          | `go mod download`                                                                   |
-| `build`            | `go build ./...`                                                                    |
-| `lint`             | `go vet` with the integration and e2e tags, then a `gofmt` check                    |
-| `typecheck`        | `go build ./...`, then compiles every test package with those tags, without running |
-| `format`           | `gofmt -w .`                                                                        |
-| `format:check`     | `gofmt -l`, which fails when it lists a file                                        |
-| `test:unit`        | skip check, then the coverage gate with `COVERAGE_PACKAGES='./...'`                 |
-| `test:quick`       | `lint`, `typecheck`, then `test:unit`                                               |
-| `test:integration` | `go test -count=1 -tags integration ./...`                                          |
-| `test:coverage`    | the coverage gate with `COVERAGE_PACKAGES='./...'`, without the skip check          |
+| Target                    | Runs                                                                                |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `install`                 | `go mod download`                                                                   |
+| `build`                   | `go build ./...`                                                                    |
+| `lint`                    | `go vet` with the integration and e2e tags, then a `gofmt` check                    |
+| `typecheck`               | `go build ./...`, then compiles every test package with those tags, without running |
+| `format`                  | `gofmt -w .`                                                                        |
+| `format:check`            | `gofmt -l`, which fails when it lists a file                                        |
+| `test:unit`               | skip check, then the coverage gate with `COVERAGE_PACKAGES='./...'`                 |
+| `test:quick`              | `typecheck`, `lint`, `test:unit`, then `test:behaviour:coverage`                    |
+| `test:integration`        | `go test -count=1 -tags integration ./...`                                          |
+| `test:coverage`           | the coverage gate with `COVERAGE_PACKAGES='./...'`, without the skip check          |
+| `test:behaviour:coverage` | `./rhino behaviour coverage validate` from the repository root                      |
 
 ## Coverage gate
 
@@ -68,14 +71,16 @@ The script does this, in order:
 1. It reads the module's `scripts/coverage-exclusions.tsv` and checks each entry. It also checks that every production
    package with statements has a test file, because a package without one is never measured. `--check-only` runs only
    these checks.
-2. It makes one instrumented run of the module's untagged tests, with `-race`. The `-coverpkg` flag covers the listed
-   packages, so a test in one package counts the statements it runs in another.
+2. It makes one instrumented run of the module's untagged tests, with `-race` and a `-timeout` of `GO_TEST_TIMEOUT`,
+   which defaults to `20m`, because Go's own default of 10 minutes is shorter than the app's behaviour suite under load.
+   The `-coverpkg` flag covers the listed packages, so a test in one package counts the statements it runs in another.
 3. It drops the profile blocks of excluded files, and it adds up the statements that the profile covers.
 4. It fails when a test fails, when no statement is measured, or when the total is below `COVERAGE_MINIMUM`. The
    default minimum is 99.
 
 The app's gate self-test, `scripts/go-coverage-gate_test.sh`, runs the `--check-only` mode against small fixture
-modules. The app's `test:unit` target runs it first. The library targets do not run it.
+modules, and one full run whose test outlives a one-second `GO_TEST_TIMEOUT`. The app's `test:unit` target runs it
+first. The library targets do not run it.
 
 This page records no coverage figure. A figure comes from a run of the target on a given tree, and it belongs with the
 change that produced it.
@@ -155,38 +160,49 @@ Known gaps, not yet fixed:
 
 Integration tests carry the `integration` tag, and end-to-end tests carry the `e2e` tag. The `test:integration` target
 runs the first, and `test:e2e` runs the second. Neither produces a coverage figure. The pre-push gate runs no Go target,
-so no integration test runs before a push.
+so no integration test runs before a push, and no end-to-end test runs on a pull request.
 
 ## Unit coverage by module
 
 The figure that the gate holds to 99 percent means different things for the app and for a library.
 
 - **The app.** Its unit coverage counts the behaviour scenarios that run at the unit level, plus the plain unit tests
-  outside the behaviour suite. `TestUnitBehaviours` is untagged, so it runs the `@unit` scenarios in memory. The gate
+  outside the behaviour suite. `TestUnitBehaviours` is untagged, so it runs the unit-level scenarios in memory. The gate
   counts the statements that those scenarios execute.
-- **A library.** Its unit coverage counts its plain unit tests. A library has no behaviour suite of its own.
+- **A library.** Its unit coverage counts its plain unit tests and its unit-level behaviour bindings, which sit in
+  `behaviour/unit`. A library has no behaviour suite of its own.
 
 Integration and end-to-end tests stay outside the figure for both.
 
-## Binding check
+## Behaviour check
 
-`bdd:check` runs two tests of `tests/conformance` with the `bdd` build tag. They read every feature file under
-`specs/behaviours`. These rules apply to the app's feature files:
+`test:behaviour:coverage` runs `./rhino behaviour coverage validate` from the repository root. It reads the feature
+files and the test files, and it runs no test. `test:quick` ends with this check too. It replaced the earlier
+`bdd:check` target, its `behaviour-coverage.json` file, and the conformance test
+`tests/conformance/scenario_bindings_test.go`, which are all retired.
 
-- Every `Scenario` and `Scenario Outline` needs an `@unit` tag. No exemption exists for it.
-- Every scenario needs an `@integration` tag or an `@e2e` tag, or the matching exempt tag, `@integration-exempt` or
-  `@e2e-exempt`.
-- An exempt tag needs a justification: a comment line in the lines directly above the scenario's tags, in this form:
+The corpus and its bindings are declared in `policies.behaviour` in `repo-config.yml`:
+
+- The app's corpus is `specs/behaviours`. Each library's corpus is `specs/libs/<lib>/behaviours`.
+- A test file covers a scenario with a comment line, `@scenario <feature-path>: <scenario name>`.
+- The level comes from the test file's location. The app's three suites in `apps/retriever-cli/tests/behaviour` and
+  the `libs/*/behaviour/{unit,integration,e2e}` folders map to the levels in the declaration.
+- `<feature-path>: *` covers every scenario of a file. It is allowed only from the three suites that the
+  `whole-file` list names, because they run whole feature files.
+- A scenario with no unit binding fails. The unit level is never exempt.
+- A scenario that needs no integration or end-to-end test carries `@integration-exempt` or `@e2e-exempt`. The line
+  directly above that tag is a comment in this form:
 
   ```gherkin
-  # Exemption(e2e): <why this level cannot prove it>; alternative-proof: <where it is proved>
+  # Exemption(e2e): <why this level cannot prove it>; alternative-proof: <target>
   @e2e-exempt
   ```
 
-- A scenario that carries both `@integration` and `@integration-exempt`, or both `@e2e` and `@e2e-exempt`, fails. A
-  scenario with both exempt tags is a detail, and it belongs in a plain Go test.
-- `behaviour-coverage.json` must match the feature files. It records, for each feature, the scenario count and the count
-  of `@unit`, `@integration`, and `@e2e` tags, with the totals. A difference fails the check.
+- An exemption with an empty reason or target, a tag without its comment, or a comment that names another level fails.
+  A stale exemption fails when a binding exists at the exempted level.
+
+The rules B01 to B09 that enforce these points are those of the contract's behaviour corpus module. The findings are
+listed in the RHINO documentation for the `behaviour coverage validate` command.
 
 ### Outline read surface
 
@@ -213,22 +229,30 @@ listing in `libs/retriever-runtime/specfolder` and the composition-root wiring i
 
 ## CI runs
 
-The Go job runs when an affected Nx project carries the `lang:go` tag. Each row selects its projects from the Nx project
-graph by tag, runs each target as one `nx run-many` over those projects, and admits the whole row once, through one
-HIPPO run under the row's resource tier. The targets run in the order listed:
+The pull-request workflow, `.github/workflows/pr-quality-gate.yml`, runs on each pull request to `main`. Its `detect`
+job asks Nx which projects declare each target, so a project joins a job with no edit to the workflow. Each job runs one
+target for one project:
 
-- `ubuntu-24.04` runs `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `test:conformance`,
-  `bdd:check`, and `deps:audit` for every project tagged `lang:go`, under the `heavy` tier. A target runs only in the
-  projects that declare it. Each library declares `lint`, `typecheck`, `test:unit`, and `test:integration`, and none
-  declares `test:e2e`, `test:conformance`, `bdd:check`, or `deps:audit`, so those four run in the app alone.
-- `macos-15` runs `test:unit`, `test:e2e`, and `test:conformance` for the projects tagged `type:app`, which is the
-  application alone, under the `standard` tier.
+- `repository-policy` runs the pull-request surface of the registry under RHINO, once for the repository.
+- `go-static` runs `lint` and `typecheck` on Ubuntu, and `deps:audit` where a project declares it.
+- `go-unit` runs `test:unit` and `go-integration` runs `test:integration`, both on Ubuntu.
+- `go-conformance` runs `test:conformance` on Ubuntu, for the projects that declare it.
+- `go-unit-macos` runs `test:unit`, and `go-conformance-macos` runs `test:conformance`, for the app alone,
+  on `macos-15`.
+- `behaviour-coverage` runs `./rhino behaviour coverage validate` once for the whole repository.
+- `cross-compile` builds the app for four platforms. It builds only, and nothing is uploaded.
+- `quality-gate` is the one aggregate check. It passes only when every required job succeeds, or when a Go job is
+  skipped because no Go project is affected.
+
+The end-to-end level does not run on a pull request. `.github/workflows/scheduled-e2e.yml` runs `test:e2e` for every
+project that declares it. It runs on a weekly schedule (Monday, 03:17 UTC), on manual dispatch, and on each push to
+`main`. The app's end-to-end suite runs again on `macos-15`, in the same workflow.
 
 Each project's `test:unit` runs its own coverage gate over its own module. No profile merges two modules.
 
-The tier follows the work. The Ubuntu row runs whole suites of eight projects, which is heavy work. The macOS row runs
-one project's tests, which is standard work. A `macos-15` runner has 3 CPUs and about 7 GiB of memory, less than the
-`heavy` tier's minimum reservation of 4 CPUs and 8192 MiB, so a `heavy` reservation does not fit that runner.
+The tier follows the work. The Ubuntu jobs use the `heavy` tier. A `macos-15` runner has 3 CPUs and about 7 GiB of
+memory, less than the `heavy` tier's minimum reservation of 4 CPUs and 8192 MiB, so the macOS jobs use the `standard`
+tier.
 
 The macOS targets cover the behaviour that depends on the platform: signals, exit statuses 130, 141, and 143, the user
 configuration directory, atomic renames, file modes, symbolic links, and port binding. The application's end-to-end and
@@ -236,20 +260,15 @@ conformance suites run the built binary, which includes the libraries, so they c
 libraries' integration tests use the real file system and processes, and they run on Ubuntu only, as the application's
 integration tests do.
 
-A cross-compile check, on `ubuntu-24.04`, builds the app's `./cmd/retriever` for `darwin/arm64`, `darwin/amd64`,
-`linux/amd64`, and `linux/arm64`, with one HIPPO run per platform under the `standard` tier, as before. It builds only,
-and nothing is uploaded or published. The app's `replace` directives name the libraries' folders in the checkout, so the
-build uses the libraries of the working tree.
-
-The Go toolchain is pinned by the `toolchain` line of each `go.mod`, which is `go1.27.4` in all seven modules. The `go`
+The Go toolchain is pinned by the `toolchain` line of each `go.mod`, which is `go1.27.4` in all eight modules. The `go`
 line sets the minimum language version, `1.27.0`. The Go setup fails when the installed toolchain differs from any
-module's `toolchain` line, or when two modules declare different `go` lines. The module cache is keyed on
-every `go.sum`.
+module's `toolchain` line, or when two modules declare different `go` lines. The module cache is keyed on every
+`go.sum`.
 
 Windows is not supported. See the [exit codes](./retriever-cli-exit-codes.md#supported-platforms).
 
-## Pull-request and pre-push gates
+## Registry gates
 
-`./rhino gate run --surface pull-request` does not run any target on this page. It runs the repository's own checks,
-such as format, README index, emoji, and public-safety checks. The `pre-push` surface runs its own set of repository
-checks, and it runs no Go target.
+`./rhino gate run --surface pull-request` runs the registry's pull-request checks, such as format, README index,
+emoji, and public-safety checks. It runs no Go target on this page. The `pre-push` surface runs only the public-safety
+range screen, and no Go target either. The [Quality gates](./quality-gates.md) page lists every gate and its surface.

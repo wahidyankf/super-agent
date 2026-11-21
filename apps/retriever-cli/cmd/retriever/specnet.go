@@ -18,14 +18,21 @@ func (realClock) WithTimeout(parent context.Context, d time.Duration) (context.C
 	return context.WithTimeout(parent, d)
 }
 
+// newTimer starts the real timer that Sleep waits on. It returns the channel that fires when d has passed, and the
+// function that stops the timer. A unit test replaces it, so the sleep is checked without starting a real timer.
+var newTimer = func(d time.Duration) (<-chan time.Time, func()) {
+	timer := time.NewTimer(d)
+	return timer.C, func() { timer.Stop() }
+}
+
 // Sleep waits for d on a real timer, or until ctx ends. When ctx ends first it returns the context's error.
 func (realClock) Sleep(ctx context.Context, d time.Duration) error {
-	timer := time.NewTimer(d)
-	defer timer.Stop()
+	fired, stop := newTimer(d)
+	defer stop()
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-timer.C:
+	case <-fired:
 		return nil
 	}
 }

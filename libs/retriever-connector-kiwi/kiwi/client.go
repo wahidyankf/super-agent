@@ -98,7 +98,7 @@ func (g *Gateway) attempt(ctx context.Context, method string, payload []byte, id
 			}
 		},
 	}
-	reqCtx, cancel := context.WithTimeout(httptrace.WithClientTrace(ctx, trace), g.timeout)
+	reqCtx, cancel := g.limit(httptrace.WithClientTrace(ctx, trace), g.timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, g.base+endpointPath, bytes.NewReader(payload))
 	if err != nil {

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"os/signal"
 	"strings"
 	"time"
 
@@ -63,6 +65,10 @@ type Deps struct {
 	// Context is the parent of the context that serve and mcp run under. SIGINT and SIGTERM cancel that context with
 	// SignalCause, so a caller can end either command as a signal would, without sending one. Nil means Background.
 	Context context.Context
+	// Notify and Stop are the signal source of serve and mcp: Notify registers the channel for the signals, and Stop
+	// releases it. Nil means os/signal, the process's own handler, which a unit test replaces.
+	Notify func(c chan<- os.Signal, sig ...os.Signal)
+	Stop   func(c chan<- os.Signal)
 	// Service serves the sources, outline, kiwi, jira, and document commands. Serve runs the GraphQL server, MCP runs the
 	// MCP server, and Sink builds the export sink. SetupErr says why the wiring is missing, when it is.
 	Service  sources.Service
@@ -97,6 +103,8 @@ type runtime struct {
 	serve    ServeFunc
 	mcp      MCPFunc
 	sink     SinkFactory
+	notify   func(c chan<- os.Signal, sig ...os.Signal)
+	stop     func(c chan<- os.Signal)
 	setupErr error
 	// command is the full path of the command that runs, such as "retriever outline documents get", for the failure body.
 	command string
@@ -139,6 +147,12 @@ func run(argv []string, d Deps) (status int) {
 	}
 	if d.Context == nil {
 		d.Context = context.Background()
+	}
+	if d.Notify == nil {
+		d.Notify = signal.Notify
+	}
+	if d.Stop == nil {
+		d.Stop = signal.Stop
 	}
 	command := "retriever"
 	defer func() {
@@ -210,6 +224,8 @@ func run(argv []string, d Deps) (status int) {
 		serve:    d.Serve,
 		mcp:      d.MCP,
 		sink:     d.Sink,
+		notify:   d.Notify,
+		stop:     d.Stop,
 		setupErr: d.SetupErr,
 		command:  command,
 	}

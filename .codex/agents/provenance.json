@@ -15,7 +15,7 @@
     {
       "id": "skill/developing-applications",
       "path": ".agents/skills/developing-applications/SKILL.md",
-      "digest": "8bb94370f5e5533b3cc492e4994eafd12a986eb39ccbf54436793ab6d4acc968"
+      "digest": "fc6502ffd32cd9f05bf17461aac8104093045f6ada00a0cae67670f7d8191bde"
     },
     {
       "id": "skill/docs-applying-content-quality",
@@ -50,12 +50,12 @@
     {
       "id": "skill/programming-golang",
       "path": ".agents/skills/programming-golang/SKILL.md",
-      "digest": "8eb3343b96b6aec864e7ac5a13cfdae31ca973cc5131495fc5e774d4a2cd8f9d"
+      "digest": "f7f181430132bbd2843ccbec3bf75bb9f37fbd98e4cadb0651567136197a2137"
     },
     {
       "id": "skill/programming-shell",
       "path": ".agents/skills/programming-shell/SKILL.md",
-      "digest": "19d0fe41ef692fdf9182e215c662df94d861775f2d9e62c270eee3ae1d8645d6"
+      "digest": "1bf8fa2112a0e5a8b6b34ee9bede2db02af674b9eb370e6d5cac80b4a58c3625"
     },
     {
       "id": "skill/propagating-rules",
@@ -80,7 +80,7 @@
     {
       "id": "instruction",
       "path": "AGENTS.md",
-      "digest": "50a86bfe64207149b70cb995ce37f8c8815c68747bcc40e0313a086488532892"
+      "digest": "c19466b5e87e194d1c71fcfc7fc95a4758d3220820ab4863e3c2e1af43bf20f9"
     },
     {
       "id": "agent/docs-checker",
@@ -166,7 +166,7 @@
   "resolvedModels": {
     "execution": "gpt-6.1-terra",
     "fast": "gpt-6.1-terra",
-    "plan": "gpt-6.1-sol",
-    "ultra": "gpt-6.1-sol"
+    "plan": "gpt-6.2-sol",
+    "ultra": "gpt-6.2-sol"
   }
 }

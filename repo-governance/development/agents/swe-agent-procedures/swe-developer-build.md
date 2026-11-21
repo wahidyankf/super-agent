@@ -14,7 +14,7 @@ that the caller gives. It does not decide the design, and it does not judge its 
 ## Build
 
 1. **Load the standards.** Read the [test-driven development](../../workflow/test-driven-development.md) rule, the
-   [three-level testing standard](../../quality/three-level-testing-standard.md), and the stack standard of each
+   [test boundaries and gates](../../quality/testing/test-boundaries-and-gates.md), and the stack standard of each
    language the change touches. A stack with no standard is built under the language-neutral rules, and the hand-off
    says so.
 2. **Read the requirement.** List each acceptance criterion as a separate item. A criterion with no check is not yet a

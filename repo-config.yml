@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/wahidyankf/rhino/v0.17.0/schemas/repo-config/v2.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/wahidyankf/rhino/v0.19.0/schemas/repo-config/v2.schema.json
 # Repository-owned policy for the checksum-pinned RHINO release named in rhino.lock.
 #
 # Each retained lifecycle check is declared below with a direct executable and typed arguments.
@@ -585,6 +585,35 @@ policies:
       exclude-sources:
         - "plans/done/**"
         - ".claude/skills/**"
+    # Owner: repo-governance/conventions/writing/diagrams.md. Every Mermaid block is validated under the `rendered`
+    # rule. The exclusions repeat the scan's standard directories and the worktree and temporary folders.
+    mermaid:
+      authoring-rule: rendered
+      node-label-graphemes: 32
+      edge-label-graphemes: 24
+      fill-colors:
+        - "#0173B2"
+        - "#DE8F05"
+        - "#029E73"
+        - "#CA9161"
+      edge-colors:
+        - "#0173B2"
+        - "#000000"
+      text-colors:
+        - "#000000"
+        - "#FFFFFF"
+      require-default-class: true
+      exclude:
+        - "**/.git/**"
+        - "**/node_modules/**"
+        - "**/dist/**"
+        - "**/build/**"
+        - "**/target/**"
+        - "**/.next/**"
+        - "**/coverage/**"
+        - "**/generated-reports/**"
+        - "**/local-tmp/**"
+        - "**/worktrees/**"
     naming:
       surfaces:
         - glob: "**/*.md"
@@ -684,11 +713,47 @@ policies:
         - glob: "**/*.exs"
         - glob: "**/*.ex"
         - glob: "**/*.clj"
+  # The behaviour corpus and where each level's bindings sit (C13, D17, P2). The application's corpus is
+  # specs/behaviours; each library's corpus is specs/libs/<lib>/behaviours. A test covers a scenario with an
+  # `@scenario <feature-path>: <name>` comment line; its level comes from the file's location below.
+  behaviour:
+    corpus:
+      - specs/behaviours
+      - specs/libs
+    fixtures:
+      - specs/fixtures
+    levels:
+      unit:
+        - apps/retriever-cli/tests/behaviour/unit_suite_test.go
+        - libs/*/behaviour/unit/**/*_test.go
+      integration:
+        - apps/retriever-cli/tests/behaviour/integration_suite_test.go
+        - libs/*/behaviour/integration/**/*_test.go
+      e2e:
+        - apps/retriever-cli/tests/behaviour/e2e_suite_test.go
+        - libs/*/behaviour/e2e/**/*_test.go
+    # The suites of a runner that executes whole feature files (godog), so `<feature>: *` covers every scenario
+    # of the file (B05).
+    whole-file:
+      - apps/retriever-cli/tests/behaviour/unit_suite_test.go
+      - apps/retriever-cli/tests/behaviour/integration_suite_test.go
+      - apps/retriever-cli/tests/behaviour/e2e_suite_test.go
 
 gates:
   composition:
     pull-request:
       relation: at-least
+  # The C6 placement: each local surface holds only the entries its allowed list names (W07), and every other check
+  # runs at the pull-request surface.
+  wiring:
+    hooks:
+      directory: .husky
+    ci:
+      directory: .github/workflows
+    local-surfaces:
+      pre-commit: [format-staged]
+      commit-msg: [commit-message]
+      pre-push: [public-safety-range]
   entries:
     - id: public-safety-tree
       type: check
@@ -697,29 +762,8 @@ gates:
         args:
           - literal: scripts/public-safety/check.sh
       run-on:
-        pre-commit: {}
-        pre-push: {}
-        pull-request: {}
-    - id: public-safety-commit-message
-      type: check
-      inputs:
-        message:
-          kind: commit-message
-      command:
-        executable: ./scripts/public-safety/check-commit-message
-        args:
-          - input: message.text
-            expand: single
-      run-on:
-        commit-msg:
-          bind:
-            message:
-              source: hook-message-file
         pull-request:
-          bind:
-            message:
-              source: explicit-range
-              range: explicit
+          reason: "C11: the tree scan runs at pull-request; pre-push screens the pushed range alone."
     # The history screen: every commit a push publishes, and every commit in a pull request's base..head range,
     # contributes its own additions, names, and message.
     - id: public-safety-range
@@ -747,6 +791,23 @@ gates:
             range:
               source: explicit-range
               range: explicit
+    - id: public-safety-commit-message
+      type: check
+      inputs:
+        message:
+          kind: commit-message
+      command:
+        executable: ./scripts/public-safety/check-commit-message
+        args:
+          - input: message.text
+            expand: single
+      run-on:
+        pull-request:
+          reason: "C11: the message screen runs at pull-request; pre-push screens each pushed message in the range."
+          bind:
+            message:
+              source: explicit-range
+              range: explicit
     - id: remote-dispatch-refusal
       type: check
       command:
@@ -754,9 +815,52 @@ gates:
         args:
           - literal: scripts/check-remote-dispatch-refusal.sh
       run-on:
-        pre-commit: {}
-        pre-push: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
+    # The format lint (C10). At commit-msg commitlint reads Git's message file. At pull-request commit-history lints
+    # each commit of the range separately.
+    - id: commit-message
+      type: check
+      inputs:
+        message:
+          kind: commit-message
+      command:
+        executable: bash
+        args:
+          - literal: scripts/check-commit-message.sh
+        environment:
+          RHINO_GATE_MESSAGE:
+            input: message.text
+      run-on:
+        commit-msg:
+          bind:
+            message:
+              source: hook-message-file
+        pull-request:
+          bind:
+            message:
+              source: explicit-range
+              range: explicit
+    - id: commit-history
+      type: check
+      inputs:
+        range:
+          kind: commit-range
+      command:
+        executable: bash
+        args:
+          - literal: scripts/check-commit-range.sh
+          - input: range.base
+            expand: single
+          - input: range.head
+            expand: single
+      run-on:
+        pull-request:
+          reason: "C10: commitlint must receive each immutable commit separately, not one concatenated message stream."
+          bind:
+            range:
+              source: explicit-range
+              range: explicit
     - id: format-staged
       type: mutation
       inputs:
@@ -788,8 +892,8 @@ gates:
           - literal: repo-config
           - literal: validate
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: harness-adapters
       type: check
       command:
@@ -799,8 +903,8 @@ gates:
           - literal: adapters
           - literal: validate
       run-on:
-        pre-push: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: governance-vendor
       type: check
       command:
@@ -810,8 +914,8 @@ gates:
           - literal: vendor
           - literal: validate
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: env-validate
       type: check
       command:
@@ -820,9 +924,8 @@ gates:
           - literal: env
           - literal: validate
       run-on:
-        pre-commit: {}
-        pre-push: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: markdownlint
       type: check
       command:
@@ -832,8 +935,8 @@ gates:
           - literal: markdownlint-cli2
           - literal: "**/*.md"
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: md-readme-index
       type: check
       command:
@@ -842,10 +945,10 @@ gates:
           - literal: md
           - literal: readme-index
           - literal: validate
-      # Whole-tree on both surfaces: a README index can break from a directory added or removed outside the staged paths.
+      # Whole-tree: a README index can break from a directory added or removed outside the staged paths.
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: md-internal-link
       type: check
       command:
@@ -855,8 +958,8 @@ gates:
           - literal: internal-link
           - literal: validate
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: word-budget
       type: check
       command:
@@ -866,8 +969,8 @@ gates:
           - literal: word-budget
           - literal: validate
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: shellcheck
       type: check
       inputs:
@@ -879,11 +982,8 @@ gates:
           - input: staged.paths
             expand: repeat
       run-on:
-        pre-commit:
-          bind:
-            staged:
-              source: git-index
         pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
           bind:
             staged:
               source: explicit-range
@@ -899,11 +999,8 @@ gates:
           - input: staged.paths
             expand: repeat
       run-on:
-        pre-commit:
-          bind:
-            staged:
-              source: git-index
         pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
           bind:
             staged:
               source: explicit-range
@@ -917,8 +1014,8 @@ gates:
           - literal: heading-hierarchy
           - literal: validate
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: md-naming
       type: check
       command:
@@ -928,8 +1025,8 @@ gates:
           - literal: naming
           - literal: validate
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: md-frontmatter
       type: check
       command:
@@ -939,8 +1036,8 @@ gates:
           - literal: frontmatter
           - literal: validate
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
     - id: convention-emoji
       type: check
       command:
@@ -950,8 +1047,18 @@ gates:
           - literal: emoji
           - literal: validate
       run-on:
-        pre-commit: {}
-        pull-request: {}
+        pull-request:
+          reason: "C6: a check outside the local hooks' allowed lists runs at pull-request only."
+    # The self-test of the hook health check. It builds its own fixture repositories, so it needs no installed hook.
+    - id: check-hooks-installed-tests
+      type: check
+      command:
+        executable: bash
+        args:
+          - literal: scripts/check-hooks-installed_test.sh
+      run-on:
+        pull-request:
+          reason: "C2: the self-test of the hook health check runs where the check is wired, so it cannot rot."
 
 extensions:
   # Owner: repo-governance/development/quality/stacks/repository-adapter.md

@@ -7,7 +7,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go vet -tags 'integration e2e' ./... && test -z \"$(gofmt -l .)\"",
+        "command": "go vet -tags 'integration e2e' ./... && test -z \"$(gofmt -l .)\" && go tool golangci-lint run ./... && sh ../../scripts/go-placeholder-check.sh",
         "cwd": "apps/retriever-cli"
       },
       "cache": true,
@@ -80,7 +80,7 @@
     "test:integration": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go test -count=1 -tags integration ./...",
+        "command": "go test -count=1 -timeout 20m -tags integration ./...",
         "cwd": "apps/retriever-cli"
       },
       "cache": false
@@ -100,23 +100,18 @@
         "{workspaceRoot}/libs/**/go.mod"
       ]
     },
-    "bdd:check": {
+    "test:behaviour:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go test -count=1 -tags bdd -run 'TestEveryScenarioHasItsBindingsOrAJustifiedExemption|TestBehaviourCoverageFileMatchesTheFeatures' ./tests/conformance/",
-        "cwd": "apps/retriever-cli"
+        "command": "./rhino behaviour coverage validate",
+        "cwd": "{workspaceRoot}"
       },
-      "cache": true,
-      "inputs": [
-        "{projectRoot}/tests/conformance/**/*.go",
-        "{projectRoot}/behaviour-coverage.json",
-        "{workspaceRoot}/specs/behaviours/**/*.feature"
-      ]
+      "cache": false
     },
     "test:e2e": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "go test -count=1 -tags e2e ./tests/behaviour/...",
+        "command": "go test -count=1 -timeout 20m -tags e2e ./tests/behaviour/...",
         "cwd": "apps/retriever-cli"
       },
       "cache": false,
@@ -168,9 +163,10 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          { "command": "npm exec -- nx run retriever-cli:lint", "forwardAllArgs": false },
           { "command": "npm exec -- nx run retriever-cli:typecheck", "forwardAllArgs": false },
-          { "command": "npm exec -- nx run retriever-cli:test:unit", "forwardAllArgs": false }
+          { "command": "npm exec -- nx run retriever-cli:lint", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-cli:test:unit", "forwardAllArgs": false },
+          { "command": "npm exec -- nx run retriever-cli:test:behaviour:coverage", "forwardAllArgs": false }
         ],
         "parallel": false,
         "forwardAllArgs": false

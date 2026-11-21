@@ -52,6 +52,7 @@ type Gateway struct {
 	timeout    time.Duration
 	now        func() time.Time
 	sleep      func(context.Context, time.Duration) error
+	limit      func(context.Context, time.Duration) (context.Context, context.CancelFunc)
 
 	// mu serializes calls, so one request is in flight at a time, and a Retry-After wait holds it too. lastEnd is the end
 	// of the previous request. nextID numbers the JSON-RPC requests of this gateway.
@@ -88,16 +89,26 @@ func WithSleep(sleep func(context.Context, time.Duration) error) Option {
 	return func(g *Gateway) { g.sleep = sleep }
 }
 
+// WithLimit sets the function that starts the time limit of each request. The default is context.WithTimeout, which runs
+// on the real clock. A test passes a limit on its own clock.
+func WithLimit(limit func(context.Context, time.Duration) (context.Context, context.CancelFunc)) Option {
+	return func(g *Gateway) { g.limit = limit }
+}
+
 // New returns a gateway for the endpoint of src. Its transport never reads proxy settings from the environment, so the
 // key goes straight to the endpoint host of the source.
 func New(src domain.Source, creds ports.Credentials, opts ...Option) *Gateway {
 	return build(src, src.Endpoint().String(), &http.Client{Transport: productionTransport()}, creds, opts)
 }
 
+// defaultTransport is the process default transport that productionTransport copies. It is a variable so a unit test
+// replaces the default without touching the process-wide http.DefaultTransport.
+var defaultTransport = func() http.RoundTripper { return http.DefaultTransport }
+
 // productionTransport copies the default transport and turns its proxy lookup off. The copy keeps the default dial, TLS,
 // and idle timeouts, and the shared default is unchanged.
 func productionTransport() *http.Transport {
-	if def, ok := http.DefaultTransport.(*http.Transport); ok {
+	if def, ok := defaultTransport().(*http.Transport); ok {
 		tr := def.Clone()
 		tr.Proxy = nil
 		return tr
@@ -162,6 +173,7 @@ func build(src domain.Source, base string, httpClient *http.Client, creds ports.
 		timeout:    defaultTimeout,
 		now:        time.Now,
 		sleep:      sleepContext,
+		limit:      context.WithTimeout,
 	}
 	for _, opt := range opts {
 		opt(g)

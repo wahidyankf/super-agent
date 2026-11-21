@@ -165,7 +165,7 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connecto
 	if userSpecs {
 		kinds = set.Kinds
 	}
-	cat, err := w.be.loadCatalog(paths.Catalog, kinds, set.Digests)
+	cat, err := w.be.loadCatalog(paths.Catalog, kinds, set.Digests, paths.Profile)
 	if err != nil {
 		return sources.Service{}, err
 	}
@@ -194,7 +194,7 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connecto
 		}
 	}
 	ops := set.Operations
-	return sources.Service{Catalog: cat, Gateways: registry.New(builders), Operations: &ops}, nil
+	return sources.Service{Catalog: cat, Gateways: registry.New(builders), Operations: &ops, Profile: paths.Profile}, nil
 }
 
 // bundledOutlineModel returns the bundled outline.yml model of the set, or nil when the set holds none. It mirrors
@@ -386,6 +386,7 @@ func wireKiwi(src domain.Source, creds ports.Credentials, seam seamConfig, clk *
 	if seam.timeout > 0 {
 		opts = append(opts, kiwi.WithTimeout(seam.timeout))
 	}
+	opts = append(opts, kiwi.WithLimit(engineClock{clk: clk}.WithTimeout))
 	gw, err := kiwi.NewWithBase(src, seam.base, seam.client, creds, opts...)
 	if err != nil {
 		return nil, err
@@ -646,9 +647,11 @@ func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) erro
 		CatalogFlag:    g.Catalog,
 		EnvFileFlag:    g.EnvFile,
 		ConnectorsFlag: g.ConnectorsDir,
+		ProfileFlag:    g.Profile,
 		Getenv:         w.getenv,
 		Getwd:          w.getwd,
 		Exists:         w.be.regularFile,
+		IsDir:          w.be.dirExists,
 	})
 	if err != nil {
 		return err
@@ -709,6 +712,8 @@ func (w *world) protocolDeps(ctx context.Context, stdin io.Reader, stdout io.Wri
 		Stderr:  io.Discard,
 		Getenv:  w.getenv,
 		Now:     w.clock.Now,
+		Notify:  noSignalNotify,
+		Stop:    noSignalStop,
 		Sink:    w.be.sink,
 		Context: ctx,
 	}

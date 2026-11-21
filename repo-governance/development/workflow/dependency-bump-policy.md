@@ -19,7 +19,8 @@ A dependency is a liability that the repository must carry. Add one only when it
 ## Updating
 
 - Update one dependency per change, unless the change is one coordinated release of a group.
-- Read the release notes for breaking changes. Run the tests at each level before merge.
+- Read the release notes for breaking changes. Run the unit and integration tests before merge, and dispatch the
+  scheduled end-to-end workflow for the bump.
 - An update that changes behaviour follows the [test-driven development](test-driven-development.md) cycle. Show that a
   test of the behaviour that matters passes on the new version.
 

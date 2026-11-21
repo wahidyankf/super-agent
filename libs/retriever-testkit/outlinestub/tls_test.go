@@ -2,7 +2,6 @@ package outlinestub
 
 import (
 	"crypto/ecdsa"
-	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -97,8 +96,14 @@ func startFatals(tb testing.TB) (stopped bool) {
 			stopped = true
 		}
 	}()
-	Start(tb)
+	startDet(tb)
 	return false
+}
+
+// startDet is Start with a deterministic entropy source, so a unit test draws no real entropy for its certificate.
+func startDet(tb testing.TB, opts ...Option) *Stub {
+	tb.Helper()
+	return Start(tb, append([]Option{WithCertificateRandom(&detReader{})}, opts...)...)
 }
 
 // leafCertificate parses the PEM a started stub hands to its clients.
@@ -117,7 +122,7 @@ func leafCertificate(t *testing.T, data []byte) *x509.Certificate {
 
 func TestStartedCertificateCoversEveryCatalogHost(t *testing.T) {
 	useMemListener(t, newMemListener())
-	stub := Start(t)
+	stub := startDet(t)
 	data, err := stub.CAPEM()
 	if err != nil {
 		t.Fatalf("CAPEM: %v", err)
@@ -135,7 +140,7 @@ func TestStartedCertificateCoversEveryCatalogHost(t *testing.T) {
 
 func TestStartedCertificateIsDatedFromTheInjectedClock(t *testing.T) {
 	useMemListener(t, newMemListener())
-	stub := Start(t)
+	stub := startDet(t)
 	data, err := stub.CAPEM()
 	if err != nil {
 		t.Fatalf("CAPEM: %v", err)
@@ -154,7 +159,7 @@ func TestStartedCertificateIsDatedFromTheInjectedClock(t *testing.T) {
 
 func TestStartedStubReportsItsListenerAddressAndTrustsItsCertificate(t *testing.T) {
 	useMemListener(t, newMemListener())
-	stub := Start(t)
+	stub := startDet(t)
 	if got, want := stub.URL(), "https://127.0.0.1:4443"; got != want {
 		t.Fatalf("URL = %q, want %q", got, want)
 	}
@@ -172,7 +177,7 @@ func TestStartedStubClosesItsListenerWhenTheTestEnds(t *testing.T) {
 	l := newMemListener()
 	useMemListener(t, l)
 	tb := &recordingTB{TB: t}
-	stub := Start(tb)
+	stub := startDet(tb)
 	if l.closed() {
 		t.Fatal("the listener closed before the test ended")
 	}
@@ -208,7 +213,7 @@ func TestStartFailsTheTestWhenTheListenerCannotOpen(t *testing.T) {
 func TestNewTLSServerUsesTheSeamsOfThePackage(t *testing.T) {
 	l := newMemListener()
 	useMemListener(t, l)
-	srv, err := NewTLSServer(http.NotFoundHandler())
+	srv, err := newTLSServer(http.NotFoundHandler(), listenTCP, tlsNow, &detReader{})
 	if err != nil {
 		t.Fatalf("NewTLSServer: %v", err)
 	}
@@ -223,8 +228,8 @@ func TestNewTLSServerUsesTheSeamsOfThePackage(t *testing.T) {
 
 func TestNewTLSServerWithReportsAListenerFailureWithoutServing(t *testing.T) {
 	errListen := errors.New("listener refused")
-	srv, err := NewTLSServerWith(http.NotFoundHandler(),
-		func(string, string) (net.Listener, error) { return nil, errListen }, fixedClock)
+	srv, err := newTLSServer(http.NotFoundHandler(),
+		func(string, string) (net.Listener, error) { return nil, errListen }, fixedClock, &detReader{})
 	if !errors.Is(err, errListen) {
 		t.Fatalf("NewTLSServerWith returned %v, want the listener error", err)
 	}
@@ -243,7 +248,7 @@ func TestNewTLSServerOpensNoListenerWhenTheCertificateCannotBeMade(t *testing.T)
 		{name: "the entropy source runs dry before the serial number", now: testInstant,
 			random: &budgetReader{}, wantErr: errEntropy},
 		{name: "the clock is past the year 9999, which a certificate cannot encode", now: time.Date(9999, time.December, 31, 12, 0, 0, 0, time.UTC),
-			random: rand.Reader},
+			random: &detReader{}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -274,10 +279,10 @@ func TestNewTLSServerOpensNoListenerWhenTheCertificateCannotBeMade(t *testing.T)
 func TestNewTLSServerWithListensOnLoopbackPortZeroOnly(t *testing.T) {
 	var gotNetwork, gotAddress string
 	l := newMemListener()
-	srv, err := NewTLSServerWith(http.NotFoundHandler(), func(network, address string) (net.Listener, error) {
+	srv, err := newTLSServer(http.NotFoundHandler(), func(network, address string) (net.Listener, error) {
 		gotNetwork, gotAddress = network, address
 		return l, nil
-	}, fixedClock)
+	}, fixedClock, &detReader{})
 	if err != nil {
 		t.Fatalf("NewTLSServerWith: %v", err)
 	}
@@ -335,7 +340,7 @@ func TestMakeStubCertificateReportsEveryFailureOfItsEntropySource(t *testing.T) 
 // test uses: the listener it opens and the clock that dates its certificate. No socket opens.
 func TestStartWithAListenerAndACertificateClockDatesTheCertificateFromThatClock(t *testing.T) {
 	listen := func(string, string) (net.Listener, error) { return newMemListener(), nil }
-	stub := Start(t, WithListener(listen), WithCertificateClock(fixedClock))
+	stub := startDet(t, WithListener(listen), WithCertificateClock(fixedClock))
 	data, err := stub.CAPEM()
 	if err != nil {
 		t.Fatalf("CAPEM: %v", err)
@@ -351,7 +356,7 @@ func TestMakeStubCertificateReportsAKeyThatCannotBeMade(t *testing.T) {
 	errKey := errors.New("no key")
 	generateKey = func(io.Reader) (*ecdsa.PrivateKey, error) { return nil, errKey }
 	t.Cleanup(func() { generateKey = saved })
-	if _, err := makeStubCertificate(testInstant, rand.Reader); !errors.Is(err, errKey) {
+	if _, err := makeStubCertificate(testInstant, &detReader{}); !errors.Is(err, errKey) {
 		t.Fatalf("makeStubCertificate error = %v, want the key error", err)
 	}
 }

@@ -15,6 +15,14 @@ import (
 // sharedSpace is the carrier-grade NAT range, which is not public and is not in the standard private ranges.
 var sharedSpace = netip.MustParsePrefix("100.64.0.0/10")
 
+// GuardedTransport returns the transport that the engine builds for its own requests, over the network port n. Each
+// connection is dialed through the network guard, so a caller can check the guard on its own. An IP literal, a local
+// name, and an address of a private range are refused unless allowPrivate is set; an unspecified or a multicast address
+// is always refused. The roots, when set, replace the system certificate roots for TLS.
+func GuardedTransport(n Network, allowPrivate bool, roots *x509.CertPool) *http.Transport {
+	return guardedTransport(n, allowPrivate, roots)
+}
+
 // guardedTransport returns the transport that every request of the engine uses. Each connection is dialed through
 // guardDial, so no request can reach an address that the check refused. The transport never reads a proxy from the
 // environment, and it requires TLS 1.2 or later.

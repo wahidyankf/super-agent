@@ -31,9 +31,14 @@ you already use. Each agent keeps its own job. super-agent supplies two shared t
 
 ## How the pieces fit
 
-```text
-  you + harnesses ---> CLI or MCP server ---> connectors ---> data sources and channels
-  (many agents)        (built)                (built)         (wikis, test management, tickets)
+```mermaid
+flowchart LR
+    accTitle: Harnesses, interfaces, connectors, and sources
+    accDescr: Agents reach the CLI or MCP server, which uses the connectors to reach the data sources and channels.
+    you["you + harnesses<br/>(many agents)"] --> cli["CLI or MCP server<br/>(built)"]
+    cli --> connectors["connectors<br/>(built)"]
+    connectors --> sources["data sources and channels<br/>(wikis, test management,<br/>tickets)"]
+    classDef default fill:#0173B2,stroke:#000000,color:#FFFFFF
 ```
 
 - **The harness side** is the command-line tool, `retriever`, and its Model Context Protocol (MCP) server, started with

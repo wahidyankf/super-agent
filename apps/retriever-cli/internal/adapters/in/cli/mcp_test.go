@@ -42,6 +42,8 @@ func runMCPCLI(t *testing.T, argv []string, stdin string, setupErr error, mcp MC
 	var stdout, stderr bytes.Buffer
 	code := Run(argv, Deps{
 		Ports:    ports.Ports{FS: stubFS{}},
+		Notify:   noSignals,
+		Stop:     noStop,
 		Stdin:    strings.NewReader(stdin),
 		Stdout:   &stdout,
 		Stderr:   &stderr,

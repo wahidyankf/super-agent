@@ -4,6 +4,7 @@
 # refused request never reaches a source. The unit and integration levels run the server in process; the end-to-end level
 # runs the built binary.
 Feature: GraphQL read server
+
   As a dashboard or a script that reads the sources through one local API
   I want a read-only GraphQL endpoint on the loopback address
   So that other tools can read source content without holding any key
@@ -22,12 +23,13 @@ Feature: GraphQL read server
       | d0c2d0c2-0000-4000-8000-000000000002 | 1c1c1c1c-0000-4000-8000-000000000001         | d0c1d0c1-0000-4000-8000-000000000001  | Child | Synthetic body two  |
     And retriever serve is running on the loopback address
 
-  @unit @integration @e2e
+  # Behaviour: CLI-159
   Scenario: The server reports that it listens on the loopback address only
     Then the server listens on the loopback address only
 
-  @unit @integration @e2e
-  Scenario: The sources query lists each configured source without its endpoint or credential name
+  # Behaviour: CLI-160
+  # Behaviour: CLI-161
+  Scenario: The sources query lists each configured source by its id without its endpoint or credential name
     When retriever serve receives this GraphQL request:
       """
       query { sources { id kind tags } }
@@ -38,16 +40,7 @@ Feature: GraphQL read server
     And the GraphQL response does not contain "docs.example.test"
     And the GraphQL response does not contain "EXAMPLE_OUTLINE_API_KEY"
 
-  @unit @integration @e2e
-  Scenario: The served API lists each source by its id
-    When retriever serve receives this GraphQL request:
-      """
-      query { sources { id } }
-      """
-    Then the HTTP status is 200
-    And the GraphQL response field "data.sources.0.id" is "example-outline"
-
-  @unit @integration @e2e
+  # Behaviour: CLI-162
   Scenario: The collections query lists the collections of the default wiki source
     When retriever serve receives this GraphQL request:
       """
@@ -58,7 +51,7 @@ Feature: GraphQL read server
     And the GraphQL response field "data.collections.0.id" is "1c1c1c1c-0000-4000-8000-000000000001"
     And the GraphQL response field "data.collections.0.name" is "Synthetic"
 
-  @unit @integration @e2e
+  # Behaviour: CLI-163
   Scenario: The collection tree is flat, with each node naming its parent and depth
     When retriever serve receives this GraphQL request:
       """
@@ -69,7 +62,7 @@ Feature: GraphQL read server
     And the GraphQL response field "data.collectionTree.1.parentId" is "d0c1d0c1-0000-4000-8000-000000000001"
     And the GraphQL response field "data.collectionTree.1.depth" is 1
 
-  @unit @integration @e2e
+  # Behaviour: CLI-164
   Scenario: The collection tree has no nested children field
     When retriever serve receives this GraphQL request:
       """
@@ -78,7 +71,7 @@ Feature: GraphQL read server
     Then the GraphQL response has an error
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-165
   Scenario: A document query returns its Markdown body and collection ID
     When retriever serve receives this GraphQL request:
       """
@@ -89,7 +82,7 @@ Feature: GraphQL read server
     And the GraphQL response field "data.document.markdown" is "Synthetic body one"
     And the GraphQL response field "data.document.collectionId" is "1c1c1c1c-0000-4000-8000-000000000001"
 
-  @unit @integration @e2e
+  # Behaviour: CLI-166
   Scenario: A document that the wiki does not hold returns a GraphQL error
     When retriever serve receives this GraphQL request:
       """
@@ -98,7 +91,7 @@ Feature: GraphQL read server
     Then the HTTP status is 200
     And the GraphQL response has an error
 
-  @unit @integration @e2e
+  # Behaviour: CLI-167
   Scenario: A mutation is refused because the served API has no write operation
     When retriever serve receives this GraphQL request:
       """
@@ -107,7 +100,7 @@ Feature: GraphQL read server
     Then the GraphQL response has an error
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-168
   Scenario: A Host header that names another host is refused before any source is called
     When retriever serve receives this GraphQL request with the Host header "docs.example.test":
       """
@@ -116,7 +109,7 @@ Feature: GraphQL read server
     Then the HTTP status is 403
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-169
   Scenario: A loopback Host header with the served port is accepted
     When retriever serve receives this GraphQL request with the Host header "localhost:{port}":
       """
@@ -125,7 +118,7 @@ Feature: GraphQL read server
     Then the HTTP status is 200
     And the GraphQL response has no errors
 
-  @unit @integration @e2e
+  # Behaviour: CLI-170
   Scenario: A loopback Host header without the served port is refused
     When retriever serve receives this GraphQL request with the Host header "localhost":
       """
@@ -134,7 +127,7 @@ Feature: GraphQL read server
     Then the HTTP status is 403
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-171
   Scenario: A GET request is refused with 405, and POST is the only allowed method
     When retriever serve receives this GraphQL request with the HTTP method "GET":
       """
@@ -144,7 +137,7 @@ Feature: GraphQL read server
     And the HTTP response has the header "Allow" with the value "POST"
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-172
   Scenario: An OPTIONS preflight is refused, so the server gives no CORS answer
     When retriever serve receives this GraphQL request with the HTTP method "OPTIONS":
       """
@@ -153,7 +146,7 @@ Feature: GraphQL read server
     Then the HTTP status is 405
     And the HTTP response has no header whose name starts with "Access-Control-"
 
-  @unit @integration @e2e
+  # Behaviour: CLI-173
   Scenario: A request with a plain-text content type is refused with 415
     When retriever serve receives this GraphQL request with the Content-Type header "text/plain":
       """
@@ -162,7 +155,7 @@ Feature: GraphQL read server
     Then the HTTP status is 415
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-174
   Scenario: A JSON content type with a charset parameter is accepted
     When retriever serve receives this GraphQL request with the Content-Type header "application/json; charset=utf-8":
       """
@@ -171,7 +164,7 @@ Feature: GraphQL read server
     Then the HTTP status is 200
     And the GraphQL response has no errors
 
-  @unit @integration @e2e
+  # Behaviour: CLI-175
   Scenario Outline: A request that carries an Origin header is refused before any source is called
     When retriever serve receives this GraphQL request with the Origin header "<origin>":
       """
@@ -186,7 +179,7 @@ Feature: GraphQL read server
       | https://app.example.test  |
       | null                      |
 
-  @unit @integration @e2e
+  # Behaviour: CLI-176
   Scenario: A normal answer carries no CORS header
     When retriever serve receives this GraphQL request:
       """
@@ -195,13 +188,13 @@ Feature: GraphQL read server
     Then the HTTP status is 200
     And the HTTP response has no header whose name starts with "Access-Control-"
 
-  @unit @integration @e2e
+  # Behaviour: CLI-177
   Scenario: A body larger than 1 MiB is refused with 413 before any source is called
     When retriever serve receives a GraphQL request of 2 MiB
     Then the HTTP status is 413
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-178
   Scenario: A query nested six selection sets deep is refused by the depth limit
     When retriever serve receives this GraphQL request:
       """
@@ -211,7 +204,7 @@ Feature: GraphQL read server
     And the GraphQL response contains "depth limit of 5 levels"
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-179
   Scenario: A query nested five selection sets deep passes the depth limit and fails schema validation
     When retriever serve receives this GraphQL request:
       """
@@ -221,7 +214,7 @@ Feature: GraphQL read server
     And the GraphQL response has an error
     And the GraphQL response does not contain "depth limit"
 
-  @unit @integration @e2e
+  # Behaviour: CLI-180
   Scenario: Three calls to the source in one query are refused by the complexity limit
     When retriever serve receives this GraphQL request:
       """
@@ -231,7 +224,7 @@ Feature: GraphQL read server
     And the GraphQL response contains "complexity limit of 100 points"
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-181
   Scenario: Two calls to the source in one query are within the complexity limit
     When retriever serve receives this GraphQL request:
       """
@@ -240,7 +233,7 @@ Feature: GraphQL read server
     Then the HTTP status is 200
     And the GraphQL response has no errors
 
-  @unit @integration @e2e
+  # Behaviour: CLI-182
   Scenario: A query that reads the schema is refused by the limits with 422
     When retriever serve receives this GraphQL request:
       """
@@ -250,12 +243,38 @@ Feature: GraphQL read server
     And the GraphQL response contains "introspection is disabled"
     And the stub Outline server received no requests
 
-  @unit @integration @e2e
+  # Behaviour: CLI-183
   Scenario: An interrupt stops the server with status 130
     When the interrupt reaches the running server
     Then the serve command exits with status 130
 
-  @unit @integration @e2e
+  # Behaviour: CLI-184
   Scenario: A termination signal stops the server with status 143
     When the termination signal reaches the running server
     Then the serve command exits with status 143
+
+  # Behaviour: CLI-185
+  Scenario: A loopback address with the served port is accepted
+    When retriever serve receives this GraphQL request with the Host header "127.0.0.1:{port}":
+      """
+      query { sources { id } }
+      """
+    Then the HTTP status is 200
+    And the GraphQL response has no errors
+
+  # Behaviour: CLI-186
+  Scenario: A loopback Host header with another port is refused
+    When retriever serve receives this GraphQL request with the Host header "localhost:1":
+      """
+      query { sources { id } }
+      """
+    Then the HTTP status is 403
+    And the stub Outline server received no requests
+
+  # Behaviour: CLI-187
+  Scenario: A serve whose loopback port another process holds exits 125 with a refused code
+    Given another process holds a loopback port
+    When I run "retriever --output json serve --port {held-port}"
+    Then the exit status is 125
+    And the standard output is empty
+    And the standard error is a JSON error with a code that starts with "retriever.serve.refused"
