@@ -1,0 +1,114 @@
+name: Scheduled End-to-End
+
+# The end-to-end level runs here, not on each pull request: the test and gate contract places test:e2e in a scheduled
+# or main workflow (rule C17). This workflow runs it weekly, on a manual dispatch, and on every push to main. Every
+# project that declares the test:e2e target gets a job, and each job runs that one target through the pinned HIPPO
+# wrapper. There is no aggregate job: a failed job fails the run, and the run is the record.
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    name: Discover end-to-end projects
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      e2e-projects: ${{ steps.discover.outputs.e2e-projects }}
+      app-e2e-projects: ${{ steps.discover.outputs.app-e2e-projects }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      # Nx lists the projects that declare the target, so a project added later joins this workflow with no edit here.
+      - id: discover
+        name: List the projects that declare test:e2e
+        shell: bash
+        run: |
+          set -euo pipefail
+          e2e_projects="$(./hippo run --class ephemeral --resource-tier light --disk-path . -- \
+            npx nx show projects --with-target test:e2e --json | jq -c .)"
+          if [ "$e2e_projects" = "[]" ]; then
+            echo "No project declares test:e2e, so there is no end-to-end suite to run." >&2
+            exit 1
+          fi
+          app_e2e_projects="$(./hippo run --class ephemeral --resource-tier light --disk-path . -- \
+            npx nx show projects --projects='tag:type:app' --with-target test:e2e --json | jq -c .)"
+          {
+            echo "e2e-projects=${e2e_projects}"
+            echo "app-e2e-projects=${app_e2e_projects}"
+          } >> "$GITHUB_OUTPUT"
+          echo "End-to-end projects: ${e2e_projects}"
+
+  e2e-linux:
+    name: End-to-end (${{ matrix.project }}, Ubuntu)
+    needs: discover
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.discover.outputs.e2e-projects) }}
+    env:
+      PROJECT: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      # The setup-go action checks the installed Go against the toolchain line of every go.mod, and keys the module
+      # cache on every go.sum, so a library's dependencies are cached as the app's are.
+      - uses: ./.github/actions/setup-go
+        with:
+          cache-dependency-path: |
+            apps/**/go.sum
+            libs/**/go.sum
+
+      - name: End-to-end tests
+        run: ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- npx nx run "${PROJECT}:test:e2e"
+
+  # The application's end-to-end suite runs the built binary, so it also covers the platform behaviour that the
+  # pull-request gate checks on macOS. A macos-15 runner has less than the heavy tier's minimum reservation, so this
+  # job uses the standard tier.
+  e2e-macos:
+    name: End-to-end (${{ matrix.project }}, macOS)
+    needs: discover
+    if: needs.discover.outputs.app-e2e-projects != '[]'
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.discover.outputs.app-e2e-projects) }}
+    env:
+      PROJECT: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      - uses: ./.github/actions/setup-go
+        with:
+          cache-dependency-path: |
+            apps/**/go.sum
+            libs/**/go.sum
+
+      - name: End-to-end tests on macOS
+        run: ./hippo run --class ephemeral --resource-tier standard --disk-path . -- npx nx run "${PROJECT}:test:e2e"

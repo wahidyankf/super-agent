@@ -2,6 +2,8 @@
 set -eu
 
 # Thin lifecycle adapter. Rhino applies declared mutations to the Git index.
+# This surface holds staged-file formatting only (C6): the formatter rewrites the staged files and restages them.
+# Every check, test, and scan runs at the pull-request surface.
 export RHINO_GATE_SURFACE=pre-commit
 exec ./hippo run --class transactional --resource-tier standard --disk-path . -- \
   ./rhino gate run --surface pre-commit

@@ -4,6 +4,11 @@ name: PR Quality Gate
 # so the guarantees the hooks enforce are checked again here. Every repository command runs through the pinned
 # HIPPO wrapper, as it does locally.
 #
+# The registry's pull-request surface runs in one job, from the registry alone, so no job copies a gate's command.
+# The test levels run as parallel jobs, one per Nx project and per level, and each project list comes from Nx
+# itself. The behaviour corpus is checked once for the whole repository. The end-to-end level is not here: it runs
+# in scheduled-e2e.yml, as the test and gate contract requires (rule C17).
+#
 # The single required status check is the quality-gate job at the bottom of this file. Branch protection names
 # that one context, so adding or splitting a job below never means editing the ruleset.
 on:
@@ -25,6 +30,12 @@ jobs:
     timeout-minutes: 15
     outputs:
       has-go: ${{ steps.detect.outputs.has-go }}
+      go-projects: ${{ steps.detect.outputs.go-projects }}
+      unit-projects: ${{ steps.detect.outputs.unit-projects }}
+      integration-projects: ${{ steps.detect.outputs.integration-projects }}
+      conformance-projects: ${{ steps.detect.outputs.conformance-projects }}
+      app-unit-projects: ${{ steps.detect.outputs.app-unit-projects }}
+      app-conformance-projects: ${{ steps.detect.outputs.app-conformance-projects }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -34,10 +45,14 @@ jobs:
 
       - uses: ./.github/actions/setup-node
 
-      # Each affected project's lang:* tag decides which language job runs. With no affected Go project, every Go
+      # Each affected project's lang:* tag decides whether the Go jobs run. With no affected Go project, every Go
       # job is skipped. The aggregate below still requires detection to succeed.
+      #
+      # The lists below are Nx's own answer to "which projects declare this target". A project that declares a
+      # target joins its job with no edit here, and a project that drops one leaves its job. An empty list fails
+      # its job, so a target that vanishes cannot pass without running anything.
       - id: detect
-        name: Map affected projects to language tags
+        name: Map affected projects to language tags and list the projects of each job
         shell: bash
         env:
           NX_BASE: ${{ github.event.pull_request.base.sha }}
@@ -56,8 +71,29 @@ jobs:
               fi
             done
           done
-          echo "has-go=${has_go}" >> "$GITHUB_OUTPUT"
+
+          nx_list() {
+            ./hippo run --class ephemeral --resource-tier light --disk-path . -- \
+              npx nx show projects "$@" --json | jq -c .
+          }
+          go_projects="$(nx_list --projects='tag:lang:go')"
+          unit_projects="$(nx_list --with-target test:unit)"
+          integration_projects="$(nx_list --with-target test:integration)"
+          conformance_projects="$(nx_list --with-target test:conformance)"
+          app_unit_projects="$(nx_list --projects='tag:type:app' --with-target test:unit)"
+          app_conformance_projects="$(nx_list --projects='tag:type:app' --with-target test:conformance)"
+
+          {
+            echo "has-go=${has_go}"
+            echo "go-projects=${go_projects}"
+            echo "unit-projects=${unit_projects}"
+            echo "integration-projects=${integration_projects}"
+            echo "conformance-projects=${conformance_projects}"
+            echo "app-unit-projects=${app_unit_projects}"
+            echo "app-conformance-projects=${app_conformance_projects}"
+          } >> "$GITHUB_OUTPUT"
           echo "Affected Go projects: ${has_go}"
+          echo "Go projects: ${go_projects}"
 
   repository-policy:
     name: Repository policy
@@ -78,45 +114,31 @@ jobs:
       # rather than skips, so the pinned releases are installed before the lifecycle runs.
       - uses: ./.github/actions/setup-lint-tools
 
-      # One typed lifecycle replay under the pinned RHINO. The base and head are the pull request's commits, so
-      # the public-safety range scan and the commit-message scan see exactly the history the pull request adds.
-      - name: Run the pull-request lifecycle under the pinned RHINO
+      # The whole pull-request surface of the registry, under the pinned RHINO. The base and head are the pull
+      # request's commits, so the public-safety range scan and the commit-message scan see exactly the history the
+      # pull request adds.
+      - name: Run the pull-request surface under the pinned RHINO
         env:
           RHINO_BASE: ${{ github.event.pull_request.base.sha }}
           RHINO_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          PATH="$GITHUB_WORKSPACE/node_modules/.bin:$PATH" ./hippo run --class ephemeral --resource-tier standard --disk-path . -- \
+          PATH="$GITHUB_WORKSPACE/node_modules/.bin:$PATH" \
+            ./hippo run --class ephemeral --resource-tier standard --disk-path . -- \
             ./rhino gate run --surface pull-request --base "$RHINO_BASE" --head "$RHINO_HEAD"
 
-  go:
-    name: Go quality gate (${{ matrix.os }})
+  go-static:
+    name: Go lint, typecheck, and audit (${{ matrix.project }})
     needs: detect
     if: needs.detect.outputs.has-go == 'true'
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Each row selects its Nx projects by tag, so a Go module joins a row through its tags alone. Ubuntu runs every
-          # Go project (lang:go) through the full set. A target runs only in the projects that declare it, so the
-          # app-only targets run for the app. macOS runs the application (type:app) through the targets whose behaviour
-          # depends on the platform: signals, exit statuses, the user configuration directory, atomic renames, file
-          # modes, symbolic links, and port binding. The application's end-to-end and conformance suites run the built
-          # binary, which includes the libraries, so they cover the libraries on macOS. The libraries' integration tests
-          # use the real file system and processes, and they run on Ubuntu only, as the application's integration tests
-          # do. Each row's tier follows its work. Ubuntu runs whole suites of eight projects, which is heavy work. macOS
-          # runs one project's tests, which is standard work, and a macos-15 runner (3 CPUs, about 7 GiB) has less than
-          # the heavy tier's minimum reservation of 4 CPUs and 8192 MiB.
-          - os: ubuntu-24.04
-            tier: heavy
-            projects: "tag:lang:go"
-            targets: "lint typecheck test:unit test:integration test:e2e test:conformance bdd:check deps:audit"
-          - os: macos-15
-            tier: standard
-            projects: "tag:type:app"
-            targets: "test:unit test:e2e test:conformance"
+        project: ${{ fromJSON(needs.detect.outputs.go-projects) }}
+    env:
+      PROJECT: ${{ matrix.project }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -134,36 +156,202 @@ jobs:
             apps/**/go.sum
             libs/**/go.sum
 
-      # One HIPPO run admits the whole row, so its targets do not queue for capacity between themselves. A run
-      # admitted between two targets can be deferred after the first one has loaded the host. Each target is one
-      # run-many over the row's projects. A target skips the projects that do not declare it. A selector that matches
-      # no project fails, so a renamed tag cannot pass without running anything.
-      - name: Run the Go targets through Nx
-        shell: bash
-        env:
-          PROJECTS: ${{ matrix.projects }}
-          TARGETS: ${{ matrix.targets }}
-          TIER: ${{ matrix.tier }}
+      - name: Lint
+        run: ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- npx nx run "${PROJECT}:lint"
+
+      - name: Typecheck
+        run: ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- npx nx run "${PROJECT}:typecheck"
+
+      # The audit reads the Go vulnerability database over the network, so it stays out of the cached path. It runs
+      # only where the project declares the target.
+      - name: Dependency audit where the project declares it
         run: |
           set -euo pipefail
-          read -r -a targets <<< "$TARGETS"
-          # shellcheck disable=SC2016 # the inner bash expands its own arguments, so its script stays in single quotes
-          ./hippo run --class ephemeral --resource-tier "$TIER" --disk-path . -- \
-            bash -c '
-              set -euo pipefail
-              projects=$1
-              shift
-              selected="$(npx nx show projects --projects="$projects")"
-              if [ -z "$selected" ]; then
-                echo "No Nx project matches ${projects}" >&2
-                exit 1
-              fi
-              echo "Nx projects for ${projects}:"
-              printf "  %s\n" $selected
-              for target in "$@"; do
-                npx nx run-many --targets="$target" --projects="$projects" --parallel=1 --nxBail || exit $?
-              done
-            ' bash "$PROJECTS" "${targets[@]}"
+          audit="$(./hippo run --class ephemeral --resource-tier light --disk-path . -- \
+            npx nx show projects --projects="${PROJECT}" --with-target deps:audit --json)"
+          if [ "$audit" != "[]" ]; then
+            ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- npx nx run "${PROJECT}:deps:audit"
+          fi
+
+  go-unit:
+    name: Go unit tests (${{ matrix.project }})
+    needs: detect
+    if: needs.detect.outputs.has-go == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.detect.outputs.unit-projects) }}
+    env:
+      PROJECT: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      - uses: ./.github/actions/setup-go
+        with:
+          cache-dependency-path: |
+            apps/**/go.sum
+            libs/**/go.sum
+
+      # The unit level is hermetic, and its coverage floor is read from this run alone.
+      - name: Unit tests
+        run: ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- npx nx run "${PROJECT}:test:unit"
+
+  go-integration:
+    name: Go integration tests (${{ matrix.project }})
+    needs: detect
+    if: needs.detect.outputs.has-go == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.detect.outputs.integration-projects) }}
+    env:
+      PROJECT: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      - uses: ./.github/actions/setup-go
+        with:
+          cache-dependency-path: |
+            apps/**/go.sum
+            libs/**/go.sum
+
+      - name: Integration tests
+        run: |
+          ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- \
+            npx nx run "${PROJECT}:test:integration"
+
+  go-conformance:
+    name: Go conformance tests (${{ matrix.project }})
+    needs: detect
+    if: needs.detect.outputs.has-go == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.detect.outputs.conformance-projects) }}
+    env:
+      PROJECT: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      - uses: ./.github/actions/setup-go
+        with:
+          cache-dependency-path: |
+            apps/**/go.sum
+            libs/**/go.sum
+
+      - name: Conformance and architecture tests
+        run: |
+          ./hippo run --class ephemeral --resource-tier heavy --disk-path . -- \
+            npx nx run "${PROJECT}:test:conformance"
+
+  # The platform rows run the application only, on macOS, through the targets whose behaviour depends on the
+  # platform: signals, exit statuses, the user configuration directory, atomic renames, file modes, symbolic links,
+  # and port binding. A macos-15 runner (3 CPUs, about 7 GiB) has less than the heavy tier's minimum reservation of
+  # 4 CPUs and 8192 MiB, so these jobs use the standard tier. The end-to-end suite runs in scheduled-e2e.yml.
+  go-unit-macos:
+    name: Go unit tests on macOS (${{ matrix.project }})
+    needs: detect
+    if: needs.detect.outputs.has-go == 'true'
+    runs-on: macos-15
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.detect.outputs.app-unit-projects) }}
+    env:
+      PROJECT: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      - uses: ./.github/actions/setup-go
+        with:
+          cache-dependency-path: |
+            apps/**/go.sum
+            libs/**/go.sum
+
+      - name: Unit tests on macOS
+        run: ./hippo run --class ephemeral --resource-tier standard --disk-path . -- npx nx run "${PROJECT}:test:unit"
+
+  go-conformance-macos:
+    name: Go conformance tests on macOS (${{ matrix.project }})
+    needs: detect
+    if: needs.detect.outputs.has-go == 'true'
+    runs-on: macos-15
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.detect.outputs.app-conformance-projects) }}
+    env:
+      PROJECT: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+
+      - uses: ./.github/actions/setup-go
+        with:
+          cache-dependency-path: |
+            apps/**/go.sum
+            libs/**/go.sum
+
+      - name: Conformance and architecture tests on macOS
+        run: |
+          ./hippo run --class ephemeral --resource-tier standard --disk-path . -- \
+            npx nx run "${PROJECT}:test:conformance"
+
+  behaviour-coverage:
+    name: Behaviour coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-node
+        with:
+          run-npm-ci: "false"
+
+      # One check for the whole repository, not one per project: a binding and its scenario can sit in any project,
+      # so the check is global (rule C7). It reads text and runs no test.
+      - name: Validate the behaviour corpus and its bindings
+        run: ./hippo run --class ephemeral --resource-tier light --disk-path . -- ./rhino behaviour coverage validate
 
   cross-compile:
     name: Cross-compile check
@@ -207,44 +395,50 @@ jobs:
 
   quality-gate:
     name: Quality gate
-    # Only an explicit success from every required job may open the merge button. A skipped language job is a
-    # pass only when detection found no project of that language; any other result fails the aggregate.
-    needs: [detect, repository-policy, go, cross-compile]
+    # Only an explicit success from every required job may open the merge button. A skipped Go job is a pass only
+    # when detection found no affected Go project; every other result fails the aggregate, including a skip caused
+    # by a failed dependency.
+    needs:
+      [
+        detect,
+        repository-policy,
+        go-static,
+        go-unit,
+        go-integration,
+        go-conformance,
+        go-unit-macos,
+        go-conformance-macos,
+        behaviour-coverage,
+        cross-compile,
+      ]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
-      DETECT_RESULT: ${{ needs.detect.result }}
-      POLICY_RESULT: ${{ needs.repository-policy.result }}
-      GO_RESULT: ${{ needs.go.result }}
-      CROSS_RESULT: ${{ needs.cross-compile.result }}
       HAS_GO: ${{ needs.detect.outputs.has-go }}
+      NEEDS: ${{ toJSON(needs) }}
     steps:
       - name: Check every gate
         shell: bash
         run: |
           set -euo pipefail
-          echo "detect=${DETECT_RESULT} repository-policy=${POLICY_RESULT} go=${GO_RESULT}" \
-            "cross-compile=${CROSS_RESULT} has-go=${HAS_GO}"
-          if [ "${DETECT_RESULT}" != "success" ]; then
-            echo "Affected-project detection did not succeed." >&2
-            exit 1
-          fi
-          if [ "${POLICY_RESULT}" != "success" ]; then
-            echo "Repository policy did not succeed." >&2
-            exit 1
-          fi
-          if [ "${HAS_GO}" = "true" ]; then
-            if [ "${GO_RESULT}" != "success" ]; then
-              echo "The Go quality gate did not succeed." >&2
-              exit 1
-            fi
-            if [ "${CROSS_RESULT}" != "success" ]; then
-              echo "The cross-compile check did not succeed." >&2
-              exit 1
-            fi
-          elif [ "${GO_RESULT}" != "skipped" ] || [ "${CROSS_RESULT}" != "skipped" ]; then
-            echo "A Go job ran without an affected Go project." >&2
+          go_jobs=" go-static go-unit go-integration go-conformance go-unit-macos go-conformance-macos cross-compile "
+          failed=0
+          while read -r job result; do
+            echo "${job}=${result}"
+            case "$result" in
+              success) ;;
+              skipped)
+                if [ "$HAS_GO" = "false" ] && [[ "$go_jobs" == *" ${job} "* ]]; then
+                  continue
+                fi
+                failed=1
+                ;;
+              *) failed=1 ;;
+            esac
+          done < <(jq -r 'to_entries[] | "\(.key) \(.value.result)"' <<< "$NEEDS")
+          if [ "$failed" -ne 0 ]; then
+            echo "A quality gate job did not succeed." >&2
             exit 1
           fi
           echo "All quality gates passed."
