@@ -41,3 +41,5 @@ Each plan states these five parts, in this order:
 - A plan names no private value and uses repository-relative paths, as the [public repository data
   policy](../security/public-repository-data-policy.md) requires.
 - A plan carries no time estimate.
+- A step check that asks for past proof that can no longer be produced records an observation of current behaviour
+  instead, per [Current Behaviour Over Past Proof](../../development/quality/current-behaviour-over-past-proof.md).

@@ -36,7 +36,9 @@ A plan may group several cycles into one pull request. Each cycle still records 
 
 ## Evidence
 
-The pull request names each new test and the result it recorded when it first ran red.
+The pull request names each new test and the result it recorded when it first ran red. A red result that was never
+recorded is not rebuilt later; a check that asks for it follows
+[Current Behaviour Over Past Proof](../quality/current-behaviour-over-past-proof.md).
 
 ## Related
 
