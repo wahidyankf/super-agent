@@ -11,7 +11,7 @@ Feature: Outline reply redaction
       | example-outline | outline | wiki | https://docs.example.test | EXAMPLE_OUTLINE_API_KEY |              |
     And the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-495
   Scenario: A title with an escape sequence leaves no terminal control byte in the text output
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -21,7 +21,7 @@ Feature: Outline reply redaction
     Then the exit status is 0
     And the standard output contains no control characters except line breaks
 
-  @integration @e2e @unit
+  # Behaviour: CLI-495
   Scenario: A document body with an escape sequence leaves no terminal control byte in the text output
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -31,7 +31,7 @@ Feature: Outline reply redaction
     Then the exit status is 0
     And the standard output contains no control characters except line breaks
 
-  @integration @e2e @unit
+  # Behaviour: CLI-495
   Scenario Outline: A hostile title never prints a control byte in the text output, whichever one it holds
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -48,7 +48,7 @@ Feature: Outline reply redaction
       | \u000c  |
       | \u007f  |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-496
   Scenario Outline: A hostile reply in JSON mode never shows a raw control byte, whichever one it holds
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -66,18 +66,7 @@ Feature: Outline reply redaction
       | \u001b  |
       | \u000c  |
 
-  @integration @e2e @unit
-  Scenario: A hostile reply in JSON mode is still a single JSON document with no raw control byte
-    Given the stub Outline server answers "documents.info" with the body:
-      """
-      {"data": {"id": "d0c1d0c1-0000-4000-8000-000000000001", "title": "\u001b[2JCleared", "text": "Synthetic body", "url": "/doc/d0c1d0c1-0000-4000-8000-000000000001", "collectionId": "1c1c1c1c-0000-4000-8000-000000000001", "revision": 1}}
-      """
-    When I run "retriever --output json outline documents get d0c1d0c1-0000-4000-8000-000000000001"
-    Then the exit status is 0
-    And the standard output is a JSON document with schemaVersion 1
-    And the standard output contains no control characters except line breaks
-
-  @integration @e2e @unit
+  # Behaviour: CLI-498
   Scenario: The webhook list prints the host of each URL and never its path, query, or signing secret
     Given the stub Outline server answers "webhookSubscriptions.list" with the body:
       """
@@ -90,7 +79,7 @@ Feature: Outline reply redaction
     And the standard output does not contain "synthetic-query-token"
     And the standard output does not contain "synthetic-signing-secret"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-498
   Scenario: The webhook list JSON document never holds the signing secret or the URL path
     Given the stub Outline server answers "webhookSubscriptions.list" with the body:
       """
@@ -102,7 +91,6 @@ Feature: Outline reply redaction
     And the standard output does not contain "synthetic-signing-secret"
     And the standard output does not contain "/synthetic/path"
 
-  @integration @e2e @unit
   Scenario: A webhook list on a server without the endpoint reports it as unavailable and prints no secret
     Given the stub Outline server answers "webhookSubscriptions.list" with status 404 and the body:
       """
@@ -114,7 +102,6 @@ Feature: Outline reply redaction
     And the standard error is a JSON error with the code "retriever.outline.operation_unavailable" and retryable false
     And the standard error does not contain "synthetic-signing-secret"
 
-  @integration @e2e @unit
   Scenario Outline: A read never prints a value that its reply holds and the rules forbid
     Given the stub Outline server answers "<method>" with the body:
       """
@@ -130,7 +117,7 @@ Feature: Outline reply redaction
       | oauthClients.list         | retriever outline oauth-clients list        | synthetic-client-secret  |
       | webhookSubscriptions.list | retriever outline webhook-subscriptions list | synthetic-signing-secret |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-499
   Scenario: An integration list prints the host of each address and never its path or query
     Given the stub Outline server answers "integrations.list" with the body:
       """
@@ -143,7 +130,7 @@ Feature: Outline reply redaction
     And the standard output does not contain "/synthetic/secret-path"
     And the standard output does not contain "synthetic-query-token"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-500
   Scenario: The JSON document of an API key list keeps the last four characters and never the key value
     Given the stub Outline server answers "apiKeys.list" with the body:
       """
@@ -156,7 +143,7 @@ Feature: Outline reply redaction
     And the standard output does not contain "synthetic-key-value"
     And the standard output does not contain "synthetic-key-hash"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-501
   Scenario Outline: The OAuth authentications list never prints a client secret that its reply holds, in text or in JSON
     Given the stub Outline server answers "oauthAuthentications.list" with the body:
       """
@@ -171,7 +158,7 @@ Feature: Outline reply redaction
       | retriever outline oauth-authentications list                |
       | retriever --output json outline oauth-authentications list  |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-504
   Scenario Outline: A failing Outline response never prints the key
     Given the stub Outline server answers "collections.list" with status <status>
     When I run "retriever --output json outline collections list"
@@ -186,21 +173,20 @@ Feature: Outline reply redaction
       | 429    | 124  |
       | 500    | 2    |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-505
   Scenario: A non-JSON reply that echoes the Authorization header never prints the key
     Given the stub Outline server echoes the Authorization header in a non-JSON reply to "collections.list"
     When I run "retriever --output json outline collections list"
     Then the exit status is 2
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
   Scenario: A successful account read never prints the key
     Given the stub Outline server holds the signed-in user "Synthetic Author" of team "Synthetic Team"
     When I run "retriever --output json outline auth whoami"
     Then the exit status is 0
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-507
   Scenario: An Outline source that cannot be reached is reported as unreachable and never prints the key
     Given no stub Outline server is listening
     When I run "retriever --output json outline collections list"
@@ -208,7 +194,7 @@ Feature: Outline reply redaction
     And the standard error is a JSON error with the code "retriever.outline.unreachable" and retryable true
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-507
   Scenario: Outline rate-limit exhaustion never prints the key
     Given the stub Outline server answers "collections.list" with status 429 and Retry-After "0"
     When I run "retriever --output json outline collections list"
@@ -217,7 +203,7 @@ Feature: Outline reply redaction
     And the stub Outline server received 4 requests to "collections.list"
     And the value of "EXAMPLE_OUTLINE_API_KEY" never appears in the standard output, the standard error, or the output folder
 
-  @integration @e2e @unit
+  # Behaviour: CLI-506
   Scenario Outline: A rejected Outline key is reported by every catalog read and never printed
     Given the stub Outline server answers "<method>" with status 401
     When I run "<command>"
@@ -230,8 +216,10 @@ Feature: Outline reply redaction
       | method            | command                                                    |
       | collections.list  | retriever --output json outline collections list           |
       | documents.info    | retriever --output json outline documents get d0c1d0c1-0000-4000-8000-000000000001 |
+      | documents.search  | retriever --output json outline documents search Synthetic |
+      | auth.info         | retriever --output json outline auth whoami                |
 
-  @integration @e2e @unit
+  # Behaviour: CLI-508
   Scenario: A GraphQL error for a rejected Outline key never includes the key
     Given the stub Outline server answers "documents.info" with status 401
     And retriever serve is running on the loopback address
@@ -243,7 +231,7 @@ Feature: Outline reply redaction
     And the GraphQL response has an error
     And the GraphQL response does not contain "synthetic-outline-key"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-508
   Scenario: A GraphQL reply to a failing Outline server never includes the key it echoed
     Given the stub Outline server echoes the Authorization header in a non-JSON reply to "documents.info"
     And retriever serve is running on the loopback address
@@ -255,7 +243,7 @@ Feature: Outline reply redaction
     And the GraphQL response has an error
     And the GraphQL response does not contain "synthetic-outline-key"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-497
   Scenario: A hostile reply through an MCP tool leaves no terminal control byte in the tool result
     Given the stub Outline server answers "documents.info" with the body:
       """
@@ -269,7 +257,7 @@ Feature: Outline reply redaction
     Then the tool result is not an error
     And the tool result text contains no control characters except line breaks
 
-  @integration @e2e @unit
+  # Behaviour: CLI-508
   Scenario: A failing reply that echoes the key never puts the key in an MCP tool result
     Given the stub Outline server answers "documents.info" with status 500 and the body:
       """
@@ -283,7 +271,7 @@ Feature: Outline reply redaction
     Then the tool result is an error
     And the tool result text does not contain "synthetic-outline-key"
 
-  @integration @e2e @unit
+  # Behaviour: CLI-508
   Scenario: The OAuth authentications MCP tool never returns a client secret that its reply holds
     Given the stub Outline server answers "oauthAuthentications.list" with the body:
       """
@@ -294,3 +282,25 @@ Feature: Outline reply redaction
     Then the tool result is not an error
     And the tool result text contains "0c0c0c0c-0000-4000-8000-000000000001"
     And the tool result text does not contain "synthetic-client-secret"
+
+  # Behaviour: CLI-502
+  Scenario: A user list never prints an e-mail address
+    Given the stub Outline server answers "users.list" with the body:
+      """
+      {"data": [{"id": "5e52e52e-0000-4000-8000-000000000002", "name": "Synthetic User", "email": "synthetic-user@example.test", "role": "member", "isSuspended": false, "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-02T00:00:00Z"}], "pagination": {"offset": 0, "limit": 25}}
+      """
+    When I run "retriever outline users list"
+    Then the exit status is 0
+    And the standard output contains "Synthetic User"
+    And the standard output does not contain "@"
+
+  # Behaviour: CLI-503
+  Scenario: A share list never prints the public link of a share
+    Given the stub Outline server answers "shares.list" with the body:
+      """
+      {"data": [{"id": "5a5a5a5a-0000-4000-8000-000000000001", "documentId": "d0c1d0c1-0000-4000-8000-000000000001", "url": "https://docs.example.test/s/synthetic-share-link", "published": true, "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-02T00:00:00Z"}], "pagination": {"offset": 0, "limit": 25}}
+      """
+    When I run "retriever outline shares list"
+    Then the exit status is 0
+    And the standard output contains "5a5a5a5a-0000-4000-8000-000000000001"
+    And the standard output does not contain "synthetic-share-link"

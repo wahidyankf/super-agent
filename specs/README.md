@@ -20,13 +20,16 @@ specs/
 │   ├── export/            export to plain Markdown files in a chosen folder
 │   ├── graphql/           the read-only GraphQL server started by `serve`
 │   └── mcp/               the MCP tool server started by `mcp`
+├── libs/                  the behaviour corpora of the libraries, one folder for each library
 └── fixtures/              synthetic data and conformance data that tests and feature files read
     └── cli-conformance/   the published contract checks that run before merge
 ```
 
 - [behaviours/](behaviours/) holds the feature files, and [fixtures/](fixtures/) holds the synthetic data they read.
-- **Feature files** cover one behaviour area each, and each file holds one `Feature:`. Every scenario carries a tag for
-  each level it runs at: `@unit`, `@integration`, or `@e2e`.
+- [libs/](libs/) holds the behaviour corpora of the libraries under `libs/`, indexed by [its README](libs/README.md).
+- **Feature files** cover one behaviour area each, and each file holds one `Feature:`. Every scenario runs at the unit
+  level. A scenario that does not run at the integration or end-to-end level carries `@integration-exempt` or
+  `@e2e-exempt`, with an `Exemption` comment above the tag that names its alternative proof.
 - **Fixtures** are small and synthetic. Hosts are `example.test` names, keys are `EXAMPLE_*` names, and issue keys are
   `EXAMPLE-n`.
 - **Run by** the runners in [apps/retriever-cli/tests](../apps/retriever-cli/tests/README.md). The step vocabulary is

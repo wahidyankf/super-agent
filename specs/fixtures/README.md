@@ -5,4 +5,4 @@ keys and tokens use the `EXAMPLE_` names and synthetic values, and issue keys us
 
 ## Files
 
-- [cli-conformance/](cli-conformance/README.md): the published contract checks that run in the quick gate before merge.
+- [cli-conformance/](cli-conformance/README.md): the published contract checks that run in the pull-request gate before merge.
