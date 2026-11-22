@@ -37,6 +37,8 @@ working directory and the process environment.
 - `stubs_test.go`: the stub lifecycle and the seam variables. It loads the synthetic Outline replies.
 - `process_test.go`: the `serve` and `mcp` sessions and the GraphQL request.
 - `steps_cli_test.go`, `steps_stub_test.go`, `steps_process_test.go`, `steps_connectors_test.go`: the step definitions.
+- `steps_plugin_test.go`: the step definitions for the plugin catalog, plugin-file, and process-count steps.
+- `plugin_fakes_test.go`: the in-memory plugin files, fake process, and start error the unit level uses.
 - `connector_fixtures_test.go`: the example wiki spec and its variants, which the connector steps write into the scenario.
 - `spec_runtime_test.go`: how the in-process levels reach a spec source. The unit level answers from the replay stubs in
   memory, behind a network that refuses every call.

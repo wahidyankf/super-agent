@@ -119,10 +119,10 @@ Feature: Engine construction and gateway reads
   @e2e-exempt
   # Exemption(integration): the behaviour has no file, process, or network boundary; it is a pure in-memory rule; alternative-proof: retriever-engine:test:unit
   @integration-exempt
-  Scenario: A collections read returns the flat tree with its parent IDs and depths
+  Scenario: A collections read returns the ID and name of each collection
     Given a validated spec with the list-collections and document roles
     When the caller lists the collections
-    Then the result is the flat tree of the collections with each parent ID and depth
+    Then the result holds the ID and name of each collection, and no parent ID or depth
 
   # Behaviour: ENG-012
   # Exemption(e2e): the library is built into the retriever binary and has no process, network, or file boundary of its own at this level; alternative-proof: retriever-cli:test:e2e

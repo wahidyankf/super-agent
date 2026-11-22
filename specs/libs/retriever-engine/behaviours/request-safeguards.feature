@@ -98,10 +98,10 @@ Feature: Request safeguards
   @e2e-exempt
   # Exemption(integration): the rule is decided in memory from the spec and a canned reply, with no file, process, or network boundary; alternative-proof: retriever-engine:test:unit
   @integration-exempt
-  Scenario: A slot inside a longer text in the body is only text
-    Given a validated read whose body holds a slot inside a longer text
-    When the caller runs the read
-    Then the body holds the slot as plain text
+  Scenario: A slot inside a longer text in a read body is refused when the spec is validated
+    Given a spec whose read body holds a slot inside a longer text
+    When the caller loads the spec
+    Then the load is refused and no request is sent
 
   # Behaviour: ENG-206
   # Exemption(e2e): the library is built into the retriever binary and has no process, network, or file boundary of its own at this level; alternative-proof: retriever-cli:test:e2e

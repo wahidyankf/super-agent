@@ -327,3 +327,34 @@ Feature: Sources catalog
     Then the exit status is 0
     And the standard output is a JSON document with schemaVersion 2
     And the JSON field "profile" of the standard output is "personal"
+
+  # Behaviour: CLI-201
+  Scenario: A plugin whose pin does not match fails and starts no process
+    Given the sources catalog file "sources.yml" holds one outline source served by the plugin "plugins/example-plugin" pinned to a digest of 64 zeros
+    And the plugin file "plugins/example-plugin" answers every request with one collection list
+    And the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
+    When I run "retriever --output json --catalog sources.yml outline collections"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.connector.plugin_pin_mismatch" and retryable false
+    And no plugin process has started
+
+  # Behaviour: CLI-202
+  Scenario: A plugin reply the host refuses is reported with the protocol code
+    Given the sources catalog file "sources.yml" holds one outline source served by the plugin "plugins/example-plugin" pinned to the digest of its file
+    And the plugin file "plugins/example-plugin" answers every request with a reply whose id is not the request id
+    And the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
+    When I run "retriever --output json --catalog sources.yml outline collections"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.connector.plugin_protocol" and retryable false
+
+  # Behaviour: CLI-203
+  Scenario: A plugin that cannot start is reported with its start-failure code
+    Given the sources catalog file "sources.yml" holds one outline source served by the plugin "plugins/example-plugin" pinned to the digest of its file
+    And the plugin file "plugins/example-plugin" cannot start
+    And the environment variable "EXAMPLE_OUTLINE_API_KEY" is set to "synthetic-outline-key"
+    When I run "retriever --output json --catalog sources.yml outline collections"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.connector.plugin_start_failed" and retryable false

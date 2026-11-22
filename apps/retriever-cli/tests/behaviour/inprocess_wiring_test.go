@@ -22,6 +22,7 @@ import (
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
 	"github.com/wahidyankf/super-agent/libs/retriever-engine/engine"
+	"github.com/wahidyankf/super-agent/libs/retriever-plugin"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/configpaths"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/registry"
@@ -193,8 +194,26 @@ func (w *world) wireSources(paths configpaths.Paths, seams seamSet, set connecto
 			return w.buildJiraGateway(model, src, creds, seam, rt)
 		}
 	}
+	// A source with a plugin block is served by its pinned plugin instead of its kind's gateway, whatever the kind, as the
+	// root wires it. The seams are this level's: fakes at the unit level, the production seams at the disk levels.
+	plug := w.be.pluginSeams(w)
+	for kind, built := range builders {
+		inner := built
+		builders[kind] = func(src domain.Source) (ports.SourceGateway, error) {
+			if src.HasPlugin() {
+				return buildPluginGateway(src, creds, plug)
+			}
+			return inner(src)
+		}
+	}
 	ops := set.Operations
 	return sources.Service{Catalog: cat, Gateways: registry.New(builders), Operations: &ops, Profile: paths.Profile}, nil
+}
+
+// buildPluginGateway returns the gateway of one plugin source, mirroring buildPlugin in the composition root: the pinned
+// program serves the source, with the secrets that the credentials and identities resolve.
+func buildPluginGateway(src domain.Source, creds *envfile.Credentials, s plugin.Seams) (ports.SourceGateway, error) {
+	return &plugin.Gateway{Source: src, Credentials: creds, Identities: creds, Seams: s}, nil
 }
 
 // bundledOutlineModel returns the bundled outline.yml model of the set, or nil when the set holds none. It mirrors
@@ -652,6 +671,7 @@ func (w *world) attachSources(deps *cli.Deps, g cli.Globals, seams seamSet) erro
 		Getwd:          w.getwd,
 		Exists:         w.be.regularFile,
 		IsDir:          w.be.dirExists,
+		IsSymlink:      w.be.isSymlink,
 	})
 	if err != nil {
 		return err

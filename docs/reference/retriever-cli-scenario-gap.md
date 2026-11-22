@@ -15,9 +15,9 @@ This page maps each feature file of the older Butler CLI specs to the retriever 
 and it lists what is not ported. It states facts. It ports no scenario.
 
 Butler's specs hold 98 feature files and 1013 scenario headings, 170 of them outlines. The retriever specs under
-`specs/behaviours` hold 16 feature files and 380 scenario headings. Both counts count `Scenario` and `Scenario Outline`
-lines. Counted row by row, as godog runs them, the 37 outlines expand to 187 rows, and the corpus runs 530 scenarios
-in all: 343 plain scenarios and 187 outline rows. The godog suites in `apps/retriever-cli/tests/behaviour` fail when the
+`specs/behaviours` hold 16 feature files and 384 scenario headings. Both counts count `Scenario` and `Scenario Outline`
+lines. Counted row by row, as godog runs them, the 37 outlines expand to 187 rows, and the corpus runs 534 scenarios
+in all: 347 plain scenarios and 187 outline rows. The godog suites in `apps/retriever-cli/tests/behaviour` fail when the
 scenarios they run differ from the corpus.
 
 ## Status

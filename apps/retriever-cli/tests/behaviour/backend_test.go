@@ -15,6 +15,7 @@ import (
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-plugin"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/markdownfiles"
@@ -46,6 +47,14 @@ type backend interface {
 	regularFile(path string) bool
 	// dirExists reports whether a real folder exists at path, following no symbolic link.
 	dirExists(path string) bool
+	// symlink makes a symbolic link at link that points at target. The target is never checked, and the link is never followed.
+	symlink(target, link string) error
+	// isSymlink reports whether a symbolic link is at path. The link itself is described, never followed.
+	isSymlink(path string) bool
+	// pluginSeams returns the file, process, and timer seams of one plugin call at this level.
+	pluginSeams(w *world) plugin.Seams
+	// pluginStarts returns how many plugin processes started in the scenario.
+	pluginStarts() int
 	// walk returns the regular files under root, keyed by slash path relative to root.
 	walk(root string) (map[string]string, error)
 	// dirFiles returns the regular files directly inside the folder at path. A missing folder holds none.
@@ -88,11 +97,15 @@ const memRoot = "/scenario"
 type memoryBackend struct {
 	files *memfs.FS
 	net   *memNet
+	// links maps the clean path of each symbolic link to its target. The tree holds no link entry, so a link is kept here.
+	links map[string]string
+	// pluginStarted counts the fake plugin starts of the scenario, which run no process.
+	pluginStarted int
 }
 
 // newMemoryBackend returns an empty in-memory backend for one scenario.
 func newMemoryBackend(*testing.T) backend {
-	return &memoryBackend{files: memfs.New(), net: newMemNet(nil)}
+	return &memoryBackend{files: memfs.New(), net: newMemNet(nil), links: map[string]string{}}
 }
 
 // start creates the scenario folder in the tree and returns it.
@@ -137,6 +150,44 @@ func (m *memoryBackend) dirExists(name string) bool {
 	info, err := m.files.Lstat(name)
 	return err == nil && info.IsDir()
 }
+
+// symlink records a link at link that points at target. The folder that holds the link must exist, and nothing else may
+// be stored at link, as the operating system requires.
+func (m *memoryBackend) symlink(target, link string) error {
+	if _, err := m.files.Lstat(path.Dir(link)); err != nil {
+		return err
+	}
+	if _, err := m.files.Lstat(link); err == nil {
+		return fmt.Errorf("symlink %s: the path exists", link)
+	}
+	m.links[path.Clean(link)] = target
+	return nil
+}
+
+// isSymlink reports whether a link is recorded at name.
+func (m *memoryBackend) isSymlink(name string) bool {
+	_, ok := m.links[path.Clean(name)]
+	return ok
+}
+
+// pluginSeams returns the plugin seams of the unit level: the file calls work on the in-memory tree, the start is a fake
+// that answers the scenario's reply and counts every start, and the timer never fires. No real file or process is touched.
+func (m *memoryBackend) pluginSeams(w *world) plugin.Seams {
+	return plugin.Seams{
+		Files: memPluginFiles{be: m},
+		Start: func(string, string, []string) (plugin.Proc, error) {
+			m.pluginStarted++
+			if w.pluginFile == nil || w.pluginFile.broken {
+				return nil, errPluginCannotStart
+			}
+			return memPluginProc{reply: []byte(w.pluginFile.reply)}, nil
+		},
+		After: func(time.Duration) <-chan time.Time { return make(chan time.Time) },
+	}
+}
+
+// pluginStarts returns the number of fake plugin starts.
+func (m *memoryBackend) pluginStarts() int { return m.pluginStarted }
 
 // walk returns every file under root.
 func (m *memoryBackend) walk(root string) (map[string]string, error) {

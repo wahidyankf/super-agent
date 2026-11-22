@@ -259,6 +259,17 @@ Feature: Configuration discovery
     And the standard output is empty
     And the standard error is a JSON error with the code "retriever.usage.profile_invalid" and retryable false
 
+  # Behaviour: CLI-023
+  Scenario: A profile folder that is a symbolic link is refused
+    Given the profile "personal" is a symbolic link to a folder that holds these sources:
+      | id           | kind | tags  | endpoint                  | credential_env        | identity_env |
+      | example-kiwi | kiwi | tests | https://kiwi.example.test | PERSONAL_KIWI_API_KEY |              |
+    When I run "retriever --output json --profile personal sources list"
+    Then the exit status is 2
+    And the standard output is empty
+    And the standard error is a JSON error with the code "retriever.usage.profile_invalid" and retryable false
+    And the standard error does not name the profile folder
+
   # Behaviour: CLI-022
   Scenario: The user configuration folder comes from the home folder when XDG_CONFIG_HOME is empty
     Given the environment variable "XDG_CONFIG_HOME" is set to ""

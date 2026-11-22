@@ -1,6 +1,8 @@
 package behaviour
 
 import (
+	"errors"
+	"fmt"
 	"net"
 	"path"
 	"strconv"
@@ -34,6 +36,12 @@ func registerDiscoverySteps(ctx *godog.ScenarioContext, cur func() *world) {
 	ctx.Step(`^the spec file "([^"]*)" is (\d+) KiB large$`, func(name, kib string) error {
 		return cur().writeOversizeSpec(name, kib)
 	})
+	ctx.Step(`^the profile "([^"]*)" is a symbolic link to a folder that holds these sources:$`, func(name string, tbl *godog.Table) error {
+		return cur().linkProfile(name, tbl)
+	})
+	ctx.Step(`^the standard error does not name the profile folder$`, func() error {
+		return cur().checkProfileNotNamed()
+	})
 }
 
 // profileFolder is the folder of a named profile, inside the scenario's configuration folder.
@@ -53,6 +61,47 @@ func (w *world) writeProfileCatalog(name string, tbl *godog.Table) error {
 	}
 	_, err = w.writeInput(path.Join(folder, "sources.yml"), renderCatalog(rows))
 	return err
+}
+
+// linkProfile makes the profile folder a symbolic link to a real folder that holds the sources. The profiles folder stays
+// real, as it is when a user links one profile, and the link's target is a folder inside the scenario.
+func (w *world) linkProfile(name string, tbl *godog.Table) error {
+	rows, err := tableRows(tbl)
+	if err != nil {
+		return err
+	}
+	target := path.Join("links", name)
+	if err := w.be.mkdir(w.absPath(target)); err != nil {
+		return err
+	}
+	if _, err := w.writeInput(path.Join(target, "sources.yml"), renderCatalog(rows)); err != nil {
+		return err
+	}
+	if err := w.be.mkdir(w.absPath(path.Dir(profileFolder(name)))); err != nil {
+		return err
+	}
+	if err := w.be.symlink(w.absPath(target), w.absPath(profileFolder(name))); err != nil {
+		return err
+	}
+	w.linkedProfile = name
+	return nil
+}
+
+// checkProfileNotNamed checks that the standard error of the last command names neither the linked profile nor its folder.
+func (w *world) checkProfileNotNamed() error {
+	if w.linkedProfile == "" {
+		return errors.New("no profile was made a symbolic link in this scenario")
+	}
+	text, err := w.streamText("stderr")
+	if err != nil {
+		return err
+	}
+	for _, named := range []string{w.linkedProfile, w.absPath(profileFolder(w.linkedProfile))} {
+		if strings.Contains(text, named) {
+			return fmt.Errorf("the standard error names the profile folder %q: %q", named, text)
+		}
+	}
+	return nil
 }
 
 // writeHomeCatalog writes a sources catalog into the folder of the home directory's configuration, which the scenario
