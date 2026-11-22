@@ -23,7 +23,7 @@ Feature: Time limits, retries, and pacing
   Scenario: A Retry-After wait over 60 seconds is not waited out and no second request is sent
     Given a validated read and a replay that answers 429 with a Retry-After wait of more than 60 seconds
     When the caller runs the read
-    Then the read fails with the rate-limit error
+    Then the read fails with the retry-after-too-long error, which exits with status 2
     And exactly one request is sent
 
   # Behaviour: ENG-210

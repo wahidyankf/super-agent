@@ -10,6 +10,7 @@ import (
 
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-engine/engine"
+	"github.com/wahidyankf/super-agent/libs/retriever-spec"
 )
 
 // The request safeguards of these bindings build each request from a validated spec. Every request is recorded by the
@@ -341,25 +342,31 @@ func TestRequestSafeguards_BodyValueJSONEncodedAsGiven(t *testing.T) {
 	}
 }
 
-// TestRequestSafeguards_SlotInsideLongerTextIsText binds a slot inside a longer text of the body to plain text. The validator
-// refuses such a body at load, so the body is set on the validated model after it loads, which is the only way the renderer
-// meets it; the render must keep the text as it is.
-// @scenario specs/libs/retriever-engine/behaviours/request-safeguards.feature: A slot inside a longer text in the body is only text
-func TestRequestSafeguards_SlotInsideLongerTextIsText(t *testing.T) {
-	s := rebindSpec(t, requestsPostReadDoc)
-	s.Operations[0].Body = map[string]any{"text": "before {{title}} after"}
+// TestRequestSafeguards_SlotInsideLongerTextIsRefused checks that a spec document whose read body holds a slot inside a longer
+// text is refused. The validator refuses the document at the body value, so no spec model and no engine exist, and no
+// request is sent.
+// @scenario specs/libs/retriever-engine/behaviours/request-safeguards.feature: A slot inside a longer text in a read body is refused when the spec is validated
+func TestRequestSafeguards_SlotInsideLongerTextIsRefused(t *testing.T) {
+	doc := strings.Replace(rebindHeader+requestsPostReadDoc, `      text: "{{title}}"`, `      text: "before {{title}} after"`, 1)
 	tr := rebindReplies(rebindJSON(http.StatusOK, `{"id":"note-1"}`))
-	eng := rebindEngine(t, s, tr, &rebindClock{})
-	if _, err := pagingRead(eng, "example-wiki.docs.note", map[string]any{"title": "First"}); err != nil {
-		t.Fatalf("the read fails: %v", err)
+	res := spec.Validate([]byte(doc))
+	if !errors.Is(res.Err(), spec.ErrInvalid) {
+		t.Fatalf("the error is %v, want the spec refusal", res.Err())
 	}
-	reqs := tr.seen()
-	if len(reqs) != 1 {
-		t.Fatalf("%d requests, want one", len(reqs))
+	if res.Spec != nil {
+		t.Fatal("a spec model was returned for a document that is refused")
 	}
-	body := writesBody(t, tr)
-	if body["text"] != "before {{title}} after" {
-		t.Fatalf("the body holds %v, want the slot as plain text", body["text"])
+	var atBody bool
+	for _, f := range res.Findings {
+		if f.Code == spec.CodeSpecInvalid && f.Path == "/operations/0/body/text" {
+			atBody = true
+		}
+	}
+	if !atBody {
+		t.Fatalf("the findings are %v, want a refusal at /operations/0/body/text", res.Findings)
+	}
+	if n := len(tr.seen()); n != 0 {
+		t.Fatalf("the refused spec sent %d requests, want 0", n)
 	}
 }
 

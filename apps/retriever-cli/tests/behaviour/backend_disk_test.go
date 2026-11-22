@@ -21,6 +21,7 @@ import (
 	"github.com/wahidyankf/super-agent/apps/retriever-cli/internal/adapters/graphql"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/domain"
 	"github.com/wahidyankf/super-agent/libs/retriever-contract/ports"
+	"github.com/wahidyankf/super-agent/libs/retriever-plugin"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/catalog"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/envfile"
 	"github.com/wahidyankf/super-agent/libs/retriever-runtime/markdownfiles"
@@ -122,6 +123,27 @@ func (d *diskBackend) regularFile(name string) bool {
 func (d *diskBackend) dirExists(name string) bool {
 	info, err := os.Lstat(name)
 	return err == nil && info.IsDir()
+}
+
+// symlink makes a real symbolic link at link that points at target, as the user would create one.
+func (d *diskBackend) symlink(target, link string) error { return os.Symlink(target, link) }
+
+// isSymlink reports whether a symbolic link is at name. Lstat describes the link itself, so the link is never followed.
+func (d *diskBackend) isSymlink(name string) bool {
+	info, err := os.Lstat(name)
+	return err == nil && info.Mode()&os.ModeSymlink != 0
+}
+
+// pluginSeams returns the production plugin seams: the zero value, which the plugin package reads as the real file copy,
+// the real process start, and time.After. realHost leaves its plugin seams zero in the same way.
+func (d *diskBackend) pluginSeams(*world) plugin.Seams { return plugin.Seams{} }
+
+// pluginStarts counts the plugin processes that started, through the marker file that a plugin script writes when it runs.
+func (d *diskBackend) pluginStarts() int {
+	if d.regularFile(filepath.Join(d.root, pluginMarker)) {
+		return 1
+	}
+	return 0
 }
 
 // walk returns every regular file under root, keyed by slash path relative to root.

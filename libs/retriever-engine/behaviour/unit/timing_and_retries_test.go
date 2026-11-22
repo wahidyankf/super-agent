@@ -52,8 +52,8 @@ func TestTiming_RateLimitedReadWaitsRetryAfterThenSucceeds(t *testing.T) {
 	}
 }
 
-// TestTiming_RetryAfterOverSixtySecondsNotWaited binds a Retry-After of more than 60 seconds to a rate-limit failure with no
-// wait and no second request.
+// TestTiming_RetryAfterOverSixtySecondsNotWaited binds a Retry-After of more than 60 seconds to the retry-after-too-long
+// failure, with exit status 2, no wait, and no second request.
 // @scenario specs/libs/retriever-engine/behaviours/timing-and-retries.feature: A Retry-After wait over 60 seconds is not waited out and no second request is sent
 func TestTiming_RetryAfterOverSixtySecondsNotWaited(t *testing.T) {
 	s := rebindSpec(t, readsObjectDoc(""))
@@ -61,8 +61,8 @@ func TestTiming_RetryAfterOverSixtySecondsNotWaited(t *testing.T) {
 	clock := &rebindClock{}
 	eng := rebindEngine(t, s, tr, clock)
 	_, err := pagingRead(eng, "example-wiki.docs.one", map[string]any{"id": "doc-1"})
-	if !errors.Is(err, domain.ErrRetryAfterTooLong) {
-		t.Fatalf("the error is %v, want the rate-limit error for a wait over 60 seconds", err)
+	if !errors.Is(err, domain.ErrRetryAfterTooLong) || engine.ExitStatus(err) != 2 {
+		t.Fatalf("the error is %v with exit status %d, want the retry-after-too-long error and exit status 2", err, engine.ExitStatus(err))
 	}
 	if n := len(tr.seen()); n != 1 || fmt.Sprint(clock.recordedWaits()) != "[]" {
 		t.Fatalf("%d requests and waits %v, want one request and no wait", n, clock.recordedWaits())

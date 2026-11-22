@@ -19,6 +19,7 @@ func registerSteps(ctx *godog.ScenarioContext, cur func() *world) {
 	registerReadSteps(ctx, cur)
 	registerConnectorSteps(ctx, cur)
 	registerDiscoverySteps(ctx, cur)
+	registerPluginSteps(ctx, cur)
 }
 
 // runSuite runs every scenario of the corpus except those that carry the excluded tag. The unit level excludes

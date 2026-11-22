@@ -58,6 +58,12 @@ type world struct {
 	procKill []func()
 	// stdoutClosed is set by a step that makes standard output a pipe with no reader, so the next command meets EPIPE.
 	stdoutClosed bool
+	// linkedProfile is the profile that a step made a symbolic link, so a later check can see whether an error names it.
+	linkedProfile string
+	// pluginFile is the plugin file the scenario wrote, and pluginCatalog the catalog that names it, kept until the file's
+	// digest can pin it.
+	pluginFile    *pluginFile
+	pluginCatalog *pluginCatalogSpec
 	// kept holds the standard error of an earlier command, by the name a step gave it, for a later identical-text check.
 	kept map[string]string
 	// clock is the fake clock of the in-process levels. The gateways and the stubs of those levels read it, so the spacing

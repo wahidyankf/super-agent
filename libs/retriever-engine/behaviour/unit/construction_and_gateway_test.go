@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -562,34 +563,27 @@ func TestConstructionCollectionsReadNeedsTheListCollectionsRole(t *testing.T) {
 	}
 }
 
-// TestConstructionCollectionTreeHasParentIDsAndDepths reads the flat collection tree of a spec that holds the
-// list-collections and collection-tree roles. The read returns each node with its parent ID and its depth. The read is
-// the collection-tree read, because only that read returns parent IDs and depths.
+// TestConstructionListCollectionsReturnsIDAndName reads the collections of a spec that holds the list-collections role. The
+// read returns each collection with its ID and its name, and no other field.
 //
-// @scenario specs/libs/retriever-engine/behaviours/construction-and-gateway.feature: A collections read returns the flat tree with its parent IDs and depths
-func TestConstructionCollectionTreeHasParentIDsAndDepths(t *testing.T) {
+// @scenario specs/libs/retriever-engine/behaviours/construction-and-gateway.feature: A collections read returns the ID and name of each collection
+func TestConstructionListCollectionsReturnsIDAndName(t *testing.T) {
 	s := rebindDoc(t, wireWikiDoc+wireGatewayOps)
 	rt := rebindReplies(rebindJSON(200, `{"items":[`+
-		`{"id":"doc-1","title":"First document","url":"https://docs.example.test/doc-1","depth":0,"parent_id":null},`+
-		`{"id":"doc-2","title":"Second document","url":"https://docs.example.test/doc-2","depth":1,"parent_id":"doc-1"}`+
+		`{"id":"col-1","name":"Handbook"},`+
+		`{"id":"col-2","name":"Archive"}`+
 		`]}`))
 	eng := rebindEngine(t, s, rt, &rebindClock{})
-	col, err := domain.NewCollectionID("col-1")
+	cols, err := eng.ListCollections(context.Background())
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("ListCollections: %v", err)
 	}
-	nodes, err := eng.CollectionTree(context.Background(), col)
-	if err != nil {
-		t.Fatalf("CollectionTree: %v", err)
+	want := []domain.Collection{{ID: "col-1", Name: "Handbook"}, {ID: "col-2", Name: "Archive"}}
+	if !reflect.DeepEqual(cols, want) {
+		t.Fatalf("collections = %+v, want the ID and name of each collection %+v", cols, want)
 	}
-	if len(nodes) != 2 {
-		t.Fatalf("got %d nodes, want 2", len(nodes))
-	}
-	if nodes[0].ID != "doc-1" || nodes[0].Depth != 0 || nodes[0].ParentID != nil {
-		t.Fatalf("first node = %+v, want doc-1 at depth 0 with no parent", nodes[0])
-	}
-	if nodes[1].ID != "doc-2" || nodes[1].Depth != 1 || nodes[1].ParentID == nil || *nodes[1].ParentID != "doc-1" {
-		t.Fatalf("second node = %+v, want doc-2 at depth 1 under doc-1", nodes[1])
+	if n := reflect.TypeOf(domain.Collection{}).NumField(); n != 2 {
+		t.Fatalf("domain.Collection has %d fields, want only the ID and the name", n)
 	}
 }
 
