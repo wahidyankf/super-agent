@@ -32,10 +32,13 @@ alias, or the binding itself.
    the dispatch will create.
 5. **Run exactly one HIPPO boundary, on the target.** Do not wrap the SSH command in a local HIPPO boundary. Do not
    nest a second boundary inside the first.
-6. **Tear down.** Remove every artifact and worktree the task created on the target. If something remains, report
-   what it is and why.
-7. **Delete the record last.** Delete the dispatch record only after teardown is verified and nothing it lists
-   remains.
+6. **Tear down.** Remove each artifact the task creates on the target once the step that needed it ends. At a
+   handoff, the target holds only the task worktree and its installed dependencies. After the work ends, remove the
+   worktree and its branch. The dispatch note lists the target's `/var/tmp` entries, `git worktree list`, containers,
+   and disk use before the first remote step and after teardown. Never remove what existed before the task or what
+   another session made. If something remains, report what it is and why.
+7. **Delete the record last.** Delete the dispatch record only after teardown is verified, the dispatch note
+   holds the after-teardown listing, and nothing it lists remains.
 
 Count each dispatch-created worktree toward the per-repository and global worktree caps. A dispatch waits, or moves
 to another eligible machine, when the cap is full.
